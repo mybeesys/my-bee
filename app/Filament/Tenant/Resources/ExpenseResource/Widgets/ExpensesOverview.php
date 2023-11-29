@@ -23,13 +23,12 @@ class ExpensesOverview extends BaseWidget
         foreach ($categories as $category) {
             $amount = $category->expenses->sum('amount');
             $amount_words = numbers_to_words($amount);
-            $amount_formatted = (new \NumberFormatter(app()->getLocale(), \NumberFormatter::DECIMAL))->format($amount);
+            $amount_formatted = main_currency_iso_code() . " " . format_amount($amount);
             $cards[] = Stat::make($category->name, $amount_formatted)->description($amount_words)->color('warning');
         }
 
         $total_amount = $categories->pluck('expenses')->flatten()->sum('amount');
-        $total_formatted = (new \NumberFormatter(app()->getLocale(), \NumberFormatter::DECIMAL))
-            ->format($total_amount);
+        $total_formatted = main_currency_iso_code() . " " .format_amount($total_amount);
         $total_words = numbers_to_words($total_amount);
 
         return array_merge($cards, [

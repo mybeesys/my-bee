@@ -8,6 +8,7 @@ use App\Filament\Pages\Profile;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Livewire\ExpenseChart;
 use BezhanSalleh\FilamentLanguageSwitch\FilamentLanguageSwitchPlugin;
+use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -125,7 +126,7 @@ class AdminPanelProvider extends PanelProvider
                         'default' => 1,
                         'sm' => 2,
                     ]),
-                FilamentLanguageSwitchPlugin::make(),
+
                 FilamentSpatieLaravelBackupPlugin::make()
                     ->usingQueue('default')
                     ->usingPage(Backups::class),

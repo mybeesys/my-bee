@@ -17,12 +17,15 @@ class CategoryResource extends BaseResource
         return $this->filterFields([
             'id' => $this->id,
             'name' => $this->name,
+            'nameEn' => $this->getTranslation("name", "en"),
+            'nameAr' => $this->getTranslation("name", "ar"),
             'description' => $this->description,
             'sort' => $this->sort,
             'productsCount' => $this->products->count(),
             'canBecomeParent' => $this->products->isEmpty(),
-            'canDelete' => false,
+            'canDelete' => true,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
+            'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
 //            'parent' => new CategoryResource($this->parent),
         ]);
     }

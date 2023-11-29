@@ -2,11 +2,9 @@
 
 namespace App\Http\Resources;
 
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
-class TenantResource extends BaseResource
+class ExpenseResource extends BaseResource
 {
     /**
      * Transform the resource into an array.
@@ -17,18 +15,15 @@ class TenantResource extends BaseResource
     {
         return $this->filterFields([
             'id' => $this->id,
-            'type' => $this->type,
             'name' => $this->name,
-            'phone' => $this->phone,
-            'mobile' => $this->mobile,
-            'email' => $this->email,
-            'address' => $this->address,
-            'trn' => $this->trn,
-            'companyPerson' => $this->company_person,
-            'active' => $this->active,
+            'expenseCategoryId' => $this->expense_category_id,
+            'expenseCategory' => $this->category->name,
+            'amount' => main_currency_iso_code() . " " .$this->amount_formatted,
+            'amountWritten' => numbers_to_words($this->amount),
+            'date' => $this->date->format('F j, Y, g:i a'),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
-            'canDelete' => false,
+            'canDelete' => true,
         ]);
     }
 }

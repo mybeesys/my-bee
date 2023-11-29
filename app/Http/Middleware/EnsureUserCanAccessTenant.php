@@ -19,6 +19,7 @@ class EnsureUserCanAccessTenant
         $startTime = microtime(true);
 
         $user = auth('sanctum')->user();
+
         $tenant = Tenant::find($request->header('Tenant-Id'));
 
         if (!$tenant)

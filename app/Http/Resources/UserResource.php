@@ -26,6 +26,8 @@ class UserResource extends BaseResource
             'canCreateTenant' => $this->hasRole(User::ROLE_CLIENT),
             'canUpdateTenants' => $this->hasRole(User::ROLE_CLIENT),
             'tenants' => TenantResource::collection($this->tenants),
+            'createdAt' => $this->created_at->format('F j, Y, g:i a'),
+            'canDelete' => false,
         ]);
     }
 }

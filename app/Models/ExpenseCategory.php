@@ -15,4 +15,9 @@ class ExpenseCategory extends BaseModel
     {
         return $this->hasMany(Expense::class);
     }
+
+    public function getExpensesTotalFormattedAttribute(): string
+    {
+        return format_amount($this->expenses->sum('amount'));
+    }
 }

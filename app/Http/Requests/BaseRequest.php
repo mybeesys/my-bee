@@ -43,7 +43,7 @@ class BaseRequest extends FormRequest
         $errors = [];
         foreach ($validator->getMessageBag()->keys() as $key){
             $msg = $validator->getMessageBag()->get($key)[0] ?? 'Invalid input.';
-            $errors[$key] = str($msg)->replace(['id'], '')->value();
+            $errors[$key] = str($msg)->replace([' id'], '', false)->value();
         }
         throw new HttpResponseException(response()->json(
             [

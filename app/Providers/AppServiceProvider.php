@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Tables\Columns\DateColumn;
+use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
@@ -43,6 +44,16 @@ class AppServiceProvider extends ServiceProvider
         Page::$reportValidationErrorUsing = function (ValidationException $exception) {
             fns()->sendWarning($exception->getMessage());
         };
+
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
+            $switch
+                ->locales(['ar', 'en'])
+                ->labels([
+                    'ar' => 'العربية',
+                    'en' => 'English',
+                ])
+                ->visible(outsidePanels: true);
+        });
     }
 
     protected function configPublicPath()

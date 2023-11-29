@@ -48,17 +48,34 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
         ]
     ], function () {
 
-        Route::group(['prefix' => 'shop'], function (){
+        Route::group(['prefix' => 'shop'], function () {
             Route::apiResources([
                 'categories' => \App\Http\Controllers\API\V1\CategoryController::class,
+                'suppliers' => \App\Http\Controllers\API\V1\SupplierController::class,
 //                'products' => \App\Http\Controllers\API\V1\ProductController::class
             ]);
         });
 
-        Route::group(['prefix' => 'warehouses'], function (){
+        Route::group(['prefix' => 'warehouses'], function () {
             Route::apiResources([
+                'warehouses' => \App\Http\Controllers\API\V1\WarehouseController::class,
                 'units' => \App\Http\Controllers\API\V1\UnitController::class,
             ]);
         });
+
+        Route::group(['prefix' => 'expenses'], function () {
+            Route::apiResources([
+                'categories' => \App\Http\Controllers\API\V1\ExpenseCategoryController::class,
+                'expenses' => \App\Http\Controllers\API\V1\ExpenseController::class,
+            ]);
+        });
+
+//        Route::group(['prefix' => 'settings'], function () {
+//            Route::apiResources([
+//                'settings' => \App\Http\Controllers\API\V1\ExpenseController::class,
+//                'tax-profiles' => \App\Http\Controllers\API\V1\ExpenseCategoryController::class,
+//            ]);
+//        });
+
     });
 });

@@ -69,7 +69,10 @@ class CategoryController extends BaseController
 
         $parent = Category::with('products')->find($data['parent_id'] ?? null);
 
-        if ($parent and $parent->products->isNotEmpty() or $parent->id == $category->id)
+        if (!$parent)
+            unset($data['parent_id']);
+
+        if ($parent and $parent->products->isNotEmpty() or ($parent and $parent->id == $category->id))
             abort(400, 'The selected parent category has products and cannot be a parent or is invalid');
 
         $data['name'] = [

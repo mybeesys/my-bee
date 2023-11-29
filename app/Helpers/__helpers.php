@@ -657,7 +657,10 @@ if (!function_exists('custom_slug')) {
 
         function numbers_to_words($amount): ?string
         {
+
             $amount = Str::replace(',', '', $amount);
+
+            $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT);
 
             if (blank($amount) or !is_number($amount))
                 return null;
@@ -669,7 +672,7 @@ if (!function_exists('custom_slug')) {
             return $formatter->format($amount);
         }
 
-        function format_amount($amount, $style = NumberFormatter::DECIMAL, $locale = "en"): ?string
+        function format_amount($amount, $style = NumberFormatter::DECIMAL, $locale = "en", $includeCurrencyCode = false): ?string
         {
             $amount = Str::replace(',', '', $amount);
 
@@ -679,6 +682,9 @@ if (!function_exists('custom_slug')) {
             $formatter = new NumberFormatter($locale, $style);
 
             $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, currency_decimals());
+
+            if ($includeCurrencyCode)
+                return main_currency_iso_code() . " " . $formatter->format($amount);
 
             return $formatter->format($amount);
         }
@@ -722,7 +728,7 @@ if (!function_exists('custom_slug')) {
 
 
     if (!function_exists('main_currency_iso_code')) {
-        function main_currency_iso_code($default = "SAR"): ? string
+        function main_currency_iso_code($default = "SAR"): ?string
         {
             return setting('main_currency', $default);
         }

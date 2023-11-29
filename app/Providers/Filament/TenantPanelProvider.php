@@ -12,6 +12,9 @@ use App\Http\Middleware\ApplyTenantScopes;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Models\Tenant;
 use BezhanSalleh\FilamentLanguageSwitch\FilamentLanguageSwitchPlugin;
+use BezhanSalleh\FilamentLanguageSwitch\Http\Livewire\SwitchFilamentLanguage;
+use BezhanSalleh\FilamentLanguageSwitch\Http\Middleware\SwitchLanguageLocale;
+use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -124,7 +127,7 @@ class TenantPanelProvider extends PanelProvider
                 Authenticate::class,
             ])->plugins([
                 SpatieLaravelTranslatablePlugin::make(),
-                FilamentLanguageSwitchPlugin::make(),
+
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
                     ->gridColumns([
                         'default' => 1,

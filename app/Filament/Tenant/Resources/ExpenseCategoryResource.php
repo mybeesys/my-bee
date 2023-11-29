@@ -5,6 +5,7 @@ namespace App\Filament\Tenant\Resources;
 use App\Filament\Tenant\Resources\ExpenseCategoryResource\Pages;
 use App\Filament\Tenant\Resources\ExpenseCategoryResource\RelationManagers;
 use App\Models\ExpenseCategory;
+use App\Rules\UniqueTenantItemRule;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -50,10 +51,10 @@ class ExpenseCategoryResource extends Resource
                 Forms\Components\Section::make(__("fields.expense_category"))->schema([
                     Forms\Components\TextInput::make('name')
                         ->label(__("fields.name"))
-                        ->unique()
+                        ->rules([new UniqueTenantItemRule(ExpenseCategory::class, 'name', $form->getRecord()?->id)])
                         ->required()
                         ->maxLength(255),
-                ])
+                ])->columns(2)
             ]);
     }
 
@@ -70,10 +71,9 @@ class ExpenseCategoryResource extends Resource
                     ->counts('expenses'),
                 Tables\Columns\TextColumn::make('expenses_total')
                     ->label(__("fields.total"))
-                    ->money('SAR')
                     ->moneyTooltip()
                     ->getStateUsing(function (ExpenseCategory $record) {
-                        return $record->expenses->sum('amount');
+                        return main_currency_iso_code() . " " .$record->expenses_total_formatted;
                     }),
 
             ])

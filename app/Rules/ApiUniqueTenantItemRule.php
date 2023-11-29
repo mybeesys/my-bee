@@ -2,6 +2,7 @@
 
 namespace App\Rules;
 
+use App\Models\Warehouse;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
@@ -18,7 +19,6 @@ class ApiUniqueTenantItemRule implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-
         //for example
         //tenant one cant have duplicate barcode (bc1)
         //but another tenant can have barcode (bc1)

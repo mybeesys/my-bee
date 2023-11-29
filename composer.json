@@ -12,7 +12,7 @@
         "ext-intl": "*",
         "alkoumi/laravel-arabic-tafqeet": "dev-master",
         "awcodes/filament-table-repeater": "^2.0",
-        "bezhansalleh/filament-language-switch": "^2.0",
+        "bezhansalleh/filament-language-switch": "^3.0",
         "bezhansalleh/filament-shield": "^3.0",
         "filament/filament": "^3.0",
         "filament/spatie-laravel-media-library-plugin": "^3.0-stable",

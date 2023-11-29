@@ -2,25 +2,24 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-
-class UnitResource extends JsonResource
+class ExpenseCategoryResource extends BaseResource
 {
     /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
-    public function toArray(Request $request): array
+    public function toArray($request): array
     {
-        return [
+        return $this->filterFields([
             'id' => $this->id,
             'name' => $this->name,
-            'productsCount' => $this->products->count(),
+            'expensesCount' => $this->expenses->Count(),
+            'expensesTotal' => $this->expenses_total_formatted,
+            'expenses' => ExpenseResource::collection($this->expenses),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
             'canDelete' => true,
-        ];
+        ]);
     }
 }

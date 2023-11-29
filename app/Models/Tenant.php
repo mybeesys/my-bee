@@ -89,4 +89,14 @@ class Tenant extends BaseModel
         return $this->hasMany(TaxProfile::class);
     }
 
+    public function expenseCategories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
+    public function expenses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
 }

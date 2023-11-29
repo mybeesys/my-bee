@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+//dd(User::with('tokens')->find(3)->createToken("test")->plainTextToken);
 //Route::get('/', function () {
 //    return view('welcome');
 //});
