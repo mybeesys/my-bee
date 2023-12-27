@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Rules\InternationalPhoneRule;
 use App\Rules\UniqueClientAttributeRule;
 use App\Rules\UniqueItemAttributeRule;
+use App\Services\CookieService;
 use App\Services\SettingService;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -23,6 +24,7 @@ use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
 use Filament\Support\Colors\Color;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Str;
 
 class TenantUserProfile extends Page implements HasForms
@@ -265,6 +267,9 @@ class TenantUserProfile extends Page implements HasForms
                             'date_column_format' => $this->date_column_format,
                         ]
                     );
+
+
+                   $rs = CookieService::instance()->set('primary_color', $this->primary_color);
 
                     $user->update($state);
 

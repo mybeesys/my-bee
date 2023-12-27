@@ -29,6 +29,8 @@ class UpdateWarehouseRequest extends BaseRequest
             'name' => ['sometimes', 'max:255', new ApiUniqueTenantItemRule(Warehouse::class, 'name', $id)],
             'phone' => ['sometimes', new InternationalPhoneRule(false)],
             'address' => ['sometimes', 'max:255'],
+            'main' => ['sometimes', 'boolean'],
+            'pulling_stock_priority' => ['sometimes', 'integer', 'min:1', 'max:500'],
             'description' => ['sometimes', 'max:255'],
         ];
     }

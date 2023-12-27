@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Casts\EncryptCast;
 use App\Helpers\CacheManager;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Translatable\HasTranslations;
 
-class Setting extends BaseModel
+class Setting extends BaseModel implements HasMedia
 {
-    use HasFactory, HasTranslations;
+    use HasFactory, HasTranslations, InteractsWithMedia;
 
     protected $guarded = [];
 

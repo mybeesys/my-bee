@@ -2,8 +2,11 @@
 
 namespace App\Filament\Tenant\Resources\CategoryResource\RelationManagers;
 
+use App\Filament\Tenant\Resources\ProductResource;
+use App\Models\Product;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,7 +32,33 @@ class ProductsRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name'),
+
+                Tables\Columns\TextColumn::make('name')
+                    ->label(__('fields.name'))
+                    ->color(Color::Sky)
+                    ->searchable()
+                    ->url(fn($record) => ProductResource::getUrl('edit', ['record' => $record->id]), true),
+
+                Tables\Columns\TextColumn::make('type')
+                    ->label(__('fields.type'))
+                    ->getStateUsing(function (Product $record) {
+
+                        if ($record->type === Product::$TYPE_BASIC)
+                            return __('fields.product_type_basic');
+
+                        if ($record->type === Product::$TYPE_UNITS)
+                            return __('fields.product_type_units');
+
+                        if ($record->type === Product::$TYPE_VARIANTS)
+                            return __('fields.product_type_variants');
+
+                        if ($record->type === Product::$TYPE_SERVICE)
+                            return __('fields.product_type_service');
+
+                        return "-";
+                    })
+                    ->searchable(),
+
             ])
             ->bulkActions([])
             ->actions([])

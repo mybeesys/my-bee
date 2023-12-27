@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Pages;
 
 use App\Models\TenantUser;
 use App\Models\User;
+use App\Rules\InternationalPhoneRule;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Filament\Actions\Action;
@@ -19,6 +20,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\SimplePage;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\HtmlString;
@@ -72,19 +74,23 @@ class LoginTenant extends SimplePage
         $data = $this->form->getState();
 
         //custom
-        $user = User::with('tenants')->whereEmail($data['email'])->first();
 
-        if(!$user)
+        $identifier = $data['email_or_phone'];
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $user = User::with('tenants')->whereEmail($identifier)->first();
+        } else {
+            $user = User::with('tenants')->wherePhone($identifier)->first();
+        }
+
+        if (!$user)
             $this->throwFailureValidationException();
 
-        if($user->roles->isEmpty())
+        if ($user->roles->isEmpty())
             $this->throwCustomFailureValidationException("This account does not have any role configuration, please contact your administrator");
 
 
-        if($user and Hash::check($data['password'], $user->password))
-        {
-            if(!$user->active)
-            {
+        if ($user and Hash::check($data['password'], $user->password)) {
+            if (!$user->active) {
                 $this->throwCustomFailureValidationException("Account inactive, please contact support.");
             }
 
@@ -93,8 +99,7 @@ class LoginTenant extends SimplePage
 //                $this->throwCustomFailureValidationException("Please verify your account from the email that we sent you. or contact support.");
 //            }
 
-            if(!$user->hasRole(User::ROLE_CLIENT) and $user->tenants->isEmpty())
-            {
+            if (!$user->hasRole(User::ROLE_CLIENT) and $user->tenants->isEmpty()) {
                 Notification::make()
                     ->title("Information")
                     ->body("You don`t have access to any activities, please contact your administrator.")
@@ -105,7 +110,7 @@ class LoginTenant extends SimplePage
             }
 
         }
-        if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
+        if (!Filament::auth()->attempt($this->getCredentialsFromFormData($identifier, $data), $data['remember'] ?? false)) {
             $this->throwFailureValidationException();
         }
 
@@ -113,7 +118,7 @@ class LoginTenant extends SimplePage
 
         if (
             ($user instanceof FilamentUser) &&
-            (! $user->canAccessPanel(Filament::getCurrentPanel()))
+            (!$user->canAccessPanel(Filament::getCurrentPanel()))
         ) {
             Filament::auth()->logout();
 
@@ -128,14 +133,14 @@ class LoginTenant extends SimplePage
     protected function throwFailureValidationException(): never
     {
         throw ValidationException::withMessages([
-            'data.email' => __('filament-panels::pages/auth/login.messages.failed'),
+            'data.email_or_phone' => __('filament-panels::pages/auth/login.messages.failed'),
         ]);
     }
 
     protected function throwCustomFailureValidationException($message): never
     {
         throw ValidationException::withMessages([
-            'data.email' => $message,
+            'data.email_or_phone' => $message,
         ]);
     }
 
@@ -164,9 +169,8 @@ class LoginTenant extends SimplePage
 
     protected function getEmailFormComponent(): \Filament\Forms\Components\Component
     {
-        return TextInput::make('email')
-            ->label(__('filament-panels::pages/auth/login.form.email.label'))
-            ->email()
+        return TextInput::make('email_or_phone')
+            ->label(__('fields.email_or_phone'))
             ->required()
             ->autocomplete()
             ->autofocus()
@@ -198,12 +202,12 @@ class LoginTenant extends SimplePage
             ->url(filament()->getRegistrationUrl());
     }
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         return __('filament-panels::pages/auth/login.title');
     }
 
-    public function getHeading(): string | Htmlable
+    public function getHeading(): string|Htmlable
     {
         return __('filament-panels::pages/auth/login.heading');
     }
@@ -231,13 +235,14 @@ class LoginTenant extends SimplePage
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    protected function getCredentialsFromFormData(array $data): array
+    protected function getCredentialsFromFormData($identifier, array $data): array
     {
+        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
         return [
-            'email' => $data['email'],
+            $field => $data['email_or_phone'],
             'password' => $data['password'],
         ];
     }

@@ -95,10 +95,12 @@ class PlanResource extends Resource
 
                         Forms\Components\TextInput::make('price')
                             ->label(__('fields.price'))
-                            ->reactive()
+                            ->live(true)
                             ->numeric()
+                            ->formatStateUsing(fn($state) => format_amount($state))
                             ->minValue(0)
                             ->maxValue(500000)
+
                             ->required(),
                     ])->columns(4),
 
@@ -175,14 +177,40 @@ class PlanResource extends Resource
 
                         ]),
 
-                    Forms\Components\Section::make()
-                        ->schema([
-                            Forms\Components\Checkbox::make('active')
-                                ->label(__('fields.active'))
-                                ->default(1),
-                        ]),
                 ])->columns(3),
 
+                Forms\Components\Section::make()
+                    ->schema([
+                        Forms\Components\Toggle::make('restrict_account_after_period')
+                            ->label(__('fields.restrict_account_after_period'))
+                            ->dehydrated(false)
+                            ->helperText(__("fields.use_this_feature_with_trial_plans_only"))
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                if ($state === true) {
+                                    $set('restrict_account_after_days', 14);
+                                } else {
+                                    $set('restrict_account_after_days', -1);
+                                }
+                            }),
+
+                        Forms\Components\TextInput::make('restrict_account_after_days')
+                            ->visible(fn(Forms\Get $get) => $get('restrict_account_after_period') === true)
+                            ->label(__('fields.restrict_account_after_days'))
+                            ->default(-1)
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(90)
+                            ->columnSpan(1)
+                            ->required(),
+                    ])->columns(4),
+
+                Forms\Components\Section::make()
+                    ->schema([
+                        Forms\Components\Checkbox::make('active')
+                            ->label(__('fields.active'))
+                            ->default(1),
+                    ]),
             ]);
     }
 
@@ -197,12 +225,14 @@ class PlanResource extends Resource
 
                 Tables\Columns\TextColumn::make('span')
                     ->label(__('fields.span'))
-                    ->description(fn(Plan $record) => $record->span === Plan::SPAN_ONE_TIME ? null : $record->span_in_days)
+                    ->formatStateUsing(fn($state) => __("fields.plan_span_$state"))
+                    ->description(fn(Plan $record) => $record->span === Plan::SPAN_ONE_TIME ? "∞" : $record->span_in_days)
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label(__('fields.price'))
-                    ->formatStateUsing(fn($state) => format_money($state, 'SAR'))
+                    ->prefix("SAR ")
+                    ->formatStateUsing(fn($state) => format_amount($state))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('max_allowed_companies')
@@ -251,7 +281,7 @@ class PlanResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['clients', 'subscriptions'])->latest();
+        return parent::getEloquentQuery()->with(['clients', 'subscriptions']);
     }
 
     public static function getRelations(): array

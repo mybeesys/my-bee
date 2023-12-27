@@ -28,7 +28,7 @@ class EnsureUserCanAccessTenant
         $canAccess = $user->canAccessTenant($tenant);
 
         if (!$canAccess)
-            abort(403, "$tenant->name: permission denied.");
+            abort(403, "Activity permission denied.");
 
         $endTime = microtime(true);
         $executionTime = $endTime - $startTime;

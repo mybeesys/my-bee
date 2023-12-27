@@ -48,11 +48,14 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
         ]
     ], function () {
 
+
         Route::group(['prefix' => 'shop'], function () {
+            Route::get('stats', [\App\Http\Controllers\API\V1\StatsController::class, 'shop']);
             Route::apiResources([
                 'categories' => \App\Http\Controllers\API\V1\CategoryController::class,
                 'suppliers' => \App\Http\Controllers\API\V1\SupplierController::class,
-//                'products' => \App\Http\Controllers\API\V1\ProductController::class
+//                'products' => \App\Http\Controllers\API\V1\ProductController::class,
+                  //'clients' => \App\Http\Controllers\API\V1\CustomerController::class
             ]);
         });
 
@@ -64,18 +67,21 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
         });
 
         Route::group(['prefix' => 'expenses'], function () {
+            Route::get('stats', [\App\Http\Controllers\API\V1\StatsController::class, 'expenses']);
             Route::apiResources([
                 'categories' => \App\Http\Controllers\API\V1\ExpenseCategoryController::class,
                 'expenses' => \App\Http\Controllers\API\V1\ExpenseController::class,
             ]);
         });
 
-//        Route::group(['prefix' => 'settings'], function () {
-//            Route::apiResources([
-//                'settings' => \App\Http\Controllers\API\V1\ExpenseController::class,
-//                'tax-profiles' => \App\Http\Controllers\API\V1\ExpenseCategoryController::class,
-//            ]);
-//        });
+        Route::group(['prefix' => 'settings'], function () {
+            Route::get('stats', [\App\Http\Controllers\API\V1\StatsController::class, 'settings']);
+            Route::apiResources([
+                'units' => \App\Http\Controllers\API\V1\UnitController::class,
+                'warehouses' => \App\Http\Controllers\API\V1\WarehouseController::class,
+                'suppliers' => \App\Http\Controllers\API\V1\SupplierController::class,
+            ]);
+        });
 
     });
 });

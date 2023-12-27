@@ -18,6 +18,8 @@ class WarehouseResource extends BaseResource
             'address' => $this->address,
             'phone' => $this->phone,
             'description' => $this->description,
+            'main' => $this->main,
+            'pullingStockPriority' => $this->pulling_stock_priority,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
             'canDelete' => true,

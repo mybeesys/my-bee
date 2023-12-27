@@ -92,7 +92,7 @@ class StocksRelationManager extends RelationManager
                     }),
 
                 Tables\Columns\TextColumn::make('unit_cost')
-                    ->label(__('fields.unit_cost'))
+                    ->label(__('fields.purchase_price'))
                     ->tooltip(function ($record) {
                         return numbers_to_words($record->unit_cost);
                     })

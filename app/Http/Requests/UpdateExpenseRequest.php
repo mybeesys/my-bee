@@ -24,10 +24,10 @@ class UpdateExpenseRequest extends BaseRequest
     {
         $id = str(request()->getRequestUri())->afterLast('/')->value();
         return [
-            'name' => ['sometimes', 'max:255', new ApiUniqueTenantItemRule(Expense::class, 'name', $id)],
+            'description' => ['sometimes'],
             'amount' => ['sometimes', 'numeric', "max:". PHP_INT_MAX],
             'date' => ['sometimes', 'date', 'date_format:d-m-Y'],
-            'description' => ['sometimes'],
+            'expense_category_id' => ['sometimes', 'exists:expense_categories,id'],
         ];
     }
 }

@@ -63,57 +63,16 @@ class PurchaseInvoiceStatusResource extends Resource
 
                 ])->columns(2),
 
-                Section::make()
-                    ->schema([
-                        Forms\Components\Select::make('permission_type')
-                            ->label(__("fields.status_who_can_use_this_status"))
-                            ->required()
-                            ->dehydrated(false)
-                            ->live()
-                            ->default('all-supervisors')
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state == "all-supervisors")
-                                    $set('all_supervisors_can_change_to_status', 1);
-                                else
-                                    $set('all_supervisors_can_change_to_status', 0);
-                            })
-                            ->options([
-                                'all-supervisors' => __('fields.status_all_supervisors'),
-                                'specified-supervisors' => __('fields.status_specified_supervisors'),
-                            ]),
-
-                        Forms\Components\Select::make('supervisors')
-                            ->visible(fn(Forms\Get $get) => $get('permission_type') == "specified-supervisors")
-                            ->required()
-                            ->label(__('fields.status_supervisors'))
-                            ->multiple()
-                            ->searchable()
-                            ->options(TenantService::instance()->getUsers(filament()->getTenant()->id)->pluck('full_name', 'id')),
-
-                        Forms\Components\Hidden::make('all_supervisors_can_change_to_status')->default(1),
-                    ])->columns(2),
-
-
                 Section::make()->schema([
 
-                    Forms\Components\Checkbox::make('lock_change')
-                        ->label(__("fields.status_lock_change"))
+                    Forms\Components\Checkbox::make('locks_invoice')
+                        ->label(__("fields.status_locks_invoice"))
                         ->live(),
-
-                    Forms\Components\Select::make('lock_change_supervisors')
-                        ->label(__("fields.status_who_can_change_status_even_if_its_locked"))
-                        ->helperText(__("fields.lock_change_supervisors_helper_text"))
-                        ->visible(fn(Forms\Get $get) => $get('lock_change') == true)
-                        ->multiple()
-                        ->searchable()
-                        ->options(TenantService::instance()->getUsers(filament()->getTenant()->id)->pluck('full_name', 'id')),
-                ]),
-
-                Section::make()->schema([
 
                     Forms\Components\Checkbox::make('releases_stock')
                         ->label(__("fields.status_release_stock"))
                         ->live(),
+
                 ]),
 
             ]);
@@ -140,6 +99,12 @@ class PurchaseInvoiceStatusResource extends Resource
                     ->label(__('fields.status_release_stock'))
                     ->tooltip("")
                     ->boolean(),
+
+                Tables\Columns\IconColumn::make('locks_invoice')
+                    ->label(__('fields.status_locks_invoice'))
+                    ->tooltip("")
+                    ->boolean(),
+
             ])
             ->filters([
                 //

@@ -96,10 +96,11 @@ class ExpenseResource extends Resource
                 ])->columns(3),
 
                 Forms\Components\Section::make()->schema([
-                    Forms\Components\RichEditor::make('description')
+                    Forms\Components\Textarea::make('description')
                         ->label(__("fields.description"))
-                        ->required()
-                        ->label(__("fields.description")),
+                        ->rows(10)
+                        ->cols(20)
+                        ->required(),
                 ]),
 
                 Forms\Components\Section::make()->schema([
@@ -112,11 +113,6 @@ class ExpenseResource extends Resource
                         ->previewable()
                         ->openable()
                         ->collection('attachments'),
-                ]),
-
-                Forms\Components\Section::make()->schema([
-                    Forms\Components\RichEditor::make('notes')
-                        ->label(__("fields.notes")),
                 ]),
             ]);
     }

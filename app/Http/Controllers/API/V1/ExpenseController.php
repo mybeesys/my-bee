@@ -7,6 +7,7 @@ use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class ExpenseController extends BaseController
@@ -14,9 +15,14 @@ class ExpenseController extends BaseController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = Expense::with(['category'])->get();
+        $data = Expense::with(['category'])
+            ->when($request->expense_category_id, function (Builder $builder) use ($request) {
+                return $builder->where('expense_category_id', $request->expense_category_id);
+            })
+            ->get();
+
         return $this->responder(__('messages_data_retrieved'), 200, ExpenseResource::collection($data))->respond();
     }
 

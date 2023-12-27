@@ -7,6 +7,7 @@
     use App\Models\BidResult;
     use App\Models\Category;
     use App\Models\Client;
+    use App\Models\Customer;
     use App\Models\Employee;
     use App\Models\InsurancePolicy;
     use App\Models\Invoice;
@@ -33,6 +34,21 @@
                 'type' => 'numbers',
                 'length' => 6,
             ],
+
+            Customer::class => [
+                'attribute' => 'no',
+                'prefix' => '',
+                'type' => 'numbers',
+                'length' => 6,
+            ],
+
+            Order::class => [
+                'attribute' => 'no',
+                'prefix' => '',
+                'type' => 'numbers',
+                'length' => 8,
+            ],
+
         ];
 
 

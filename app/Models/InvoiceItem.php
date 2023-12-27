@@ -34,9 +34,19 @@ class InvoiceItem extends BaseModel
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class);
+    }
+
     public function item()
     {
         return $this->morphTo();
+    }
+
+    public function taxProfile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(TaxProfile::class);
     }
 
 }

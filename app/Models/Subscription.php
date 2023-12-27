@@ -22,11 +22,22 @@ class Subscription extends BaseModel
         return $this->belongsTo(Plan::class);
     }
 
+    public static function isSubscribedTo($plan_id, Client $client): bool
+    {
+        $client->loadMissing(['user', 'subscription.plan']);
+
+        if (!$client->user->hasRole(User::ROLE_CLIENT)) {
+            throw new \Exception("Client is not valid for subscription.");
+        }
+
+        return $client->subscriptions->where('plan_id', $plan_id)->first() !== null;
+    }
+
     public static function subscribe(Plan $plan, Client $client): Subscription
     {
         $client->loadMissing(['user', 'subscription.plan']);
 
-        if(!$client->user->hasRole(User::ROLE_CLIENT)){
+        if (!$client->user->hasRole(User::ROLE_CLIENT)) {
             throw new \Exception("Client is not valid for subscription.");
         }
 

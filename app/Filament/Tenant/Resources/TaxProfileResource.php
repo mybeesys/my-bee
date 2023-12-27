@@ -51,6 +51,57 @@ class TaxProfileResource extends Resource
         return static::getModel()::count();
     }
 
+    public static function getSchemaForCreateOption(): array
+    {
+        return [
+            Forms\Components\Section::make()
+                ->columnSpan(1)->schema([
+
+                    hidden_tenant_id_field(),
+
+                    Forms\Components\TextInput::make('name')
+                        ->label(__('fields.name'))
+                        ->placeholder(__('fields.tax_profile_name_place_holder'))
+                        ->required()
+                        ->maxLength(255)
+                        ->rules([new UniqueTenantItemRule(TaxProfile::class, 'name')]),
+
+                    Forms\Components\Repeater::make("taxes")
+                        ->label("")
+                        ->minItems(1)
+                        ->required()
+                        ->defaultItems(2)
+                        ->reorderable()
+                        ->columns(2)
+                        ->addActionLabel(__('fields.add'))
+                        ->schema([
+
+                            hidden_tenant_id_field(),
+
+                            Forms\Components\TextInput::make('description')
+                                ->label(__('fields.tax_description'))
+                                ->placeholder(__('fields.tax_description_place_holder'))
+                                ->required()
+                                ->maxLength(255)
+                                ->rules([
+                                    function ($component, $record) {
+                                        return new UniqueTenantItemRule(Tax::class, 'description');
+                                    }
+                                ]),
+
+                            Forms\Components\TextInput::make('percent')
+                                ->label(__('fields.tax_percent'))
+                                ->placeholder("%")
+                                ->required()
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(100),
+                        ])
+                ]),
+
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -98,7 +149,6 @@ class TaxProfileResource extends Resource
                                     ->maxValue(100),
                             ])
                     ]),
-
             ]);
     }
 
@@ -108,8 +158,8 @@ class TaxProfileResource extends Resource
             ->columns([
 
                 Tables\Columns\TextColumn::make('name')
-                ->label(__('fields.name'))
-                ->searchable(),
+                    ->label(__('fields.name'))
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('taxes_count')
                     ->label(__('fields.taxes'))
@@ -117,8 +167,8 @@ class TaxProfileResource extends Resource
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('total_percentages')
-                    ->formatStateUsing(function (TaxProfile $record){
-                        return $record->total_percentages."%";
+                    ->formatStateUsing(function (TaxProfile $record) {
+                        return $record->total_percentages . "%";
                     })
                     ->label(__('fields.total_percentages')),
 

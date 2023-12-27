@@ -161,7 +161,6 @@ class RegisterTenant extends BaseRegisterTenant
         } catch (\Throwable $exception) {
             DB::rollBack();
             fns()->sendDanger("تعذر إضافة النشاط", 'حدث خطأ أثناء إنشاء النشاط.');
-            dd($exception);
             $this->halt();
         }
         return $tenant;

@@ -12,7 +12,6 @@ use App\Models\Category;
 use App\Models\ContactUS;
 use App\Models\Currency;
 use App\Models\Customer;
-use App\Models\CustomRole;
 use App\Models\Driver;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -28,15 +27,23 @@ use App\Models\Op;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\PaymentVoucher;
+use App\Models\PaymentVoucherPayment;
 use App\Models\Product;
 use App\Models\PurchaseInvoiceStatus;
+use App\Models\ReceiptVoucher;
+use App\Models\ReceiptVoucherPayment;
 use App\Models\SaleInvoiceStatus;
 use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\Tax;
+use App\Models\TaxProfile;
 use App\Models\Tenant;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\VariantLibrary;
+use App\Models\VariantLibraryOption;
+use App\Models\VariantOption;
 use App\Models\Warehouse;
 use Closure;
 use Filament\Facades\Filament;
@@ -138,6 +145,14 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
+        ReceiptVoucher::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        ReceiptVoucherPayment::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
         InvoiceStatus::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
@@ -174,6 +189,10 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
+        PaymentVoucherPayment::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
         Role::resolveRelationUsing('tenant', function ($model) {
             return $model->belongsTo(Tenant::class, 'tenant_id');
         });
@@ -199,6 +218,22 @@ class ApplyTenantScopes
         );
 
         Warehouse::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        TaxProfile::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        Tax::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        VariantLibrary::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        VariantLibraryOption::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 

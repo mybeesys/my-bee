@@ -167,7 +167,6 @@ class ClientController extends BaseController
             return $this->responder(__('messages.created'), 201, new TenantResource($t))->respond();
         } catch (\Throwable $exception) {
             DB::rollBack();
-
             return $this->error($exception)->respond();
         }
     }

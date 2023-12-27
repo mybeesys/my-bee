@@ -20,7 +20,7 @@ class ListPurchaseInvoices extends ListRecords
             Action::make('statuses')
                 ->url(fn() => PurchaseInvoiceStatusResource::getUrl())
                 ->color('gray')
-                ->label(__('fields.statuses')),
+                ->label(__('fields.purchase_status_types')),
         ];
     }
 }

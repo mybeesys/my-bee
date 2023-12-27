@@ -22,7 +22,6 @@ return new class extends Migration
             $table->decimal('amount', 19, 4)->unsigned();
             $table->date('date')->index();
             $table->text('description')->nullable();
-            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

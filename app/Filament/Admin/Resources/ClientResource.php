@@ -8,6 +8,7 @@ use App\Models\Client;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Rules\InternationalPhoneRule;
 use App\Rules\TenantEmailRule;
 use App\Rules\TenantPhoneRule;
 use App\Rules\UniqueClientAttributeRule;
@@ -274,7 +275,12 @@ class ClientResource extends Resource
                                     ->label(__('fields.phone'))
                                     ->tel()
                                     ->required()
-                                    ->rules([new TenantPhoneRule($record)]),
+                                    ->rules(
+                                        [
+                                            new InternationalPhoneRule(false),
+                                            new TenantPhoneRule($record),
+                                        ]
+                                    ),
 
                                 TextInput::make('mobile')
                                     ->label(__('fields.mobile'))

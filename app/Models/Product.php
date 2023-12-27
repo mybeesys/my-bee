@@ -20,6 +20,12 @@ class Product extends BaseModel implements HasMedia
     protected $guarded = [];
 
 
+    public static string $TYPE_BASIC = "basic";
+    public static string $TYPE_UNITS = "units";
+    public static string $TYPE_VARIANTS = "variants";
+    public static string $TYPE_SERVICE = "service";
+    public static string $TYPE_DIGITAL = "digital";
+
 //        public function scopeWithAvailable(Builder $query)
 //        {
 //            return $query->addSelect()
@@ -34,7 +40,7 @@ class Product extends BaseModel implements HasMedia
     public function getFinanceNameAttribute()
     {
         if ($this->barcode) {
-            return $this->name . " - " . $this->barcode;
+            return $this->name;
         }
         return $this->name;
     }
@@ -222,6 +228,31 @@ class Product extends BaseModel implements HasMedia
     }
 
 
+    //old deprecated
+//    public function unitsAsOptions($onlyHasAvailableStock = false, $onlyPriced = false): array
+//    {
+//        $this->loadMissing(['units.unit', 'prices', 'availableStocks']);
+//
+//        $options = [];
+//
+//        //add main unit
+//        $options[$this->main_unit_id] = $this->mainUnit->name;
+//
+//        foreach ($this->units as $productUnit) {
+//
+//            if ($onlyHasAvailableStock and $this->availableStocks->where('unit_id', $productUnit->unit_id)->last() == null)
+//                continue;
+//
+//            if ($onlyPriced and $this->prices->where('unit_id', $productUnit->unit_id)->last() == null)
+//                continue;
+//
+//            $options[$productUnit->unit_id] = $productUnit->unit->name;
+//        }
+//
+//        return $options;
+//    }
+
+
     public function unitsAsOptions($onlyHasAvailableStock = false, $onlyPriced = false): array
     {
         $this->loadMissing(['units.unit', 'prices', 'availableStocks']);
@@ -233,10 +264,7 @@ class Product extends BaseModel implements HasMedia
 
         foreach ($this->units as $productUnit) {
 
-            if ($onlyHasAvailableStock and $this->availableStocks->where('unit_id', $productUnit->unit_id)->last() == null)
-                continue;
-
-            if ($onlyPriced and $this->prices->where('unit_id', $productUnit->unit_id)->last() == null)
+            if ($onlyHasAvailableStock and $productUnit->qty == 0)
                 continue;
 
             $options[$productUnit->unit_id] = $productUnit->unit->name;
@@ -245,4 +273,117 @@ class Product extends BaseModel implements HasMedia
         return $options;
     }
 
+    //under construct
+    public static function groupedAsOptions($published = true, $onlyHasAvailableStock = false): array
+    {
+        $products = Product::with(['variants', 'units'])
+            ->where('published', $published)
+            ->latest()
+            ->get()
+            ->groupBy('type')
+            ->map(fn($type) => $type->pluck('name', 'id'))
+//            ->map(function ($items) {
+//                return $items->groupBy(function ($item) {
+//                    return $item->type;
+//                })->map(function ($type) {
+//                    return $type . "1";
+//                });
+//            })
+            ->toArray();
+
+        return $products;
+
+        $options = [];
+
+//        foreach ($products as $product) {
+//
+//            if($product->type)
+//            if ($onlyHasAvailableStock and $this->availableStocks->where('unit_id', $productUnit->unit_id)->last() == null)
+//                continue;
+//
+//            if ($onlyPriced and $this->prices->where('unit_id', $productUnit->unit_id)->last() == null)
+//                continue;
+//
+//            $options[$productUnit->unit_id] = $productUnit->unit->name;
+//        }
+
+        return $options;
+    }
+
+    public function variantOptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductVariantOption::class);
+    }
+
+    public function variants(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function getPrice($product_variant_id = null, $unit_id = null)
+    {
+        if ($product_variant_id) {
+            $this->loadMissing('variants');
+            return $this->variants->filter(function ($item) use ($product_variant_id) {
+                return $item->id == $product_variant_id;
+            })->first()?->retail_price;
+        }
+
+        if ($unit_id) {
+            if ($unit_id == $this->main_unit_id) {
+                if ($this->discount_price and $this->discount_price > 0) {
+                    return $this->discount_price;
+                }
+                return 0;
+            }
+            return $this->units->filter(function ($item) use ($unit_id) {
+                return $item->unit_id == $unit_id;
+            })->first()?->retail_price;
+        }
+
+        if ($this->discount_price and $this->discount_price > 0) {
+            return $this->discount_price;
+        }
+
+        return $this->price ?? 0;
+    }
+
+    public function isInventoryUnlimited(): bool
+    {
+        return $this->unlimited_qty;
+    }
+
+    public function getInventoryStatementForPanel(): string
+    {
+        if ($this->type === Product::$TYPE_BASIC) {
+            if ($this->isInventoryUnlimited())
+                return __('fields.unlimited_qty');
+            return $this->qty;
+        }
+        if ($this->type === Product::$TYPE_VARIANTS) {
+            return __('fields.variants');
+        }
+        if ($this->type === Product::$TYPE_UNITS) {
+        }
+        if ($this->type === Product::$TYPE_SERVICE) {
+        }
+        if ($this->type === Product::$TYPE_DIGITAL) {
+        }
+        return false;
+    }
+
+    public function getInventoryCountAttribute()
+    {
+        return $this->isInventoryUnlimited() ? 1000 : $this->qty ?? 0;
+    }
+
+    public function setPriceAttribute($value)
+    {
+        return $this->attributes['price'] = $value ?? 0;
+    }
+
+    public function setQtyAttribute($value)
+    {
+        return $this->attributes['qty'] = $value ?? 0;
+    }
 }

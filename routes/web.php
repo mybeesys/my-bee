@@ -27,3 +27,7 @@ use Illuminate\Support\Facades\Route;
 //$default_status_id = PurchaseInvoiceStatus::firstWhere('default', 1)?->id;
 //
 //dd($default_status_id);
+
+//$value = \Illuminate\Support\Facades\Crypt::decrypt(App\Services\CookieService::instance()->get('primary_color'), false);
+
+//(new TenantService())->updateOrCreateSettings(3);

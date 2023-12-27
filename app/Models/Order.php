@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\HasPrefixedId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Order extends BaseModel
+class Order extends BaseModel implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, HasPrefixedId, InteractsWithMedia;
 
     protected $guarded = [];
 
@@ -20,8 +23,10 @@ class Order extends BaseModel
         'updated_at' => 'datetime',
     ];
 
-    public static string $STATUS_PENDING = "pending";
-    public static string $STATUS_DELIVERED = "delivered";
+    public static string $STATUS_NEW = "new";
+    public static string $STATUS_DELIVERY_IN_PROGRESS = "delivery-in-progress";
+    public static string $STATUS_READY = "ready";
+    public static string $STATUS_COMPLETED = "completed";
     public static string $STATUS_CANCELLED = "cancelled";
 
     public static string $PAYMENT_METHOD_CASH = "cash";
@@ -29,14 +34,19 @@ class Order extends BaseModel
     public static string $PAYMENT_METHOD_FAWRY = "fawry";
     public static string $PAYMENT_METHOD_OTHER = "other";
 
-    public function scopePending(Builder $builder): Builder
+    public function scopeNew(Builder $builder): Builder
     {
-        return $builder->where('status', self::$STATUS_PENDING);
+        return $builder->where('status', self::$STATUS_NEW);
     }
 
-    public function scopeDelivered(Builder $builder): Builder
+    public function scopeDeliveryInProgress(Builder $builder): Builder
     {
-        return $builder->where('status', self::$STATUS_DELIVERED);
+        return $builder->where('status', self::$STATUS_DELIVERY_IN_PROGRESS);
+    }
+
+    public function scopeCompleted(Builder $builder): Builder
+    {
+        return $builder->where('status', self::$STATUS_COMPLETED);
     }
 
     public function scopeCancelled(Builder $builder): Builder
@@ -85,9 +95,9 @@ class Order extends BaseModel
         return $this->belongsTo(Invoice::class);
     }
 
-    public function client()
+    public function customer()
     {
-        return $this->belongsTo(Client::class);
+        return $this->belongsTo(Customer::class);
     }
 
     public function user()
@@ -98,9 +108,9 @@ class Order extends BaseModel
     public function getSubTotalAttribute()
     {
         $price = 0;
-        foreach ($this->details as $detail)
-        {
-            $price += $detail->unit_price_sdg * $detail->qty;
+        foreach ($this->details as $detail) {
+            if (!$detail->cancelled)
+                $price += $detail->unit_price * $detail->qty;
         }
         return $price;
     }

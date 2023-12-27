@@ -199,7 +199,9 @@ return [
     'all_transaction_fields_required' => 'All transactions fields are required',
     'journal_entry_saved' => 'Journal entry saves',
     'invoice_saved' => 'Invoice saved',
-    'invoice_no' => 'Invoice no',
+    'the_no' => 'No.',
+    'invoice' => 'Invoice',
+    'view_invoice' => 'View invoice',
     'invoice_total' => 'Invoice total',
     'invoice_total_post_discount' => 'Invoice total after discount',
     'total_purchases' => 'Total purchases',
@@ -221,8 +223,8 @@ return [
 
     //begin modules
 
-    'warehouses' => 'Warehouses',
-    'warehouse' => 'Warehouse',
+    'warehouses' => 'Inventories',
+    'warehouse' => 'Inventory',
 
     'invoice_locked' => 'Invoice locked',
     'lock' => 'Lock',
@@ -327,9 +329,9 @@ return [
 
     'none_priced_items' => 'None priced products',
 
-    'total_items_cost_in_warehouses' => 'Total products cost in warehouses',
-    'total_items_cost_sdg_in_warehouses' => 'Total products cost sdg in warehouses',
-    'total_items_cost_usd_in_warehouses' => 'Total products cost usd in warehouses',
+    'total_items_cost_in_warehouses' => 'Total products cost in inventory',
+    'total_items_cost_sdg_in_warehouses' => 'Total products cost sdg in inventories',
+    'total_items_cost_usd_in_warehouses' => 'Total products cost usd in inventories',
 
     'warehouse_items_cost_sdg' => 'Products cost SDG',
     'warehouse_items_cost_usd' => 'Products cost USD',
@@ -362,10 +364,10 @@ return [
     'from_warehouse' => 'From warehouse',
     'to_warehouse' => 'To warehouse',
     'movement_expenses' => 'Movement expenses',
-    'target_warehouse_pre_movement_qty' => 'Qty of target warehouse pre movement',
-    'target_warehouse_post_movement_qty' => 'Qty of target warehouse post movement',
-    'destination_warehouse_pre_movement_qty' => 'Qty of destination warehouse pre movement',
-    'destination_warehouse_post_movement_qty' => 'Qty of destination warehouse post movement',
+    'target_warehouse_pre_movement_qty' => 'Qty of target inventory pre movement',
+    'target_warehouse_post_movement_qty' => 'Qty of target inventory post movement',
+    'destination_warehouse_pre_movement_qty' => 'Qty of destination inventory pre movement',
+    'destination_warehouse_post_movement_qty' => 'Qty of destination inventory post movement',
     'moved' => 'Moved stock',
 
     'receipt_voucher' => 'Receipt voucher',
@@ -389,6 +391,7 @@ return [
     'amount_sdg' => 'Amount SDG',
     'amount_usd' => 'Amount USD',
     'paid_amount' => 'Paid amount',
+    'unpaid_amount' => 'Unpaid amount',
     'invoice_total_sdg' => 'Invoice Total sdg',
     'invoice_total_usd' => 'Invoice Total usd',
     'invoice_paid_sdg' => 'Invoice paid amount sdg',
@@ -417,7 +420,6 @@ return [
 
     'print_invoice' => 'Print invoice',
     'preview_invoice' => 'Preview invoice',
-    'download_invoice' => 'Download invoice',
 
     'subject' => 'Subject',
     'files' => 'Files',
@@ -517,6 +519,8 @@ return [
     'pusher' => 'Pusher',
     'firebase' => 'Firebase',
     'statuses' => 'Statuses',
+    'purchase_status_types' => 'Invoice types',
+    'purchase_status_type' => 'Invoice type',
 
     'last_seen' => 'Last seen',
     'next_billing_date' => 'Next billing date',
@@ -547,6 +551,8 @@ return [
 
     'email_verified?' => "Email verified",
     'phone_verified?' => "Phone verified",
+
+    'roles' => 'Roles',
     'roles_list' => 'Roles list',
 
     'enable_variations' => 'Enable variations',
@@ -590,11 +596,12 @@ return [
     'current_status' => 'Current status',
     'change_status_to' => 'Change status to',
 
-    'purchase_invoice_status' => 'Purchase invoice status',
-    'purchase_invoice_statuses' => 'Purchase invoice statuses',
+    'purchase_invoice_status' => 'Purchase invoice type',
+    'purchase_invoice_statuses' => 'Purchase invoice types',
     'color' => 'Color',
     'default_status' => 'Default status',
     'status_release_stock' => 'Status allows stock release',
+    'status_locks_invoice' => 'Changing to this status locks invoice',
     'status_who_can_use_this_status' => 'Who can use this status',
     'status_all_supervisors' => 'All users',
     'status_specified_supervisors' => 'Specified users',
@@ -602,5 +609,108 @@ return [
     'status_supervisors' => 'Users',
     'status_who_can_change_status_even_if_its_locked' => 'Who can change status even if it`s locked',
     'lock_change_supervisors_helper_text' => 'Leave empty if no one should be able to change it.',
+
+    'email_or_phone' => 'Email or phone',
+
+    'invoice_total_discount' => 'Total discount',
+    'total_invoice_net_post_discount' => 'Total after discount',
+    'invoice_total_with_tax' => 'Invoice total with taxes',
+
+    'change_invoice_numbering_helper_text' => 'Change invoice number pattern',
+
+    'download_invoice' => 'Download invoice',
+    'invoice_download_complete' => 'Invoice download complete',
+    'invoice_download_view_file' => 'View file',
+    'invoice_download_error' => 'Unable to download invoice.',
+
+    'plan_span_specified' => 'Specified',
+    'plan_span_one-time' => 'One time (Permanent)',
+
+    'restrict_account_after_period' => 'Restrict accounts linked to this plan after a specified period',
+    'restrict_account_after_days' => 'Period in days',
+    'use_this_feature_with_trial_plans_only' => 'Use this feature with trial plans only',
+
+    'payment_status' => 'Payment status',
+
+    'make_receipt_voucher_for' => 'Receipt voucher for',
+    'receipt_voucher_for_invoice' => 'Invoice',
+    'receipt_voucher_for_supplier' => 'Supplier',
+    'receipt_voucher_for_customer' => 'Client',
+
+    'total_payments' => 'Total payments',
+
+    'payments_are_bigger_than_invoice_amount' => 'Cumulative payments are more than total invoice.',
+
+    'payment_details' => 'Payment details',
+
+
+    'variant_library' => 'Option',
+    'variant_libraries' => 'Variant library',
+    'option_name_ar' => 'Option name in arabic',
+    'option_name_en' => 'Option name in english',
+
+    'variant_library_name_ar_placeholder' => 'مثال: الالوان',
+    'variant_library_name_en_placeholder' => 'e.g. Colors',
+
+    'variant_library_value_name_ar_placeholder' => 'Value name in arabic',
+    'variant_library_value_name_en_placeholder' => 'Value name in english',
+    'options' => 'Options',
+    'option' => 'Option',
+    'option_name' => 'Option name',
+    'value' => 'Value',
+    'values' => 'Values',
+    'customize_options' => 'Customize options',
+    'discount_price' => 'Discount price',
+
+    'mark_warehouse_as_default' => 'Mark as default inventory',
+    'main_warehouse_description' => 'Default inventory',
+    'no_default_inventory_found_alert' => 'Please assign a default inventory',
+    'pulling_stock_priority' => 'Pulling stock priority',
+    'drag_and_drop_to_reorder' => 'Drag and drop to reorder',
+
+    'product_type' => 'Product type',
+    'product_type_basic' => 'Basic',
+    'product_type_service' => 'Service',
+    'product_type_basic_description' => 'For basic products that does not require complex options (variants)',
+    'product_type_units' => 'Units',
+    'product_type_units_description' => 'Units for Point of sale products (POS)',
+    'product_type_variants' => 'Variants',
+    'unlimited_qty' => 'Unlimited quantity',
+    'variants_update_all_qty' => 'Update all quantities',
+    'variants_update_all_unit_cost' => 'Update all costs',
+    'variants_update_all_price' => 'Update all prices',
+    'variants_update_all_discount_price' => 'Update all discount prices',
+    'variants_new_qtys' => 'New quantities',
+    'product_published' => 'Show on store',
+    'sku' => 'Stock-keeping unit (SKU)',
+    'product_more_details' => 'Product details',
+    'product_description' => 'Product description',
+
+    'new' => 'New',
+    'no_records_placeholder' => 'No records',
+    'service_details' => 'Service details',
+
+    'qtys' => 'Quantities',
+    'update_qtys' => 'Update Quantities',
+
+    'add_product' => 'Add product',
+    'order_details' => 'Order details',
+    'product_variant_not_priced' => 'Variant not priced',
+    'no_stock_available' => 'No stock available',
+    'order_details_item_already_exists' => 'Item already exists',
+
+    'new_orders' => 'New orders',
+
+    'order_status_new' => 'New',
+    'order_status_ready' => 'Ready',
+    'order_status_delivery-in-progress' => 'Delivery in-progress',
+    'order_status_completed' => 'Completed',
+    'order_status_cancelled' => 'Cancelled',
+
+    'alert_created' => 'Record created',
+    'alert_deleted' => 'Record deleted',
+    'alert_saved' => 'Record saved',
+
+
 ];
 //

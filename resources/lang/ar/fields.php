@@ -122,7 +122,7 @@ return [
     'representatives' => 'المناديب',
     'company' => 'الشركة',
 
-    'client' => 'العميل',
+    'client' => 'عميل',
     'clients' => 'العملاء',
 
     'reports' => 'البلاغات',
@@ -201,6 +201,8 @@ return [
     'journal_entry_saved' => 'تم حفظ قيد اليومية بنجاح',
     'invoice_saved' => 'تم حفظ الفاتورة بنجاح',
     'invoice_no' => 'رقم الفاتورة',
+    'invoice' => 'الفاتورة',
+    'view_invoice' => 'عرض الفاتورة',
     'invoice_total' => 'إجمالي الفاتورة',
     'invoice_total_post_discount' => 'إجمالي الفاتورة بعد الخصم',
     'total_purchases' => 'إجمالي المشتريات',
@@ -223,7 +225,7 @@ return [
     //begin modules
 
     'warehouses' => 'المخازن',
-    'warehouse' => 'المخزن',
+    'warehouse' => 'مخزن',
 
     'invoice_locked' => 'الفاتورة مغلقة',
     'lock' => 'إغلاق',
@@ -290,7 +292,7 @@ return [
 
     'sub_total' => 'الإجمالي الفرعي',
     'orders' => 'الطلبات',
-    'order' => 'الطلب',
+    'order' => 'طلب',
     'order_no' => 'رقم الطلب',
     'pending' => 'قيد الانتظار',
     'delivered' => 'تم التوصيل',
@@ -318,10 +320,10 @@ return [
 
     'total_stock' => 'المخزون الكلي',
     'sold_stock' => 'المخزون المباع',
-    'available_stock' => 'المخزون المتوفر',
+    'available_stock' => 'المخزون متوفر',
     'unit_retail_sdg' => 'سعر البيع للمستهلك بالجنية',
     'unit_retail_usd' => 'سعر البيع للمستهلك بالدولار',
-    'purchase_price' => 'سعر الشراء (التكلفة)',
+    'purchase_price' => 'سعر التكلفة',
     'sale_price' => 'سعر البيع',
 
     'record_in_use_alert' => 'السجل مستخدم ولا يمكن حذفة',
@@ -393,6 +395,8 @@ return [
     'amount_sdg' => 'المبلغ بالجنية',
     'amount_usd' => 'المبلغ بالدولار',
     'paid_amount' => 'المبلغ المسدد',
+    'unpaid_amount' => 'المبلغ المتبقي',
+
     'invoice_total_sdg' => 'إجمالي الفاتورة بالجنية',
     'invoice_total_usd' => 'إجمالي الفاتورة بالدولار',
     'invoice_paid_sdg' => 'المسدد من الفاتورة بالجنية',
@@ -421,7 +425,6 @@ return [
 
     'print_invoice' => 'طباعة الفاتورة',
     'preview_invoice' => 'عرض الفاتورة',
-    'download_invoice' => 'تحميل الفاتورة',
 
     'subject' => 'الموضوع',
     'files' => 'المستندات',
@@ -521,6 +524,8 @@ return [
     'pusher' => 'Pusher',
     'firebase' => 'Firebase',
     'statuses' => 'الحالات',
+    'purchase_status_types' => 'أنواع الفواتير',
+    'purchase_status_type' => 'نوع الفاتورة',
 
     'last_seen' => 'اخر ظهور',
     'next_billing_date' => 'موعد الفاتورة التالية',
@@ -551,7 +556,9 @@ return [
 
     'email_verified?' => "تم تأكيد البريد الإلكتروني",
     'phone_verified?' => "تم تأكيد الهاتف",
-    'roles_list' => 'قائمة الصلاحيات',
+
+    'roles' => 'الأدوار',
+    'roles_list' => 'قائمة الأدوار',
 
     'enable_variations' => 'تفعيل خيارات المنتج',
 
@@ -594,11 +601,12 @@ return [
     'current_status' => 'حالة الفاتورة الحالية',
     'change_status_to' => 'تغيير الحالة إلى',
 
-    'purchase_invoice_status' => 'حالة فاتورة المشتريات',
-    'purchase_invoice_statuses' => 'حالات فواتير المشتريات',
+    'purchase_invoice_status' => 'نوع فاتورة المشتريات',
+    'purchase_invoice_statuses' => 'أنواع فواتير المشتريات',
     'color' => 'اللون',
     'default_status' => 'حالة إفتراضية',
     'status_release_stock' => 'الحالة تسمح بانزال المخزون',
+    'status_locks_invoice' => 'التغيير لهذة الحالة يقوم بإغلاق الفاتورة',
     'status_who_can_use_this_status' => 'من الذي يمكنة إستخدام هذة الحالة',
     'status_all_supervisors' => 'كل المستخدمين',
     'status_specified_supervisors' => 'مستخدمين محددين',
@@ -606,6 +614,110 @@ return [
     'status_supervisors' => 'المستخدمين',
     'status_who_can_change_status_even_if_its_locked' => 'من الذي يمكنة تغيير هذة الحالة حتى إذا كانت مغلقة',
     'lock_change_supervisors_helper_text' => 'اترك الخانة فارغة في حالة لا يُسمح لإحد بتغيير الحالة',
+
+    'email_or_phone' => 'البريد الإلكتروني أو الهاتف',
+
+    'invoice_total_discount' => 'إجمالي الخصم',
+    'total_invoice_net_post_discount' => 'الصافي بعد الخصم',
+    'invoice_total_with_tax' => 'الإجمالي شامل الضريبة',
+
+    'change_invoice_numbering_helper_text' => 'تغيير شكل ونمط الترقيم',
+
+    'download_invoice' => 'تحميل الفاتورة',
+    'invoice_download_complete' => 'تم تحميل الفاتورة',
+    'invoice_download_view_file' => 'عرض الملف',
+    'invoice_download_error' => 'حدث خطأ اثناء تحميل الفاتورة',
+
+    'plan_span_specified' => 'فترة محددة',
+    'plan_span_one-time' => 'فترة غير محددة (دائمة)',
+
+    'restrict_account_after_period' => 'إيقاف الحسابات المرتبطة بهذة الخطة بعد فترة محددة',
+    'restrict_account_after_days' => 'الفترة بالأيام',
+    'use_this_feature_with_trial_plans_only' => 'إستخدم هذة الميزة مع الخطط التجريبية فقط',
+
+    'payment_status' => 'حالة السداد',
+
+    'make_receipt_voucher_for' => 'تفاصيل سند القبض',
+    'receipt_voucher_for_supplier' => 'مورد',
+    'receipt_voucher_for_customer' => 'عميل',
+
+    'total_payments' => 'إجمالي الدفعيات',
+
+    'payments_are_bigger_than_invoice_amount' => 'إجمالي الدفعيات أكبر من إجمالي الفاتورة',
+
+    'payment_details' => 'تفاصيل السداد',
+
+
+    'variant_library' => 'خيار',
+    'variant_libraries' => 'مكتبة الخيارات',
+    'option_name_ar' => 'إسم الخيار بالعربية',
+    'option_name_en' => 'إسم الخيار بالإنجليزية',
+
+    'value_name_ar' => 'إسم القيمة بالعربية',
+    'value_name_en' => 'إسم القيمة بالإنجليزية',
+
+    'variant_library_name_ar_placeholder' => 'مثال: الالوان',
+    'variant_library_name_en_placeholder' => 'e.g. Colors',
+
+    'variant_library_value_name_ar_placeholder' => 'إسم القيمة بالعربية',
+    'variant_library_value_name_en_placeholder' => 'إسم القيمة بالإنجليزية',
+    'options' => 'الخيارات',
+    'option' => 'الخيار',
+    'option_name' => 'إسم الخيار',
+    'value' => 'القيمة',
+    'values' => 'القيم',
+    'customize_options' => 'تخصيص الخيارات',
+    'discount_price' => 'سعر التخفيض',
+
+    'mark_warehouse_as_default' => 'تعيين كمخزن إفتراضي',
+    'main_warehouse_description' => 'مخزن إفتراضي',
+    'no_default_inventory_found_alert' => 'الرجاء تعيين مخزن إفتراضي',
+    'pulling_stock_priority' => 'أولوية السحب من المخزن',
+    'drag_and_drop_to_reorder' => 'قم بالسحب والإفلات لإعادة الترتيب',
+    'product_type' => 'نوع المنتج',
+
+    'product_type_units' => 'وحدات',
+    'product_type_basic' => 'أساسي',
+    'product_type_service' => 'خدمي',
+    'product_type_basic_description' => 'للمنتجات التي لا تتطلب خيارات متعددة. مثال: لابتوب',
+    'product_type_units_description' => 'وحدات قياس متعددة لنقاط البيع',
+    'product_type_service_description' => 'منتج خدمي.',
+    'product_type_variants' => 'خيارات متعددة',
+    'unlimited_qty' => 'كمية غير محدودة',
+    'variants_update_all_qty' => 'تحديث كل الكميات',
+    'variants_update_all_unit_cost' => 'تحديث كل أسعار التكاليف',
+    'variants_update_all_price' => 'تحديث كل الأسعار',
+    'variants_update_all_discount_price' => 'تحديث كل أسعار التخفيضات',
+    'variants_new_qtys' => 'الكميات الجديدة',
+    'product_published' => 'إظهار المنتج في المتجر',
+    'sku' => 'رمز المنتج SKU',
+    'product_more_details' => 'تفاصيل اخرى للمنتج',
+    'product_description' => 'وصف المنتج',
+
+    'new' => 'جديد',
+    'no_records_placeholder' => 'لا توجد سجلات',
+    'service_details' => 'تفاصيل الخدمة',
+
+    'qtys' => 'الكميات',
+    'update_qtys' => 'تحديث الكميات',
+
+    'add_product' => 'إضافة منتج',
+    'order_details' => 'تفاصيل الطلب',
+    'product_variant_not_priced' => 'الخيار غير مسعر',
+    'no_stock_available' => 'الخيار غير متوفر في المخزن',
+    'order_details_item_already_exists' => 'العنصر موجود مسبقا',
+
+    'new_orders' => 'الطلبات الجديدة',
+
+    'order_status_new' => 'جديد',
+    'order_status_ready' => 'جاهز',
+    'order_status_delivery-in-progress' => 'جاري التوصيل',
+    'order_status_completed' => 'مكتمل',
+    'order_status_cancelled' => 'ملغي',
+
+    'alert_created' => 'تم الحفظ',
+    'alert_deleted' => 'تم الحذف',
+    'alert_saved' => 'تم الحفظ',
 
 ];
 //

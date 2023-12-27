@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Filament\Tenant\Resources\PaymentVoucherResource;
+use App\Filament\Tenant\Resources\ReceiptVoucherResource;
 use App\Services\AccountingService;
 use Dompdf\Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +19,7 @@ class Invoice extends BaseModel
 
     protected $casts = [
         'files' => 'array',
+        'inventory_taken_from_warehouses' => 'array',
         'date' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -78,9 +81,19 @@ class Invoice extends BaseModel
         return $this->hasMany(InvoiceAdditionalCost::class);
     }
 
-    public function payments()
+//    public function payments()
+//    {
+//        return $this->hasMany(InvoicePayment::class);
+//    }
+
+    public function purchasePayments(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
-        return $this->hasMany(InvoicePayment::class);
+        return $this->morphMany(PaymentVoucherPayment::class, 'model');
+    }
+
+    public function salesPayments(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(ReceiptVoucherPayment::class, 'model');
     }
 
     public function client()
@@ -98,6 +111,11 @@ class Invoice extends BaseModel
         return $this->belongsTo(Supplier::class);
     }
 
+    public function customer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -108,18 +126,32 @@ class Invoice extends BaseModel
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    public function getItemsCost($withAdditionalCosts = false)
+    public function getItemsCost($withAdditionalCosts = false, $applyDiscount = false, $applyTaxes = false)
     {
-        $items_cost = 0;
+        $total = 0;
 
         foreach ($this->items as $item) {
-            $items_cost += $item->price * $item->qty;
+            $subTotal = $item->price * $item->qty;
+
+            if ($applyDiscount)
+            {
+                $subTotal -= $item->discount;
+            }
+
+            $total += $subTotal;
         }
 
         if ($withAdditionalCosts)
-            return $items_cost + $this->getAdditionalCosts() - $this->getDiscountInAmount();
+        {
+            $total += $this->getAdditionalCosts();
+        }
 
-        return $items_cost - $this->getDiscountInAmount();
+        if ($applyTaxes)
+        {
+            $total += $this->getTaxesAsAmount();
+        }
+
+        return $total;
     }
 
     public function getAdditionalCosts(): float
@@ -133,7 +165,7 @@ class Invoice extends BaseModel
 
     public function getDiscountInAmount(): float|int
     {
-        $discount = null;
+        $discount = 0;
 
         if ($this->discount_option === "overall") {
 
@@ -170,31 +202,75 @@ class Invoice extends BaseModel
         return $discount;
     }
 
-    public function getTotalPaidAttribute()
+    public function getTaxesAsAmount(): float|int
     {
-        $amount_sdg = 0;
-        $amount_usd = 0;
+        $this->loadMissing('items.taxProfile');
+        $total = 0;
 
-        foreach ($this->payments as $payment) {
-            if ($payment->currency->iso_code == "SDG") //sdg
-            {
-                $amount_sdg += $payment->amount;
-            } else if ($payment->currency->iso_code == "USD") { //usd
-                $amount_usd += $payment->amount;
-                $amount_sdg += floatval($payment->amount * $payment->exchange_rate);
-            } else {
-                throw new \Exception('getTotalPaid: Currency not supported');
+        foreach ($this->items as $index => $item) {
+            $subTotal = $item->price * $item->qty;
+            $subTotal -= $item->discount;
+
+            $taxProfile = $item->taxProfile;
+            if ($taxProfile) {
+                $total += $subTotal * ($taxProfile->total_percentages / 100);
             }
         }
-        return [
-            'sdg' => $amount_sdg,
-            'usd' => $amount_usd,
+
+        return $total;
+    }
+
+
+    public function getTotalPaidAttribute()
+    {
+        if($this->type == 'purchases')
+        {
+            return $this->purchasePayments->sum('amount');
+        }
+        return $this->salesPayments->sum('amount');
+    }
+
+    public function getTotalUnpaidAttribute()
+    {
+        if($this->type == 'purchases')
+        {
+            return $this->getItemsCost(true, true, true) - $this->purchasePayments->sum('amount');
+        }
+        return $this->getItemsCost(true, true, true) - $this->salesPayments->sum('amount');
+    }
+
+    public function getPaymentStatusAttribute()
+    {
+        $statuses_en = [
+            'Post paid',
+            'Partly paid',
+            'Paid',
         ];
+
+        $statuses_ar = [
+            'دفع بالآجل',
+            'مسدد جزئيا',
+            'تم السداد',
+        ];
+
+        $statuses = app()->getLocale() == "ar" ? $statuses_ar : $statuses_en;
+
+        if($this->paid)
+        {
+            return $statuses[2];
+        }
+
+        if($this->purchasePayments->isEmpty())
+        {
+            return $statuses[0];
+        }
+
+        return $statuses[1];
     }
 
     public function getPaidAttribute(): bool
     {
-        return $this->getItemsCost() == $this->total_paid['sdg'];
+        return $this->getItemsCost(true, true, true) == $this->total_paid;
     }
 
     protected function checkCurrencySupport($currency)
@@ -442,13 +518,13 @@ class Invoice extends BaseModel
         })->pluck('no', 'id')->toArray();
     }
 
-    public static function dropdownUnpaid($client_id = null, $existsInReceiptVouchers = true, $except = []): array
+    public static function dropdownUnpaidForSupplier($supplier_id = null, $existsInReceiptVouchers = true, $except = []): array
     {
-        $invoices = self::with(['items', 'payments'])->get();
+        $invoices = self::with(['items', 'purchasePayments'])->get();
 
-        $unpaid = $invoices->filter(function (Invoice $invoice) use ($client_id, $except) {
-            if ($client_id)
-                return ($invoice->paid == false and $invoice->client_id == $client_id) or ($invoice->client_id == $client_id and in_array($invoice->id, $except));
+        $unpaid = $invoices->filter(function (Invoice $invoice) use ($supplier_id, $except) {
+            if ($supplier_id)
+                return ($invoice->paid == false and $invoice->supplier_id == $supplier_id) or ($invoice->supplier_id == $supplier_id and in_array($invoice->id, $except));
             return $invoice->paid === false;
         });
 
@@ -459,5 +535,65 @@ class Invoice extends BaseModel
 
         }
         return $unpaid->pluck('no', 'id')->toArray();
+    }
+
+    public static function dropdownUnpaidForCustomer($customer_id = null, $existsInReceiptVouchers = true, $except = []): array
+    {
+        $invoices = self::with(['items', 'salesPayments'])->get();
+
+        $unpaid = $invoices->filter(function (Invoice $invoice) use ($customer_id, $except) {
+            if ($customer_id)
+                return ($invoice->paid == false and $invoice->customer_id == $customer_id) or ($invoice->customer_id == $customer_id and in_array($invoice->id, $except));
+            return $invoice->paid === false;
+        });
+
+        if (!$existsInReceiptVouchers) {
+            $invoice_ids_in_receipts_vouchers = ReceiptVoucher::pluck('invoice_id')->toArray();
+
+            return $unpaid->whereNotIn('id', $invoice_ids_in_receipts_vouchers)->pluck('no', 'id')->toArray();
+
+        }
+        return $unpaid->pluck('no', 'id')->toArray();
+    }
+
+    //start client payments
+    //create or edit (if exist) receipt voucher
+    public function getReceiptVoucherResourceUrl()
+    {
+        $rv = ReceiptVoucher::where('invoice_id', $this->id)->first();
+
+        if($rv){
+            return ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]);
+        }
+
+        return ReceiptVoucherResource::getUrl('create', ['invoice_id' => $this->id]);
+    }
+
+    //start supplier payments
+    //create or edit (if exist) payment voucher
+    public function getPaymentVoucherResourceUrl()
+    {
+        $pv = PaymentVoucher::where('invoice_id', $this->id)->first();
+
+        if($pv){
+            return PaymentVoucherResource::getUrl('edit', ['record' => $pv->id]);
+        }
+
+        return PaymentVoucherResource::getUrl('create', ['invoice_id' => $this->id]);
+    }
+
+    public function getDebitAccountCode(): ? string
+    {
+        if($this->for === "supplier")
+        {
+            return $this->supplier->acc4->code;
+        }
+
+        if($this->for === "customer")
+        {
+            return $this->customer->acc4->code;
+        }
+
+        return null;
     }
 }

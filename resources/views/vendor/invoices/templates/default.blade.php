@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
     <head>
         <title>{{ $invoice->name }}</title>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
         <style type="text/css" media="screen">
             html {
-                font-family: sans-serif;
+                font-family: DejaVu Sans, serif;
                 line-height: 1.15;
                 margin: 0;
             }
@@ -360,20 +360,20 @@
 
         @if($invoice->notes)
             <p>
-                {{ trans('invoices::invoice.notes') }}: {!! $invoice->notes !!}
+                {{ __('invoices::invoice.notes') }}: {!! $invoice->notes !!}
             </p>
         @endif
 
         <p>
-            {{ trans('invoices::invoice.amount_in_words') }}: {{ tafqeet($invoice->total_amount + $invoice->shipping_amount, 'egp') }}
+            {{ __('invoices::invoice.amount_in_words') }}: {{ $invoice->getTotalAmountInWords() }}
         </p>
-{{--        <p>--}}
-{{--            {{ trans('invoices::invoice.pay_until') }}: {{ $invoice->getPayUntilDate() }}--}}
-{{--        </p>--}}
+        <p>
+            {{ __('invoices::invoice.pay_until') }}: {{ $invoice->getPayUntilDate() }}
+        </p>
 
         <script type="text/php">
             if (isset($pdf) && $PAGE_COUNT > 1) {
-                $text = "Page {PAGE_NUM} / {PAGE_COUNT}";
+                $text = "{{ __('invoices::invoice.page') }} {PAGE_NUM} / {PAGE_COUNT}";
                 $size = 10;
                 $font = $fontMetrics->getFont("Verdana");
                 $width = $fontMetrics->get_text_width($text, $font, $size) / 2;

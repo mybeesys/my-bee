@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\CookieService;
 use App\Tables\Columns\DateColumn;
 use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
@@ -9,10 +10,13 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Assets\Js;
+use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\ServiceProvider;
 use Filament\Pages\Page;
 use Illuminate\Validation\ValidationException;
@@ -32,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+
         if (app()->isProduction()) {
             FilamentAsset::register([
                 Js::make('custom-script', __DIR__ . '/../../resources/js/custom.js'),
@@ -54,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
                 ])
                 ->visible(outsidePanels: true);
         });
+
     }
 
     protected function configPublicPath()
@@ -116,5 +122,18 @@ class AppServiceProvider extends ServiceProvider
             });
             return $this;
         });
+
+        TextInput::macro('translateFrontValidationGt', function () {
+            $this->extraInputAttributes(function () {
+                $min = $this->getMinValue() ?? 0;
+                $msg = __('validation.gt.numeric', ['attribute' => $this->getLabel(), 'value' => $min]);
+                return [
+                    'oninvalid' => "this.setCustomValidity('$msg')",
+                    'oninput' => "this.setCustomValidity('')",
+                ];
+            }, merge: true);
+            return $this;
+        });
+
     }
 }

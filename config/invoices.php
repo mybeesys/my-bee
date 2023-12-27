@@ -6,7 +6,7 @@ return [
         /*
          * Carbon date format
          */
-        'format' => 'Y-m-d',
+        'format' => 'd-m-Y',
 
         /*
          * Due date for payment since invoice's date.
@@ -106,6 +106,7 @@ return [
 
     'dompdf_options' => [
         'enable_php' => true,
+        'defaultFont' => 'Arial',
         /**
          * Do not write log.html or make it optional
          *  @see https://github.com/dompdf/dompdf/issues/2810

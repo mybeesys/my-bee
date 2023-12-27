@@ -24,6 +24,9 @@ class EditPlan extends EditRecord
         $data['unlimited_companies'] = $data['max_allowed_companies'] == -1;
         $data['unlimited_purchase_invoices'] = $data['max_allowed_purchase_invoices'] == -1;
         $data['unlimited_sales_invoices'] = $data['max_allowed_sales_invoices'] == -1;
+        $data['restrict_account_after_period'] = $data['restrict_account_after_days'] > 0;
+
+
         return parent::mutateFormDataBeforeFill($data);
     }
 

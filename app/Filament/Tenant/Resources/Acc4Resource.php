@@ -23,7 +23,7 @@
 
         protected static ?string $recordTitleAttribute = "name";
 
-        protected static ?string $slug = "finance/accounts-tree/level-four";
+        protected static ?string $slug = "finance/tree-accounts/level-four";
 
         protected static ?int $navigationSort = 7;
 

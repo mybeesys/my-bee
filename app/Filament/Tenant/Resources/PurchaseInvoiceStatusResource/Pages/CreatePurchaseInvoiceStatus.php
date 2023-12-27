@@ -9,4 +9,5 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePurchaseInvoiceStatus extends CreateRecord
 {
     protected static string $resource = PurchaseInvoiceStatusResource::class;
+
 }

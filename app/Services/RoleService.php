@@ -63,14 +63,13 @@ class RoleService
             ->where('tenant_id', $tenant_id)
             ->first();
 
-        if ($role)
-            return $role;
-
-        DB::table("roles")->insert([
-            'name' => $role_name,
-            'guard_name' => $guard,
-            'tenant_id' => $tenant_id,
-        ]);
+        if (!$role) {
+            DB::table("roles")->insert([
+                'name' => $role_name,
+                'guard_name' => $guard,
+                'tenant_id' => $tenant_id,
+            ]);
+        }
 
         return Role::findById(
             DB::table("roles")
@@ -79,7 +78,7 @@ class RoleService
                 ->where('tenant_id', $tenant_id)
                 ->first()
                 ->id
-        );
+            , $guard);
     }
 
     public function assignRole($user, $role)

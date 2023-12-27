@@ -21,10 +21,14 @@ class CreateWarehousesTable extends Migration
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
             $table->string('description')->nullable();
+            $table->boolean('main')->default(0);
+            $table->integer('pulling_stock_priority')->nullable();
+
             $table->timestamps();
 
             $table->unique(['name', 'tenant_id']);
         });
+
     }
 
     /**

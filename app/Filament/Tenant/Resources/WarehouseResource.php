@@ -12,6 +12,8 @@ use App\Rules\UniqueTenantItemRule;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\Page;
+use Filament\Resources\RelationManagers\RelationGroup;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,6 +27,8 @@ class WarehouseResource extends Resource
     protected static ?string $slug = "warehouses/warehouses";
 
     protected static ?int $navigationSort = 1;
+
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function getNavigationGroup(): ?string
     {
@@ -69,11 +73,12 @@ class WarehouseResource extends Resource
 
                 ])->columns(3),
 
-                Forms\Components\Section::make()
-                    ->schema([
-                        Forms\Components\RichEditor::make('description')
-                            ->label(__('fields.description')),
-                    ]),
+//                Forms\Components\Section::make()
+//                    ->schema([
+//                        Forms\Components\RichEditor::make('description')
+//                            ->label(__('fields.description')),
+//                    ]),
+
             ]);
     }
 
@@ -85,6 +90,7 @@ class WarehouseResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('fields.name'))
                     ->extraAttributes(['class' => 'text-success-700'])
+                    ->description(fn($record) => $record->main ? __("fields.main_warehouse_description") : "")
                     ->searchable(),
                 Tables\Columns\TextColumn::make('address')
                     ->label(__('fields.address'))
@@ -95,25 +101,25 @@ class WarehouseResource extends Resource
                 Tables\Columns\TextColumn::make('stocks')
                     ->label(__('fields.products'))
                     ->getStateUsing(function ($record) {
-                        return $record->stocks->pluck('item_id')->unique()->count();
+                        return $record->products->where('type', Product::$TYPE_BASIC)->count() + $record->units->count() + $record->variants->count();
                     }),
 
-                Tables\Columns\TextColumn::make('warehouse_items_cost')
-                    ->label(__('fields.warehouse_items_cost'))
-                    ->tooltip(function ($record) {
-                        $total = 0;
-                        foreach ($record->stocks as $stock) {
-                            $total += $stock->getTotalCost();
-                        }
-                        return numbers_to_words($total);
-                    })
-                    ->getStateUsing(function (Warehouse $record) {
-                        $total = 0;
-                        foreach ($record->stocks as $stock) {
-                            $total += $stock->getTotalCost();
-                        }
-                        return setting('main_currency') . " " . format_amount($total,);
-                    }),
+//                Tables\Columns\TextColumn::make('warehouse_items_cost')
+//                    ->label(__('fields.warehouse_items_cost'))
+//                    ->tooltip(function ($record) {
+//                        $total = 0;
+//                        foreach ($record->stocks as $stock) {
+//                            $total += $stock->getTotalCost();
+//                        }
+//                        return numbers_to_words($total);
+//                    })
+//                    ->getStateUsing(function (Warehouse $record) {
+//                        $total = 0;
+//                        foreach ($record->stocks as $stock) {
+//                            $total += $stock->getTotalCost();
+//                        }
+//                        return setting('main_currency') . " " . format_amount($total,);
+//                    }),
 
 //                    Tables\Columns\TextColumn::make('description')
 //                        ->label(__('fields.description'))
@@ -130,32 +136,33 @@ class WarehouseResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make(),
 
-                    Tables\Actions\Action::make('delete')
-                        ->label(__('fields.delete'))
-                        ->icon('heroicon-o-trash')
-                        ->action(function (Warehouse $record) {
-                            if ($record->stocks->isNotEmpty()) {
-                                Notification::make()
-                                    ->title(__('fields.record_in_use_alert'))
-                                    ->warning()
-                                    ->send();
-                                return;
-                            }
-
+                Tables\Actions\Action::make('mark_as_main')
+                    ->label(__('fields.mark_warehouse_as_default'))
+                    ->visible(fn($record) => !$record->main)
+                    ->icon('heroicon-o-building-storefront')
+                    ->color('gray')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->update(['main' => 1]);
+                        Warehouse::whereNotIn('id', [$record->id])->update(['main' => 0]);
+                        fns()->saved();
+                    }),
+                Tables\Actions\Action::make('delete')
+                    ->label(__('fields.delete'))
+                    ->icon('heroicon-o-trash')
+                    ->action(function (Warehouse $record) {
+                        try {
                             $record->delete();
+                            fns()->deleted();
+                        } catch (\Exception $exception) {
+                            fns()->displayException($exception);
+                        }
 
-                            Notification::make()
-                                ->title(__('fields.record_deleted_alert'))
-                                ->success()
-                                ->send();
-
-                        })
-                        ->requiresConfirmation()
-                        ->color('danger'),
-                ]),
+                    })
+                    ->requiresConfirmation()
+                    ->color('danger'),
 
             ])
             ->bulkActions([
@@ -166,20 +173,21 @@ class WarehouseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\StocksRelationManager::class,
+            RelationManagers\BasicProductStockRelationManager::class,
+            RelationManagers\VariantProductStockRelationManager::class,
+            RelationManagers\UnitsProductStockRelationManager::class,
         ];
     }
 
     public static function getWidgets(): array
     {
         return [
-            PricingOverview::class,
         ];
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['stocks.item.lastPrice', 'stocks.stock'])->latest(); // TODO: Change the autogenerated stub
+        return parent::getEloquentQuery()->with(['stocks.item.lastPrice', 'stocks.stock', 'products', 'variants', 'units.unit', 'units.product'])->latest(); // TODO: Change the autogenerated stub
     }
 
     public static function getPages(): array

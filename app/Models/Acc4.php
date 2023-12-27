@@ -82,7 +82,7 @@ class Acc4 extends BaseModel
                 if($withUnitsAsOptions)
                     foreach ($acc4->item->units as $productUnit)
                     {
-                        $name = $acc4->item->name . " - " . $productUnit->unit->name ." - ". $productUnit->barcode;
+                        $name = $acc4->item->name . " - " . $productUnit->unit->name;
                         $options["$id-$productUnit->unit_id"] = $name;
                     }
 //                if ($useItemId)

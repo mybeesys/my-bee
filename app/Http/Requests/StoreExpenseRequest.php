@@ -23,9 +23,9 @@ class StoreExpenseRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'max:255', new ApiUniqueTenantItemRule(Expense::class, 'name')],
             'amount' => ['required', 'numeric', "max:". PHP_INT_MAX],
             'date' => ['required', 'date', 'date_format:d-m-Y'],
+            'expense_category_id' => ['required', 'exists:expense_categories,id'],
             'description' => ['required'],
         ];
     }

@@ -65,17 +65,20 @@ class CategoryResource extends Resource
             ->schema([
                 Forms\Components\Section::make()
                     ->schema([
-                        TextInput::make('name')->label(__('fields.name'))->required(),
+                        TextInput::make('name')
+                            ->label(__('fields.name'))
+                            ->autofocus()
+                            ->required(),
 
-                        Select::make('parent_id')
-                            ->label(__('fields.category_parent'))
-                            ->options(function ($operation, $record) {
-                                if ($operation == "edit")
-                                    return Category::canBecomeParent($ignore_ids = [$record->id])->pluck('name', 'id');
-
-                                return Category::canBecomeParent()->pluck('name', 'id');
-                            })
-                            ->searchable(),
+//                        Select::make('parent_id')
+//                            ->label(__('fields.category_parent'))
+//                            ->options(function ($operation, $record) {
+//                                if ($operation == "edit")
+//                                    return Category::canBecomeParent($ignore_ids = [$record->id])->pluck('name', 'id');
+//
+//                                return Category::canBecomeParent()->pluck('name', 'id');
+//                            })
+//                            ->searchable(),
 
                         Forms\Components\TextInput::make('sort')
                             ->label(__('fields.sort'))
@@ -101,8 +104,8 @@ class CategoryResource extends Resource
                         return "#" . $record->sort;
                     }),
                 Tables\Columns\TextColumn::make('name')->label(__('fields.name')),
-                Tables\Columns\TextColumn::make('parent.name')->label(__('fields.category_parent')),
-                Tables\Columns\TextColumn::make('all_children_count')->counts('allChildren')->label(__('fields.category_subs')),
+//                Tables\Columns\TextColumn::make('parent.name')->label(__('fields.category_parent')),
+//                Tables\Columns\TextColumn::make('all_children_count')->counts('allChildren')->label(__('fields.category_subs')),
                 Tables\Columns\TextColumn::make('products_count')->counts('products')->label(__('fields.products')),
 
                 Tables\Columns\TextColumn::make('created_at')

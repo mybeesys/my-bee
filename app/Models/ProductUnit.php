@@ -23,4 +23,26 @@ class ProductUnit extends BaseModel
         return $this->belongsTo(Unit::class);
     }
 
+    public function getInventoryCountAttribute()
+    {
+        return $this->qty ?? 0;
+    }
+
+    public function getRetailPriceAttribute()
+    {
+        if ($this->discount_price and $this->discount_price > 0)
+            return $this->discount_price;
+        return $this->price ?? 0;
+    }
+
+    public function setPriceAttribute($value)
+    {
+        return $this->attributes['price'] = $value ?? 0;
+    }
+
+    public function setQtyAttribute($value)
+    {
+        return $this->attributes['qty'] = $value ?? 0;
+    }
+
 }

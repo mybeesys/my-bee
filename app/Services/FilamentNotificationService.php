@@ -41,7 +41,7 @@ class FilamentNotificationService
         return $this;
     }
 
-    public function persist(bool $persist = false): self
+    public function persist(bool $persist = true): self
     {
         $this->persist = $persist;
         return $this;
@@ -111,8 +111,7 @@ class FilamentNotificationService
         if($exception instanceof QueryException and ($exception->errorInfo[1] ?? null) == 1451)
         {
             $this->status = "warning";
-            $this->title = "Delete failed";
-            $this->body = "Record in-use and cannot be deleted.";
+            $this->title = __('fields.record_in_use_alert');
         } else {
             $this->status = "danger";
             $this->title = "Something went wrong";
@@ -128,7 +127,7 @@ class FilamentNotificationService
     public function created()
     {
         $this->status = "success";
-        $this->title = "Created";
+        $this->title = __('fields.alert_created');
         $this->send();
     }
 
@@ -136,14 +135,14 @@ class FilamentNotificationService
     public function deleted()
     {
         $this->status = "success";
-        $this->title = "Deleted";
+        $this->title = __('fields.alert_deleted');
         $this->send();
     }
 
     public function saved()
     {
         $this->status = "success";
-        $this->title = "Saved";
+        $this->title = __('fields.alert_saved');
         $this->send();
     }
 

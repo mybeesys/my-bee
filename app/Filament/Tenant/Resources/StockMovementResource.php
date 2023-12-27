@@ -23,6 +23,8 @@
 
         protected static ?string $slug = "warehouses/stock-movement";
 
+        protected static bool $shouldRegisterNavigation = false;
+
         public static function getNavigationGroup(): ?string
         {
             return __('fields.warehouses');

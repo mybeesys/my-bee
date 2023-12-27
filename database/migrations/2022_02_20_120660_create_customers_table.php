@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
+            $table->string('no');
             $table->string('name');
             $table->string('phone')->index();
-            $table->string('address')->nullable();
+            $table->string('delivery_address')->nullable();
             $table->string('email')->index()->nullable();
             $table->string('notes')->nullable();
             $table->timestamps();

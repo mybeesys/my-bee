@@ -181,6 +181,10 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/shuvroroy/filament-spatie-laravel-backup" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/calebporzio/sushi" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/awcodes/filament-table-repeater" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/carbonphp/carbon-doctrine-types" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/league/csv" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/awcodes/shout" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/flowframe/laravel-trend" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -134,7 +134,7 @@
         public function acc4()
         {
             $data = array(
-                array('code' => '120100001', 'acc3_code' => '1201', 'name' => 'الخزينة (جنيه)'),
+                array('code' => '120100001', 'acc3_code' => '1201', 'name' => 'الخزينة (ريال سعودي)'),
                 array('code' => '120100002', 'acc3_code' => '1201', 'name' => 'الخزينة (دولار)'),
                 array('code' => '121800001', 'acc3_code' => '1218', 'name' => 'المبيعات'),
                 array('code' => '121900001', 'acc3_code' => '1219', 'name' => 'مردودات المبيعات'),

@@ -99,4 +99,28 @@ class Tenant extends BaseModel
         return $this->hasMany(Expense::class);
     }
 
+    public function customers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function paymentVouchers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PaymentVoucher::class);
+    }
+
+    public function receiptVouchers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ReceiptVoucher::class);
+    }
+
+    public function variantLibraries(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VariantLibrary::class);
+    }
+
+    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
 }

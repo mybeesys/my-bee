@@ -11,6 +11,7 @@ use App\Filament\Tenant\Pages\TenantUserProfile;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Models\Tenant;
+use App\Services\CookieService;
 use BezhanSalleh\FilamentLanguageSwitch\FilamentLanguageSwitchPlugin;
 use BezhanSalleh\FilamentLanguageSwitch\Http\Livewire\SwitchFilamentLanguage;
 use BezhanSalleh\FilamentLanguageSwitch\Http\Middleware\SwitchLanguageLocale;
@@ -27,6 +28,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\SpatieLaravelTranslatablePlugin;
 use Filament\Support\Colors\Color;
+use Filament\Support\Facades\FilamentColor;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -44,10 +46,12 @@ class TenantPanelProvider extends PanelProvider
         if (config('app.env') === "local")
             $domain = "client.my-bee.test";
 
+
         return $panel
             ->id('tenant')
             ->path('')
             ->domain($domain)
+            ->spa()
             ->brandName(fn() => filament()->getTenant()?->name)
             ->globalSearch(false)
             ->registration(RegisterClient::class)

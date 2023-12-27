@@ -10,13 +10,16 @@ use App\Models\Acc4;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Currency;
+use App\Models\InvoiceAdditionalCostType;
 use App\Models\InvoiceStatus;
 use App\Models\Product;
 use App\Models\PurchaseInvoiceStatus;
 use App\Models\Supplier;
+use App\Models\TaxProfile;
 use App\Models\Tenant;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\VariantLibrary;
 use App\Models\Warehouse;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -89,10 +92,9 @@ class TenantService
             array('name' => 'متر طولي', 'created_at' => now()),
             array('name' => 'متر مكعب', 'created_at' => now()),
             array('name' => 'جوال', 'created_at' => now()),
-//            array('name' => 'عدد', 'created_at' => now()),
-//            array('name' => 'عمليه', 'created_at' => now()),
-//            array('name' => 'وحده', 'created_at' => now()),
             array('name' => 'طن', 'created_at' => now()),
+            array('name' => 'قطعة', 'created_at' => now()),
+            array('name' => 'كرتونة', 'created_at' => now()),
         );
 
         foreach ($data as $item) {
@@ -116,9 +118,23 @@ class TenantService
         //products
 
 
+        //VariantLibraries and options
+        $this->createVariantLibraries($tenant_id);
+        //VariantLibraries and options
+
+
         //suppliers
         $this->createSuppliers($tenant_id);
         //suppliers
+
+
+        //taxProfiles
+        $this->createTaxProfiles($tenant_id);
+        //taxProfiles
+
+        //invoiceAdditionalCostTypes
+        $this->createInvoiceAdditionalCostTypes($tenant_id);
+        //invoiceAdditionalCostTypes
 
 
         //currencies
@@ -302,7 +318,7 @@ class TenantService
     public function acc4($tenant_id)
     {
         $data = array(
-            array('code' => '120100001', 'acc3_code' => '1201', 'name' => 'الخزينة (جنيه)'),
+            array('code' => '120100001', 'acc3_code' => '1201', 'name' => 'الخزينة (ريال)'),
             array('code' => '120100002', 'acc3_code' => '1201', 'name' => 'الخزينة (دولار)'),
             array('code' => '121800001', 'acc3_code' => '1218', 'name' => 'المبيعات'),
             array('code' => '121900001', 'acc3_code' => '1219', 'name' => 'مردودات المبيعات'),
@@ -1300,18 +1316,22 @@ class TenantService
     {
         $service = new SettingService($tenant_id);
 
-        DB::table('settings')->where('tenant_id', $tenant_id)->delete();
+//        DB::table('settings')->where('tenant_id', $tenant_id)->delete();
 
-        CacheService::instance()->tenant($tenant_id)->forget('settings');
-
-        $service->createOrUpdate('main_currency', ['en' => 'Main currency', 'ar' => 'العملة الرئيسية'], "SAR", 'options', false, $service->rulesForString(), 'system', [], false, 'System', null, null, 1, 1, true, "currency_options@$tenant_id"); //cause every tenant has his own options
+        $service->createOrUpdate('main_currency', ['en' => 'Currency', 'ar' => 'العملة'], "SAR", 'options', false, $service->rulesForString(), 'system', [], false, 'System', null, null, 1, 1, true, "currency_options@$tenant_id"); //cause every tenant has his own options
         $service->createOrUpdate('main_currency_decimals', ['en' => 'Currency decimals', 'ar' => 'الفواصل العشرية في العملة'], "2", 'options', false, $service->rulesForNumber(true, 0, 4), 'system', [0 => 0, 1 => 1, 2 => 2, 3 => 3, 4 => 4], false, 'System', null, null, 1, 2, true); //cause every tenant has his own options
+
+        $service->createOrUpdate('invoice_prefix', ['en' => 'Invoice number prefix', 'ar' => 'نمط ترقيم الفاتورة'], "", 'text', false, $service->rulesForString(false, 5), 'system', [], false, 'System', "INV-", "E.g. INV-000001", 1, 2, true);
+        $service->createOrUpdate('invoice_number_digits', ['en' => 'Invoice number digits', 'ar' => 'عدد خانات رقم الفاتورة'], "6", 'text', false, $service->rulesForNumber(true, 1, 20), 'system', [], false, 'System', null, null, 1, 2, true); //cause every tenant has his own options
+        $service->createOrUpdate('invoice_starting_number', ['en' => 'Invoice starting number', 'ar' => 'بادئة رقم الفاتورة'], "1", 'text', false, $service->rulesForNumber(true, 1, 100000), 'system', [], false, 'System', null, null, 1, 2, true); //cause every tenant has his own options
 
         $service->createOrUpdate('company.name', ['en' => 'Company name', 'ar' => 'إسم الشركة'], Tenant::find($tenant_id)?->name, 'text', false, $service->rulesForString(false), 'general', [], false, 'General', null, null, 1, 2);
         $service->createOrUpdate('company.address', ['en' => 'Company address', 'ar' => 'عنوان الشركة'], null, 'text', false, $service->rulesForString(false), 'general', [], false, 'General', null, null, 2, 2);
         $service->createOrUpdate('company.contact.phone', ['en' => 'Company phone', 'ar' => 'رقم هاتف الشركة'], null, 'text', false, $service->rulesForInternationalPhone(false), 'general', [], false, 'General', null, null, 3, 2);
         $service->createOrUpdate('company.contact.mobile', ['en' => 'Company mobile', 'ar' => 'رقم موبايل الشركة'], null, 'text', false, $service->rulesForInternationalPhone(false), 'general', [], false, 'General', null, null, 4, 2);
         $service->createOrUpdate('company.contact.email', ['en' => 'Company email', 'ar' => 'إيميل الشركة'], null, 'text', false, $service->rulesForEmail(false), 'general', [], false, 'General', null, null, 5, 2);
+
+        CacheService::instance()->tenant($tenant_id)->forget('settings');
 
     }
 
@@ -1333,23 +1353,52 @@ class TenantService
         }
     }
 
-    public function createProducts($tenant_id, $records = 10): void
+    public function createProducts($tenant_id, $basic_products = 5, $units_products = 5, $variant_products = 0): void
     {
         $tenant = Tenant::find($tenant_id);
 
-        for ($i = 0; $i < $records; $i++) {
+        $flag = 1;
+
+        for ($i = 0; $i < $basic_products; $i++) {
             $product = Product::create(
                 [
                     'tenant_id' => $tenant_id,
-                    'name' => $tenant->name . " - product " . $i + 1,
+                    'name' => $tenant->name . " - product " . $flag,
+                    'type' => 'basic',
+                    'sku' => random_int(111111111, 999999999),
+                    'price' => random_int(100, 10000),
+                    'qty' => 12,
+                    'description' => 'Product description',
                     'barcode' => Str::random(8),
+                    'warehouse_id' => Warehouse::where('tenant_id', $tenant_id)->get()->random()->id,
                     'category_id' => Category::where('tenant_id', $tenant_id)->get()->random()->id,
                     'main_unit_id' => Unit::where('tenant_id', $tenant_id)->get()->random()->id,
                     'security_stock' => 10,
                 ]
             );
 
-//            (new AccountingService())->createAcc4AccountForItem($product);
+            $flag++;
+        }
+
+        for ($i = 0; $i < $units_products; $i++) {
+            $product = Product::create(
+                [
+                    'tenant_id' => $tenant_id,
+                    'name' => $tenant->name . " - product " . $flag,
+                    'type' => 'units',
+                    'sku' => random_int(111111111, 999999999),
+                    'price' => random_int(100, 10000),
+                    'qty' => 12,
+                    'description' => 'Product description',
+                    'barcode' => Str::random(8),
+                    'warehouse_id' => Warehouse::where('tenant_id', $tenant_id)->get()->random()->id,
+                    'category_id' => Category::where('tenant_id', $tenant_id)->get()->random()->id,
+                    'main_unit_id' => Unit::where('tenant_id', $tenant_id)->get()->random()->id,
+                    'security_stock' => 10,
+                ]
+            );
+
+            $flag++;
         }
     }
 
@@ -1390,7 +1439,7 @@ class TenantService
 
         $data_en = [
             [
-                'name' => 'Proforma invoice',
+                'name' => 'Purchase request',
                 'color' => '#5035ff',
                 'default' => true,
                 'system' => true,
@@ -1410,12 +1459,13 @@ class TenantService
                 'color' => '#077d4c',
                 'system' => true,
                 'locks_invoice' => true,
+                'releases_stock' => true,
             ]
         ];
 
         $data_ar = [
             [
-                'name' => 'فاتورة مبدئية',
+                'name' => 'طلب شراء',
                 'color' => '#5035ff',
                 'default' => true,
                 'system' => true,
@@ -1435,6 +1485,7 @@ class TenantService
                 'color' => '#077d4c',
                 'system' => true,
                 'locks_invoice' => true,
+                'releases_stock' => true,
             ]
         ];
 
@@ -1445,6 +1496,205 @@ class TenantService
 
     }
 
+    public function createTaxProfiles($tenant_id): void
+    {
+        $purchasesTaxProfile = TaxProfile::create([
+            'tenant_id' => $tenant_id,
+            'name' => 'ضريبة المشتريات القياسية',
+        ]);
+
+        $salesTaxProfile = TaxProfile::create([
+            'tenant_id' => $tenant_id,
+            'name' => 'ضريبة المبيعات القياسية',
+        ]);
+
+        $productTaxProfile = TaxProfile::create([
+            'tenant_id' => $tenant_id,
+            'name' => 'ضريبة المنتج القياسية',
+        ]);
+
+        $purchasesTaxProfile->taxes()->insert([
+            [
+                'tenant_id' => $tenant_id,
+                'tax_profile_id' => $purchasesTaxProfile->id,
+                'description' => 'الضريبة 1',
+                'percent' => 5,
+            ],
+            [
+                'tenant_id' => $tenant_id,
+                'tax_profile_id' => $purchasesTaxProfile->id,
+                'description' => 'الضريبة 2',
+                'percent' => 7,
+            ],
+        ]);
+
+        $salesTaxProfile->taxes()->insert([
+            [
+                'tenant_id' => $tenant_id,
+                'tax_profile_id' => $salesTaxProfile->id,
+                'description' => 'الضريبة 1',
+                'percent' => 2,
+            ],
+            [
+                'tenant_id' => $tenant_id,
+                'tax_profile_id' => $salesTaxProfile->id,
+                'description' => 'الضريبة 2',
+                'percent' => 2.5,
+            ],
+        ]);
+
+        $productTaxProfile->taxes()->insert([
+            [
+                'tenant_id' => $tenant_id,
+                'tax_profile_id' => $productTaxProfile->id,
+                'description' => 'ضريبة القيمة المضافة',
+                'percent' => 15,
+            ],
+        ]);
+    }
+
+    public function createInvoiceAdditionalCostTypes($tenant_id): void
+    {
+        InvoiceAdditionalCostType::create([
+            'tenant_id' => $tenant_id,
+            'name' => 'توصيل/شحن',
+        ]);
+    }
+
+    public function createVariantLibraries($tenant_id): void
+    {
+        $color = VariantLibrary::create([
+            'tenant_id' => $tenant_id,
+            'name_en' => 'Colors',
+            'name_ar' => 'الألوان',
+        ]);
+
+        $size = VariantLibrary::create([
+            'tenant_id' => $tenant_id,
+            'name_en' => 'Sizes',
+            'name_ar' => 'المقاسات',
+        ]);
+
+        $material = VariantLibrary::create([
+            'tenant_id' => $tenant_id,
+            'name_en' => 'Materials',
+            'name_ar' => 'خامات الملابس',
+        ]);
+
+        $color->options()->insert([
+            [
+                'name_ar' => 'أزرق',
+                'name_en' => 'Blue',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $color->id,
+                'sort' => 1,
+            ],
+            [
+                'name_ar' => 'أحمر',
+                'name_en' => 'Red',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $color->id,
+                'sort' => 2,
+            ],
+            [
+                'name_ar' => 'أخضر',
+                'name_en' => 'Green',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $color->id,
+                'sort' => 3,
+            ]
+        ]);
+
+        $size->options()->insert([
+            [
+                'name_ar' => 'S',
+                'name_en' => 'S',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 1,
+            ],
+            [
+                'name_ar' => 'M',
+                'name_en' => 'M',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 2,
+            ],
+            [
+                'name_ar' => 'L',
+                'name_en' => 'L',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 3,
+            ],
+            [
+                'name_ar' => 'XL',
+                'name_en' => 'XL',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 4,
+            ],
+            [
+                'name_ar' => 'XXL',
+                'name_en' => 'XXL',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 5,
+            ],
+            [
+                'name_ar' => '3XL',
+                'name_en' => '3XL',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 6,
+            ],
+            [
+                'name_ar' => '4XL',
+                'name_en' => '4XL',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 7,
+            ],
+            [
+                'name_ar' => '5XL',
+                'name_en' => '5XL',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 8,
+            ],
+            [
+                'name_ar' => '6XL',
+                'name_en' => '6XL',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $size->id,
+                'sort' => 9,
+            ],
+        ]);
+
+        $material->options()->insert([
+            [
+                'name_ar' => 'قطن',
+                'name_en' => 'Cotten',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $material->id,
+                'sort' => 1,
+            ],
+            [
+                'name_ar' => 'كتان',
+                'name_en' => 'Linen',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $material->id,
+                'sort' => 2,
+            ],
+            [
+                'name_ar' => 'صوف',
+                'name_en' => 'Wool',
+                'tenant_id' => $tenant_id,
+                'variant_library_id' => $material->id,
+                'sort' => 3,
+            ]
+        ]);
+    }
 
     public function getUsers($tenant_id): Collection
     {

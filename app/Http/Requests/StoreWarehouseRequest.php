@@ -28,6 +28,8 @@ class StoreWarehouseRequest extends BaseRequest
             'name' => ['required', 'max:255', new ApiUniqueTenantItemRule(Warehouse::class, 'name')],
             'phone' => ['required', new InternationalPhoneRule(false)],
             'address' => ['sometimes', 'max:255'],
+            'main' => ['required', 'boolean'],
+            'pulling_stock_priority' => ['sometimes', 'integer', 'min:1', 'max:500'],
             'description' => ['sometimes', 'max:255'],
         ];
     }

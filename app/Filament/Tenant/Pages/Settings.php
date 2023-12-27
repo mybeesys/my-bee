@@ -8,7 +8,11 @@ use App\Filament\Tenant\Resources\Acc1Resource;
 use App\Filament\Tenant\Resources\Acc2Resource;
 use App\Filament\Tenant\Resources\Acc3Resource;
 use App\Filament\Tenant\Resources\Acc4Resource;
+use App\Filament\Tenant\Resources\Shield\RoleResource;
+use App\Filament\Tenant\Resources\SupplierResource;
 use App\Filament\Tenant\Resources\TaxProfileResource;
+use App\Filament\Tenant\Resources\UserResource;
+use App\Filament\Tenant\Resources\WarehouseResource;
 use App\Models\Currency;
 use App\Models\Setting;
 use App\Models\User;
@@ -78,32 +82,6 @@ class Settings extends Page implements HasForms
 
         $this->form->fill();
 
-//        $tabs = settings()->pluck('tab')->unique()->toArray();
-//        $tabs = array_filter($tabs);
-//
-//        $data = collect();
-//
-//        foreach ($tabs as $tab) {
-//            $data = $data->merge(settings_by_tab($tab));
-//        }
-//
-//        $inputs = [];
-//
-//        foreach ($data as $item) {
-//            if ($item->type == "options") {
-//                $options = array_flip($item->options);
-//                $default = null;
-//                if (array_key_exists($item->value, $options)) {
-//                    $default = $item->value;
-//                    $inputs[$item->id] = $default;
-//                }
-//            } else {
-//                $inputs[$item->id] = $item->value;
-//            }
-//        }
-////        $this->form->fill($data->flatten()->pluck('value', 'id')->toArray());
-//        $this->form->fill($inputs);
-
         if (config('app.debug'))
             $this->enable_full_access = true;
     }
@@ -142,12 +120,10 @@ class Settings extends Page implements HasForms
 
     protected function getFormSchema(): array
     {
-//        dd($this->getTabs());
-        $tabs = $this->getTabs();
-//        unset($tabs[4]);
         return [
             Tabs::make('Settings')
-                ->tabs($tabs)->statePath('data'),
+                ->tabs($this->getTabs())
+                ->statePath('data'),
         ];
     }
 
@@ -259,7 +235,6 @@ class Settings extends Page implements HasForms
                 ->label(__('fields.save'))
                 ->action(function () {
                     $this->form->validate();
-
                     foreach ($this->data as $id => $value) {
                         $setting = Setting::find($id);
                         if ($this->validateSetting($setting, $value) and $value != $setting->value) {
@@ -325,29 +300,45 @@ class Settings extends Page implements HasForms
         return [
             ActionGroup::make([
 
+                \Filament\Actions\Action::make('roles')
+                    ->label(__('fields.roles'))
+                    ->url(fn() => RoleResource::getUrl()),
+
+                \Filament\Actions\Action::make('user_management')
+                    ->label(__('fields.user_management'))
+                    ->url(fn() => UserResource::getUrl()),
+
+                \Filament\Actions\Action::make('warehouses')
+                    ->label(__('fields.warehouses'))
+                    ->url(fn() => WarehouseResource::getUrl()),
+
+                \Filament\Actions\Action::make('suppliers')
+                    ->label(__('fields.suppliers'))
+                    ->url(fn() => SupplierResource::getUrl()),
+
                 \Filament\Actions\Action::make('tax_profiles')
                     ->label(__('fields.tax_profiles'))
                     ->url(fn() => TaxProfileResource::getUrl()),
 
-                \Filament\Actions\Action::make('level_1')
-                    ->label(__('fields.level_1'))
-                    ->url(fn() => Acc1Resource::getUrl()),
-
-                \Filament\Actions\Action::make('level_2')
-                    ->label(__('fields.level_2'))
-                    ->url(fn() => Acc2Resource::getUrl()),
-
-                \Filament\Actions\Action::make('level_3')
-                    ->label(__('fields.level_3'))
-                    ->url(fn() => Acc3Resource::getUrl()),
-
-                \Filament\Actions\Action::make('level_4')
-                    ->label(__('fields.level_4'))
-                    ->url(fn() => Acc4Resource::getUrl()),
+//                \Filament\Actions\Action::make('level_1')
+//                    ->label(__('fields.level_1'))
+//                    ->url(fn() => Acc1Resource::getUrl()),
+//
+//                \Filament\Actions\Action::make('level_2')
+//                    ->label(__('fields.level_2'))
+//                    ->url(fn() => Acc2Resource::getUrl()),
+//
+//                \Filament\Actions\Action::make('level_3')
+//                    ->label(__('fields.level_3'))
+//                    ->url(fn() => Acc3Resource::getUrl()),
+//
+//                \Filament\Actions\Action::make('level_4')
+//                    ->label(__('fields.level_4'))
+//                    ->url(fn() => Acc4Resource::getUrl()),
 
             ])->label(__('fields.more_settings'))->button(),
 
-            ClearCache::make(),
+//            ClearCache::make(),
         ];
     }
 }

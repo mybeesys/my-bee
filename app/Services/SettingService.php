@@ -173,14 +173,23 @@ class SettingService
         ];
     }
 
-    public function rulesForString($required = true)
+    public function rulesForString($required = true, $maxLength = 255, $endsWith = null)
     {
+        $rules = ["string"];
+
         if ($required)
-            return [
-                "value" => ["required", "string", "max:255"]
-            ];
+            $rules[] = "required";
+        else
+            $rules[] = "nullable";
+
+        if ($maxLength)
+            $rules[] = "max:$maxLength";
+
+        if ($endsWith)
+            $rules[] = "ends_with:$endsWith";
+
         return [
-            "value" => ["nullable", "string", "max:255"]
+            "value" => $rules
         ];
     }
 

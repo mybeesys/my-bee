@@ -18,7 +18,6 @@ class UniqueTenantItemRule implements ValidationRule
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-
         //TextInput('barcode')->rules([new UniqueTenantItemRule(Product::class, 'barcode')]);
         //for example
         //tenant one cant have duplicate barcode (bc1)

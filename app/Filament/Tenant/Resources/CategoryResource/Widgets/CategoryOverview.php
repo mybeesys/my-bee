@@ -12,10 +12,10 @@
         public function getCards(): array
         {
             return [
-                Card::make(__('fields.main_categories'), Category::main()->count())
-                    ->color('primary'),
-                Card::make(__('fields.all_categories'), Category::count())
-                    ->color('success'),
+//                Card::make(__('fields.main_categories'), Category::main()->count())
+//                    ->color('primary'),
+//                Card::make(__('fields.all_categories'), Category::count())
+//                    ->color('success'),
             ];
         }
 

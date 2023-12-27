@@ -18,7 +18,7 @@ class Acc3Resource extends Resource
 
     protected static ?string $recordTitleAttribute = "name";
 
-    protected static ?string $slug = "finance/accounts-tree/level-three";
+    protected static ?string $slug = "finance/tree-accounts/level-three";
 
     protected static ?int $navigationSort = 6;
 

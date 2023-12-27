@@ -31,4 +31,19 @@ class TaxProfile extends BaseModel
         }
         return implode(', ', $descriptions);
     }
+
+    public static function asOptions()
+    {
+        $options = [];
+
+        $data = TaxProfile::with('taxes')
+            ->has('taxes')
+            ->get();
+
+        foreach ($data as $item)
+        {
+            $options[$item->id] = $item->name . " (" . $item->total_percentages . "%)";
+        }
+        return $options;
+    }
 }

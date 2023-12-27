@@ -36,6 +36,8 @@ class UserResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'first_name';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function getModelLabel(): string
     {
         return __('fields.user');
@@ -142,7 +144,11 @@ class UserResource extends Resource
                                 ->required(function ($operation) {
                                     return $operation == "create";
                                 })
-                                ->relationship('tenants', 'name'),
+                                ->relationship('tenants', 'name',
+                                    modifyQueryUsing: fn(Builder $query) => $query->whereHas('client', function (Builder $builder){
+                                        $builder->where('user_id', auth()->id());
+                                    })
+                                ),
                         ])
                         ->columns(1),
 

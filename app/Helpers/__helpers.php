@@ -352,7 +352,17 @@ function generate_payment_voucher()
 function generate_invoice_no()
 {
     $item = \App\Models\Invoice::latest()->first();
-    return str_pad($item ? (int)$item->no + 1 : 1, 6, '0', STR_PAD_LEFT);
+    $startingNumber = intval(setting('invoice_starting_number', 1));
+    $length = intval(setting('invoice_number_digits', 6));
+    $prefix = setting('invoice_prefix', null);
+
+    if ($item) {
+        $no = intval(preg_replace('/\D/', '', $item->no)) + 1;
+    } else {
+        $no = $startingNumber;
+    }
+
+    return $prefix . str_pad($no, $length, '0', STR_PAD_LEFT);
 }
 
 //    function str($string = null)
@@ -442,6 +452,41 @@ function make_general_voucher_op(): \App\Models\Op
         [
             'tenant_id' => filament()->getTenant()->id,
             'type' => "general-voucher", //قيد عام
+            'user_id' => auth()->id(),
+            'no' => generate_op(),
+            'payment_voucher_no' => null,
+            'date' => now(),
+            'locked_at' => null,
+            'submitted_at' => null,
+            'files' => null,
+        ]
+    );
+}
+
+function make_cash_receipt_voucher_op(): \App\Models\Op
+{
+    return \App\Models\Op::create(
+        [
+            'tenant_id' => filament()->getTenant()->id,
+            'type' => "cash-receipt-voucher", //قيد عام
+            'user_id' => auth()->id(),
+            'no' => generate_op(),
+            'payment_voucher_no' => null,
+            'date' => now(),
+            'locked_at' => null,
+            'submitted_at' => null,
+            'files' => null,
+        ]
+    );
+}
+
+
+function make_cash_payment_voucher_op(): \App\Models\Op
+{
+    return \App\Models\Op::create(
+        [
+            'tenant_id' => filament()->getTenant()->id,
+            'type' => "cash-payment-voucher",
             'user_id' => auth()->id(),
             'no' => generate_op(),
             'payment_voucher_no' => null,
@@ -660,7 +705,7 @@ if (!function_exists('custom_slug')) {
 
             $amount = Str::replace(',', '', $amount);
 
-            $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT);
+//            $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT);
 
             if (blank($amount) or !is_number($amount))
                 return null;
@@ -734,10 +779,18 @@ if (!function_exists('custom_slug')) {
         }
     }
 
-    if (!function_exists('currency_decimals')) {
-        function currency_decimals(): int
+    if (!function_exists('main_currency_symbol')) {
+        function main_currency_symbol($default = "$"): ?string
         {
-            return setting('main_currency_decimals', 4);
+            return \App\Models\Currency::where('iso_code', main_currency_iso_code())->first()?->symbol ?? $default;
+        }
+    }
+
+
+    if (!function_exists('currency_decimals')) {
+        function currency_decimals($default = 2): int
+        {
+            return setting('main_currency_decimals', $default);
         }
     }
 
@@ -750,5 +803,31 @@ if (!function_exists('custom_slug')) {
         }
     }
 
+    if (!function_exists('extract_values_from_array_that_has_key_starts_with')) {
+        function extract_values_from_array_that_has_key_starts_with($startWith, array $data): array
+        {
+            $result = [];
+            foreach ($data as $key => $value) {
+                if(str($key)->startsWith($startWith)){
+                    $result[] = $value;
+                }
+            }
+            return $result;
+        }
+    }
+
+    if (!function_exists('extract_data_from_array_that_has_key_starts_with')) {
+        function extract_data_from_array_that_has_key_starts_with($startWith, array $data): array
+        {
+            $result = [];
+            foreach ($data as $key => $value) {
+                if(str($key)->startsWith($startWith)){
+                    $arr = explode($startWith, $key);
+                    $result[] = $arr[1];
+                }
+            }
+            return $result;
+        }
+    }
 }
 

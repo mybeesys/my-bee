@@ -22,9 +22,20 @@ class FilamentPanelsUserSettings
             ->databaseNotifications((bool)user_setting('enable_notifications', true))
             ->topNavigation((bool)user_setting('enable_top_navigation', false));
 
+        //store the primary color to cookies using:
+        //Cookie::queue(Cookie::make($key, $value))
+
+        if(auth()->user())
+        {
+            $primaryColor = user_setting('primary_color', default: "#e8d41b");
+        }else{
+            $primaryColor = $request->cookies->get('primary_color', default: "#e8d41b");
+        }
+
         FilamentColor::register([
-            'primary' => user_setting('primary_color', "#e8d41b"),
+            'primary' => $primaryColor,
         ]);
+
         return $next($request);
     }
 }
