@@ -7,8 +7,10 @@ use App\Filament\Tenant\Resources\ProductResource\RelationManagers;
 use App\Filament\Tenant\Resources\ProductResource\Widgets\PricingOverview;
 use App\Models\Acc4;
 use App\Models\Category;
+use App\Models\ItemExtra;
 use App\Models\ItemPrice;
 use App\Models\Product;
+use App\Models\ProductExtra;
 use App\Models\ProductionCost;
 use App\Models\ProductProductionCost;
 use App\Models\ProductRawMaterial;
@@ -24,6 +26,7 @@ use App\Models\Warehouse;
 use App\Rules\UniqueTenantItemRule;
 use App\Services\FilamentVariantBuilderService;
 use App\Services\PricingService;
+use App\Services\StockService;
 use Awcodes\FilamentTableRepeater\Components\TableRepeater;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -35,6 +38,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Illuminate\Database\Eloquent\Builder;
@@ -53,11 +57,11 @@ class ProductResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    protected static ?string $slug = "products/products";
+    protected static ?string $slug = "store/products";
 
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.products');
+        return user_setting('fav.products', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
     }
 
     public static function getLabel(): ?string
@@ -124,7 +128,7 @@ class ProductResource extends Resource
 
                         TextInput::make('sku')
                             ->required()
-                            ->afterStateHydrated(fn(TextInput $component) => $component->state(random_int(100000000, 999999999)))
+                            ->afterStateHydrated(fn(TextInput $component, $record, $operation) => $operation === "create" ? $component->state(random_int(100000000, 999999999)) : $record)
                             ->rules([new UniqueTenantItemRule(Product::class, 'sku', $form->getRecord()?->id)])
                             ->label(__('fields.sku')),
 
@@ -138,10 +142,10 @@ class ProductResource extends Resource
 
                                         TextInput::make('name')->label(__('fields.name'))->required(),
 
-                                        Select::make('parent_id')
-                                            ->label(__('fields.category_parent'))
-                                            ->options(Category::canBecomeParent()->pluck('name', 'id'))
-                                            ->searchable(),
+//                                        Select::make('parent_id')
+//                                            ->label(__('fields.category_parent'))
+//                                            ->options(Category::canBecomeParent()->pluck('name', 'id'))
+//                                            ->searchable(),
 
                                         Forms\Components\TextInput::make('sort')
                                             ->label(__('fields.sort'))
@@ -178,7 +182,28 @@ class ProductResource extends Resource
                     ])->columns(5),
 
 
+                Forms\Components\Section::make()->schema([
+
+                    Forms\Components\Hidden::make('type')->default('basic'),
+
+                    Forms\Components\Checkbox::make('enable_variations')
+                        ->live()
+                        ->label(__('fields.enable_variations'))
+                        ->helperText(__('fields.enable_variations_description'))
+                        ->dehydrated(false)
+                        ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            if ($state) {
+                                $set('type', 'variants');
+                            } else {
+                                $set('type', 'basic');
+                            }
+                        })
+                        ->default(0),
+
+                ]),
+
                 Forms\Components\Section::make(__('fields.images'))
+                    ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == false)
                     ->collapsible()
                     ->schema([
 
@@ -191,6 +216,7 @@ class ProductResource extends Resource
                             ->multiple()
                             ->maxSize(2048)
                             ->disk('cdn')
+                            ->collection('images')
                             ->directory('products'),
 
                         //                    Forms\Components\Actions::make([
@@ -202,325 +228,12 @@ class ProductResource extends Resource
 
                     ]),
 
-                Forms\Components\Section::make(__('fields.product_type'))
-                    ->collapsible()
-                    ->schema([
-                        Forms\Components\Section::make()->schema([
-
-                            Forms\Components\Radio::make('type')
-                                ->label("")
-                                ->required()
-                                ->live()
-                                ->disabledOn('edit')
-                                ->options([
-                                    Product::$TYPE_BASIC => __('fields.product_type_basic'),
-                                    Product::$TYPE_VARIANTS => __('fields.product_type_variants'),
-                                    Product::$TYPE_UNITS => __('fields.product_type_units'),
-                                    Product::$TYPE_SERVICE => __('fields.product_type_service'),
-                                ])->descriptions([
-                                    Product::$TYPE_BASIC => __('fields.product_type_basic_description'),
-                                    Product::$TYPE_UNITS => __('fields.product_type_units_description'),
-                                    Product::$TYPE_VARIANTS => __('fields.enable_variations_description'),
-                                    Product::$TYPE_SERVICE => __('fields.product_type_service_description'),
-                                ]),
-
-
-//                            Forms\Components\Checkbox::make('enable_variations')
-//                                ->live()
-//                                ->label(__('fields.enable_variations'))
-//                                ->helperText(__('fields.enable_variations_description'))
-//                                ->default(0),
-
-                        ]),
-                    ]),
-
-
-                Forms\Components\Section::make(__('fields.units'))
-                    ->collapsible()
-                    ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_UNITS)
-                    ->schema([
-//                    Forms\Components\Checkbox::make('add_more_units')->live()->default(0),
-
-
-                        Forms\Components\Section::make()
-                            ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_UNITS)
-                            ->schema([
-
-                                Select::make('main_unit_id')
-                                    ->label(__('fields.main_unit'))
-                                    ->options(Unit::pluck('name', 'id'))
-                                    ->required()
-                                    ->live()
-                                    ->createOptionForm([
-                                        Forms\Components\Section::make(__('fields.unit'))
-                                            ->schema([
-
-                                                TextInput::make('name')
-                                                    ->label(__('fields.name'))
-                                                    ->required()
-                                                    ->autofocus()
-                                                    ->rules([new UniqueTenantItemRule(Unit::class, 'name')]),
-                                            ])
-                                    ])
-                                    ->createOptionUsing(function ($data) {
-                                        $model = new Unit();
-
-                                        $model->tenant_id = filament()->getTenant()->id;
-                                        $model->name = $data['name'];
-                                        $model->save();
-
-                                        return $model->id;
-                                    })
-                                    ->createOptionAction(
-                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
-                                    )
-                                    ->searchable(),
-
-
-                                TextInput::make('unit_cost')
-                                    ->label(__('fields.purchase_price'))
-                                    ->live(true)
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
-                                    ->mainCurrencySuffix(),
-
-                                TextInput::make('price')
-                                    ->label(__('fields.sale_price'))
-                                    ->live(true)
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
-                                    ->mainCurrencySuffix(),
-
-                                TextInput::make('discount_price')
-                                    ->label(__('fields.discount_price'))
-                                    ->default(null)
-                                    ->numeric()
-                                    ->lt('price')
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->live(true)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
-                                    ->mainCurrencySuffix(),
-
-
-                                Select::make('tax_profile_id')
-                                    ->label(__('fields.tax'))
-                                    ->options(TaxProfile::asOptions())
-                                    ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
-                                    ->createOptionUsing(function ($data) {
-                                        $data['tenant_id'] = filament()->getTenant()->id;
-                                        $model = TaxProfile::create(Arr::except($data, ['taxes']));
-                                        foreach ($data['taxes'] as $tax) {
-                                            $model->taxes()->create([
-                                                'tenant_id' => $data['tenant_id'],
-                                                'tax_profile_id' => $model->id,
-                                                'description' => $tax['description'],
-                                                'percent' => $tax['percent'],
-                                            ]);
-                                        }
-                                        return $model->id;
-                                    })
-                                    ->createOptionAction(
-                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
-                                    ),
-
-
-                                Select::make('warehouse_id')
-                                    ->required()
-                                    ->label(__('fields.warehouse'))
-                                    ->options(Warehouse::all()->pluck('name', 'id'))
-                                    ->default(Warehouse::getMainWarehouse()?->id)
-                                    ->createOptionForm([
-                                        Forms\Components\Section::make(__('fields.warehouse'))
-                                            ->schema([
-                                                TextInput::make('name')
-                                                    ->label(__('fields.name'))
-                                                    ->required()
-                                                    ->autofocus()
-                                                    ->rules([new UniqueTenantItemRule(Warehouse::class, 'name')]),
-                                            ])
-                                    ])
-                                    ->createOptionUsing(function ($data) {
-                                        $model = new Warehouse();
-
-                                        $model->tenant_id = filament()->getTenant()->id;
-                                        $model->name = $data['name'];
-                                        $model->save();
-
-                                        return $model->id;
-                                    })
-                                    ->createOptionAction(
-                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
-                                    ),
-
-                                TextInput::make('qty')
-                                    ->label(__('fields.qty'))
-                                    ->numeric()
-                                    ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-                                    ->minValue(0)
-                                    ->visible(fn(Forms\Get $get) => $get('unlimited_qty') == false)
-                                    ->maxValue(PHP_INT_MAX),
-
-                            ])->columns(4),
-
-
-                        TableRepeater::make('units')
-                            ->label(__('fields.more_units'))
-                            ->relationship('units')
-                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                            ->hideLabels()
-                            ->emptyLabel(__('fields.no_records_placeholder'))
-                            ->columnWidths([
-                                'barcode' => "180px",
-                                'unit_id' => "180px",
-                                'unit_count_from_main_unit' => "100px",
-                                'warehouse_id' => "160px",
-                                'qty' => "100px",
-                                'unit_cost' => "170px",
-                                'price' => "170px",
-                                'discount_price' => "170px",
-                            ])
-                            ->schema([
-
-                                hidden_tenant_id_field(),
-
-                                Forms\Components\Hidden::make('sku')
-                                    ->afterStateHydrated(fn(Forms\Components\Hidden $component) => $component->state(random_int(100000000, 999999999))),
-
-
-                                Select::make('unit_id')
-                                    ->label(__('fields.unit'))
-                                    ->required()
-                                    ->searchable()
-                                    ->createOptionForm([
-                                        Forms\Components\Section::make(__('fields.unit'))
-                                            ->schema([
-
-                                                TextInput::make('name')
-                                                    ->label(__('fields.name'))
-                                                    ->required()
-                                                    ->autofocus()
-                                                    ->rules([new UniqueTenantItemRule(Unit::class, 'name')]),
-                                            ])
-                                    ])
-                                    ->createOptionUsing(function ($data) {
-                                        $model = new Unit();
-
-                                        $model->tenant_id = filament()->getTenant()->id;
-                                        $model->name = $data['name'];
-                                        $model->save();
-
-                                        return $model->id;
-                                    })
-                                    ->createOptionAction(
-                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
-                                    )
-                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-                                    ->options(function (Forms\Get $get) {
-                                        $main_unit_id = $get('../../main_unit_id');
-
-                                        if ($main_unit_id) {
-                                            return Unit::whereNotIn('id', [$main_unit_id])->pluck('name', 'id')->toArray();
-                                        }
-                                        return Unit::pluck('name', 'id')->toArray();
-                                    }),
-
-                                TextInput::make('unit_count_from_main_unit')
-                                    ->label(__('fields.unit_count_from_main_unit'))
-                                    ->required()
-                                    ->live(true)
-                                    ->numeric()
-                                    ->rules([
-                                        function ($component) {
-                                            return function (string $attribute, $value, \Closure $fail) use ($component) {
-
-                                                $items = $component->getContainer()->getParentComponent()->getState();
-
-                                                $selected = array_column($items, $component->getName());
-
-                                                if (count(array_unique($selected)) < count($selected)) {
-                                                    $fail('Duplicate unit counts.');
-                                                }
-                                            };
-                                        },
-                                    ])
-                                    ->minValue(2),
-
-                                TextInput::make('barcode')
-                                    ->label(__('fields.barcode'))
-                                    ->maxLength(255),
-
-                                Select::make('warehouse_id')
-                                    ->required()
-                                    ->label(__('fields.warehouse'))
-                                    ->options(Warehouse::all()->pluck('name', 'id'))
-                                    ->default(Warehouse::getMainWarehouse()?->id)
-                                    ->createOptionAction(
-                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
-                                    ),
-
-                                TextInput::make('qty')
-                                    ->label(__('fields.qty'))
-                                    ->numeric()
-                                    ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-                                    ->minValue(0)
-                                    ->maxValue(PHP_INT_MAX),
-
-                                TextInput::make('unit_cost')
-                                    ->label(__('fields.purchase_price'))
-                                    ->default(null)
-//                                ->required()
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->live(true)
-//                                ->gt('data.main_unit_price', isStatePathAbsolute: true)
-                                    ->validationMessages([
-                                        'gt' => __('fields.validate_unit_price_must_be_bigger_than_main_unit_price'),
-                                    ])
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null),
-
-                                TextInput::make('price')
-                                    ->label(__('fields.sale_price'))
-                                    ->default(null)
-                                    //->required()
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->gt('unit_cost')
-                                    ->live(true)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null),
-
-                                TextInput::make('discount_price')
-                                    ->label(__('fields.discount_price'))
-                                    ->default(null)
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->lt('price')
-                                    ->live(true)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null),
-
-                            ])
-                            ->reorderable()
-                            ->defaultItems(0)
-                            ->addActionLabel(__('fields.add'))
-                            ->columns(5)
-                            ->columnSpanFull()
-
-                    ])->columns(2),
-
                 Forms\Components\Section::make(__('fields.options'))
-                    ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_VARIANTS)
+                    ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == true)
                     ->collapsible()
-                    ->collapsed()
                     ->schema([
                         Repeater::make('variant_options')
-                            ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_VARIANTS)
+                            ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == true)
                             ->label(__('fields.options'))
                             ->relationship('variantOptions')
                             ->grid(4)
@@ -542,7 +255,7 @@ class ProductResource extends Resource
                                     ->required()
                                     ->label(__('fields.value'))
                                     ->multiple()
-                                    ->live(true)
+//                                    ->live(true)
                                     ->afterStateUpdated(fn($livewire) => self::updateVariantsViewV2($livewire, 'Repeater:variant_options:select:values:afterStateUpdated'))
                                     ->options(function (Forms\Get $get) {
                                         $variantLib = VariantLibrary::find($get('variant_library_id'));
@@ -558,67 +271,10 @@ class ProductResource extends Resource
                         Forms\Components\Hidden::make('variants_count')->default(0)->dehydrated(false),
 
                         Forms\Components\Section::make()
-                            ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_VARIANTS)
+                            ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == true)
                             ->key('section-v')
                             ->headerActions(
                                 [
-                                    Forms\Components\Actions\Action::make('update_all_qty')
-                                        ->label(__('fields.variants_update_all_qty'))
-                                        ->color('gray')
-                                        ->requiresConfirmation()
-                                        ->form([
-                                            Forms\Components\Section::make()
-                                                ->schema([
-                                                    TextInput::make('qty')
-                                                        ->label(__('fields.variants_new_qtys'))
-                                                        ->required()
-                                                        ->numeric()
-                                                        ->minValue(0)
-                                                        ->maxValue(PHP_INT_MAX)
-                                                        ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-                                                        ->hidden(fn(Forms\Get $get) => $get('unlimited') == true),
-
-                                                    Forms\Components\Checkbox::make('unlimited')
-                                                        ->live()
-                                                        ->label(__('fields.unlimited_qty')),
-                                                ])
-                                        ])
-                                        ->action(function (array $data, $livewire) {
-
-                                            $unlimited = $data['unlimited'];
-                                            foreach ($livewire->data['variants'] ?? [] as $key => $variant) {
-                                                if ($unlimited) {
-                                                    $livewire->data['variants'][$key]['unlimited_qty'] = true;
-                                                    $livewire->data['variants'][$key]['qty'] = null;
-                                                } else {
-                                                    $livewire->data['variants'][$key]['unlimited_qty'] = false;
-                                                    $livewire->data['variants'][$key]['qty'] = $data['qty'];
-                                                }
-                                            }
-                                        }),
-
-                                    Forms\Components\Actions\Action::make('update_all_unit_cost')
-                                        ->label(__('fields.variants_update_all_unit_cost'))
-                                        ->color('gray')
-                                        ->requiresConfirmation()
-                                        ->form([
-                                            Forms\Components\Section::make()
-                                                ->schema([
-                                                    TextInput::make('value')
-                                                        ->label(__('fields.value'))
-                                                        ->required()
-                                                        ->numeric()
-                                                        ->minValue(0)
-                                                        ->maxValue(PHP_INT_MAX)
-                                                        ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX]),
-                                                ])
-                                        ])
-                                        ->action(function (array $data, $livewire) {
-                                            foreach ($livewire->data['variants'] ?? [] as $key => $variant) {
-                                                $livewire->data['variants'][$key]['unit_cost'] = $data['value'];
-                                            }
-                                        }),
-
                                     Forms\Components\Actions\Action::make('update_all_price')
                                         ->label(__('fields.variants_update_all_price'))
                                         ->color('gray')
@@ -665,7 +321,7 @@ class ProductResource extends Resource
                                 ]
                             )->schema([
                                 TableRepeater::make('variants')
-                                    ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_VARIANTS)
+                                    ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == true)
                                     ->relationship('variants')
                                     ->hideLabels()
                                     ->emptyLabel(__('fields.no_records_placeholder'))
@@ -682,14 +338,39 @@ class ProductResource extends Resource
                                         return true;
                                     })
                                     ->minItems(1)
+//                                    ->mutateRelationshipDataBeforeCreateUsing(function (array $data) use ($form) {
+//                                        $unitCost = $data['unit_cost'];
+//                                        $price = $data['price'];
+//                                        $discount_price = $data['discount_price'];
+//
+//                                        PricingService::instance()->addPrice($form->getRecord(), $unitCost, $price, $discount_price);
+//
+//                                        return $data;
+//                                    })
+//                                    ->mutateRelationshipDataBeforeSaveUsing(function (array $data) use ($form) {
+//
+//                                        if($productVariant = ProductVariant::firstWhere('sku', $data['sku'])){
+//                                            $unitCost = $data['unit_cost'];
+//                                            $price = $data['price'];
+//                                            $discount_price = $data['discount_price'];
+//                                            PricingService::instance()->addPrice($productVariant, $unitCost, $price, $discount_price);
+//                                        }
+//
+//                                        return $data;
+//                                    })
+                                    ->mutateRelationshipDataBeforeFillUsing(function (array $data) use ($form) {
+                                        $data['price'] = PricingService::instance()->getItemPrice(ProductVariant::find($data['id']), 0);
+                                        $data['discount_price'] = PricingService::instance()->getItemDiscountPrice(ProductVariant::find($data['id']), null);
+                                        return $data;
+                                    })
                                     ->columnWidths([
                                         'name' => '200px',
-                                        'warehouse_id' => '200px',
-                                        'qty' => '90px',
-                                        'unlimited_qty' => '10px',
-                                        'unit_cost' => '135px',
-                                        'price' => '135px',
-                                        'discount_price' => '135px',
+//                                        'warehouse_id' => '200px',
+//                                        'qty' => '90px',
+//                                        'unlimited_qty' => '10px',
+//                                        'unit_cost' => '135px',
+                                        'price' => '200px',
+                                        'discount_price' => '200px',
                                     ])
                                     ->schema([
 
@@ -709,6 +390,20 @@ class ProductResource extends Resource
 
                                         Forms\Components\Hidden::make('name_ar'),
                                         Forms\Components\Hidden::make('name_en'),
+
+                                        SpatieMediaLibraryFileUpload::make('image')
+                                            ->label("")
+                                            ->image()
+                                            ->reorderable()
+                                            ->openable()
+                                            ->downloadable()
+                                            ->multiple()
+                                            ->maxSize(2048)
+                                            ->disk('cdn')
+                                            ->collection('images')
+                                            ->directory('variants'),
+
+//                                        Forms\Components\Placeholder::make('test'),
 
                                         TextInput::make('name')
                                             ->label(__('fields.option'))
@@ -737,38 +432,38 @@ class ProductResource extends Resource
                                             })
                                             ->dehydrated(false),
 
-                                        Select::make('warehouse_id')
-                                            ->required()
-                                            ->label(__('fields.warehouse'))
-                                            ->options(Warehouse::all()->pluck('name', 'id')),
+//                                        Select::make('warehouse_id')
+//                                            ->required()
+//                                            ->label(__('fields.warehouse'))
+//                                            ->options(Warehouse::all()->pluck('name', 'id')),
 
-                                        TextInput::make('qty')
-                                            ->label(__('fields.qty'))
-                                            ->numeric()
-                                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-                                            ->minValue(0)
-                                            ->disabled(fn(Forms\Get $get) => $get('unlimited_qty') == true)
-//                                        ->hint(fn(Forms\Get $get) => $get('unlimited_qty') == true ? __('fields.unlimited_qty') : "")
-                                            ->maxValue(PHP_INT_MAX),
+//                                        TextInput::make('qty')
+//                                            ->label(__('fields.qty'))
+//                                            ->numeric()
+//                                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
+//                                            ->minValue(0)
+////                                            ->disabled(fn(Forms\Get $get) => $get('unlimited_qty') == true)
+////                                        ->hint(fn(Forms\Get $get) => $get('unlimited_qty') == true ? __('fields.unlimited_qty') : "")
+//                                            ->maxValue(PHP_INT_MAX),
 
-                                        Forms\Components\Checkbox::make('unlimited_qty')
-                                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                                if ($state) {
-                                                    $set('qty', null);
-                                                } else {
-                                                    $set('qty', 0);
-                                                }
-                                            })
-                                            ->label(__('fields.unlimited_qty')),
+//                                        Forms\Components\Checkbox::make('unlimited_qty')
+//                                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+//                                                if ($state) {
+//                                                    $set('qty', null);
+//                                                } else {
+//                                                    $set('qty', 0);
+//                                                }
+//                                            })
+//                                            ->label(__('fields.unlimited_qty')),
 
-                                        TextInput::make('unit_cost')
-                                            ->numeric()
-                                            ->minValue(1)
-                                            ->maxValue(PHP_INT_MAX)
-                                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-                                            ->nullable()
-                                            ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
-                                            ->label(__('fields.purchase_price')),
+//                                        TextInput::make('unit_cost')
+//                                            ->numeric()
+//                                            ->minValue(1)
+//                                            ->maxValue(PHP_INT_MAX)
+//                                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
+//                                            ->nullable()
+//                                            ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
+//                                            ->label(__('fields.purchase_price')),
 
                                         TextInput::make('price')
                                             ->numeric()
@@ -776,8 +471,9 @@ class ProductResource extends Resource
                                             ->maxValue(PHP_INT_MAX)
                                             ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
                                             ->nullable()
-                                            ->gt('unit_cost')
+//                                            ->gt('unit_cost')
                                             ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
+                                            ->dehydrated(false)
                                             ->label(__('fields.price')),
 
                                         TextInput::make('discount_price')
@@ -788,76 +484,42 @@ class ProductResource extends Resource
                                             ->nullable()
                                             ->lt('price')
                                             ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
+                                            ->dehydrated(false)
                                             ->label(__('fields.discount_price')),
 
                                     ]),
                             ]),
                     ]),
 
-                Forms\Components\Section::make(__('fields.service_details'))
-                    ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_SERVICE)
-                    ->collapsible()
-                    ->schema([
-
-                        Forms\Components\Section::make()
-                            ->schema([
-
-                                TextInput::make('price')
-                                    ->label(__('fields.price'))
-                                    ->live(true)
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
-                                    ->mainCurrencySuffix(),
-
-                                TextInput::make('discount_price')
-                                    ->label(__('fields.discount_price'))
-                                    ->default(null)
-                                    ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(PHP_INT_MAX)
-                                    ->live(true)
-                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, 2, '.', '') : null)
-                                    ->mainCurrencySuffix(),
-
-                            ])->columns(4),
-                    ]),
-
-                Forms\Components\Section::make(__('fields.description'))
-                    ->collapsible()
-                    ->collapsed()
-                    ->schema([
-
-                        Forms\Components\RichEditor::make('description')
-                            ->label(""),
-
-                    ]),
-
                 Forms\Components\Section::make(__('fields.product_more_details'))
                     ->collapsible()
-                    ->visible(fn(Forms\Get $get): bool => $get('type') === Product::$TYPE_BASIC)
                     ->schema([
 
-
-                        TextInput::make('unit_cost')
-                            ->label(__('fields.purchase_price'))
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(PHP_INT_MAX)
-                            ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
-                            ->live(true)
-//                                ->gt('data.main_unit_price', isStatePathAbsolute: true)
-                            ->validationMessages([
-                                'gt' => __('fields.validate_unit_price_must_be_bigger_than_main_unit_price'),
-                            ])
-                            ->formatStateUsing(function ($record, $state) {
-                                $value = $record?->unit_cost ?? $state;
-                                return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
-                            })
-                            ->mainCurrencySuffix(),
+//                        TextInput::make('unit_cost')
+//                            ->readOnly(fn(Forms\Get $get): bool => $get('enable_variations') == true)
+//                            ->helperText(fn(Forms\Get $get) => $get('enable_variations') == true ? __("fields.calc_by_variants_msg") : null)
+//                            ->label(__('fields.purchase_price'))
+//                            ->numeric()
+//                            ->minValue(1)
+//                            ->maxValue(PHP_INT_MAX)
+//                            ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
+//                            ->live(true)
+////                                ->gt('data.main_unit_price', isStatePathAbsolute: true)
+//                            ->validationMessages([
+//                                'gt' => __('fields.validate_unit_price_must_be_bigger_than_main_unit_price'),
+//                            ])
+//                            ->dehydrated(false)
+//                            ->formatStateUsing(function ($record) {
+//                                $value = null;
+//                                if ($record)
+//                                    $value = PricingService::instance()->getItemCost($record);
+//                                return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
+//                            })
+//                            ->mainCurrencySuffix(),
 
                         TextInput::make('price')
+                            ->readOnly(fn(Forms\Get $get): bool => $get('enable_variations') == true)
+                            ->helperText(fn(Forms\Get $get) => $get('enable_variations') == true ? __("fields.calc_by_variants_msg") : null)
                             ->label(__('fields.sale_price'))
                             //->required()
                             ->numeric()
@@ -865,13 +527,18 @@ class ProductResource extends Resource
                             ->maxValue(PHP_INT_MAX)
                             ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
                             ->live(true)
-                            ->gt('unit_cost')
-                            ->formatStateUsing(function ($record, $state) {
-                                $value = $record?->price ?? $state;
+//                            ->gt('unit_cost')
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                $value = null;
+                                if ($record)
+                                    $value = PricingService::instance()->getItemPrice($record);
                                 return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
                             })->mainCurrencySuffix(),
 
                         TextInput::make('discount_price')
+                            ->readOnly(fn(Forms\Get $get): bool => $get('enable_variations') == true)
+                            ->helperText(fn(Forms\Get $get) => $get('enable_variations') == true ? __("fields.calc_by_variants_msg") : null)
                             ->label(__('fields.discount_price'))
                             ->numeric()
                             ->minValue(1)
@@ -879,14 +546,18 @@ class ProductResource extends Resource
                             ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
                             ->live(true)
                             ->lt('price')
-                            ->formatStateUsing(function ($record, $state) {
-                                $value = $record?->discount_price ?? $state;
+                            ->dehydrated(false)
+                            ->formatStateUsing(function ($record) {
+                                $value = null;
+                                if ($record)
+                                    $value = PricingService::instance()->getItemDiscountPrice($record);
                                 return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
                             })
                             ->mainCurrencySuffix(),
 
                         Select::make('tax_profile_id')
                             ->label(__('fields.tax'))
+                            ->placeholder('غير خاضع للضريبة')
                             ->options(TaxProfile::asOptions())
                             ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
                             ->createOptionUsing(function ($data) {
@@ -907,64 +578,199 @@ class ProductResource extends Resource
                             ),
 
 
-                        Select::make('warehouse_id')
-                            ->required()
-                            ->label(__('fields.warehouse'))
-                            ->options(Warehouse::all()->pluck('name', 'id'))
-                            ->default(Warehouse::getMainWarehouse()?->id)
-                            ->createOptionForm([
-                                Forms\Components\Section::make(__('fields.warehouse'))
-                                    ->schema([
-                                        TextInput::make('name')
-                                            ->label(__('fields.name'))
-                                            ->required()
-                                            ->autofocus()
-                                            ->rules([new UniqueTenantItemRule(Warehouse::class, 'name')]),
-                                    ])
-                            ])
-                            ->createOptionUsing(function ($data) {
-                                $model = new Warehouse();
+//                        Select::make('warehouse_id')
+//                            ->disabled(fn(Forms\Get $get): bool => $get('enable_variations') == true)
+//                            ->helperText(fn(Forms\Get $get) => $get('enable_variations') == true ? __("fields.calc_by_variants_msg") : null)
+//                            ->required(function (Forms\Get $get) {
+//                                return $get('enable_variations') == false;
+//                            })
+//                            ->label(__('fields.warehouse'))
+//                            ->options(Warehouse::all()->pluck('name', 'id'))
+//                            ->default(Warehouse::getMainWarehouse()?->id)
+//                            ->createOptionForm([
+//                                Forms\Components\Section::make(__('fields.warehouse'))
+//                                    ->schema([
+//                                        TextInput::make('name')
+//                                            ->label(__('fields.name'))
+//                                            ->required()
+//                                            ->autofocus()
+//                                            ->rules([new UniqueTenantItemRule(Warehouse::class, 'name')]),
+//                                    ])
+//                            ])
+//                            ->createOptionUsing(function ($data) {
+//                                $model = new Warehouse();
+//
+//                                $model->tenant_id = filament()->getTenant()->id;
+//                                $model->name = $data['name'];
+//                                $model->save();
+//
+//                                return $model->id;
+//                            })
+//                            ->createOptionAction(
+//                                fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
+//                            ),
 
-                                $model->tenant_id = filament()->getTenant()->id;
-                                $model->name = $data['name'];
-                                $model->save();
+//                        TextInput::make('qty')
+//                            ->readOnly(fn(Forms\Get $get): bool => $get('enable_variations') == true)
+//                            ->helperText(fn(Forms\Get $get) => $get('enable_variations') == true ? __("fields.calc_by_variants_msg") : null)
+//                            ->label(__('fields.qty'))
+//                            ->numeric()
+//                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
+//                            ->minValue(0)
+//                            ->dehydrated(false)
+//                            ->formatStateUsing(function ($record) {
+//                                return StockService::instance()->getAvailableStock($record);
+//                            })
+////                            ->visible(fn(Forms\Get $get) => $get('unlimited_qty') == false)
+//                            ->maxValue(PHP_INT_MAX),
 
-                                return $model->id;
-                            })
-                            ->createOptionAction(
-                                fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
-                            ),
 
-                        TextInput::make('qty')
-                            ->label(__('fields.qty'))
+                        TextInput::make('calories')
+                            ->label(__('fields.calories'))
+                            ->nullable()
                             ->numeric()
-                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-                            ->minValue(0)
-                            ->visible(fn(Forms\Get $get) => $get('unlimited_qty') == false)
+                            ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
+                            ->minValue(1)
                             ->maxValue(PHP_INT_MAX),
 
-                        Forms\Components\Checkbox::make('unlimited_qty')
-                            ->label(__('fields.unlimited_qty'))
-                            ->live()
+//                        Forms\Components\Checkbox::make('unlimited_qty')
+//                            ->label(__('fields.unlimited_qty'))
+//                            ->live()
+//                            ->columnSpanFull()
+//                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+//                                if ($state)
+//                                    $set('qty', null);
+//                                else
+//                                    $set('qty', 0);
+//                            })
+//                            ->default(0),
+
+                        Forms\Components\RichEditor::make('description')
                             ->columnSpanFull()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
-                                if ($state)
-                                    $set('qty', null);
-                                else
-                                    $set('qty', 0);
-                            })
-                            ->default(0),
+                            ->label(__('fields.description')),
 
                     ])->columns(4),
 
 
+                Forms\Components\Section::make(__('fields.product_extras'))
+                    ->collapsible()
+                    ->schema([
+
+                        TableRepeater::make('extras_table')
+                            ->label("")
+                            ->defaultItems(0)
+                            ->relationship('extras')
+                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
+                            ->hideLabels()
+                            ->addActionLabel(__('fields.add'))
+                            ->emptyLabel(__('fields.no_records_placeholder'))
+                            ->columnWidths([
+                                'item_extra_id' => "200px",
+//                                'unit_cost' => "200px",
+                                'price' => "200px",
+                                'discount_price' => "200px",
+                            ])
+                            ->mutateRelationshipDataBeforeFillUsing(function (array $data) use ($form) {
+                                $data['price'] = PricingService::instance()->getItemPrice(ProductExtra::find($data['id']), 0);
+                                $data['discount_price'] = PricingService::instance()->getItemDiscountPrice(ProductExtra::find($data['id']), null);
+                                return $data;
+                            })
+                            ->schema([
+
+                                hidden_tenant_id_field(),
+
+                                Select::make('item_extra_id')
+                                    ->required()
+                                    ->label(__('fields.product_extra'))
+                                    ->options(ItemExtra::pluck('name', 'id'))
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->createOptionForm([
+                                        Forms\Components\Section::make()->schema([
+                                            TextInput::make('name')
+                                                ->label(__('fields.name'))
+                                                ->required()
+                                                ->placeholder(__('fields.extra_placeholder'))
+                                                ->autofocus()
+                                                ->rules([new UniqueTenantItemRule(ItemExtra::class, 'name')]),
+                                        ])
+                                    ])
+                                    ->createOptionUsing(function ($data) {
+                                        $data['tenant_id'] = filament()->getTenant()->id;
+                                        $model = ItemExtra::create($data);
+                                        return $model->id;
+                                    })
+                                    ->createOptionAction(
+                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth(MaxWidth::Small),
+                                    ),
+
+//                                TextInput::make('unit_cost')
+//                                    ->required()
+//                                    ->label(__('fields.purchase_price'))
+//                                    ->numeric()
+//                                    ->minValue(1)
+//                                    ->maxValue(PHP_INT_MAX)
+//                                    ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
+//                                    ->live(true)
+//                                    ->validationMessages([
+//                                        'gt' => __('fields.validate_unit_price_must_be_bigger_than_main_unit_price'),
+//                                    ])
+//                                    ->formatStateUsing(function ($record, $state) {
+//                                        $value = $record?->unit_cost ?? $state;
+//                                        return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
+//                                    })
+//                                    ->mainCurrencySuffix(),
+
+                                TextInput::make('price')
+                                    ->required()
+                                    ->label(__('fields.sale_price'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(PHP_INT_MAX)
+                                    ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
+                                    ->live(true)
+//                                    ->gt('unit_cost')
+                                    ->formatStateUsing(function ($record, $state) {
+                                        $value = $record?->price ?? $state;
+                                        return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
+                                    })
+                                    ->dehydrated(false)
+                                    ->mainCurrencySuffix(),
+
+                                TextInput::make('discount_price')
+                                    ->nullable()
+                                    ->label(__('fields.discount_price'))
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->maxValue(PHP_INT_MAX)
+                                    ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
+                                    ->live(true)
+                                    ->lt('price')
+                                    ->formatStateUsing(function ($record, $state) {
+                                        $value = $record?->discount_price ?? $state;
+                                        return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
+                                    })
+                                    ->dehydrated(false)
+                                    ->mainCurrencySuffix(),
+                            ]),
+
+                    ]),
+
                 Forms\Components\Section::make()->schema([
+
+                    Forms\Components\TextInput::make('sort')
+                        ->label(__('fields.product_sort'))
+                        ->nullable()
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(50000)
+                        ->extraInputAttributes(['min' => 1, 'max' => 50000]),
 
                     Forms\Components\Checkbox::make('published')
                         ->label(__('fields.product_published'))
+                        ->columnSpanFull()
                         ->default(1),
 
-                ]),
+                ])->columns(4),
 
             ]);
     }
@@ -978,7 +784,7 @@ class ProductResource extends Resource
                     ->label(__('fields.image'))
                     ->disk('cdn')
                     ->toggleable()
-                    ->collection('products'),
+                    ->collection('images'),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label(__('fields.type'))
@@ -987,22 +793,20 @@ class ProductResource extends Resource
                         if ($record->type === Product::$TYPE_BASIC)
                             return __('fields.product_type_basic');
 
-                        if ($record->type === Product::$TYPE_UNITS)
-                            return __('fields.product_type_units');
-
                         if ($record->type === Product::$TYPE_VARIANTS)
                             return __('fields.product_type_variants');
 
-                        if ($record->type === Product::$TYPE_SERVICE)
-                            return __('fields.product_type_service');
-
                         return "-";
+                    })
+                    ->description(function (Product $record) {
+                        if ($record->type === Product::$TYPE_VARIANTS)
+                            return $record->variants->count();
                     })
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('name')
                     //'console.log(\'clicked!\')'
-                    ->extraHeaderAttributes(['x-on:click' => 'console.log(\'clicked!\')'])
+//                    ->extraHeaderAttributes(['x-on:click' => 'console.log(\'clicked!\')'])
                     ->label(__('fields.name'))
                     ->searchable(),
 
@@ -1021,23 +825,46 @@ class ProductResource extends Resource
                     ->toggleable()
                     ->getStateUsing(function (Product $record) {
 
-                        if ($record->type === Product::$TYPE_BASIC or $record->type === Product::$TYPE_SERVICE) {
-                            return main_currency_iso_code() . " " . format_amount($record->getPrice());
+                        if ($record->type === Product::$TYPE_BASIC) {
+                            $itemPrice = PricingService::instance()->getLastPrice($record);
+
+                            if ($itemPrice) {
+                                if ($itemPrice->has_discount) {
+                                    $originalPrice = format_amount($itemPrice->price) . " " . main_currency_iso_code();
+                                    $retailPrice = format_amount($itemPrice->retail_price) . " " . main_currency_iso_code();
+                                    return new HtmlString("<p><h1 style='text-decoration: line-through; font-weight: lighter; color: #ff5028;'>$originalPrice</h1>  $retailPrice</p>");
+                                } else {
+                                    return main_currency_iso_code() . " " . format_amount(PricingService::instance()->getRetailPrice($record));
+                                }
+                            }
                         }
 
-                        if ($record->type === Product::$TYPE_UNITS) {
-                            return main_currency_iso_code() . " " . format_amount($record->getPrice(unit_id: $record->main_unit_id));
-                        }
+                        if ($record->type === Product::$TYPE_VARIANTS)
+                            return PricingService::instance()->getProductVariantsPriceRange($record);
 
                         return "-";
                     })
                     ->description(function ($record) {
-                        if ($record->type === Product::$TYPE_UNITS and $record->mainUnit) {
-                            return $record->mainUnit?->name;
-                        }
+                    }),
+
+                Tables\Columns\TextColumn::make('qty')
+                    ->label(__('fields.qty'))
+                    ->getStateUsing(function (Product $record) {
+
+                        if ($record->type === Product::$TYPE_BASIC)
+                            return StockService::instance()->getAvailableStock($record);
+
                         if ($record->type === Product::$TYPE_VARIANTS) {
-                            return __('fields.product_type_variants');
+                            $qty = 0;
+
+                            foreach ($record->variants as $productVariant) {
+                                $qty += (StockService::instance()->getAvailableStock($productVariant));
+                            }
+
+                            return $qty;
                         }
+
+                        return "-";
                     }),
 
 //                Tables\Columns\TextColumn::make('description')
@@ -1063,9 +890,7 @@ class ProductResource extends Resource
                             ->multiple()
                             ->options([
                                 Product::$TYPE_BASIC => __('fields.product_type_basic'),
-                                Product::$TYPE_UNITS => __('fields.product_type_units'),
                                 Product::$TYPE_VARIANTS => __('fields.product_type_variants'),
-                                Product::$TYPE_SERVICE => __('fields.product_type_service'),
                             ]),
 
                         Forms\Components\DatePicker::make('created_from')
@@ -1238,6 +1063,7 @@ class ProductResource extends Resource
 
     public static function updateVariantsViewV2($livewire, $source = "unknown"): void
     {
+
         $record = $livewire->record;
 
         if ($record instanceof ProductVariantOption) {
@@ -1247,7 +1073,7 @@ class ProductResource extends Resource
         $data = FilamentVariantBuilderService::instance($record, $livewire)->buildOptions();
 
         if (count($data) > 0) {
-            $livewire->data['variants'] = $data;
+            $livewire->data['variants'] = collect($data)->sortByDesc('should_remove')->toArray();
         }
 
         $livewire->data['variants_count'] = count($data);
@@ -1275,7 +1101,7 @@ class ProductResource extends Resource
     {
         return [
 //            RelationManagers\VariantsRelationManager::class,
-//            RelationManagers\StocksRelationManager::class,
+            RelationManagers\StocksRelationManager::class,
 //            RelationManagers\RawMaterialsRelationManager::class,
 //            RelationManagers\CostsRelationManager::class,
         ];
@@ -1290,7 +1116,7 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'variants', 'mainUnit', 'units', 'acc4.lastPrice', 'acc4.prices', 'costs.ProductionCost', 'rawMaterials', 'stocks.warehouse'])->latest();
+        return parent::getEloquentQuery()->with(['category', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks'])->latest();
     }
 
     public static function getPages(): array

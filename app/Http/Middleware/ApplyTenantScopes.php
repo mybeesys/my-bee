@@ -7,20 +7,21 @@ use App\Models\Acc2;
 use App\Models\Acc3;
 use App\Models\Acc4;
 use App\Models\AccountingTransaction;
+use App\Models\AdditionalCost;
+use App\Models\AdditionalCostType;
 use App\Models\CashDet;
 use App\Models\Category;
 use App\Models\ContactUS;
+use App\Models\Coupon;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Driver;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Invoice;
-use App\Models\InvoiceAdditionalCost;
-use App\Models\InvoiceAdditionalCostType;
 use App\Models\InvoiceItem;
 use App\Models\InvoicePayment;
-use App\Models\InvoiceStatus;
+use App\Models\ItemExtra;
 use App\Models\ItemPrice;
 use App\Models\ItemStock;
 use App\Models\Op;
@@ -29,10 +30,13 @@ use App\Models\OrderDetail;
 use App\Models\PaymentVoucher;
 use App\Models\PaymentVoucherPayment;
 use App\Models\Product;
-use App\Models\PurchaseInvoiceStatus;
+use App\Models\ProductExtra;
+use App\Models\PurchasesReturns;
 use App\Models\ReceiptVoucher;
 use App\Models\ReceiptVoucherPayment;
-use App\Models\SaleInvoiceStatus;
+use App\Models\SalesReturns;
+use App\Models\Service;
+use App\Models\ServiceType;
 use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\Supplier;
@@ -42,13 +46,16 @@ use App\Models\Tenant;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\VariantLibrary;
-use App\Models\VariantLibraryOption;
-use App\Models\VariantOption;
 use App\Models\Warehouse;
+use App\Models\Workflow;
+use App\Models\WorkflowAction;
+use App\Models\WorkflowActionExecution;
+use App\Models\WorkflowCondition;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -89,9 +96,9 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
-        User::addGlobalScope(
-            fn(Builder $query) => $query->whereBelongsTo($tenant),
-        );
+//        User::addGlobalScope(
+//            fn(Builder $query) => $query->whereBelongsTo($tenant),
+//        );
 
         Category::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
@@ -129,11 +136,11 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
-        InvoiceAdditionalCostType::addGlobalScope(
+        AdditionalCostType::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
-        InvoiceAdditionalCost::addGlobalScope(
+        AdditionalCost::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
@@ -150,18 +157,6 @@ class ApplyTenantScopes
         );
 
         ReceiptVoucherPayment::addGlobalScope(
-            fn(Builder $query) => $query->whereBelongsTo($tenant),
-        );
-
-        InvoiceStatus::addGlobalScope(
-            fn(Builder $query) => $query->whereBelongsTo($tenant),
-        );
-
-        PurchaseInvoiceStatus::addGlobalScope(
-            fn(Builder $query) => $query->whereBelongsTo($tenant),
-        );
-
-        SaleInvoiceStatus::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
@@ -197,9 +192,17 @@ class ApplyTenantScopes
             return $model->belongsTo(Tenant::class, 'tenant_id');
         });
 
+//        Media::resolveRelationUsing('tenant', function ($model) {
+//            return $model->belongsTo(Tenant::class, 'tenant_id');
+//        });
+//
+//        Media::addGlobalScope(
+//            fn(Builder $query) => $query->whereBelongsTo($tenant),
+//        );
         Role::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
+
 
         Setting::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
@@ -229,11 +232,59 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
+        ProductExtra::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        ItemExtra::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
         VariantLibrary::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
-        VariantLibraryOption::addGlobalScope(
+        Coupon::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        ServiceType::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        AdditionalCostType::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        Service::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        AdditionalCost::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        Workflow::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        WorkflowAction::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        WorkflowActionExecution::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        WorkflowCondition::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        SalesReturns::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        PurchasesReturns::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 

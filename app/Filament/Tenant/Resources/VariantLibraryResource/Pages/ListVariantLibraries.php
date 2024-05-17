@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\VariantLibraryResource\Pages;
 
+use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Resources\VariantLibraryResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -14,6 +15,8 @@ class ListVariantLibraries extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            AddToFavourites::make('fav')
+                ->settingKey('fav.variant_libraries'),
             Actions\CreateAction::make(),
         ];
     }

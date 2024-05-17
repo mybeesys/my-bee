@@ -17,7 +17,7 @@ class UnitController extends BaseController
     public function index()
     {
         $data = Unit::with(['products'])->get();
-        return $this->responder(__('messages_data_retrieved'), 200, UnitResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, UnitResource::collection($data))->respond();
     }
 
     /**
@@ -31,7 +31,7 @@ class UnitController extends BaseController
 
         $unit = Unit::create($data);
 
-        return $this->responder(__('messages_data_stored'), 201, new UnitResource($unit))->respond();
+        return $this->responder(__('messages.api.created'), 201, new UnitResource($unit))->respond();
     }
 
     /**
@@ -40,7 +40,7 @@ class UnitController extends BaseController
     public function show(string $id)
     {
         $item = Unit::with(['products'])->findOrFail($id);
-        return $this->responder(__('messages_data_retrieved'), 200, new UnitResource($item))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, new UnitResource($item))->respond();
     }
 
     /**
@@ -50,7 +50,7 @@ class UnitController extends BaseController
     {
         $unit = Unit::with(['products'])->findOrFail($id);
         $unit->update($request->only(['name']));
-        return $this->responder(__('messages_data_retrieved'), 200, new UnitResource($unit))->respond();
+        return $this->responder(__('messages.api.updated'), 200, new UnitResource($unit))->respond();
     }
 
     /**
@@ -59,10 +59,10 @@ class UnitController extends BaseController
     public function destroy(string $id)
     {
         $unit = Unit::findOrFail($id);
-        abort_if(!$this->canDelete($unit), 403, "Permission denied");
+        abort_if(!$this->canDelete($unit), 403, __('messages.api.permission_denied'));
         try {
             $unit->delete();
-            return $this->responder(__('messages_data_deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

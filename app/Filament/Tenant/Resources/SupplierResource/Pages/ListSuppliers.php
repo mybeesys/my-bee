@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\SupplierResource\Pages;
 
+use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Pages\Settings;
 use App\Filament\Tenant\Resources\SupplierResource;
 use Filament\Actions\CreateAction;
@@ -14,6 +15,8 @@ class ListSuppliers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            AddToFavourites::make('fav')
+                ->settingKey('fav.suppliers'),
             CreateAction::make(),
         ];
     }

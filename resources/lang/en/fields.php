@@ -242,6 +242,7 @@ return [
     'purchases' => 'Purchases',
     'purchases_invoice' => 'Purchase invoice',
     'purchases_invoices' => 'Purchases invoices',
+    'purchase_invoice' => 'Purchase invoice',
 
     'invoices' => 'Invoices',
 
@@ -327,7 +328,7 @@ return [
     'record_added_alert' => 'Item created',
     'record_deleted_alert' => 'Item deleted',
 
-    'none_priced_items' => 'None priced products',
+    'none_priced_items' => 'Non-priced products',
 
     'total_items_cost_in_warehouses' => 'Total products cost in inventory',
     'total_items_cost_sdg_in_warehouses' => 'Total products cost sdg in inventories',
@@ -632,10 +633,16 @@ return [
 
     'payment_status' => 'Payment status',
 
+    'make_payment_voucher_for' => 'Payment voucher for',
+
     'make_receipt_voucher_for' => 'Receipt voucher for',
     'receipt_voucher_for_invoice' => 'Invoice',
-    'receipt_voucher_for_supplier' => 'Supplier',
+
+    'entity' => 'Entity',
+    'receipt_voucher_for_other_entity' => 'Other entity',
     'receipt_voucher_for_customer' => 'Client',
+    'payment_voucher_for_other_entity' => 'Other entity',
+    'payment_voucher_for_supplier' => 'Supplier',
 
     'total_payments' => 'Total payments',
 
@@ -673,7 +680,7 @@ return [
     'product_type_service' => 'Service',
     'product_type_basic_description' => 'For basic products that does not require complex options (variants)',
     'product_type_units' => 'Units',
-    'product_type_units_description' => 'Units for Point of sale products (POS)',
+    'product_type_units_description' => 'Units for multi-measurement products',
     'product_type_variants' => 'Variants',
     'unlimited_qty' => 'Unlimited quantity',
     'variants_update_all_qty' => 'Update all quantities',
@@ -702,7 +709,7 @@ return [
     'new_orders' => 'New orders',
 
     'order_status_new' => 'New',
-    'order_status_ready' => 'Ready',
+    'order_status_packaging' => 'Packaging',
     'order_status_delivery-in-progress' => 'Delivery in-progress',
     'order_status_completed' => 'Completed',
     'order_status_cancelled' => 'Cancelled',
@@ -712,5 +719,151 @@ return [
     'alert_saved' => 'Record saved',
 
 
+    'product_extras' => 'Product Extras',
+    'product_extra' => 'Product Extra',
+    'products_extras' => 'Products extras',
+    'extra_placeholder' => 'Ketchup and mayonnaise sauce',
+
+    'shop' => 'Shop',
+    'visit_shop' => 'Visit shop',
+
+    'product_sort' => 'Product Sorting in shop',
+
+    'config_invoice_alert' => 'Please configure invoices in settings to your needs before making invoices.',
+
+    'invoice_stock_released' => 'Stock released.',
+
+    'new_clients' => 'New clients ',
+    'latest_orders' => 'Latest orders',
+
+    'order_will_be_locked_after_this_action' => "Order will be locked after this action",
+
+    'canceled_reason' => 'Cancelled reason',
+
+    'latest_clients' => 'Latest clients',
+
+    'navigation_group_favourites' => 'Favourites',
+
+    'dashboard' => 'Dashboard',
+
+    'calc_by_variants_msg' => 'Value controlled by variants options',
+
+    'calories' => 'Calories',
+    'city' => 'City',
+    'district' => 'District',
+    'area' => 'Area',
+    'items' => 'Items',
+
+    'shop_link' => 'Shop link',
+
+    'shop_settings' => 'Shop Settings',
+    'english' => 'English',
+    'arabic' => 'Arabic',
+    'store_title' => 'Store title',
+    'store_address' => 'Store address',
+    'store_working_hours' => 'Store working hours',
+    'store_bio' => 'Store bio',
+    'store_hide_out_of_stock_products' => 'Hide out of stock products',
+
+    'coupon_span_one_time' => 'One time usage',
+    'coupon_span_specified_time' => 'Specified time',
+    'coupon_span_unlimited_time' => 'Unlimited time',
+    'valid_until' => 'Valid until',
+    'coupon_validity' => 'Validity',
+    'coupon_type_fixed' => 'Amount',
+    'coupon_type_percent' => 'Percentage',
+    'coupons' => 'Coupons',
+    'coupon' => 'Coupon',
+    'coupon_usages' => 'Coupon usage',
+
+    'social_media_links' => 'Social media links',
+
+    'social_label' => [
+        'facebook' => 'Facebook',
+        'twitter' => 'Twitter',
+        'instagram' => 'Instagram',
+        'youtube' => 'Youtube',
+        'snapchat' => 'Snapchat',
+        'whatsapp' => 'WhatsApp',
+    ],
+
+    'store_logo' => 'Logo',
+    'store_cover' => 'Cover',
+
+    'products_categories' => 'Products categories',
+
+    'store_enable_orders_tracking' => 'Enable orders tracking for clients',
+    'store_orders_tracking_mode' => 'Orders statuses update mode',
+    'store_manually_change_orders_statuses' => 'Manually',
+    'store_automatically_change_orders_statuses' => 'Automatically',
+    'store_orders_tracking_packaging_time_hours' => 'Orders packaging time in hours',
+    'store_orders_tracking_delivery_time_hours' => 'Orders delivery time in hours',
+
+    'nav_group_sales' => 'Sales',
+    'nav_group_purchases' => 'Purchases',
+    'nav_group_clients_and_suppliers' => 'Clients and suppliers',
+    'nav_group_transactions' => 'Transactions',
+    'nav_group_store' => 'Store',
+    'nav_group_reports' => 'Reports',
+
+    'price_offers' => 'Price offers',
+    'price_offer' => 'Price offer',
+
+    'supply_orders' => 'Supply Orders',
+    'supply_order' => 'Supply order',
+
+    'make_sales_invoice_from_price_offer' => 'Make invoice from price offer',
+
+    'make_purchases_invoice_from_supply_order' => 'Create invoice from supply order',
+
+
+    'name_en' => 'Name in english',
+    'name_ar' => 'Name in arabic',
+
+    'invoice_status_purchase_order' => 'Purchase Order',
+    'invoice_status_sale_order' => 'Sale Order',
+    'invoice_status_cancelled' => 'Cancelled',
+    'invoice_status_confirmed' => 'Confirmed',
+
+    'treasury_report' => 'Treasury accounts',
+    'bank_report' => 'Bank accounts',
+    'tax_report' => 'Tax report',
+
+    'add_purchases' => 'Add purchases',
+
+    'sales_returns' => 'Sales returns',
+    'purchases_returns' => 'Purchases returns',
+
+    'add_purchases_returns' => 'Add purchases return',
+    'add_sales_returns' => 'Add sales return',
+
+    'unit_price' => 'Unit price',
+
+
+    'balance_pre_transaction' => 'Balance pre transaction',
+    'balance_post_transaction' => 'Balance post transaction',
+
+    'service' => 'Service',
+    'services' => 'Services',
+    'service_type' => 'Service type',
+    'service_types' => 'Service types',
+    'price_after_tax' => 'price_after_tax',
+
+    'requested_qty_out_of_stock' => 'Requested qty out of stock',
+
+    'amount_includes_tax' => 'Amount includes tax',
+    'amount_without_tax' => 'Amount without tax',
+
+    'voucher_already_exists_for_this_invoice' => 'Voucher already exists for this invoice',
+
+
+    'services_types' => 'Services types',
+    'additional_costs_types' => 'Additional costs types',
+
+    'balance' => 'balance',
+    'account_statement' => 'Account statement',
+
+    'store_enable_stock_tracking' => 'Activate inventory control',
+    'store_enable_stock_tracking_hint' => 'When using this feature, you will have to create and adjust purchase invoices to control inventory effectively.',
 ];
 //

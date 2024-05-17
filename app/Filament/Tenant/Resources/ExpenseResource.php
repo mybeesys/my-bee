@@ -8,17 +8,25 @@ use App\Filament\Tenant\Resources\ExpenseResource\Widgets\ExpensesOverview;
 use App\Livewire\ExpenseChart;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\Invoice;
+use App\Models\TaxProfile;
 use App\Rules\UniqueTenantItemRule;
+use App\Services\MathService;
+use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
+use Illuminate\Support\HtmlString;
 
 class ExpenseResource extends Resource
 {
@@ -26,13 +34,13 @@ class ExpenseResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-wallet';
 
-    protected static ?string $slug = "expenses";
+    protected static ?string $slug = "expenses/manage";
 
     protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.expenses');
+        return user_setting('fav.expenses', false) ? __('fields.navigation_group_favourites') : null;
     }
 
     public static function getLabel(): ?string
@@ -81,19 +89,142 @@ class ExpenseResource extends Resource
                         )
                         ->options(ExpenseCategory::pluck('name', 'id')),
 
-                    Forms\Components\TextInput::make('amount')
-                        ->label(__("fields.amount_money"))
-                        ->numeric()
-                        ->minValue(1)
-                        ->currency()
-                        ->required(),
 
                     Forms\Components\DatePicker::make('date')
                         ->label(__("fields.date"))
                         ->required()
+                        ->default(now())
                         ->time(false),
 
                 ])->columns(3),
+
+                Section::make()->schema([
+
+                    Forms\Components\TextInput::make('amount')
+                        ->live()
+                        ->label(__("fields.amount_money"))
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(PHP_INT_MAX)
+                        ->currency()
+                        ->required(),
+
+                    Forms\Components\Toggle::make('amount_includes_tax')
+                        ->label(__('fields.amount_includes_tax'))
+                        ->visible(fn(Forms\Get $get) => is_number($get('amount')))
+                        ->live()
+                        ->dehydrated(false)
+                        ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            if (!$state) {
+                                $set('amount_without_tax', null);
+                                $set('tax', 0);
+                                $set('tax_percent', null);
+                            }
+                        })
+                        ->inline(false),
+
+                    Forms\Components\Hidden::make('tax_profile_data'),
+
+                    Select::make('tax_profile_id')
+                        ->required()
+                        ->visible(fn(Forms\Get $get) => $get('amount_includes_tax') == true and is_number($get('amount')))
+                        ->label(__('fields.tax'))
+                        ->live()
+                        ->afterStateUpdated(function ($state, $livewire, Set $set, Forms\Get $get) {
+                            $taxProfile = TaxProfile::find($state);
+                            if ($taxProfile) {
+                                if ($amount = $get('amount') and is_number($amount)) {
+                                    $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile);
+                                    $set('amount_without_tax', number_format($amount - $tax, currency_decimals(), '.', ''));
+                                    $set('tax', number_format($tax, currency_decimals(), '.', ''));
+                                }
+                                $set('tax_profile_data', json_encode(TaxProfile::with('taxes')->find($state)->toArray()));
+                            } else {
+                                $set('tax_profile_data', null);
+                            }
+                        })
+                        ->options(TaxProfile::asOptions())
+                        ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
+                        ->createOptionUsing(function ($data) {
+                            $data['tenant_id'] = filament()->getTenant()->id;
+                            $model = TaxProfile::create(Arr::except($data, ['taxes']));
+                            foreach ($data['taxes'] as $tax) {
+                                $model->taxes()->create([
+                                    'tenant_id' => $data['tenant_id'],
+                                    'tax_profile_id' => $model->id,
+                                    'description' => $tax['description'],
+                                    'percent' => $tax['percent'],
+                                ]);
+                            }
+                            return $model->id;
+                        })
+                        ->createOptionAction(
+                            fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
+                        )
+                        ->searchable(),
+
+                    Forms\Components\Hidden::make('tax')->default(0),
+
+//                    Forms\Components\TextInput::make('tax_percent')
+//                        ->visible(fn(Forms\Get $get) => $get('amount_includes_tax') == true and is_number($get('amount')))
+//                        ->label(__("fields.tax_percent"))
+//                        ->numeric()
+//                        ->live(true)
+//                        ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set){
+//                            if(is_number($state) and $amount = $get('amount') and is_number($amount)){
+//                                $tax = $state /100 * $amount;
+//                                fns()->sendDanger($tax, $amount);
+//                                $set('amount_without_tax', $amount - $tax);
+//                                $set('tax', $tax);
+//                            }else{
+//                                $set('amount_without_tax', null);
+//                                $set('tax', null);
+//                            }
+//                        })
+//                        ->minValue(1)
+//                        ->maxValue(100)
+//                        ->required(),
+
+                    Forms\Components\Placeholder::make('amount_without_tax')
+                        ->visible(fn(Forms\Get $get) => $get('tax_profile_id'))
+                        ->label(__('fields.amount_without_tax'))
+                        ->dehydrated(false)
+                        ->columnSpanFull()
+                        ->content(function ($livewire) {
+                            $value = $livewire->data['amount_without_tax'];
+                            return new HtmlString("<h3 style='color: #0464ff;font-weight: bold'>$value</h3>");
+                        }),
+
+                    Forms\Components\Placeholder::make('tax_placeholder')
+                        ->visible(fn(Forms\Get $get) => $get('tax_profile_id'))
+                        ->label(__('fields.tax'))
+                        ->columnSpanFull()
+                        ->content(function ($livewire) {
+                            $value = $livewire->data['tax'];
+                            return new HtmlString("<h3 style='color: #0464ff;font-weight: bold'>$value</h3>");
+                        }),
+
+//                    Forms\Components\TextInput::make('amount_without_tax')
+//                        ->visible(fn(Forms\Get $get) => $get('amount_includes_tax') == true and is_number($get('amount')))
+//                        ->label(__("fields.amount_without_tax"))
+//                        ->numeric()
+//                        ->minValue(1)
+//                        ->dehydrated(false)
+//                        ->readOnly()
+//                        ->currency()
+//                        ->required(),
+
+//                    Forms\Components\TextInput::make('tax')
+//                        ->visible(fn(Forms\Get $get) => is_number($get('amount')))
+//                        ->label(__("fields.tax"))
+//                        ->numeric()
+//                        ->default(0)
+//                        ->minValue(0)
+//                        ->readOnly()
+//                        ->lt('amount')
+//                        ->currency()
+//                        ->required(),
+                ])->columns(5),
 
                 Forms\Components\Section::make()->schema([
                     Forms\Components\Textarea::make('description')
@@ -132,6 +263,12 @@ class ExpenseResource extends Resource
                     ->label(__("fields.category"))
                     ->url(fn($record) => ExpenseCategoryResource::getUrl('edit', ['record' => $record->expense_category_id]), true)
                     ->searchable()
+                    ->description(function (Expense $record) {
+//                        $meta = json_decode($record->meta, true);
+                        if ($record->meta and $record->meta['invoice_id'] ?? null) {
+                            return Invoice::find($record->meta['invoice_id'])?->no;
+                        }
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('amount')
@@ -141,10 +278,29 @@ class ExpenseResource extends Resource
                     ->getStateUsing(function (Expense $record) {
                         return main_currency_iso_code() . " " . format_amount($record->amount);
                     })
-                    ->moneyTooltip()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
-                        return main_currency_iso_code() . " " . format_amount($state);
-                    })),
+                    ->moneyTooltip(),
+
+                Tables\Columns\TextColumn::make('tax')
+                    ->label(__("fields.tax"))
+                    ->searchable()
+                    ->sortable()
+                    ->description(function ($record){
+                        if($record->taxProfile){
+                            return collect($record->taxProfile->taxes)->sum('percent') . "%";
+                        }
+                    })
+                    ->getStateUsing(function (Expense $record) {
+                        return main_currency_iso_code() . " " . format_amount($record->tax);
+                    })
+                    ->moneyTooltip(),
+
+                Tables\Columns\TextColumn::make('total')
+                    ->label(__("fields.total"))
+                    ->sortable()
+                    ->getStateUsing(function (Expense $record) {
+                        return main_currency_iso_code() . " " . format_amount($record->total);
+                    })
+                    ->moneyTooltip(),
 
                 Tables\Columns\TextColumn::make('amount_words')
                     ->label(__("fields.amount_money_written"))
@@ -249,7 +405,7 @@ class ExpenseResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'media'])->latest();
+        return parent::getEloquentQuery()->with(['category', 'media', 'taxProfile'])->latest();
     }
 
     public static function getRelations(): array

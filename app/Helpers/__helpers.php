@@ -4,6 +4,7 @@ use App\Http\Requests\CreateSectionRequest;
 use App\Http\Requests\UpdateSectionRequest;
 use App\Models\Location;
 use App\Models\Section;
+use App\Models\Tenant;
 use App\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -351,7 +352,7 @@ function generate_payment_voucher()
 
 function generate_invoice_no()
 {
-    $item = \App\Models\Invoice::latest()->first();
+    $item = \App\Models\Invoice::orderByDesc('no')->first();
     $startingNumber = intval(setting('invoice_starting_number', 1));
     $length = intval(setting('invoice_number_digits', 6));
     $prefix = setting('invoice_prefix', null);
@@ -450,7 +451,7 @@ function make_general_voucher_op(): \App\Models\Op
 {
     return \App\Models\Op::create(
         [
-            'tenant_id' => filament()->getTenant()->id,
+            'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
             'type' => "general-voucher", //قيد عام
             'user_id' => auth()->id(),
             'no' => generate_op(),
@@ -467,7 +468,7 @@ function make_cash_receipt_voucher_op(): \App\Models\Op
 {
     return \App\Models\Op::create(
         [
-            'tenant_id' => filament()->getTenant()->id,
+            'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
             'type' => "cash-receipt-voucher", //قيد عام
             'user_id' => auth()->id(),
             'no' => generate_op(),
@@ -480,13 +481,46 @@ function make_cash_receipt_voucher_op(): \App\Models\Op
     );
 }
 
+function make_bank_transfer_receipt_voucher_op(): \App\Models\Op
+{
+    return \App\Models\Op::create(
+        [
+            'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
+            'type' => "bank-transfer-receipt-voucher",
+            'user_id' => auth()->id(),
+            'no' => generate_op(),
+            'payment_voucher_no' => null,
+            'date' => now(),
+            'locked_at' => null,
+            'submitted_at' => null,
+            'files' => null,
+        ]
+    );
+}
 
 function make_cash_payment_voucher_op(): \App\Models\Op
 {
     return \App\Models\Op::create(
         [
-            'tenant_id' => filament()->getTenant()->id,
+            'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
             'type' => "cash-payment-voucher",
+            'user_id' => auth()->id(),
+            'no' => generate_op(),
+            'payment_voucher_no' => null,
+            'date' => now(),
+            'locked_at' => null,
+            'submitted_at' => null,
+            'files' => null,
+        ]
+    );
+}
+
+function make_bank_transfer_payment_voucher_op(): \App\Models\Op
+{
+    return \App\Models\Op::create(
+        [
+            'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
+            'type' => "bank-transfer-payment-voucher",
             'user_id' => auth()->id(),
             'no' => generate_op(),
             'payment_voucher_no' => null,
@@ -650,184 +684,221 @@ if (!function_exists('custom_slug')) {
 
         return $string;
     }
+}
+/**
+ * (reject)/Check if collection has the given columns translated based on the current locale
+ *
+ * @param Collection $data collection
+ * @return array columns to be checked.
+ */
+function collection_has_trans(Collection $data, array $columns): Collection
+{
+    return $data->reject(function ($item) use ($columns) {
+        $result = false;
+        foreach ($columns as $column) {
+            $result = $item->{$column} == "";
+            if ($result == true)
+                return true;
+        }
+        return $result;
+    });
+}
 
+if (!function_exists('str_contains_with_results')) {
     /**
-     * (reject)/Check if collection has the given columns translated based on the current locale
-     *
-     * @param Collection $data collection
-     * @return array columns to be checked.
+     * str_contains_with_results
+     * returns the found needles
      */
-    function collection_has_trans(Collection $data, array $columns): Collection
+    function str_contains_with_results($haystack, $needles, $ignoreCase = false): array
     {
-        return $data->reject(function ($item) use ($columns) {
-            $result = false;
-            foreach ($columns as $column) {
-                $result = $item->{$column} == "";
-                if ($result == true)
-                    return true;
-            }
-            return $result;
-        });
-    }
+        $match = [];
 
-    if (!function_exists('str_contains_with_results')) {
-        /**
-         * str_contains_with_results
-         * returns the found needles
-         */
-        function str_contains_with_results($haystack, $needles, $ignoreCase = false): array
-        {
-            $match = [];
-
-            if ($ignoreCase) {
-                $haystack = mb_strtolower($haystack);
-            }
-
-            if (!is_iterable($needles)) {
-                $needles = (array)$needles;
-            }
-
-            foreach ($needles as $needle) {
-                if ($ignoreCase) {
-                    $needle = mb_strtolower($needle);
-                }
-
-                if ($needle !== '' && str_contains($haystack, $needle)) {
-                    $match[] = $needle;
-                }
-            }
-
-            return $match;
+        if ($ignoreCase) {
+            $haystack = mb_strtolower($haystack);
         }
 
-        function numbers_to_words($amount): ?string
-        {
+        if (!is_iterable($needles)) {
+            $needles = (array)$needles;
+        }
 
-            $amount = Str::replace(',', '', $amount);
+        foreach ($needles as $needle) {
+            if ($ignoreCase) {
+                $needle = mb_strtolower($needle);
+            }
+
+            if ($needle !== '' && str_contains($haystack, $needle)) {
+                $match[] = $needle;
+            }
+        }
+
+        return $match;
+    }
+
+    function numbers_to_words($amount, $locale = null): ?string
+    {
+
+        if (null == $locale)
+            $locale = app()->getLocale();
+
+        $amount = Str::replace(',', '', $amount);
 
 //            $amount = filter_var($amount, FILTER_SANITIZE_NUMBER_FLOAT);
 
-            if (blank($amount) or !is_number($amount))
-                return null;
+        if (blank($amount) or !is_number($amount))
+            return null;
 
-            $formatter = new NumberFormatter(app()->getLocale(), NumberFormatter::SPELLOUT);
+        $formatter = new NumberFormatter($locale, NumberFormatter::SPELLOUT);
 
-            $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, currency_decimals());
+        $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, currency_decimals());
 
-            return $formatter->format($amount);
-        }
-
-        function format_amount($amount, $style = NumberFormatter::DECIMAL, $locale = "en", $includeCurrencyCode = false): ?string
-        {
-            $amount = Str::replace(',', '', $amount);
-
-            if (blank($amount) or !is_number($amount))
-                return null;
-
-            $formatter = new NumberFormatter($locale, $style);
-
-            $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, currency_decimals());
-
-            if ($includeCurrencyCode)
-                return main_currency_iso_code() . " " . $formatter->format($amount);
-
-            return $formatter->format($amount);
-        }
-
-
-        function user_setting(string $name, $default = null, $guard = "web"): mixed
-        {
-            $user = auth($guard)->user();
-
-            return $user ? $user->setting($name, $default) : $default;
-        }
+        return $formatter->format($amount);
     }
 
-    if (!function_exists('hidden_tenant_id_field')) {
-        function hidden_tenant_id_field(): \Filament\Forms\Components\Field
-        {
-            return \Filament\Forms\Components\Hidden::make('tenant_id')->default(filament()->getTenant()->id);
-        }
-    }
+    function format_amount($amount, $style = NumberFormatter::DECIMAL, $locale = "en", $includeCurrencyCode = false): ?string
+    {
+        $amount = Str::replace(',', '', $amount);
 
-    if (!function_exists('hidden_main_currency_field')) {
-        function hidden_main_currency_field($name = "currency_iso_code", $default = "SAR"): \Filament\Forms\Components\Field
-        {
-            return \Filament\Forms\Components\Hidden::make($name)->default(setting('main_currency', $default));
-        }
-    }
+        if (blank($amount) or !is_number($amount))
+            return null;
 
-    if (!function_exists('hidden_user_id_field')) {
-        function hidden_user_id_field($name = "user_id", $default = null): \Filament\Forms\Components\Field
-        {
-            return \Filament\Forms\Components\Hidden::make($name)->default($default ?? auth("web")->id());
-        }
-    }
+        $formatter = new NumberFormatter($locale, $style);
 
-    if (!function_exists('hidden_invoice_no_field')) {
-        function hidden_invoice_no_field($name = "no", $default = null): \Filament\Forms\Components\Field
-        {
-            return \Filament\Forms\Components\Hidden::make($name)->default($default ?? generate_invoice_no());
-        }
+        $formatter->setAttribute(NumberFormatter::MAX_FRACTION_DIGITS, currency_decimals());
+
+        if ($includeCurrencyCode)
+            return main_currency_iso_code() . " " . $formatter->format($amount);
+
+        return $formatter->format($amount);
     }
 
 
-    if (!function_exists('main_currency_iso_code')) {
-        function main_currency_iso_code($default = "SAR"): ?string
-        {
-            return setting('main_currency', $default);
-        }
-    }
+    function user_setting(string $name, $default = null, $guard = "web"): mixed
+    {
+        $user = auth($guard)->user();
 
-    if (!function_exists('main_currency_symbol')) {
-        function main_currency_symbol($default = "$"): ?string
-        {
-            return \App\Models\Currency::where('iso_code', main_currency_iso_code())->first()?->symbol ?? $default;
-        }
-    }
-
-
-    if (!function_exists('currency_decimals')) {
-        function currency_decimals($default = 2): int
-        {
-            return setting('main_currency_decimals', $default);
-        }
-    }
-
-    if (!function_exists('format_currency_decimals')) {
-        function format_currency_decimals(): callable
-        {
-            return function () {
-
-            };
-        }
-    }
-
-    if (!function_exists('extract_values_from_array_that_has_key_starts_with')) {
-        function extract_values_from_array_that_has_key_starts_with($startWith, array $data): array
-        {
-            $result = [];
-            foreach ($data as $key => $value) {
-                if(str($key)->startsWith($startWith)){
-                    $result[] = $value;
-                }
-            }
-            return $result;
-        }
-    }
-
-    if (!function_exists('extract_data_from_array_that_has_key_starts_with')) {
-        function extract_data_from_array_that_has_key_starts_with($startWith, array $data): array
-        {
-            $result = [];
-            foreach ($data as $key => $value) {
-                if(str($key)->startsWith($startWith)){
-                    $arr = explode($startWith, $key);
-                    $result[] = $arr[1];
-                }
-            }
-            return $result;
-        }
+        return $user ? $user->setting($name, $default) : $default;
     }
 }
+
+if (!function_exists('hidden_tenant_id_field')) {
+    function hidden_tenant_id_field(): \Filament\Forms\Components\Field
+    {
+        return \Filament\Forms\Components\Hidden::make('tenant_id')->default(filament()->getTenant()->id ?? request()->header('Tenant-Id'));
+    }
+}
+
+if (!function_exists('hidden_main_currency_field')) {
+    function hidden_main_currency_field($name = "currency_iso_code", $default = "SAR"): \Filament\Forms\Components\Field
+    {
+        return \Filament\Forms\Components\Hidden::make($name)->default(setting('main_currency', $default));
+    }
+}
+
+if (!function_exists('hidden_user_id_field')) {
+    function hidden_user_id_field($name = "user_id", $default = null): \Filament\Forms\Components\Field
+    {
+        return \Filament\Forms\Components\Hidden::make($name)->default($default ?? auth("web")->id());
+    }
+}
+
+if (!function_exists('hidden_invoice_no_field')) {
+    function hidden_invoice_no_field($name = "no", $default = null): \Filament\Forms\Components\Field
+    {
+        return \Filament\Forms\Components\Hidden::make($name)->default($default ?? generate_invoice_no());
+    }
+}
+
+
+if (!function_exists('main_currency_iso_code')) {
+    function main_currency_iso_code($default = "SAR"): ?string
+    {
+        return setting('main_currency', $default);
+    }
+}
+
+if (!function_exists('main_currency_native_symbol')) {
+    function main_currency_native_symbol($default = "ر.س."): ?string
+    {
+        return \App\Services\CacheService::instance()->remember('currencies', \App\Services\CacheService::TTL_DAY, function () {
+            return \App\Models\Currency::select('iso_code', 'symbol_native')->get();
+        })->firstWhere('iso_code', main_currency_iso_code())->symbol_native ?? $default;
+    }
+}
+
+
+if (!function_exists('currency_decimals')) {
+    function currency_decimals($default = 2): int
+    {
+        return setting('main_currency_decimals', $default);
+    }
+}
+
+if (!function_exists('format_currency_decimals')) {
+    function format_currency_decimals(): callable
+    {
+        return function () {
+
+        };
+    }
+}
+
+if (!function_exists('extract_values_from_array_that_has_key_starts_with')) {
+    function extract_values_from_array_that_has_key_starts_with($startWith, array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (str($key)->startsWith($startWith)) {
+                $result[] = $value;
+            }
+        }
+        return $result;
+    }
+}
+
+if (!function_exists('extract_data_from_array_that_has_key_starts_with')) {
+    function extract_data_from_array_that_has_key_starts_with($startWith, array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (str($key)->startsWith($startWith)) {
+                $arr = explode($startWith, $key);
+                if ($value)
+                    $result[] = $arr[1];
+            }
+        }
+        return $result;
+    }
+}
+
+if (!function_exists('extract_dynamic_product_extras_from_array_that_has_key_starts_with')) {
+    function extract_dynamic_product_extras_from_array_that_has_key_starts_with($startWith, array $data): array
+    {
+        $result = [];
+        foreach ($data as $key => $value) {
+            if (str($key)->startsWith($startWith)) {
+                $arr = explode($startWith, $key);
+                if ($value)
+                    $result[] = $arr[1];
+            }
+        }
+        return $result;
+    }
+}
+
+if (!function_exists('get_tenant')) {
+    function get_tenant(): ?Tenant
+    {
+        if(\Filament\Facades\Filament::getTenant() != null)
+            return \Filament\Facades\Filament::getTenant();
+
+        if(request()->header('Tenant-Id'))
+            return Tenant::findOrFail(request()->header('Tenant-Id'));
+
+        if(request()->header('Store-Slug'))
+            return Tenant::firstWhere('slug', request()->header('Store-Slug'));
+
+        return null;
+    }
+}
+
 

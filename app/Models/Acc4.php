@@ -21,7 +21,7 @@ class Acc4 extends BaseModel
         return $this->name . ' - ' . $this->code;
     }
 
-    public function acc3Code()
+    public function acc3(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Acc3::class, 'acc3_code');
     }
@@ -46,49 +46,41 @@ class Acc4 extends BaseModel
         return $this->hasOne(ItemPrice::class, 'acc4_code')->latest();
     }
 
-    public function getItemPricePriceForUnit($unit_id, $getPrice = false):mixed
+    public function getItemPricePriceForUnit($unit_id, $getPrice = false): mixed
     {
         $this->loadMissing('prices');
 
-        if($getPrice)
+        if ($getPrice)
             return $this->prices->where('unit_id', $unit_id)->last()?->price;
 
         return $this->prices->where('unit_id', $unit_id)->last();
     }
 
-    public static function asOptions($item_class, $onlyHasAvailableStock = false, $onlyPriced = false, $useItemId = false, $withUnitsAsOptions = false)
+    public static function asOptions(array $only_item_class = [], array $exclude_item_class = [], $useItemId = false, $with_code = false)
     {
-        $data = self::with(['item.units.unit'])->where('item_type', $item_class)->get();
         $options = [];
+
+        $query = self::query()->with('item');
+
+        if (count($only_item_class) > 0) {
+            $query->whereIn('item_type', $only_item_class);
+        }
+        if (count($exclude_item_class) > 0) {
+            $query->whereNotIn('item_type', $exclude_item_class)->orWhereNull('item_type');
+        }
+
+        $data = $query->get();
+
         foreach ($data as $acc4) {
             if ($acc4->item) {
-                if ($item_class == Product::class) {
-
-//                        dd($acc4->item);
-//                        $acc4->item->load('lastPrice', 'availableStock');;
-
-                    if ($onlyHasAvailableStock and $acc4->item->availableStock == null)
-                        continue;
-
-                    if ($onlyPriced and $acc4->item->lastPrice == null)
-                        continue;
-
-                }
-
                 $id = $useItemId ? $acc4->item->id : $acc4->code;
-
-                $options[$id] = $acc4->item->finance_name;
-
-                if($withUnitsAsOptions)
-                    foreach ($acc4->item->units as $productUnit)
-                    {
-                        $name = $acc4->item->name . " - " . $productUnit->unit->name;
-                        $options["$id-$productUnit->unit_id"] = $name;
-                    }
-//                if ($useItemId)
-//                    $options[$acc4->item->id] = $acc4->item->finance_name;
-//                else
-//                    $options[$acc4->code] = $acc4->item->finance_name;
+                $name = $with_code ? $acc4->item->finance_name . " - $acc4->code" : $acc4->item->finance_name;
+                $options[$id] = $name;
+            } else {
+                if (!$useItemId){
+                    $name = $with_code ? $acc4->name . " - $acc4->code" : $acc4->name;
+                    $options[$acc4->code] = $name;
+                }
             }
         }
 

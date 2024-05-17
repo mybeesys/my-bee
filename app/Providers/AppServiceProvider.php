@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Services\CookieService;
+use App\Services\CouponService;
 use App\Tables\Columns\DateColumn;
 use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use BezhanSalleh\FilamentShield\Facades\FilamentShield;
@@ -13,13 +13,17 @@ use Filament\Support\Assets\Js;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentColor;
+use Filament\Support\Facades\FilamentView;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 use Filament\Pages\Page;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -37,11 +41,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
 
-        if (app()->isProduction()) {
-            FilamentAsset::register([
-                Js::make('custom-script', __DIR__ . '/../../resources/js/custom.js'),
-            ]);
-        }
+        Number::useLocale('en');
+
+//        if (app()->isProduction()) {
+//            FilamentAsset::register([
+//                Js::make('custom-script', __DIR__ . '/../../resources/js/custom.js'),
+//            ]);
+//        }
         $this->configPublicPath();
         $this->configFilament();
         $this->configMacros();
@@ -60,6 +66,10 @@ class AppServiceProvider extends ServiceProvider
                 ->visible(outsidePanels: true);
         });
 
+        FilamentView::registerRenderHook(
+             'panels::global-search.after',
+            fn (): View => view('shop'),
+        );
     }
 
     protected function configPublicPath()

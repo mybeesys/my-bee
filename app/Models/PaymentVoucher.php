@@ -12,6 +12,7 @@ class PaymentVoucher extends BaseModel
     protected $guarded = [];
 
     protected $casts = [
+        'date' => 'datetime',
         'files' => 'array',
         'submitted_at' => 'datetime',
         'checked_at' => 'datetime',
@@ -32,5 +33,10 @@ class PaymentVoucher extends BaseModel
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function acc4(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Acc4::class);
     }
 }

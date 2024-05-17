@@ -5,30 +5,43 @@ namespace App\Filament\Tenant\Resources;
 use App\Filament\Tenant\Resources\OrderResource\Pages;
 use App\Filament\Tenant\Resources\OrderResource\RelationManagers;
 use App\Filament\Tenant\Resources\OrderResource\Widgets\OrderStats;
+use App\Models\AdditionalCost;
+use App\Models\City;
+use App\Models\Country;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\PriceOffer;
 use App\Models\Product;
+use App\Models\ProductExtra;
 use App\Models\ProductUnit;
 use App\Models\ProductVariant;
 use App\Models\ReceiptVoucher;
+use App\Models\State;
 use App\Models\Supplier;
 use App\Models\VariantLibrary;
 use App\Models\VariantLibraryOption;
 use App\Services\InvoiceService;
+use App\Services\PricingService;
+use App\Services\StockService;
 use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\Shout\Components\Shout;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class OrderResource extends Resource
@@ -41,6 +54,11 @@ class OrderResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+
+    public static function getNavigationGroup(): ?string
+    {
+        return user_setting('fav.orders', false) ? __('fields.navigation_group_favourites') : null;
+    }
 
     public static function getLabel(): ?string
     {
@@ -63,6 +81,24 @@ class OrderResource extends Resource
         return $form
             ->schema([
 
+                Forms\Components\Hidden::make('price_offer_id')->dehydrated(false),
+
+                Shout::make('auto-create-inv-from-order-alert')
+                    ->visible(fn(Get $get) => $get('price_offer_id') !== null)
+                    ->content(__('fields.auto_create_inv_from_order_alert'))
+                    ->icon("")
+                    ->color(Color::Sky)
+                    ->columnSpan(2)
+                    ->type('warning'),
+
+                Shout::make('from-price-offer')
+                    ->visible(fn(Get $get) => $get('price_offer_id') !== null)
+                    ->content(fn(Get $get) => PriceOffer::find($get('price_offer_id'))?->description)
+                    ->icon("")
+                    ->color(Color::Yellow)
+                    ->columnSpan(2)
+                    ->type('warning'),
+
                 Forms\Components\Section::make()
                     ->disabled(fn($record) => $record and $record->status == Order::$STATUS_COMPLETED)
                     ->schema([
@@ -82,31 +118,47 @@ class OrderResource extends Resource
                                 return $model->id;
                             })
                             ->createOptionAction(
-                                fn(Forms\Components\Actions\Action $action) => $action->modalWidth(MaxWidth::Small),
+                                fn(Forms\Components\Actions\Action $action) => $action->modalWidth(MaxWidth::ThreeExtraLarge),
                             )->afterStateUpdated(function ($state, Forms\Set $set) {
                                 $customer = Customer::find($state);
 
                                 if ($customer) {
                                     $set('delivery_address', $customer->delivery_address);
+                                    $set('delivery_address_hint', $customer->location);
                                 } else {
                                     $set('delivery_address', null);
+                                    $set('delivery_address_hint', null);
                                 }
                             }),
+
+
+                        Forms\Components\Hidden::make('delivery_address_hint')->dehydrated(false),
 
                         TextInput::make('delivery_address')
                             ->label(__('fields.delivery_address'))
                             ->required()
+                            ->helperText(fn(Forms\Get $get) => $get('delivery_address_hint'))
                             ->maxLength(255),
-                    ])->columns(2),
+
+                        TextInput::make('delivery')
+                            ->label(__('fields.delivery_price'))
+                            ->required()
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(PHP_INT_MAX)
+                            ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, currency_decimals(), '.', '') : null)
+                            ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX]),
+
+                    ])->columns(3),
 
 
                 Forms\Components\Section::make()
-                    ->disabled(fn($record) => $record and $record->status == Order::$STATUS_COMPLETED)
+                    ->disabled(fn($record) => $record and $record->status == Order::$STATUS_COMPLETED or $record and $record->status == Order::$STATUS_CANCELLED)
                     ->key('details-section')
                     ->headerActions([
                         Forms\Components\Actions\Action::make('add_product')
-                            ->disabled(fn($record) => $record and $record->status == Order::$STATUS_COMPLETED)
-                            ->color('gray')
+                            ->hidden(fn($record) => $record != null and $record->status == Order::$STATUS_COMPLETED or $record and $record->status == Order::$STATUS_CANCELLED)
+                            ->color(Color::Slate)
                             ->label(__('fields.add_product'))
                             ->modalSubmitActionLabel(__('fields.add'))
 //                            ->extraModalFooterActions(fn (Forms\Components\Actions\Action $action): array => [
@@ -148,75 +200,15 @@ class OrderResource extends Resource
                                                         return;
                                                     }
 
-                                                    if ($product->type == Product::$TYPE_BASIC or $product->type == Product::$TYPE_SERVICE) {
+                                                    if ($product->type == Product::$TYPE_BASIC) {
                                                         $set('type', $product->type);
                                                         $set('name', $product->name);
                                                         $set('model_id', $product->id);
                                                         $set('model_type', Product::class);
-                                                        $set('unit_price', number_format($product->getPrice(), currency_decimals(), '.', ''));
-                                                        $set('max_qty', $product->qty);
+                                                        $set('unit_price', number_format(PricingService::instance()->getRetailPrice($product), currency_decimals(), '.', ''));
+                                                        $set('max_qty', StockService::instance()->getAvailableStock($product));
                                                     }
 
-                                                } else {
-                                                    $set('type', null);
-                                                    $set('name', null);
-                                                    $set('model_id', null);
-                                                    $set('model_type', null);
-                                                    $set('unit_price', null);
-                                                    $set('max_qty', 0);
-                                                }
-                                            }),
-
-
-                                        Select::make('unit_id')
-                                            ->visible(fn(Forms\Get $get) => Product::where('type', Product::$TYPE_UNITS)->where('id', $get('product_id'))->first())
-                                            ->required()
-                                            ->label(__('fields.unit'))
-                                            ->live()
-                                            ->options(function (Forms\Get $get) {
-                                                $product = Product::with(['units'])->where('type', Product::$TYPE_UNITS)->where('id', $get('product_id'))->first();
-
-                                                if ($product) {
-                                                    return $product->unitsAsOptions();
-                                                }
-                                            })
-                                            ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
-                                                if ($state) {
-                                                    $product = Product::with(['mainUnit'])->find($get('product_id'));
-
-                                                    $productUnit = ProductUnit::with(['product', 'unit'])->firstWhere('unit_id', $state);
-
-
-                                                    //watch out of main unit because its has no model it's linked with product model
-
-                                                    if ($product->main_unit_id != $state and !$productUnit) {
-                                                        $set('type', null);
-                                                        $set('name', null);
-                                                        $set('model_id', null);
-                                                        $set('model_type', null);
-                                                        $set('unit_price', null);
-                                                        $set('max_qty', 0);
-                                                        fns()->sendDanger("Unit not found!");
-                                                        return;
-                                                    }
-
-                                                    //main unit
-                                                    if ($product->main_unit_id == $state) {
-
-                                                        $set('type', $product->type);
-                                                        $set('name', $product->name . " - " . $product->mainUnit?->name);
-                                                        $set('model_id', $product->id);
-                                                        $set('model_type', Product::class);
-                                                        $set('unit_price', number_format($product->getPrice(), currency_decimals(), '.', ''));
-                                                        $set('max_qty', $product->qty);
-                                                    } else { //product with separate productunit model
-                                                        $set('type', $product->type);
-                                                        $set('name', $product->name . " - " . $productUnit->unit->name);
-                                                        $set('model_id', $productUnit->id);
-                                                        $set('model_type', ProductUnit::class);
-                                                        $set('unit_price', number_format($productUnit->retail_price, currency_decimals(), '.', ''));
-                                                        $set('max_qty', $productUnit->qty);
-                                                    }
                                                 } else {
                                                     $set('type', null);
                                                     $set('name', null);
@@ -238,23 +230,35 @@ class OrderResource extends Resource
                                                 return [];
                                             }),
 
+
+                                        Forms\Components\Fieldset::make(__('fields.product_extras'))
+                                            ->visible(fn(Forms\Get $get) => Product::where('id', $get('product_id'))->first())
+                                            ->schema(function (Forms\Get $get, $livewire) {
+                                                $product_id = $get('product_id');
+                                                if ($product_id)
+                                                    return self::getProductExtras($product_id);
+
+                                                return [];
+                                            }),
+
                                     ])->columns(2)
                             ])
                             ->action(function (array $data, $livewire, Forms\Components\Actions\Action $action, array $arguments) {
 
 //                                dd($arguments, $action->getArguments());
-                                $product = Product::with(['units', 'variants'])->findOrFail($data['product_id']);
+                                $product = Product::with(['variants'])->findOrFail($data['product_id']);
 
                                 $existingDetails = $livewire->data['details'] ?? [];
 
                                 $max_qty = $data['max_qty'];
                                 $unlimited_qty = $data['unlimited_qty'] ?? false;
 
+                                $productExtrasIds = extract_data_from_array_that_has_key_starts_with("px@", $data);
+
                                 if ($product->type == Product::$TYPE_VARIANTS) {
 
                                     $variantOptions = extract_data_from_array_that_has_key_starts_with("vo@", $data);
                                     $variantLibraryOptions = extract_values_from_array_that_has_key_starts_with("vo@", $data);
-
                                     if (count($variantOptions) < 0) {
                                         fns()->sendDanger("Something went-wrong!");
                                         $action->halt();
@@ -268,6 +272,8 @@ class OrderResource extends Resource
                                         return array_diff($array1, $array2) == array_diff($array2, $array1);
                                     })->first();
 
+//                                    dd($variant, $variant->retail_price);
+
                                     if (!$variant) {
                                         fns()->sendDanger("Option not found");
                                     }
@@ -277,9 +283,8 @@ class OrderResource extends Resource
                                     $name = $variant->name;
                                     $model_id = $variant->id;
                                     $model_type = ProductVariant::class;
-                                    $price = $variant->retail_price;
-                                    $unlimited_qty = $variant->unlimited_qty;
-                                    $max_qty = $unlimited_qty ? 1000 : $variant->qty;
+                                    $price = PricingService::instance()->getRetailPrice($variant);
+                                    $max_qty = StockService::instance()->getAvailableStock($variant);
                                     $qty = 1;
 
                                     if (!$unlimited_qty and $max_qty == 0) {
@@ -302,9 +307,13 @@ class OrderResource extends Resource
                                         'qty' => $qty,
                                         'unit_price' => $price,
                                         'price' => format_amount($qty * $price),
+                                        'tax' => PricingService::instance()->getTaxAmount($product, $price, $qty),
+                                        'product_extras_ids' => $productExtrasIds,
+                                        'extras' => implode(', ', ProductExtra::findMany($productExtrasIds)->pluck('name')->toArray()),
                                     ];
 
                                 } else {
+                                    //basic
 
                                     $tenant_id = $data['tenant_id'];
                                     $type = $data['type'];
@@ -312,7 +321,9 @@ class OrderResource extends Resource
                                     $model_id = $data['model_id'];
                                     $model_type = $data['model_type'];
                                     $price = $data['unit_price'];
-                                    $max_qty = $data['max_qty'];
+                                    $max_qty = StockService::instance()->getAvailableStock($product);
+
+                                    $qty = 1;
 
                                     if (!$unlimited_qty and $max_qty == 0) {
                                         fns()->sendWarning(__('fields.no_stock_available'));
@@ -331,9 +342,12 @@ class OrderResource extends Resource
                                         'type' => $type,
                                         'display_name' => $name,
                                         'max_qty' => $max_qty,
-                                        'qty' => $max_qty,
+                                        'qty' => $qty,
                                         'unit_price' => $price,
-                                        'price' => format_amount($max_qty * $price),
+                                        'price' => format_amount($qty * $price),
+                                        'tax' => PricingService::instance()->getTaxAmount($product, $price, $qty),
+                                        'product_extras_ids' => $productExtrasIds,
+                                        'extras' => implode(', ', ProductExtra::findMany($productExtrasIds)->pluck('name')->toArray()),
                                     ];
                                 }
 
@@ -344,6 +358,13 @@ class OrderResource extends Resource
                                     $action->halt();
                                 }
 
+
+                                foreach ($livewire->data['details'] as $index => $it) {
+                                    if ($it['item_id'] == null and $it['item_type'] == null) {
+                                        unset($livewire->data['details'][$index]);
+                                        unset($existingDetails[$index]);
+                                    }
+                                }
 
                                 $livewire->data['details'] = array_merge($existingDetails, $item);
 
@@ -365,12 +386,13 @@ class OrderResource extends Resource
                     ->schema([
                         TableRepeater::make('details')
                             ->label(__('fields.order_details'))
-                            ->relationship('details')
+//                            ->relationship('details')
                             ->emptyLabel(__('fields.no_records_placeholder'))
                             ->addActionLabel(__('fields.add'))
                             ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
                             ->hideLabels()
                             ->addable(false)
+                            ->defaultItems(0)
                             ->deleteAction(
                                 fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
                             )
@@ -381,9 +403,18 @@ class OrderResource extends Resource
                                 return $data;
                             })
                             ->live()
+                            ->columnWidths([
+                                'display_name' => '165px',
+                                'extras' => '200px',
+                                'qty' => '80px',
+                                'tax' => '120px',
+                                'price' => '150px',
+                            ])
                             ->schema([
 
                                 hidden_tenant_id_field(),
+
+                                hidden_user_id_field(),
 
                                 Forms\Components\Hidden::make('max_qty')->dehydrated(false),
 
@@ -392,7 +423,12 @@ class OrderResource extends Resource
                                 Forms\Components\Hidden::make('item_type'),
                                 Forms\Components\Hidden::make('unit_price'),
 
+                                Forms\Components\Hidden::make('product_extras_ids'),
+
                                 TextInput::make('display_name')->label(__('fields.product'))->readOnly(),
+
+                                TextInput::make('extras')->label(__('fields.product_extras'))->readOnly(),
+
 
                                 TextInput::make('qty')
                                     ->label(__('fields.qty'))
@@ -401,8 +437,8 @@ class OrderResource extends Resource
                                     ->minValue(1)
                                     ->maxValue(fn(Forms\Get $get) => $get('max_qty'))
                                     ->live(true)
-                                    ->afterStateHydrated(function ($record, Forms\Set $set){
-                                        if($record){
+                                    ->afterStateHydrated(function ($record, Forms\Set $set) {
+                                        if ($record) {
 //                                            $set('max_qty', $record->item->inventory_count ?? 0);
                                         }
                                     })
@@ -425,10 +461,33 @@ class OrderResource extends Resource
                                     ->dehydrated(false)
                                     ->readOnly(),
 
+                                TextInput::make('tax')
+                                    ->label(__('fields.tax'))
+                                    ->readOnly(),
+
                             ])
                     ]),
 
                 Forms\Components\Section::make()->schema([
+
+                    TextInput::make('products_total')
+                        ->label(__('fields.products'))
+                        ->readOnly()
+                        ->suffix(fn() => main_currency_iso_code())
+                        ->dehydrated(false),
+
+                    TextInput::make('extras_total')
+                        ->label(__('fields.products_extras'))
+                        ->readOnly()
+                        ->suffix(fn() => main_currency_iso_code())
+                        ->dehydrated(false),
+
+                    TextInput::make('taxes_total')
+                        ->label(__('fields.tax'))
+                        ->readOnly()
+                        ->suffix(fn() => main_currency_iso_code())
+                        ->dehydrated(false),
+
                     TextInput::make('total')
                         ->label(__('fields.total'))
                         ->readOnly()
@@ -458,6 +517,14 @@ class OrderResource extends Resource
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('fields.status'))
+                    ->badge()
+//                    ->colors([
+//                        'new' => 'gray',
+//                        'packaging' => 'warning',
+//                        'delivery-in-progress' => 'success',
+//                        'completed' => Color::Green,
+//                        'cancelled' => 'danger',
+//                    ])
                     ->getStateUsing(fn($record) => __('fields.order_status_' . $record->status))
                     ->searchable(),
 
@@ -473,7 +540,21 @@ class OrderResource extends Resource
                         return format_amount($record->sub_total);
                     })
                     ->getStateUsing(function (Order $record) {
+                        if ($record->discount > 0) {
+                            $originalPrice = format_amount($record->sub_total + $record->discount) . " " . main_currency_iso_code();
+                            $discountedPrice = format_amount($record->sub_total) . " " . main_currency_iso_code();
+                            return new HtmlString("<p><h1 style='text-decoration: line-through; font-weight: lighter; color: #ff5028;'>$originalPrice</h1>  $discountedPrice</p>");
+                        }
                         return main_currency_iso_code() . " " . format_amount($record->sub_total);
+                    })->description(function (Order $record){
+                        return $record['coupon_data']['code'] ?? null;
+                    }),
+
+                Tables\Columns\TextColumn::make('delivery')
+                    ->toggleable()
+                    ->label(__('fields.delivery_price'))
+                    ->getStateUsing(function (Order $record) {
+                        return main_currency_iso_code() . " " . format_amount($record->delivery);
                     }),
 
                 Tables\Columns\TextColumn::make('total')
@@ -550,16 +631,17 @@ class OrderResource extends Resource
 
             ])
             ->filters([
+
                 Tables\Filters\SelectFilter::make('status')
                     ->label(__('fields.status'))
                     ->multiple()
                     ->options([
-                        Order::$STATUS_READY => __('fields.order_status_'.Order::$STATUS_READY),
-                        Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_'.Order::$STATUS_DELIVERY_IN_PROGRESS),
-                        Order::$STATUS_CANCELLED => __('fields.order_status_'.Order::$STATUS_CANCELLED),
-                        Order::$STATUS_COMPLETED => __('fields.order_status_'.Order::$STATUS_COMPLETED),
+                        Order::$STATUS_NEW => __('fields.order_status_' . Order::$STATUS_NEW),
+                        Order::$STATUS_PACKAGING => __('fields.order_status_' . Order::$STATUS_PACKAGING),
+                        Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_' . Order::$STATUS_DELIVERY_IN_PROGRESS),
+                        Order::$STATUS_CANCELLED => __('fields.order_status_' . Order::$STATUS_CANCELLED),
+                        Order::$STATUS_COMPLETED => __('fields.order_status_' . Order::$STATUS_COMPLETED),
                     ]),
-
 
                 Tables\Filters\SelectFilter::make('customer_id')
                     ->label(__('fields.client'))
@@ -628,27 +710,114 @@ class OrderResource extends Resource
                         ->label(__('fields.change_status'))
                         ->icon('heroicon-o-pencil')
                         ->color('warning')
-                        ->disabled(fn($record) => $record->status == Order::$STATUS_COMPLETED)
+                        ->disabled(fn($record) => $record and $record->status === Order::$STATUS_CANCELLED or $record->status == Order::$STATUS_COMPLETED)
                         ->modalWidth(MaxWidth::Small)
                         ->form(function (Order $record) {
                             return [
                                 Forms\Components\Section::make()->schema([
-                                    Select::make('status_id')
+
+                                    Select::make('status')
                                         ->label(__('fields.status'))
+                                        ->live()
                                         ->options([
-                                            Order::$STATUS_READY => __('fields.order_status_'.Order::$STATUS_READY),
-                                            Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_'.Order::$STATUS_DELIVERY_IN_PROGRESS),
-                                            Order::$STATUS_CANCELLED => __('fields.order_status_'.Order::$STATUS_CANCELLED),
-                                            Order::$STATUS_COMPLETED => __('fields.order_status_'.Order::$STATUS_COMPLETED),
+                                            Order::$STATUS_PACKAGING => __('fields.order_status_' . Order::$STATUS_PACKAGING),
+                                            Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_' . Order::$STATUS_DELIVERY_IN_PROGRESS),
+                                            Order::$STATUS_CANCELLED => __('fields.order_status_' . Order::$STATUS_CANCELLED),
+                                            Order::$STATUS_COMPLETED => __('fields.order_status_' . Order::$STATUS_COMPLETED),
                                         ])
                                         ->default($record->status)
                                         ->required(),
+
+                                    Forms\Components\DatePicker::make('delivery_date')
+                                        ->label(__('fields.delivery_date'))
+                                        ->required()
+                                        ->default(today())
+                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_COMPLETED),
+
+                                    Forms\Components\DatePicker::make('canceled_date')
+                                        ->label(__('fields.canceled_date'))
+                                        ->required()
+                                        ->default(today())
+                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_CANCELLED),
+
+                                    Forms\Components\Textarea::make('canceled_reason')
+                                        ->label(__('fields.canceled_reason'))
+                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_CANCELLED)
+                                        ->cols(5)
+                                        ->rows(5),
+
+                                    TextInput::make('delivery')
+                                        ->label(__('fields.delivery_price'))
+                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_COMPLETED or $get('status') === Order::$STATUS_DELIVERY_IN_PROGRESS)
+                                        ->default($record->delivery)
+                                        ->required()
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->maxValue(PHP_INT_MAX)
+                                        ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, currency_decimals(), '.', '') : null)
+                                        ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX]),
+
+
+                                    Forms\Components\Placeholder::make('info')
+                                        ->visible(function (Get $get) {
+                                            return ($get('status') === Order::$STATUS_COMPLETED or $get('status') === Order::$STATUS_CANCELLED);
+                                        })
+                                        ->label(function () {
+                                            $msg = __("fields.order_will_be_locked_after_this_action");
+                                            return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
+                                        }),
                                 ]),
                             ];
                         })
+                        ->modalWidth(MaxWidth::Small)
                         ->action(function (Order $record, array $data) {
-                            $record->update(['status' => $data['status_id']]);
-                            fns()->saved();
+                            try {
+                                DB::beginTransaction();
+
+                                if (array_key_exists('delivery', $data)) {
+                                    //sync additional cost
+                                    $invoice = $record->invoice;
+                                    $invAdditionalCost = AdditionalCost::where('meta->type', 'delivery_fees')->where('item_type', Invoice::class)->where('item_id', $invoice->id)->first();
+
+                                    if ($invAdditionalCost) {
+                                        $invAdditionalCost->update([
+                                            'cost' => $data['delivery'],
+                                        ]);
+                                    }
+
+                                }
+
+                                if ($data['status'] == Order::$STATUS_CANCELLED) {
+                                    //cancel invoice
+                                    $record->invoice->update([
+                                        'status' => 'cancelled',
+                                        'locked_by_id' => auth()->id(),
+                                        'locked_at' => now(),
+                                    ]);
+                                }
+
+                                if ($data['status'] == Order::$STATUS_COMPLETED) {
+                                    //confirmed invoice
+                                    $record->invoice->update([
+                                        'status' => 'confirmed',
+                                        'locked_by_id' => auth()->id(),
+                                        'locked_at' => now(),
+                                    ]);
+
+                                    StockService::instance()->takeStockFromSalesInvoice($record->invoice);
+
+                                }
+
+                                $record->update($data);
+
+                                DB::commit();
+
+                                fns()->saved();
+
+                            } catch (\Throwable $exception) {
+                                DB::rollBack();
+                                fns()->displayException($exception);
+                            }
                         }),
 
 
@@ -673,7 +842,7 @@ class OrderResource extends Resource
                             $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
 
                             if ($rv)
-                                return redirect(ReceiptVoucherResource::getUrl('edit', ['rv' => $rv->id]));
+                                return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]));
 
                         }),
 
@@ -685,19 +854,36 @@ class OrderResource extends Resource
 
     protected static function updateTotal($livewire)
     {
+        $extras = 0;
+        $taxes = 0;
+        $delivery = $livewire->data['delivery'];
         $total = 0;
 
         foreach ($livewire->data['details'] ?? [] as $index => $item) {
+
+            if ($item['item_type'] and $item['item_id']) {
+                $model = ($item['item_type'])::find($item['item_id']);
+                $livewire->data['details'][$index]['tax'] = number_format(PricingService::instance()->getTaxAmount($model instanceof Product ? $model : $model->product, $item['unit_price'], $item['qty']), currency_decimals(), '.', '');
+            }
+
             if (is_number($item['qty']) and is_number($item['unit_price']))
                 $total += $item['qty'] * $item['unit_price'];
+
+            if (is_number($item['tax']))
+                $taxes += $item['tax'];
+
+            foreach ($item['product_extras_ids'] ?? [] as $productExtraId) {
+                $productExtra = ProductExtra::with(['lastPrice'])->find($productExtraId);
+
+                $extras += PricingService::instance()->getRetailPrice($productExtra);
+            }
         }
 
-        $livewire->data['total'] = format_amount($total);
 
-        foreach ($livewire->data['details'] ?? [] as $index => $item) {
-            if ($item['display_name'] === null)
-                unset($livewire->data['details'][$index]);
-        }
+        $livewire->data['products_total'] = format_amount($total);
+        $livewire->data['extras_total'] = format_amount($extras);
+        $livewire->data['taxes_total'] = format_amount($taxes);
+        $livewire->data['total'] = format_amount($total + $extras + $taxes + $delivery);
     }
 
     protected static function getVariantFieldsBasedOnOptions($product_id, $livewire): array
@@ -709,18 +895,7 @@ class OrderResource extends Resource
         if ($product->type !== Product::$TYPE_VARIANTS)
             return [];
 
-//        $library_options = array_filter($product->variants->pluck('variant_library_options_ids')->flatten()->unique()->toArray());
-//
         $variantOptions = $product->variantOptions;
-
-//        dd($variantLibs);
-//
-//        foreach ($library_options as $option) {
-//            $item = self::getVariantLibraryFromOption($option);
-//            $variantLibs->add($item);
-//        }
-//
-//        $variantLibs = $variantLibs->unique('id');
 
         foreach ($variantOptions as $variantOption) {
             $lib = $variantOption->library;
@@ -758,9 +933,34 @@ class OrderResource extends Resource
         return $vl;
     }
 
+    protected static function getProductExtras($product_id)
+    {
+        $fields = [];
+        foreach (Product::with(['extras.extra', 'extras.prices', 'extras.lastPrice'])->find($product_id)?->extras ?? [] as $productExtra) {
+            $price = PricingService::instance()->getRetailPrice($productExtra, null);
+
+            $formattedPrice = is_number($price) ? (main_currency_iso_code() . " " . format_amount($price)) : null;
+
+            $fields[] = Forms\Components\Checkbox::make("px@$productExtra->id")
+                ->helperText($formattedPrice)
+                ->disabled($price === null or $price == 0)
+                ->default(0)
+                ->label($productExtra->extra->name);
+        }
+        return $fields;
+    }
+
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['invoice.items', 'invoice.salesPayments', 'customer', 'user', 'details.item'])->latest();
+        return parent::getEloquentQuery()->with(
+            [
+                'invoice.items.orderDetails.orderDetailsExtras',
+                'invoice.salesPayments',
+                'customer',
+                'user',
+                'details.item',
+                'details.orderDetailsExtras.productExtra.extra',
+            ])->latest();
     }
 
     public static function getRelations(): array

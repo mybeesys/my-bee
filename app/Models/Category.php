@@ -125,7 +125,7 @@
 
         public function products(): \Illuminate\Database\Eloquent\Relations\HasMany
         {
-            return $this->hasMany(Product::class);
+            return $this->hasMany(Product::class)->where('published', true);
         }
 
         public function localizedName()

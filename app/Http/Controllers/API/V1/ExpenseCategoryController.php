@@ -16,7 +16,7 @@ class ExpenseCategoryController extends BaseController
     public function index()
     {
         $data = ExpenseCategory::with(['expenses'])->get();
-        return $this->responder(__('messages_data_retrieved'), 200, ExpenseCategoryResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, ExpenseCategoryResource::collection($data))->respond();
     }
 
     /**
@@ -30,7 +30,7 @@ class ExpenseCategoryController extends BaseController
 
         $expenseCategory = ExpenseCategory::create($data);
 
-        return $this->responder(__('messages_data_stored'), 201, new ExpenseCategoryResource($expenseCategory))->respond();
+        return $this->responder(__('messages.api.created'), 201, new ExpenseCategoryResource($expenseCategory))->respond();
     }
 
     /**
@@ -39,7 +39,7 @@ class ExpenseCategoryController extends BaseController
     public function show(string $id)
     {
         $item = ExpenseCategory::with(['expenses'])->findOrFail($id);
-        return $this->responder(__('messages_data_retrieved'), 200, new ExpenseCategoryResource($item))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, new ExpenseCategoryResource($item))->respond();
     }
 
     /**
@@ -49,7 +49,7 @@ class ExpenseCategoryController extends BaseController
     {
         $item = ExpenseCategory::with(['expenses'])->findOrFail($id);
         $item->update($request->validated());
-        return $this->responder(__('messages_data_retrieved'), 200, new ExpenseCategoryResource($item))->respond();
+        return $this->responder(__('messages.api.updated'), 200, new ExpenseCategoryResource($item))->respond();
     }
 
     /**
@@ -58,10 +58,10 @@ class ExpenseCategoryController extends BaseController
     public function destroy(string $id)
     {
         $item = ExpenseCategory::findOrFail($id);
-        abort_if(!$this->canDelete($item), 403, "Permission denied");
+        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
         try {
             $item->delete();
-            return $this->responder(__('messages_data_deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

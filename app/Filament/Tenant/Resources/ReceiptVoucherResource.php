@@ -8,6 +8,9 @@ use App\Models\Acc4;
 use App\Models\Client;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\Product;
+use App\Models\ProductExtra;
+use App\Models\ProductVariant;
 use App\Models\ReceiptVoucher;
 use App\Models\Supplier;
 use Awcodes\FilamentTableRepeater\Components\TableRepeater;
@@ -21,6 +24,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -33,13 +37,13 @@ class ReceiptVoucherResource extends Resource
 
     protected static ?string $recordTitleAttribute = "no";
 
-    protected static ?string $slug = "finance/receipt-vouchers";
+    protected static ?string $slug = "transactions/receipt-vouchers";
 
     protected static ?int $navigationSort = 1;
 
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.finance');
+        return __('fields.nav_group_transactions');
     }
 
     public static function getLabel(): ?string
@@ -50,11 +54,6 @@ class ReceiptVoucherResource extends Resource
     public static function getPluralLabel(): ?string
     {
         return __('fields.receipt_vouchers');
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
     }
 
     public static function getNavigationBadge(): ?string
@@ -71,12 +70,6 @@ class ReceiptVoucherResource extends Resource
 
                     hidden_user_id_field(),
 
-                    Forms\Components\Hidden::make('received_invoice_id')->dehydrated(false),
-                    Forms\Components\Hidden::make('received_order_id')->dehydrated(false),
-
-
-                    Forms\Components\Hidden::make('for')
-                        ->dehydrated(false),
 
                     TextInput::make('no')
                         ->label(__('fields.voucher_no'))
@@ -95,104 +88,70 @@ class ReceiptVoucherResource extends Resource
                     Forms\Components\Radio::make('for')
                         ->live()
                         ->label(__('fields.make_receipt_voucher_for'))
-                        ->disabled(fn($livewire, $record) => self::shouldForPersonBeReadOnly($livewire, $record))
-                        ->afterStateUpdated(function ($state) {
-//                            $set('invoice_id', null);
-
+                        ->disabledOn(Pages\EditReceiptVoucher::class)
+                        ->afterStateUpdated(function ($state, Set $set, $livewire) {
+                            $set('acc4_code', null);
+                            $set('invoice_id', null);
+                            $livewire->data['payments'] = [];
 //                            self::updateInvoiceProperties($record?->invoice, $livewire);
                         })
                         ->options([
-                            'supplier' => __('fields.receipt_voucher_for_supplier'),
                             'customer' => __('fields.receipt_voucher_for_customer'),
+                            'other_entity' => __('fields.receipt_voucher_for_other_entity'),
                         ]),
 
-//                    Forms\Components\Radio::make('make_receipt_voucher_for')
-//                        ->label(__('fields.make_receipt_voucher_for'))
-//                        ->options([
-//                            'invoice' => __('fields.receipt_voucher_for_invoice'),
-//                            'customer' => __('fields.receipt_voucher_for_customer'),
-//                        ]),
 
-                    Select::make('customer_id')
-                        ->label(__('fields.client'))
-                        ->visible(fn($livewire, $record) => self::shouldCustomerFieldBeVisible($livewire, $record))
-                        ->disabled(fn($livewire, $record) => self::shouldCustomerFieldBeReadOnly($livewire, $record))
+                    Select::make('acc4_code')
                         ->live()
-                        ->searchable()
-                        ->options(Customer::dropdown())
-                        ->afterStateUpdated(function ($state, Set $set, $record, $livewire) {
-
-                            $set('invoice_id', null);
-
-                            if ($state) {
-                                $invoices = Invoice::where('customer_id', $state)->count();
-
-                                if ($invoices == 0)
-                                    Notification::make()
-                                        ->title("لا توجد فواتير لهذا العميل")
-                                        ->warning()
-                                        ->send();
+                        ->disabledOn(Pages\EditReceiptVoucher::class)
+                        ->label(function (Get $get) {
+                            if ($get('for') == "customer") {
+                                return __('fields.client');
+                            } else if ($get('for') == "other_entity") {
+                                return __('fields.receipt_voucher_for_other_entity');
+                            } else {
+                                return "account";
                             }
+                        })
+                        ->searchable()
+                        ->options(function (Get $get) {
+                            if ($get('for') == "customer") {
+                                return Acc4::asOptions(only_item_class: [Customer::class]);
+                            } else if ($get('for') == "other_entity") {
+                                return Acc4::asOptions(exclude_item_class: [Customer::class, Supplier::class, Product::class, ProductVariant::class, ProductExtra::class], with_code: true);
+                            } else {
+                                return [];
+                            }
+                        })
+                        ->afterStateUpdated(function ($state, Set $set, $record, $livewire) {
+                            $set('invoice_id', null);
                             self::updateInvoiceProperties($record?->invoice, $livewire);
                         })
                         ->required(),
 
-                    Select::make('supplier_id')
-                        ->label(__('fields.supplier'))
-                        ->visible(fn($livewire, $record) => self::shouldSupplierFieldBeVisible($livewire, $record))
-                        ->disabled(fn($livewire, $record) => self::shouldSupplierFieldBeReadOnly($livewire, $record))
-                        ->live()
-                        ->searchable()
-                        ->options(Supplier::pluck('name', 'id'))
-                        ->afterStateUpdated(function ($state, Set $set, $record, $livewire) {
-
-                            $set('invoice_id', null);
-
-                            if ($state) {
-                                $invoices = Invoice::where('supplier_id', $state)->count();
-
-                                if ($invoices == 0)
-                                    Notification::make()
-                                        ->title("لا توجد فواتير لهذا المورد")
-                                        ->warning()
-                                        ->send();
-                            }
-
-                            self::updateInvoiceProperties($record?->invoice, $livewire);
-
-                        })
-                        ->required(),
 
                     Select::make('invoice_id')
+                        ->visible(fn(Get $get) => $get('for') === "customer")
+                        ->disabledOn(Pages\EditReceiptVoucher::class)
                         ->live()
-                        ->disabled(fn($livewire, $record) => self::shouldInvoiceFieldBeReadOnly($livewire, $record))
                         ->label(__('fields.invoice_no'))
                         ->options(function (Get $get) {
-                            $customer_id = $get('customer_id');
-                            $supplier_id = $get('supplier_id');
+                            $customer_id = Acc4::with('item')->firstWhere('code', $get('acc4_code'))?->item_id;
 
                             if ($customer_id) {
                                 return Invoice::dropdownUnpaidForCustomer($customer_id, true);
                             }
 
-                            if ($supplier_id) {
-                                return Invoice::dropdownUnpaidForSupplier($supplier_id, true);
-                            }
                             return [];
                         })
                         ->afterStateHydrated(function (Get $get, $record, $livewire, Select $component) {
                             $options = [];
 
                             $invoice = self::getInvoice($livewire, $record);
-//                            $invoice = Invoice::find(request('invoice_id'));
 
                             if ($invoice) {
-                                if ($invoice->for === "supplier") {
-                                    $options = Invoice::dropdownUnpaidForSupplier($invoice->supplier_id, true);
-                                }
-                                if ($invoice->for === "customer") {
-                                    $options = Invoice::dropdownUnpaidForCustomer($invoice->customer_id, true);
-                                }
+                                $options = Invoice::dropdownUnpaidForCustomer($invoice->customer_id, true);
+
                                 $component->helperText($invoice->no);
 
                                 self::updateInvoiceProperties($invoice, $livewire);
@@ -210,24 +169,7 @@ class ReceiptVoucherResource extends Resource
                         })
                         ->required(),
 
-                    //for example, in case of purchase invoice, supplier code
-                    Forms\Components\Hidden::make('debit_acc4_code'),
-
-                    Select::make('credit_acc4_code')
-                        ->live()
-                        ->label(__('fields.account'))
-                        ->disabled(fn($record, $livewire) => self::shouldAccountFieldBeReadOnly($livewire, $record))
-                        ->hint(function (Get $get) {
-                            $acc_id = $get('credit_acc4_code');
-
-                            if ($acc_id)
-                                return Acc4::find($acc_id)->acc4_code;
-
-                            return null;
-                        })
-                        ->options(Acc4::whereIn('code', [120100001, 120100002])->pluck('name', 'code'))
-                        ->required(),
-                ])->columns(6),
+                ])->columns(3),
 
                 Forms\Components\Section::make([
 
@@ -250,7 +192,7 @@ class ReceiptVoucherResource extends Resource
                         ->dehydrated(false),
 
                 ])
-                    ->visible(fn($livewire, $record) => self::shouldInvoiceDetailsBeVisible($livewire, $record))
+                    ->visible(fn(Get $get) => $get('invoice_id') !== null)
                     ->columns(3),
 
 
@@ -262,11 +204,14 @@ class ReceiptVoucherResource extends Resource
                         ->addActionLabel(__('fields.add'))
                         ->defaultItems(1)
                         ->withoutHeader()
+                        ->emptyLabel(__('fields.no_records_placeholder'))
                         ->columnSpan('full')
                         ->columnWidths([
+                            'credit_acc4_code' => '200px',
                             'amount' => '200px',
                             'date' => '200px',
                             'statement' => '400px',
+                            'attachments' => '120px'
                         ])
                         ->live(true)
                         ->afterStateHydrated(function ($record, $livewire, Set $set) {
@@ -294,8 +239,11 @@ class ReceiptVoucherResource extends Resource
                         ->itemLabel(fn(array $state): ?string => $state['amount'] ?? null)
                         ->addable(function ($livewire, $record) {
                             $invoice = self::getInvoice($livewire, $record);
+                            if ($invoice) {
+                                return $invoice->total_unpaid > 0;
+                            }
 
-                            return $invoice?->total_unpaid > 0;
+                            return true;
                         })
                         ->schema([
 
@@ -304,15 +252,40 @@ class ReceiptVoucherResource extends Resource
                                 return $get('data.invoice_id', true);
                             }),
 
-                            Forms\Components\Hidden::make('method')->default('cash'),
-
                             hidden_tenant_id_field(),
 
                             hidden_user_id_field(),
 
-                            hidden_main_currency_field(),
-
                             Forms\Components\Hidden::make('id')->default(null),
+
+                            Forms\Components\Hidden::make('credit_acc4_code')
+                                ->formatStateUsing(function (Get $get, $livewire) {
+                                    //for customer
+                                    $invoice = self::getInvoice($livewire, null);
+                                    if ($invoice) {
+                                        return $invoice->customer->acc4->code;
+                                    }
+                                    //for other_entity
+                                    return $get('data.acc4_code', true);
+                                }),
+
+                            Select::make('debit_acc4_code')
+                                ->live()
+                                ->disabled(fn($record) => $record !== null)
+                                ->label(__('fields.account'))
+                                ->hint(function (Get $get) {
+                                    $acc_id = $get('debit_acc4_code');
+
+                                    if ($acc_id)
+                                        return Acc4::find($acc_id)->acc4_code;
+
+                                    return null;
+                                })
+                                ->options(function () {
+                                    //add bank transfers accounts
+                                    return Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code');
+                                })
+                                ->required(),
 
                             TextInput::make('amount')
                                 ->label(__('fields.amount_money'))
@@ -325,6 +298,7 @@ class ReceiptVoucherResource extends Resource
 
                             DatePicker::make('date')
                                 ->label(__('fields.date'))
+                                ->disabled(fn($record) => $record !== null)
                                 ->seconds(false)
                                 ->minDate(now()->subDays(90))
                                 ->maxDate(now())
@@ -333,6 +307,7 @@ class ReceiptVoucherResource extends Resource
 
                             TextInput::make('statement')
                                 ->required()
+                                ->disabled(fn($record) => $record !== null)
                                 ->label(__('fields.statement')),
 
                             SpatieMediaLibraryFileUpload::make('attachments')
@@ -371,47 +346,99 @@ class ReceiptVoucherResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('no')
-                    ->label(__('fields.invoice_no')),
+                    ->label(__('fields.voucher_no')),
 
                 Tables\Columns\TextColumn::make('date')
                     ->label(__('fields.date'))
                     ->dateTime('M j, Y')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('invoice.no')
-                    ->label(__('fields.invoice_no')),
+                Tables\Columns\TextColumn::make('for')
+                    ->label(__('fields.entity'))
+                    ->getStateUsing(function ($record) {
+                        if ($record->for == "customer")
+                            return __('fields.receipt_voucher_for_customer');
 
-                Tables\Columns\TextColumn::make('invoice.client.name')
-                    ->label(__('fields.client'))
+                        return __('fields.receipt_voucher_for_other_entity');
+                    })
+                    ->description(function ($record) {
+                        if ($record->invoice?->customer)
+                            return $record->invoice->customer->name;
+
+                        return $record->acc4->name . " - " . $record->acc4->code;
+
+                    })
+                    ->url(function ($record) {
+                        if ($record->invoice?->customer)
+                            return CustomerResource::getUrl('edit', ['record' => $record->invoice->customer_id]);
+                    }, true)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('paid_amount')
+                Tables\Columns\TextColumn::make('invoice.no')
+                    ->label(__('fields.invoice_no'))
+                    ->url(function ($record) {
+                        if ($record->invoice_id)
+                            return SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice_id]);
+                    }, true)->color(Color::Sky),
+
+
+                Tables\Columns\TextColumn::make('payments.amount')
                     ->label(__('fields.paid_amount'))
                     ->getStateUsing(function ($record) {
-                        return main_currency_iso_code() . " " . format_amount($record->invoice->total_paid);
-                    }),
+                        return main_currency_iso_code() . " " . format_amount($record->payments->sum('amount'));
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('paid_amount_percent')
                     ->extraAttributes(function ($record) {
-                        if (percent($record->invoice->total_paid, $record->invoice->getItemsCost(true, true, true)) > 0) {
-                            return ['class' => 'text-success-700'];
-                        }
+                        if ($record->invoice)
+                            if (percent($record->invoice->total_paid, $record->invoice->getItemsCost(true, true, true)) > 0) {
+                                return ['class' => 'text-success-700'];
+                            }
 
                         return ['class' => 'text-danger-700'];
                     })
                     ->label(__('fields.paid_amount_percent'))
                     ->getStateUsing(function ($record) {
-                        return format_amount(percent($record->invoice->total_paid, $record->invoice->getItemsCost(true, true, true))) . "%";
+                        if ($record->invoice)
+                            return format_amount(percent($record->invoice->total_paid, $record->invoice->getItemsCost(true, true, true))) . "%";
                     }),
 
                 Tables\Columns\TextColumn::make('invoice_total')
                     ->label(__('fields.invoice_total'))
                     ->getStateUsing(function ($record) {
-                        return main_currency_iso_code() . " " . format_amount($record->invoice->getItemsCost(true, true, true));
+                        if ($record->invoice)
+                            return main_currency_iso_code() . " " . format_amount($record->invoice->getItemsCost(true, true, true));
                     }),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('for')
+                    ->label(__('fields.entity'))
+                    ->multiple()
+                    ->options([
+                        'customer' => __('fields.client'),
+                        'other_entity' => __('fields.receipt_voucher_for_other_entity')
+                    ]),
+
+                Tables\Filters\SelectFilter::make('invoice_id')
+                    ->label(__('fields.invoice_no'))
+                    ->multiple()
+                    ->options(function (){
+                        return Invoice::whereIn('id', ReceiptVoucher::all()->pluck('invoice_id')->toArray())->pluck('no', 'id')->toArray();
+                    }),
+
+                Tables\Filters\SelectFilter::make('acc4_code')
+                    ->label(__('fields.account'))
+                    ->multiple()
+                    ->options(function (){
+                        $options = [];
+                        foreach (Acc4::whereIn('code', ReceiptVoucher::all()->pluck('acc4_code')->toArray())->get() as $acc){
+                            $options[$acc->code] = $acc->code . " - ".$acc->name;
+                        }
+                        return $options;
+                    }),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
@@ -422,82 +449,20 @@ class ReceiptVoucherResource extends Resource
             ]);
     }
 
-
-    public static function shouldSupplierFieldBeVisible($livewire, $record): bool
-    {
-        return $livewire->data['for'] === "supplier" or $record?->invoice->for === "supplier";
-    }
-
-    public static function shouldSupplierFieldBeReadOnly($livewire, $record): bool
-    {
-        return self::isInvoiceReceived($livewire) or $record?->invoice != null;
-    }
-
-    public static function shouldCustomerFieldBeVisible($livewire, $record): bool
-    {
-        return $livewire->data['for'] === "customer" or $record?->invoice->for === "customer";
-    }
-
-    public static function shouldCustomerFieldBeReadOnly($livewire, $record): bool
-    {
-        return self::isOrderReceived($livewire) or $record?->invoice->for === "customer";
-    }
-
-    public static function shouldAccountFieldBeReadOnly($livewire, $record): bool
-    {
-        return $record !== null;
-    }
-
-    public static function shouldForPersonBeReadOnly($livewire, $record): bool
-    {
-        return self::isInvoiceReceived($livewire) or $record?->invoice !== null;
-    }
-
-    public static function shouldInvoiceFieldBeReadOnly($livewire, $record): bool
-    {
-        return self::isInvoiceReceived($livewire) or $record?->invoice !== null;;
-    }
-
-    public static function shouldInvoiceDetailsBeVisible($livewire, $record): bool
-    {
-        return self::getInvoice($livewire, $record) !== null;
-    }
-
     public static function getInvoice($livewire, $record): ?Invoice
     {
-        if ($record)
+        if ($record and $record->invoice)
             return $record->invoice;
 
-        if ($livewire->data['received_invoice_id'])
-            return Invoice::findOrFail($livewire->data['received_invoice_id']);
-
         return Invoice::find($livewire->data['invoice_id']);
-    }
-
-    public static function isInvoiceReceived($livewire): bool
-    {
-        return $livewire->data['received_invoice_id'] !== null;
-    }
-
-    public static function isOrderReceived($livewire): bool
-    {
-        return $livewire->data['received_order_id'] !== null;
     }
 
     public static function updateInvoiceProperties($invoice, $livewire)
     {
         if ($invoice) {
-            $livewire->data['for'] = $invoice->for;
             $livewire->data['total_invoice'] = format_amount($invoice->getItemsCost(true, true, true));
             $livewire->data['total_paid_amount'] = format_amount($invoice->total_paid);
             $livewire->data['total_unpaid_amount'] = format_amount($invoice->total_unpaid);
-        } else {
-            if ($livewire->data['supplier_id'])
-                $livewire->data['for'] = "supplier";
-
-            if ($livewire->data['customer_id'])
-                $livewire->data['for'] = "customer";
-
         }
     }
 
@@ -526,7 +491,7 @@ class ReceiptVoucherResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['invoice.client', 'invoice.supplier', 'invoice.salesPayments', 'user'])->latest();
+        return parent::getEloquentQuery()->with(['invoice.customer.acc4', 'acc4', 'invoice.order', 'invoice.salesPayments', 'user'])->latest();
     }
 
     public static function getPages(): array
@@ -537,4 +502,5 @@ class ReceiptVoucherResource extends Resource
             'edit' => Pages\EditReceiptVoucher::route('/{record}/edit'),
         ];
     }
+
 }

@@ -21,8 +21,9 @@ class CreateOpTable extends Migration
                 'general-voucher',  //قيد عام
                 'opening-credit', //رصيد إفتتاحي
                 'cash-receipt-voucher', //سند قبض نقدي
-                'bank-transfer-receipt-voucher',
+                'bank-transfer-receipt-voucher', //سند قبض بتحويل بنكي
                 'cash-payment-voucher', //سند صرف نقدي
+                'bank-transfer-payment-voucher', //سند صرف بتحويل بنكي
                 'cheque-receipt-voucher', //سند قبض شيك
                 'cheque-payment-voucher', //سند صرف شيك
                 'currency-purchase', //شراء عملة

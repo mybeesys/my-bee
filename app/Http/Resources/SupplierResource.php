@@ -23,8 +23,9 @@ class SupplierResource extends BaseResource
             'email' => $this->email,
             'notes' => $this->notes,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
-            'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
+            'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
             'canDelete' => true,
+            'acc4Code' => $this->acc4->code,
         ]);
     }
 }

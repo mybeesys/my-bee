@@ -22,6 +22,9 @@ class CreateClientsTable extends Migration
             $table->string('address')->nullable();
             $table->foreignId('user_id')->index()->references('id')->on('users');
             $table->boolean('self_registered')->default(1);
+            $table->foreignId('city_id')->nullable()->index()->references('id')->on('cities');
+            $table->foreignId('area_id')->nullable()->index()->references('id')->on('areas');
+            $table->timestamp('last_seen')->nullable();
             $table->timestamps();
         });
     }

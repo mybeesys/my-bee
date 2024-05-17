@@ -20,6 +20,11 @@
             Artisan::call("optimize:clear");
 
             $this->call(SettingsSeeder::class);
+            $this->call(CountrySeeder::class);
+            $this->call(StateSeeder::class);
+            $this->call(CitySeeder::class);
+            $this->call(AreaSeeder::class);
+
 //            $this->call(UnitSeeder::class);
 //            $this->call(AccSeeder::class);
 //

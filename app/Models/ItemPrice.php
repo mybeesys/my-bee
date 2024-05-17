@@ -16,14 +16,21 @@ class ItemPrice extends BaseModel
         'created_at' => 'datetime',
     ];
 
-    public function acc4(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    //Product or ProductUnit
+    public function item()
     {
-        return $this->belongsTo(Acc4::class);
+        return $this->morphTo();
     }
 
-    public function unit(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function getHasDiscountAttribute():bool
     {
-        return $this->belongsTo(Unit::class);
+        return $this->discount_price and $this->discount_price > 0;
     }
 
+    public function getRetailPriceAttribute()
+    {
+        if ($this->discount_price and $this->discount_price > 0)
+            return $this->discount_price;
+        return $this->price ?? 0;
+    }
 }

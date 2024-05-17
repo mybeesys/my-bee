@@ -5,6 +5,7 @@ namespace App\Filament\Tenant\Resources\ProductResource\Pages;
 use App\Filament\Tenant\Resources\ProductResource;
 use App\Models\ItemPrice;
 use App\Services\PricingService;
+use App\Services\StockService;
 use Filament\Notifications\Notification;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
@@ -43,14 +44,16 @@ class CreateProduct extends CreateRecord
 
             $this->form->model($this->getRecord())->saveRelationships();
 
+            $this->handlePricing($this->record);
+
             $this->callHook('afterCreate');
 
             DB::commit();
 
-        }catch (Halt $exception){
+        } catch (Halt $exception) {
             DB::rollBack();
             return;
-        } catch (ValidationException $exception){
+        } catch (ValidationException $exception) {
             DB::rollBack();
             return;
         } catch (\Throwable $exception) {
@@ -82,4 +85,31 @@ class CreateProduct extends CreateRecord
 
     }
 
+    protected function handlePricing($record)
+    {
+        $record->refresh();
+
+        //basic pricing
+        if($record->variants->isEmpty()){
+            PricingService::instance()->addPrice($record, null, $this->data['price'], $this->data['discount_price'] ?? null);
+        }
+
+        foreach ($record->variants as $productVariant) {
+            $itemInData = collect($this->data['variants'])->firstWhere('sku', $productVariant->sku);
+
+            if($itemInData)
+            {
+                $itemPrice = PricingService::instance()->addPrice($productVariant, null, $itemInData['price'], $itemInData['discount_price'] ?? null);
+            }
+        }
+
+        foreach ($record->extras as $productExtra) {
+            $itemInData = collect($this->data['extras_table'])->firstWhere('item_extra_id', $productExtra->item_extra_id);
+
+            if($itemInData)
+            {
+                $itemPrice = PricingService::instance()->addPrice($productExtra, null, $itemInData['price'], $itemInData['discount_price']);
+            }
+        }
+    }
 }

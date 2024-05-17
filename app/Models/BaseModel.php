@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\TrackWorkflowModelEvents;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
@@ -9,7 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class BaseModel extends Model
 {
-    use LogsActivity;
+    use LogsActivity, TrackWorkflowModelEvents;
 
 
 //    public
@@ -37,10 +38,12 @@ class BaseModel extends Model
     {
         return $query->where('type', $type);
     }
+
     public function scopeOfStatus($query, $status)
     {
         return $query->where('status', $status);
     }
+
     public function scopeActive($query)
     {
         return $query->where('active', 1);
@@ -76,6 +79,18 @@ class BaseModel extends Model
     public function scopeToday($query)
     {
         return $query->whereDate('created_at', Carbon::today());
+    }
+
+    public function scopeWhereDateBetween($query, $fieldName, $fromDate, $toDate, $dates_format)
+    {
+        $from = $fromDate ?? now()->subYears(10);
+        $to = $toDate ?? now()->addYears(10);
+
+        $from = Carbon::createFromFormat($dates_format, $from)->format("Y-m-d");
+        $to = Carbon::createFromFormat($dates_format, $to)->format("Y-m-d");
+
+        return $query->whereDate($fieldName, '>=', $from)
+            ->whereDate($fieldName, '<=', $to);
     }
 
     public function getActivitylogOptions(): LogOptions

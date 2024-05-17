@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources\Acc4Resource\Pages;
 
 use App\Filament\Tenant\Resources\Acc4Resource;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 
 class ManageAcc4s extends ManageRecords
@@ -12,7 +13,7 @@ class ManageAcc4s extends ManageRecords
     protected function getActions(): array
     {
         return [
-//            Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 

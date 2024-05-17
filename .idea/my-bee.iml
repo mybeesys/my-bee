@@ -149,13 +149,11 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/filament/tables" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/filament/support" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/filament/widgets" />
-      <excludeFolder url="file://$MODULE_DIR$/vendor/intervention/image" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/image-optimizer" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/temporary-directory" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-medialibrary" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/image" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/maennchen/zipstream-php" />
-      <excludeFolder url="file://$MODULE_DIR$/vendor/league/glide" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/filament/spatie-laravel-media-library-plugin" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/spatie/laravel-permission" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/bezhansalleh/filament-shield" />
@@ -185,6 +183,10 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/league/csv" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/awcodes/shout" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/flowframe/laravel-trend" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/openspout/openspout" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/anourvalar/eloquent-serialize" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/guava/filament-icon-picker" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/rupadana/filament-announce" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

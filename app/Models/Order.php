@@ -21,11 +21,12 @@ class Order extends BaseModel implements HasMedia
         'paid_date' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'coupon_data' => 'array',
     ];
 
     public static string $STATUS_NEW = "new";
     public static string $STATUS_DELIVERY_IN_PROGRESS = "delivery-in-progress";
-    public static string $STATUS_READY = "ready";
+    public static string $STATUS_PACKAGING = "packaging";
     public static string $STATUS_COMPLETED = "completed";
     public static string $STATUS_CANCELLED = "cancelled";
 
@@ -105,18 +106,40 @@ class Order extends BaseModel implements HasMedia
         return $this->belongsTo(User::class);
     }
 
+    public function coupon(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+
     public function getSubTotalAttribute()
     {
         $price = 0;
+        $taxes = 0;
+        $discount = 0;
+
+        foreach ($this->details as $detail) {
+            if (!$detail->cancelled){
+                $price += $detail->unit_price * $detail->qty;
+                $taxes += $detail->tax;
+                $discount += $detail->discount;
+            }
+        }
+        return $price + $this->extras_total + $taxes - $discount;
+    }
+
+    public function getExtrasTotalAttribute()
+    {
+        $value = 0;
         foreach ($this->details as $detail) {
             if (!$detail->cancelled)
-                $price += $detail->unit_price * $detail->qty;
+                $value += $detail->orderDetailsExtras->sum('unit_price');
         }
-        return $price;
+        return $value;
     }
 
     public function getTotalAttribute()
     {
-        return $this->sub_total + $this->delivery + $this->delivery_extra - $this->discount;
+        return $this->sub_total + $this->delivery + $this->delivery_extra;
     }
 }

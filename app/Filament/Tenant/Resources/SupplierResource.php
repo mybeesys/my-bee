@@ -15,15 +15,13 @@ class SupplierResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $slug = "purchases/suppliers";
+    protected static ?string $slug = "suppliers";
 
-    protected static ?int $navigationSort = 4;
-
-    protected static bool $shouldRegisterNavigation = false;
+    protected static ?int $navigationSort = 2;
 
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.products');
+        return user_setting('fav.suppliers', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_clients_and_suppliers');
     }
 
     public static function getLabel(): ?string
@@ -61,14 +59,16 @@ class SupplierResource extends Resource
                 Forms\Components\TextInput::make('address')
                     ->label(__('fields.address')),
 
-
                 Forms\Components\TextInput::make('email')
                     ->label(__('fields.email')),
 
             ])->columns(5),
 
             Forms\Components\Section::make([
-                Forms\Components\RichEditor::make('notes')->label(__('fields.notes')),
+                Forms\Components\Textarea::make('notes')
+                    ->cols(10)
+                    ->rows(5)
+                    ->label(__('fields.notes')),
             ])
         ];
     }

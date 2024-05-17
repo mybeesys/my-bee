@@ -73,5 +73,7 @@ class Kernel extends HttpKernel
         'ensure_tenant_id_in_header' => \App\Http\Middleware\EnsureTenantIdInHeader::class,
         'ensure_user_can_access_tenant' => \App\Http\Middleware\EnsureUserCanAccessTenant::class,
         'apply_api_tenant_scopes' => \App\Http\Middleware\ApplyApiTenantScopes::class,
+        'ensure_tenant_slug_in_header' => \App\Http\Middleware\EnsureTenantSlugInHeader::class,
+        'ensure_store_uuid_in_header' => \App\Http\Middleware\EnsureStoreUUIDInHeader::class,
     ];
 }

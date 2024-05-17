@@ -7,6 +7,13 @@ document.addEventListener('livewire:init', () => {
                 // preventDefault()
                 // location.reload();
             } else {
+
+                // new FilamentNotification()
+                //     .title('Something went wrong!')
+                //     .danger()
+                //     .persistent()
+                //     .send()
+
                 preventDefault()
             }
         })

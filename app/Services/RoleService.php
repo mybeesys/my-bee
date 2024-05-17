@@ -244,4 +244,9 @@ class RoleService
         }
         return str($role)->title()->value();
     }
+
+    public function getRoles($users_ids):array
+    {
+        return User::with('roles')->whereIn('id', $users_ids ?? [])->get()->pluck('roles')->flatten()->pluck('name')->toArray() ?? [];
+    }
 }

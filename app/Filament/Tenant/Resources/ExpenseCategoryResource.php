@@ -29,9 +29,14 @@ class ExpenseCategoryResource extends Resource
         return __('fields.expense_category');
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return user_setting('fav.expenses_categories', false);
+    }
+
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.expenses');
+        return user_setting('fav.expenses_categories', false) ? __('fields.navigation_group_favourites') :  __('fields.expenses');
     }
 
     public static function getPluralLabel(): ?string
@@ -86,11 +91,9 @@ class ExpenseCategoryResource extends Resource
                     ->action(function (ExpenseCategory $record) {
                         if ($record->expenses->isEmpty()) {
                             $record->delete();
+                            fns()->deleted();
                         } else {
-                            Notification::make()
-                                ->title(__('fields.record_in_use_alert'))
-                                ->warning()
-                                ->send();
+                            fns()->sendRecordInUse();
                         }
                     })
             ])

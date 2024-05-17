@@ -18,15 +18,25 @@ class CreateOrderDetailsTable extends Migration
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
             $table->foreignId('order_id')->index()->references('id')->on('orders');
 
-            $table->enum('type', ['basic', 'units', 'variants']);
-
-            $table->string('display_name');
-
             $table->morphs('item');
+
             $table->integer('qty');
+
+            $table->decimal('discount', 21, 6)->default(0);
+            $table->decimal('tax', 21, 6)->default(0);
+
             $table->integer('taken_qty')->default(0);
-            $table->decimal('unit_price', 19, 4);
+
+            $table->decimal('unit_price', 21, 6);
+
             $table->boolean('cancelled')->default(0);
+            $table->timestamp('cancelled_date')->nullable();
+
+            $table->foreignId('user_id')->nullable()->index()->references('id')->on('users'); //from panel?
+
+            $table->foreignId('cancelled_by_id')->nullable()->index()->references('id')->on('users');
+
+            $table->text('tax_profile_data')->nullable();
 
             $table->timestamps();
         });

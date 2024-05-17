@@ -5,6 +5,7 @@ namespace App\Traits;
 trait HideResourceFieldsFromRequest
 {
     protected $withoutFields = [];
+    protected $onlyFields = [];
 
     /**
      * Set the keys that are supposed to be filtered out.
@@ -15,6 +16,19 @@ trait HideResourceFieldsFromRequest
     public function hide(array $fields)
     {
         $this->withoutFields = $fields;
+
+        return $this;
+    }
+
+    /**
+     * Set the keys.
+     *
+     * @param array $fields
+     * @return $this
+     */
+    public function only(array $fields)
+    {
+        $this->onlyFields = $fields;
 
         return $this;
     }

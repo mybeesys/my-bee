@@ -16,6 +16,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 trait HttpResponses
 {
     private $statusCode = 200;
+    private $code = 1;
     private $statusText = "OK";
     private $message = "";
     private $data = [];
@@ -36,16 +37,23 @@ trait HttpResponses
     private $STATUS_CODE_SERVER_ERROR = 500;
 
 
-    public static $STATUS_CODE_WALLET_BALANCE_EMPTY = 100;
-    public static $STATUS_CODE_WALLET_BALANCE_INSUFFICIENT_FUNDS = 101;
-    public static $STATUS_CODE_WALLET_BALANCE_TRANSACTION_FAILED = 102;
-    public static $STATUS_CODE_ACCOUNT_DEACTIVATED = 103;
-    public static $STATUS_CODE_ACCOUNT_LINKED_TO_ANOTHER_DEVICE_CHANGE_DEVICE_ALERT = 104;
-    public static $STATUS_CODE_ACCOUNT_LINKED_TO_ANOTHER_DEVICE = 105;
+    public static $STATUS_CODE_OK = 1;
+    public static $STATUS_CODE_WALLET_BALANCE_INSUFFICIENT_FUNDS = 100;
+    public static $CODE_ACCOUNT_DEACTIVATED = 101;
+    public static $CODE_ACCOUNT_LINKED_TO_ANOTHER_DEVICE_CHANGE_DEVICE_ALERT = 102;
+    public static $CODE_ACCOUNT_LINKED_TO_ANOTHER_DEVICE = 103;
+    public static $CODE_CART_IS_EMPTY = 104;
+    public static $CODE_CART_ITEM_ALREADY_EXISTS = 105;
 
     public function statusCode($statusCode)
     {
         $this->statusCode = $statusCode;
+        return $this;
+    }
+
+    public function code(int $code)
+    {
+        $this->code = $code;
         return $this;
     }
 
@@ -259,6 +267,7 @@ trait HttpResponses
 
         $data = response()->json([
             'statusCode' => $this->statusCode,
+            'code' => $this->code,
             'statusText' => $this->statusText,
             'message' => $this->message,
             'data' => $this->data,
@@ -298,6 +307,7 @@ trait HttpResponses
 
         $data = response()->json([
             'statusCode' => $this->statusCode,
+            'code' => $this->code,
             'statusText' => $this->statusText,
             'message' => $this->message,
             'data' => $data,

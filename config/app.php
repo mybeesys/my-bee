@@ -18,6 +18,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'shop_url' => env('SHOP_URL', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

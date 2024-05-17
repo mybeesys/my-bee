@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\ExpenseResource\Pages;
 
+use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -25,6 +26,8 @@ class ListExpenses extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            AddToFavourites::make('fav')
+                ->settingKey('fav.expenses'),
             Actions\CreateAction::make(),
         ];
     }

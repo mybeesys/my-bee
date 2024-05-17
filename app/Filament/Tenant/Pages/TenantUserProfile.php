@@ -7,6 +7,7 @@ use App\Rules\InternationalPhoneRule;
 use App\Rules\UniqueClientAttributeRule;
 use App\Rules\UniqueItemAttributeRule;
 use App\Services\CookieService;
+use App\Services\CouponService;
 use App\Services\SettingService;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -202,9 +203,9 @@ class TenantUserProfile extends Page implements HasForms
                                         ->label(__('fields.enable_notifications'))
                                         ->columnSpan(3),
 
-                                    Checkbox::make("enable_top_navigation")
-                                        ->label(__('fields.enable_top_navigation'))
-                                        ->columnSpan(3),
+//                                    Checkbox::make("enable_top_navigation")
+//                                        ->label(__('fields.enable_top_navigation'))
+//                                        ->columnSpan(3),
 
                                 ])
                         ]),
@@ -262,7 +263,7 @@ class TenantUserProfile extends Page implements HasForms
                             'font' => $this->font,
                             'primary_color' => $this->primary_color,
                             'enable_notifications' => $this->enable_notifications,
-                            'enable_top_navigation' => $this->enable_top_navigation,
+//                            'enable_top_navigation' => $this->enable_top_navigation,
                             'date_picker_format' => $this->date_picker_format,
                             'date_column_format' => $this->date_column_format,
                         ]

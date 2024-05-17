@@ -2,10 +2,16 @@
 
 namespace App\Filament\Tenant\Resources\OrderResource\Pages;
 
+use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Resources\OrderResource;
+use App\Models\PriceOffer;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
+use Filament\Forms\Components\Select;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Colors\Color;
 
 class ListOrders extends ListRecords
 {
@@ -14,7 +20,8 @@ class ListOrders extends ListRecords
     protected function getActions(): array
     {
         return [
-            CreateAction::make(),
+            AddToFavourites::make('fav')
+                ->settingKey('fav.orders'),
         ];
     }
 

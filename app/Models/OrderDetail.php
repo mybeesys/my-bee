@@ -11,8 +11,17 @@ class OrderDetail extends BaseModel
 
     protected $guarded = [];
 
+    protected $casts = [
+        'tax_profile_data' => 'array',
+    ];
+
     public function item()
     {
         return $this->morphTo();
+    }
+
+    public function orderDetailsExtras(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderDetailsExtra::class, 'order_details_id');
     }
 }

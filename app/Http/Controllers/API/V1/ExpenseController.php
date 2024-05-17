@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\API\BaseController;
+use App\Http\Requests\ListExpensesRequest;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
+use App\Models\TaxProfile;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -15,15 +17,23 @@ class ExpenseController extends BaseController
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(ListExpensesRequest $request)
     {
-        $data = Expense::with(['category'])
+        $data = Expense::with(['category', 'taxProfile'])
             ->when($request->expense_category_id, function (Builder $builder) use ($request) {
                 return $builder->where('expense_category_id', $request->expense_category_id);
             })
+            ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
+                return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
+            })
+            ->when($request->min_amount or $request->max_amount, function (Builder $builder) use ($request) {
+                return $builder->whereBetween('amount', [$request->min_amount ?? 0, $request->max_amount ?? PHP_INT_MAX]);
+            })
             ->get();
 
-        return $this->responder(__('messages_data_retrieved'), 200, ExpenseResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, ExpenseResource::collection($data))
+            ->filters($request->validated())
+            ->respond();
     }
 
     /**
@@ -35,11 +45,17 @@ class ExpenseController extends BaseController
 
         $data['tenant_id'] = $this->getTenant()->id;
 
+        if ($data['tax_profile_id'] ?? null) {
+            $taxProfile = TaxProfile::find($data['tax_profile_id']);
+            $percent = collect($taxProfile->taxes)->sum('percent');
+            $data['tax'] = $percent / 100 * $data['amount'];
+            $data['tax_profile_data'] = $taxProfile->toArray();
+        }
         $expense = Expense::create($data);
 
         $expense->load('category');
 
-        return $this->responder(__('messages_data_stored'), 201, new ExpenseResource($expense))->respond();
+        return $this->responder(__('messages.api.created'), 201, new ExpenseResource($expense))->respond();
     }
 
     /**
@@ -47,8 +63,8 @@ class ExpenseController extends BaseController
      */
     public function show(string $id)
     {
-        $item = Expense::with(['category'])->findOrFail($id);
-        return $this->responder(__('messages_data_retrieved'), 200, new ExpenseResource($item))->respond();
+        $item = Expense::with(['category', 'taxProfile'])->findOrFail($id);
+        return $this->responder(__('messages.api.retrieved'), 200, new ExpenseResource($item))->respond();
     }
 
     /**
@@ -56,9 +72,21 @@ class ExpenseController extends BaseController
      */
     public function update(UpdateExpenseRequest $request, string $id)
     {
-        $item = Expense::with(['category'])->findOrFail($id);
-        $item->update($request->validated());
-        return $this->responder(__('messages_data_retrieved'), 200, new ExpenseResource($item))->respond();
+        $data = $request->validated();
+        $item = Expense::with(['category', 'taxProfile'])->findOrFail($id);
+
+        if ($data['tax_profile_id'] ?? null) {
+            $taxProfile = TaxProfile::find($data['tax_profile_id']);
+            $percent = collect($taxProfile->taxes)->sum('percent');
+            $data['tax'] = $percent / 100 * $data['amount'];
+            $data['tax_profile_data'] = $taxProfile->toArray();
+        }else{
+            $data['tax'] = 0;
+            $data['tax_profile_data'] = null;
+        }
+
+        $item->update($data);
+        return $this->responder(__('messages.api.updated'), 200, new ExpenseResource($item))->respond();
     }
 
     /**
@@ -67,10 +95,10 @@ class ExpenseController extends BaseController
     public function destroy(string $id)
     {
         $item = Expense::findOrFail($id);
-        abort_if(!$this->canDelete($item), 403, "Permission denied");
+        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
         try {
             $item->delete();
-            return $this->responder(__('messages_data_deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

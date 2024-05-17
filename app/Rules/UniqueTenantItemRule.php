@@ -25,7 +25,7 @@ class UniqueTenantItemRule implements ValidationRule
 
         $exists = app()->make($this->item_class)
             ->where($this->item_attribute, $value)
-            ->where('tenant_id', filament()->getTenant()->id)
+            ->where('tenant_id', filament()->getTenant()->id ?? request()->header('Tenant-Id'))
             ->where('id', '!=', $this->ignore_id)
             ->first();
 

@@ -2,11 +2,12 @@
 
 return [
     "api" => [
-        "created" => "Record created.",
-        "updated" => "Record updated.",
-        "deleted" => "Record deleted.",
-        "retrieved" => "Data retrieved.",
-        "max_records" => "You have exceeded the maximum allowed records.",
+        "created" => "تمت الإضافة",
+        "updated" => "تم الحفظ",
+        "deleted" => "تم الحذف",
+        "retrieved" => "تم جلب البيانات",
+        'permission_denied' => 'ليس لديك صلاحية لإجراء هذة العملية',
+        "max_records" => "لقد تجاوزت الحد المسموح به",
     ],
 
     'greeting' => "مرحباَ",

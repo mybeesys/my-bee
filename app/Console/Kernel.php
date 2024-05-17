@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Jobs\TrackOrderStatusAutomationJob;
+use App\Models\Invoice;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -30,6 +32,19 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->everyMinute()
             ->runInBackground();
+
+        $schedule->job(new TrackOrderStatusAutomationJob())
+            ->withoutOverlapping()
+            ->everyMinute()
+            ->runInBackground();
+
+
+        $schedule->call(function () {
+            Invoice::where('created_at', '>=', Carbon::now()->subMinutes(20)->toDateTimeString())->delete();
+        })
+            ->withoutOverlapping()
+            ->everyMinute()
+            ->runInBackground();
     }
 
     /**
@@ -37,7 +52,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

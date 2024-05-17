@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\PurchaseInvoiceStatus;
+use App\Models\City;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\TenantService;
@@ -16,7 +16,24 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
+//dd(json_encode(
+//    [
+//        0 => [
+//            1,
+//            2,
+//            3,
+//            4
+//        ],
+//        1 => [
+//            5,
+//            6,
+//            7,
+//            8
+//        ]
+//    ]
+//));
+//dd(User::with('tokens')->find(3)->update(['password' => bcrypt(123456)]));
+//dd(\App\Models\Acc4::asOptions());
 //dd(User::with('tokens')->find(3)->createToken("test")->plainTextToken);
 //Route::get('/', function () {
 //    return view('welcome');
@@ -30,4 +47,24 @@ use Illuminate\Support\Facades\Route;
 
 //$value = \Illuminate\Support\Facades\Crypt::decrypt(App\Services\CookieService::instance()->get('primary_color'), false);
 
-//(new TenantService())->updateOrCreateSettings(3);
+//(new TenantService())->updateOrCreateSettings(1);
+
+//dd(\App\Models\Product::with(['stocks'])->find(1));
+
+//dd(\App\Services\StockService::instance()->canSellProductUnit(\App\Models\ProductUnit::find(2), 1));
+
+//\Illuminate\Support\Facades\Artisan::call('migrate');
+
+//\Rupadana\FilamentAnnounce\Announce::make()
+//    ->title('Big News!')
+//    ->icon('heroicon-o-megaphone')
+//    ->body('Filament can now show very important message to specific users!')
+//    ->disableCloseButton() // Optional, if you want ur announcement discloseable
+//    ->alignCenter()
+//    ->announceTo(User::all());
+
+//dd(City::with('areas')->doesntHave('areas')->first(), City::with('areas')->has('areas')->get());
+//foreach (City::with('areas')->doesntHave('areas')->get() as $city)
+//{
+//    dd($city);
+//}

@@ -2,19 +2,30 @@
 
 namespace App\Models;
 
+use App\Traits\HasFinancialAccount;
+use App\Traits\HasPrice;
+use App\Traits\HasStock;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class ProductVariant extends BaseModel
+class ProductVariant extends BaseModel implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, HasFinancialAccount, HasPrice, HasStock, InteractsWithMedia;
 
     protected $guarded = [];
+
+    public $finance = ['name' => 'finance_name', 'acc3_code' => 1204]; //المخزون
 
     protected $casts = [
         'unlimited_qty' => 'boolean',
         'variant_library_options_ids' => 'array',
     ];
+
+    public function getFinanceNameAttribute()
+    {
+        return $this->product->name ." ". $this->name;
+    }
 
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

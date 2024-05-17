@@ -14,13 +14,13 @@
 
         protected $guarded = [];
 
-        protected $casts = [
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
-        ];
-
-        public function localities()
+        public function country(): \Illuminate\Database\Eloquent\Relations\BelongsTo
         {
-            return $this->hasMany(Locality::class);
+            return $this->belongsTo(Country::class);
+        }
+
+        public function cities(): \Illuminate\Database\Eloquent\Relations\HasMany
+        {
+            return $this->hasMany(City::class);
         }
     }

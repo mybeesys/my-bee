@@ -2,16 +2,30 @@
 
 namespace App\Models;
 
+use App\Traits\HasFinancialAccount;
+use App\Traits\HasPrice;
+use App\Traits\HasStock;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class ProductUnit extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, HasFinancialAccount, HasPrice, HasStock;
+
+    public $finance = ['name' => 'name', 'acc3_code' => 1204]; //المخزون
 
     protected $guarded = [];
 
     protected $table = "product_unit";
+
+    public function getFinanceNameAttribute()
+    {
+        return $this->product->name ." ". $this->unit->name;
+    }
+
+    public function getNameAttribute()
+    {
+        return $this->product->name ." ". $this->unit->name;
+    }
 
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
@@ -21,28 +35,6 @@ class ProductUnit extends BaseModel
     public function unit(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Unit::class);
-    }
-
-    public function getInventoryCountAttribute()
-    {
-        return $this->qty ?? 0;
-    }
-
-    public function getRetailPriceAttribute()
-    {
-        if ($this->discount_price and $this->discount_price > 0)
-            return $this->discount_price;
-        return $this->price ?? 0;
-    }
-
-    public function setPriceAttribute($value)
-    {
-        return $this->attributes['price'] = $value ?? 0;
-    }
-
-    public function setQtyAttribute($value)
-    {
-        return $this->attributes['qty'] = $value ?? 0;
     }
 
 }

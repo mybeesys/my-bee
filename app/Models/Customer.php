@@ -35,15 +35,46 @@ class Customer extends BaseModel
         return $this->belongsTo(Representative::class);
     }
 
-
-    public function reports()
+    public function state()
     {
-        return $this->hasMany(ClientReport::class);
+        return $this->belongsTo(State::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
     }
 
     public static function dropdown(): array
     {
         return Customer::pluck('name', 'id')->toArray();
+    }
+
+    public function getLocationAttribute()
+    {
+        $this->loadMissing('city.state', 'area');
+
+        $location = null;
+
+        if ($this->city)
+        {
+            $location = $this->city->state->name . " - " . $this->city->name;
+        }
+
+        if ($this->area)
+            $location = $location . " - " . $this->area->name;
+
+        return $location;
     }
 
     public function setPhoneAttribute($value)

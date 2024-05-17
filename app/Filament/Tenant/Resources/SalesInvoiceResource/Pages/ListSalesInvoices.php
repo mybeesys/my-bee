@@ -2,9 +2,15 @@
 
 namespace App\Filament\Tenant\Resources\SalesInvoiceResource\Pages;
 
+use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Resources\SalesInvoiceResource;
-use Filament\Pages\Actions;
+use App\Models\PriceOffer;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\CreateAction;
+use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Colors\Color;
 
 class ListSalesInvoices extends ListRecords
 {
@@ -13,7 +19,34 @@ class ListSalesInvoices extends ListRecords
     protected function getActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            AddToFavourites::make('fav')
+                ->settingKey('fav.sales_invoices'),
+
+            ActionGroup::make([
+
+                CreateAction::make(),
+
+                Action::make('make_sales_invoice_from_price_offer')
+                    ->label(__('fields.make_sales_invoice_from_price_offer'))
+                    ->requiresConfirmation()
+                    ->color(Color::Sky)
+                    ->form([
+                        Select::make('price_offer_id')
+                            ->required()
+                            ->label(__('fields.price_offers'))
+                            ->searchable()
+                            ->options(function () {
+                                $data = [];
+                                foreach (PriceOffer::all() as $priceOffer) {
+                                    $data[$priceOffer->id] = $priceOffer->no . " - " . $priceOffer->description;
+                                }
+                                return $data;
+                            })
+                    ])->action(function ($data) {
+                        $this->redirect(SalesInvoiceResource::getUrl('create', ['price_offer_id' => $data['price_offer_id']]));
+                    }),
+
+            ])->button(),
         ];
     }
 }

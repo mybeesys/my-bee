@@ -17,8 +17,8 @@ class SupplierController extends BaseController
      */
     public function index()
     {
-        $data = Supplier::all();
-        return $this->responder(__('messages_data_retrieved'), 200, SupplierResource::collection($data))->respond();
+        $data = Supplier::with('acc4')->get();
+        return $this->responder(__('messages.api.retrieved'), 200, SupplierResource::collection($data))->respond();
     }
 
     /**
@@ -32,7 +32,9 @@ class SupplierController extends BaseController
 
         $supplier = Supplier::create($data);
 
-        return $this->responder(__('messages_data_stored'), 201, new SupplierResource($supplier))->respond();
+        $supplier->load('acc4');
+
+        return $this->responder(__('messages.api.created'), 201, new SupplierResource($supplier))->respond();
     }
 
     /**
@@ -40,8 +42,8 @@ class SupplierController extends BaseController
      */
     public function show(string $id)
     {
-        $item = Supplier::findOrFail($id);
-        return $this->responder(__('messages_data_retrieved'), 200, new SupplierResource($item))->respond();
+        $item = Supplier::with('acc4')->findOrFail($id);
+        return $this->responder(__('messages.api.retrieved'), 200, new SupplierResource($item))->respond();
     }
 
     /**
@@ -49,9 +51,9 @@ class SupplierController extends BaseController
      */
     public function update(UpdateSupplierRequest $request, string $id)
     {
-        $supplier = Supplier::findOrFail($id);
+        $supplier = Supplier::with('acc4')->findOrFail($id);
         $supplier->update($request->validated());
-        return $this->responder(__('messages_data_retrieved'), 200, new SupplierResource($supplier))->respond();
+        return $this->responder(__('messages.api.updated'), 200, new SupplierResource($supplier))->respond();
     }
 
     /**
@@ -60,10 +62,10 @@ class SupplierController extends BaseController
     public function destroy(string $id)
     {
         $item = Supplier::findOrFail($id);
-        abort_if(!$this->canDelete($item), 403, "Permission denied");
+        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
         try {
             $item->delete();
-            return $this->responder(__('messages_data_deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

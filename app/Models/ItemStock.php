@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasPrefixedId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ItemStock extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, HasPrefixedId;
 
     protected $guarded = [];
 
@@ -16,22 +17,25 @@ class ItemStock extends BaseModel
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
     public function item()
     {
         return $this->morphTo();
     }
 
     //remove currency later
-    public function getTotalCost($currency_iso_code = 'SAR')
+    public function getTotalCost()
     {
-        if ($this->currency_iso_code = $currency_iso_code)
-            return ($this->qty_in - $this->qty_out) * $this->unit_cost;
-
-        return 0;
-//            if ($currency == 'sdg')
-//                return ($this->qty_in - $this->qty_out) * $this->unit_cost_sdg;
-//
-//            return ($this->qty_in - $this->qty_out) * $this->unit_cost_usd;
+        return ($this->qty_in - $this->qty_out) * $this->unit_cost;
     }
 
     public function getAvailableAttribute(): int

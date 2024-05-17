@@ -79,7 +79,7 @@ class SettingService
                 'visible_in_user_friendly_settings' => $visible_in_user_friendly_settings,
                 'options_cache_key' => $getOptionsFromCacheKey,
             ],
-            array_merge($rules, ['type' => 'in:text,rich-text,text-area,bool,file,options,products-discount'])
+            array_merge($rules, ['type' => 'in:text,rich-text,text-area,bool,toggle,file,options,products-discount'])
         );
 
         if ($validator->passes()) {

@@ -17,7 +17,7 @@ class WarehouseController extends BaseController
     public function index()
     {
         $data = Warehouse::with(['stocks.item'])->get();
-        return $this->responder(__('messages_data_retrieved'), 200, WarehouseResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, WarehouseResource::collection($data))->respond();
     }
 
 
@@ -32,7 +32,7 @@ class WarehouseController extends BaseController
 
         $warehouse = Warehouse::create($data);
 
-        return $this->responder(__('messages_data_stored'), 201, new WarehouseResource($warehouse))->respond();
+        return $this->responder(__('messages.api.created'), 201, new WarehouseResource($warehouse))->respond();
     }
 
     /**
@@ -41,7 +41,7 @@ class WarehouseController extends BaseController
     public function show(string $id)
     {
         $item = Warehouse::findOrFail($id);
-        return $this->responder(__('messages_data_retrieved'), 200, new WarehouseResource($item))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, new WarehouseResource($item))->respond();
     }
 
     /**
@@ -51,7 +51,7 @@ class WarehouseController extends BaseController
     {
         $warehouse = Warehouse::findOrFail($id);
         $warehouse->update($request->validated());
-        return $this->responder(__('messages_data_retrieved'), 200, new WarehouseResource($warehouse))->respond();
+        return $this->responder(__('messages.api.updated'), 200, new WarehouseResource($warehouse))->respond();
     }
 
     /**
@@ -60,10 +60,10 @@ class WarehouseController extends BaseController
     public function destroy(string $id)
     {
         $item = Warehouse::findOrFail($id);
-        abort_if(!$this->canDelete($item), 403, "Permission denied");
+        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
         try {
             $item->delete();
-            return $this->responder(__('messages_data_deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

@@ -18,7 +18,7 @@ class ExpenseCategoryResource extends BaseResource
             'expensesTotal' => $this->expenses_total_formatted,
             'expenses' => ExpenseResource::collection($this->expenses),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
-            'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
+            'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
             'canDelete' => true,
         ]);
     }

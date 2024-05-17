@@ -25,7 +25,7 @@ class CategoryResource extends BaseResource
             'canBecomeParent' => $this->products->isEmpty(),
             'canDelete' => true,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
-            'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
+            'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
 //            'parent' => new CategoryResource($this->parent),
         ]);
     }

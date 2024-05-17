@@ -21,7 +21,7 @@ class WarehouseResource extends BaseResource
             'main' => $this->main,
             'pullingStockPriority' => $this->pulling_stock_priority,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
-            'updatedAt' => $this->updated_at->format('F j, Y, g:i a'),
+            'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
             'canDelete' => true,
             'inventoryCount' => $this->stocks->count(),
             'inventory' => [],

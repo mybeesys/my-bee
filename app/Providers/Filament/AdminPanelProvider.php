@@ -43,7 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('')
             ->domain($domain)
             ->globalSearch(false)
-            ->spa()
+//            ->spa()
             ->sidebarCollapsibleOnDesktop()
 //            ->font('Noto Kufi Arabic', provider: GoogleFontProvider::class)
 //            ->navigationGroups([
@@ -130,6 +130,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentSpatieLaravelBackupPlugin::make()
                     ->usingQueue('default')
                     ->usingPage(Backups::class),
+
             ]);
     }
 }

@@ -103,13 +103,13 @@ class StocksRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('unit_retail')
                     ->label(__('fields.unit_retail'))
                     ->tooltip(function ($record) {
-                        if ($record->item->lastPrice)
+                        if ($record->item?->lastPrice)
                             return numbers_to_words($record->item->lastPrice->price);
 
                         return "-";
                     })
                     ->getStateUsing(function ($record) {
-                        if ($record->item->lastPrice)
+                        if ($record->item?->lastPrice)
                             return $record->item->lastPrice->currency_iso_code . " " . format_amount($record->item->lastPrice->price);
                         return "-";
                     }),

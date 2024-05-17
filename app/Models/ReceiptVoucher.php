@@ -12,6 +12,7 @@ class ReceiptVoucher extends BaseModel
     protected $guarded = [];
 
     protected $casts = [
+        'date' => 'datetime',
         'files' => 'array',
         'submitted_at' => 'datetime',
         'created_at' => 'datetime',
@@ -33,4 +34,8 @@ class ReceiptVoucher extends BaseModel
         return $this->belongsTo(User::class);
     }
 
+    public function acc4(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Acc4::class);
+    }
 }

@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
 
-            $table->string('name')->unique();
+            $table->string('name');
+
+            $table->unique(['tenant_id', 'name']);
+
             $table->timestamps();
         });
     }

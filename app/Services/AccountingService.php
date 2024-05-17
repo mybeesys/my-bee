@@ -104,11 +104,16 @@ class AccountingService
 //        $this->exchange_rate
 
         //invoice_id is nullable
+
+
         $valid = ($this->date and $this->op_id and $this->currency_iso_code
             and $this->transaction_id and $this->amount and $this->amount > 0
             and $this->credit_account_code and $this->credit_statement and $this->debit_statement);
 
         if (!$valid) {
+//            dd($this->date , $this->op_id , $this->currency_iso_code
+//                , $this->transaction_id , $this->amount , $this->amount > 0
+//                , $this->credit_account_code , $this->credit_statement , $this->debit_statement);
             throw new \Exception("Invalid transaction");
         }
 

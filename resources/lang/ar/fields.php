@@ -128,13 +128,13 @@ return [
     'reports' => 'البلاغات',
     'report' => 'البلاغ',
 
-    'category' => 'التصنيف',
+    'category' => 'تصنيف',
     'categories' => 'التصنيفات',
 
     'sort' => 'الترتيب',
     'category_parent' => 'التصنيف الأعلي',
     'category_subs' => 'التصنيفات الفرعية',
-    'product' => 'المنتج',
+    'product' => 'منتج',
     'products' => 'المنتجات',
     'products_and_raw_materials' => 'المنتجات والمواد الخام',
     'all_categories' => 'كل التصنيفات',
@@ -241,8 +241,9 @@ return [
     'crm' => 'خدمات العملاء',
     'sales' => 'المبيعات',
     'purchases' => 'المشتريات',
-    'purchases_invoice' => 'فاتورة المشتريات',
+    'purchases_invoice' => 'فاتورة مشتريات',
     'purchases_invoices' => 'فواتير المشتريات',
+    'purchase_invoice' => 'فاتورة المشتريات',
 
     'invoices' => 'الفواتير',
 
@@ -465,7 +466,7 @@ return [
 
     'expenses' => 'المصروفات',
     'expense' => 'مصروف',
-    'expense_category' => 'تصنيف المصروف',
+    'expense_category' => 'تصنيف مصروف',
     'expense_categories' => 'تصنيفات المصروفات',
     'amount_money_written' => 'المبلغ كتابة',
 
@@ -601,7 +602,7 @@ return [
     'current_status' => 'حالة الفاتورة الحالية',
     'change_status_to' => 'تغيير الحالة إلى',
 
-    'purchase_invoice_status' => 'نوع فاتورة المشتريات',
+    'purchase_invoice_status' => 'نوع فاتورة مشتريات',
     'purchase_invoice_statuses' => 'أنواع فواتير المشتريات',
     'color' => 'اللون',
     'default_status' => 'حالة إفتراضية',
@@ -618,7 +619,7 @@ return [
     'email_or_phone' => 'البريد الإلكتروني أو الهاتف',
 
     'invoice_total_discount' => 'إجمالي الخصم',
-    'total_invoice_net_post_discount' => 'الصافي بعد الخصم',
+    'total_invoice_net_post_discount' => 'الإجمالي بعد الخصم',
     'invoice_total_with_tax' => 'الإجمالي شامل الضريبة',
 
     'change_invoice_numbering_helper_text' => 'تغيير شكل ونمط الترقيم',
@@ -637,9 +638,14 @@ return [
 
     'payment_status' => 'حالة السداد',
 
-    'make_receipt_voucher_for' => 'تفاصيل سند القبض',
-    'receipt_voucher_for_supplier' => 'مورد',
+    'make_payment_voucher_for' => 'سند صرف ل',
+    'make_receipt_voucher_for' => 'سند قبض ل',
+
+    'entity' => 'الجهة',
+    'receipt_voucher_for_other_entity' => 'جهة أخرى',
     'receipt_voucher_for_customer' => 'عميل',
+    'payment_voucher_for_other_entity' => 'جهة أخرى',
+    'payment_voucher_for_supplier' => 'مورد',
 
     'total_payments' => 'إجمالي الدفعيات',
 
@@ -679,8 +685,8 @@ return [
     'product_type_units' => 'وحدات',
     'product_type_basic' => 'أساسي',
     'product_type_service' => 'خدمي',
-    'product_type_basic_description' => 'للمنتجات التي لا تتطلب خيارات متعددة. مثال: لابتوب',
-    'product_type_units_description' => 'وحدات قياس متعددة لنقاط البيع',
+    'product_type_basic_description' => 'للمنتجات التي لا تتطلب خيارات متعددة.',
+    'product_type_units_description' => 'وحدات قياس متعددة',
     'product_type_service_description' => 'منتج خدمي.',
     'product_type_variants' => 'خيارات متعددة',
     'unlimited_qty' => 'كمية غير محدودة',
@@ -710,7 +716,7 @@ return [
     'new_orders' => 'الطلبات الجديدة',
 
     'order_status_new' => 'جديد',
-    'order_status_ready' => 'جاهز',
+    'order_status_packaging' => 'جاري التجهيز',
     'order_status_delivery-in-progress' => 'جاري التوصيل',
     'order_status_completed' => 'مكتمل',
     'order_status_cancelled' => 'ملغي',
@@ -719,5 +725,152 @@ return [
     'alert_deleted' => 'تم الحذف',
     'alert_saved' => 'تم الحفظ',
 
+    'product_extras' => 'إضافات المنتج',
+    'products_extras' => 'إضافات المنتجات',
+    'product_extra' => 'الإضافة',
+    'extra_placeholder' => 'صوص كاتشب ومايونيز',
+
+    'shop' => 'المتجر',
+    'visit_shop' => 'زيارة المتجر',
+
+    'product_sort' => 'ترتيب ظهور المنتج في المتجر',
+
+    'config_invoice_alert' => 'يرجى تهيئة الفواتير في الإعدادات حسب احتياجاتك قبل إصدار الفواتير',
+
+    'invoice_stock_released' => 'تم إنزال المخزون',
+
+    'new_clients' => 'العملاء الجدد',
+    'latest_orders' => 'أحدث الطلبات',
+
+    'order_will_be_locked_after_this_action' => "هذا الإجراء سيقوم بإغلاق الطلب",
+
+    'canceled_reason' => 'سبب الإلغاء',
+
+    'latest_clients' => 'أحدث العملاء',
+
+    'navigation_group_favourites' => 'المفضلة',
+
+    'dashboard' => 'الرئيسية',
+
+    'calc_by_variants_msg' => 'يتم التحكم بالقيمة عن طريق خيارات المنتج',
+
+    'calories' => 'السعرات الحرارية',
+    'city' => 'المدينة',
+    'district' => 'المنطقة',
+    'area' => 'الحي',
+    'items' => 'العناصر',
+
+    'shop_link' => 'رابط المتجر',
+
+    'shop_settings' => 'إعدادات المتجر',
+    'english' => 'إنجليزي',
+    'arabic' => 'عربي',
+    'store_title' => 'إسم المتجر',
+    'store_address' => 'عنوان المتجر',
+    'store_working_hours' => 'ساعات عمل المتجر',
+    'store_bio' => 'وصف المتجر',
+    'store_hide_out_of_stock_products' => 'إخفاء المنتجات غير المتوفرة من المتجر',
+
+    'coupon_span_one_time' => 'صالح لمرة واحدة',
+    'coupon_span_specified_time' => 'صالح لفترة زمنية معينة',
+    'coupon_span_unlimited_time' => 'غير مقيد بفترة زمنية',
+    'coupon_validity' => 'الصلاحية',
+    'valid_until' => 'صالح إلى',
+    'coupon_type_fixed' => 'قيمة',
+    'coupon_type_percent' => 'نسبة',
+    'coupons' => 'أكواد التخفيض',
+    'coupon' => 'كود تخفيض',
+    'coupon_usages' => 'إستخدام الكود',
+
+    'social_media_links' => 'روابط مواقع التواصل',
+
+    'social_label' => [
+        'facebook' => 'فيسبوك',
+        'twitter' => 'تويتر',
+        'instagram' => 'إنستقرام',
+        'youtube' => 'يوتيوب',
+        'snapchat' => 'سناب شات',
+        'whatsapp' => 'رقم الواتس اب',
+    ],
+
+    'store_logo' => 'الشعار',
+    'store_cover' => 'الصورة',
+
+    'products_categories' => 'تصنيفات المنتجات',
+
+    'store_enable_orders_tracking' => 'تفعيل خاصية تتبع الطلبات للعملاء',
+    'store_orders_tracking_mode' => 'تغيير حالات الطلبات',
+    'store_manually_change_orders_statuses' => 'بشكل يدوي',
+    'store_automatically_change_orders_statuses' => 'بشكل تلقائي',
+    'store_orders_tracking_packaging_time_hours' => 'زمن تجهيز الطلب بالساعات',
+    'store_orders_tracking_delivery_time_hours' => 'زمن توصيل الطلب بالساعات',
+
+    'nav_group_sales' => 'المبيعات',
+    'nav_group_purchases' => 'المشتريات',
+    'nav_group_clients_and_suppliers' => 'العملاء والموردين',
+    'nav_group_transactions' => 'معاملات',
+    'nav_group_store' => 'المتجر',
+    'nav_group_reports' => 'التقارير',
+
+    'price_offers' => 'عروض الأسعار',
+    'price_offer' => 'عرض سعر',
+
+    'supply_orders' => 'طلبات التوريد',
+    'supply_order' => 'طلب توريد',
+
+    'make_sales_invoice_from_price_offer' => 'عمل فاتورة من عرض السعر',
+    'make_purchases_invoice_from_supply_order' => 'عمل فاتورة من طلب توريد',
+
+    'auto_create_inv_from_order_alert' => 'سيتم إنشاء فاتورة بعد إكمال الطلب',
+
+    'name_en' => 'الإسم بالإنجليزية',
+    'name_ar' => 'الإسم بالعربية',
+
+    'invoice_status_purchase_order' => 'أمر شراء',
+    'invoice_status_sale_order' => 'أمر بيع',
+    'invoice_status_cancelled' => 'ملغية',
+    'invoice_status_confirmed' => 'مؤكدة',
+
+    'treasury_report' => 'الصندوق',
+    'bank_report' => 'البنك',
+    'tax_report' => 'ضريبة القيمة المضافة',
+
+    'add_purchases' => 'إضافة مشتريات',
+
+    'sales_returns' => 'مرتجع المبيعات',
+    'purchases_returns' => 'مرتجع المشتريات',
+
+    'add_purchases_returns' => 'Add purchases return',
+    'add_sales_returns' => 'Add sales return',
+
+    'unit_price' => 'سعر الوحدة',
+
+    'balance_pre_transaction' => 'الرصيد قبل المعاملة',
+    'balance_post_transaction' => 'الرصيد بعد المعاملة',
+
+    'service' => 'خدمة',
+    'services' => 'الخدمات',
+    'service_type' => 'نوع الخدمة',
+    'service_types' => 'أنواع الخدمات',
+    'price_after_tax' => 'السعر بعد الضريبة',
+
+    'requested_qty_out_of_stock' => 'لا توجد كمية كافية في المخزن',
+
+    'price_offer_url' => 'رابط عرض السعر',
+
+    'amount_includes_tax' => 'المبلغ شامل الضريبة',
+
+    'amount_without_tax' => 'المبلغ من غير الضريبة',
+
+    'voucher_already_exists_for_this_invoice' => 'لديك سند لهذة الفاتورة مسبقأ',
+
+    'services_types' => 'انواع الخدمات',
+    'additional_costs_types' => 'انواع التكاليف الاضافية',
+
+    'balance' => 'الرصيد',
+    'account_statement' => 'كشف حساب',
+
+    'store_enable_stock_tracking' => 'تفعيل خاصية ضبط المخزون',
+    'store_enable_stock_tracking_hint' => 'عند إستخدام هذة الخاصية سيتحتم عليك تهيئة وضبط فواتير المشتريات لضبظ المخزون بشكل فعال.',
 ];
 //

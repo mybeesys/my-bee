@@ -6,14 +6,18 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\ItemPrice;
+use App\Models\Product;
+use App\Models\ProductExtra;
+use App\Models\ProductUnit;
+use App\Models\ProductVariant;
+use App\Models\TaxProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
 class PricingService
 {
-    protected $tenant_id, $getCurrencyFromSettings = true,
-        $defaultCurrencyCode = "SAR", $exchangeRate = null, $validatePriceBiggerThanMainUnitPrice = true;
+    protected $tenant_id;
 
     public static function instance()
     {
@@ -26,91 +30,132 @@ class PricingService
         return $this;
     }
 
-    public function currencyFromSettings($getCurrencyFromSettings = true): self
-    {
-        $this->getCurrencyFromSettings = $getCurrencyFromSettings;
-        return $this;
-    }
-
-    public function currencyCode($currencyCode = "SAR"): self
-    {
-        $this->defaultCurrencyCode = $currencyCode;
-        return $this;
-    }
-
-    public function validatePriceHigherThanMainUnitPrice($value = true): self
-    {
-        $this->validatePriceBiggerThanMainUnitPrice = $value;
-        return $this;
-    }
-
-    public function exchangeRate($exRate = null): self
-    {
-        $this->exchangeRate = $exRate;
-        return $this;
-    }
-
-    protected function getCurrencyCode()
-    {
-        if ($this->getCurrencyFromSettings)
-            return setting('main_currency', $this->defaultCurrencyCode);
-
-        return $this->defaultCurrencyCode;
-    }
-
     protected function getTenantId()
     {
         return $this->tenant_id ?? filament()->getTenant()->id;
     }
 
-    protected function shouldAddNewPrice(Model $model, $unit_id, $unit_cost, $new_price): bool
+    protected function shouldAddNewPrice(Model $model, $unit_cost, $new_price, $new_discount): bool
     {
+        if (!$model instanceof Product and !$model instanceof ProductUnit and !$model instanceof ProductExtra and !$model instanceof ProductVariant)
+            throw new \Exception("Unknown item type");
+
         if (!$new_price) {
             return false;
         }
 
-        $lastPrice = $model->acc4->lastPrice;
-        $main_unit_price = $model->acc4->prices->where('unit_id', $model->main_unit_id)->last()?->price;
+        $lastPrice = $model->lastPrice;
 
-        if ($this->validatePriceBiggerThanMainUnitPrice and $unit_id != $model->main_unit_id and $new_price < $main_unit_price) {
-            return false;
-        }
-
-        if ($new_price == $lastPrice?->price and $unit_cost == $lastPrice?->unit_cost)
-            return false;
-
-        return true;
+        return !$lastPrice or $lastPrice->unit_cost != $unit_cost or $lastPrice->price != $new_price or
+            $lastPrice->discount_price != $new_discount;
     }
 
-    public function addPrice(Model $item, $unit_id, $cost, $price, $throwErrorOnTenantAbsence = true): ?Model
+    public function addPrice(Model $item, $cost, $price, $discount_price = null): ?ItemPrice
     {
-        $item->loadMissing('acc4');
+        $cost = is_number($cost) ? $cost : null;
+        $price = is_number($price) ? $price : null;
+        $discount_price = is_number($discount_price) ? $discount_price : null;
 
-        $tenant_id = self::getTenantId();
-
-        if ($throwErrorOnTenantAbsence and !$tenant_id) {
-            throw new \Exception("Tenant not specified.");
+        if (!$item->acc4) {
+            throw new \Exception("Item account not found.");
         }
 
-        if (!$this->shouldAddNewPrice($item, $unit_id, $cost, $price))
+        if (!$this->shouldAddNewPrice($item, $cost, $price, $discount_price))
             return null;
 
         return ItemPrice::create([
-            'tenant_id' => $tenant_id,
-            'unit_id' => $unit_id,
-            'acc4_code' => $item->acc4->code,
-            'currency_iso_code' => self::getCurrencyCode(),
+            'tenant_id' => self::getTenantId(),
+            'item_id' => $item->id,
+            'item_type' => get_class($item),
             'unit_cost' => $cost,
             'price' => $price,
+            'discount_price' => $discount_price,
+            'user_id' => auth()->id(),
             'date' => now(),
-            'exchange_rate' => $this->exchangeRate,
         ]);
     }
 
-    public function getLastPriceForUnit(Model $model, $unit_id): ?ItemPrice
+    public function getItemCost(?Model $model, $default = null)
     {
-        $model->load(['acc4.item.prices']);
+        return $model?->lastPrice?->unit_cost ?? $default;
+    }
 
-        return $model->acc4->prices->where('unit_id', $unit_id)->last();
+    public function getItemDiscountPrice(?Model $model, $default = null)
+    {
+        return $model?->lastPrice?->discount_price ?? $default;
+    }
+
+    public function getItemPrice(?Model $model, $default = null)
+    {
+        return $model?->lastPrice?->price ?? $default;
+    }
+
+    public function getItemsPrices($items)
+    {
+        $price = 0;
+
+        foreach ($items as $item) {
+            $price += $item?->lastPrice?->price ?? 0;
+        }
+        return $price;
+    }
+
+    public function getOriginalPrice(?Model $model, $default = 0)
+    {
+        return $model?->lastPrice?->price ?? $default;
+    }
+
+    public function getRetailPrice(?Model $model, $default = 0)
+    {
+        return $model?->lastPrice?->retail_price ?? $default;
+    }
+
+    public function getRetailPrices($items)
+    {
+        $price = 0;
+
+        foreach ($items as $item) {
+            $price += $item?->lastPrice?->retail_price ?? 0;
+        }
+        return $price;
+    }
+
+    public function hasDiscount(?Model $model, $default = false)
+    {
+        return $model?->lastPrice?->has_discount ?? $default;
+    }
+
+    public function getLastPrice(?Model $model, $default = null): ?ItemPrice
+    {
+        return $model?->lastPrice ?? $default;
+    }
+
+    public function getTaxAmount(Product $product, $price, int $qty)
+    {
+        $tax = 0;
+        if ($product->taxProfile?->total_percentages) {
+            $sub_total = $price * $qty;
+            $tax = $sub_total * ($product->taxProfile->total_percentages / 100);
+        }
+        return $tax;
+    }
+
+    public function getTaxAmountFromProfile(TaxProfile $taxProfile, $price, int $qty)
+    {
+        $sub_total = $price * $qty;
+        return $sub_total * ($taxProfile->total_percentages / 100);
+    }
+
+    public function getProductVariantsPriceRange(Product $product, $default = "-")
+    {
+
+        $min = $product->variants->pluck('prices')->min(function ($item) {
+            return $item->min('price');
+        });
+        $max = $product->variants->pluck('prices')->max(function ($item) {
+            return $item->max('price');
+        });
+
+        return number_format($min, currency_decimals(), '.', ',') . " - " . number_format($max, currency_decimals(), '.', ',');
     }
 }

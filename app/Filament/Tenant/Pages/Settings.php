@@ -8,6 +8,9 @@ use App\Filament\Tenant\Resources\Acc1Resource;
 use App\Filament\Tenant\Resources\Acc2Resource;
 use App\Filament\Tenant\Resources\Acc3Resource;
 use App\Filament\Tenant\Resources\Acc4Resource;
+use App\Filament\Tenant\Resources\CategoryResource;
+use App\Filament\Tenant\Resources\CouponResource;
+use App\Filament\Tenant\Resources\ExpenseCategoryResource;
 use App\Filament\Tenant\Resources\Shield\RoleResource;
 use App\Filament\Tenant\Resources\SupplierResource;
 use App\Filament\Tenant\Resources\TaxProfileResource;
@@ -24,6 +27,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -33,6 +37,9 @@ use Filament\Pages\Contracts\HasFormActions;
 use Filament\Pages\Page;
 use Filament\Resources\Concerns\Translatable;
 use Filament\Resources\Pages\Concerns\UsesResourceForm;
+use Filament\Support\Colors\Color;
+use Filament\Support\Enums\IconPosition;
+use Filament\Support\Enums\IconSize;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
@@ -45,17 +52,17 @@ class Settings extends Page implements HasForms
 
     protected static string $view = 'filament.pages.settings';
 
-    protected static ?int $navigationSort = 40;
+    protected static ?int $navigationSort = 50;
 
     public static function shouldRegisterNavigation(): bool
     {
         return auth()->user()->hasRole(User::ROLE_CLIENT);
     }
 
-//    public static function getNavigationGroup(): ?string
-//    {
-//        return __('fields.settings');
-//    }
+    public static function getNavigationGroup(): ?string
+    {
+        return __('fields.settings');
+    }
 
     public static function getNavigationLabel(): string
     {
@@ -138,20 +145,20 @@ class Settings extends Page implements HasForms
         foreach ($tabs as $tab) {
             $fields = $this->getFields($tab);
 
-            $textFields = collect($fields)->filter(function ($item) {
-                return $item instanceof TextInput or $item instanceof Select;
-            })->toArray();
-
-            $richEditorFields = collect($fields)->filter(function ($item) {
-                return $item instanceof RichEditor;
-            })->toArray();
+//            $textFields = collect($fields)->filter(function ($item) {
+//                return $item instanceof TextInput or $item instanceof Select;
+//            })->toArray();
+//
+//            $richEditorFields = collect($fields)->filter(function ($item) {
+//                return $item instanceof RichEditor;
+//            })->toArray();
 
             $schema = [
-                Card::make($textFields)->columns(3),
+                Card::make($fields)->columns(3),
             ];
 
-            if (count($richEditorFields) > 0)
-                $schema[] = Section::make(__('fields.other_settings'))->schema($richEditorFields)->collapsible()->collapsed();
+//            if (count($richEditorFields) > 0)
+//                $schema[] = Section::make(__('fields.other_settings'))->schema($richEditorFields)->collapsible()->collapsed();
 
             $data[] = Tabs\Tab::make(__("fields." . strtolower(\Str::replace([' ', '-'], '_', $tab))))
                 ->visible(function () use ($tab) {
@@ -222,6 +229,13 @@ class Settings extends Page implements HasForms
                     ->rules($setting->rules ?? [])
                     ->label($setting->display_name)
                     ->default($setting->value);
+            }
+
+            if ($setting->type == "toggle") {
+//                $fields[] = Toggle::make($setting->id)
+//                    ->label($setting->display_name)
+//                    ->columnSpanFull()
+//                    ->default($setting->value);
             }
         }
 
@@ -300,6 +314,14 @@ class Settings extends Page implements HasForms
         return [
             ActionGroup::make([
 
+                \Filament\Actions\Action::make('categories')
+                    ->label(__('fields.products_categories'))
+                    ->url(fn() => CategoryResource::getUrl()),
+
+                \Filament\Actions\Action::make('coupons')
+                    ->label(__('fields.coupons'))
+                    ->url(fn() => CouponResource::getUrl()),
+
                 \Filament\Actions\Action::make('roles')
                     ->label(__('fields.roles'))
                     ->url(fn() => RoleResource::getUrl()),
@@ -320,6 +342,11 @@ class Settings extends Page implements HasForms
                     ->label(__('fields.tax_profiles'))
                     ->url(fn() => TaxProfileResource::getUrl()),
 
+                \Filament\Actions\Action::make('expense_categories')
+                    ->label(__('fields.expense_categories'))
+                    ->url(fn() => ExpenseCategoryResource::getUrl()),
+
+
 //                \Filament\Actions\Action::make('level_1')
 //                    ->label(__('fields.level_1'))
 //                    ->url(fn() => Acc1Resource::getUrl()),
@@ -332,11 +359,17 @@ class Settings extends Page implements HasForms
 //                    ->label(__('fields.level_3'))
 //                    ->url(fn() => Acc3Resource::getUrl()),
 //
-//                \Filament\Actions\Action::make('level_4')
-//                    ->label(__('fields.level_4'))
-//                    ->url(fn() => Acc4Resource::getUrl()),
+                \Filament\Actions\Action::make('level_4')
+                    ->label(__('fields.level_4'))
+                    ->url(fn() => Acc4Resource::getUrl()),
 
-            ])->label(__('fields.more_settings'))->button(),
+            ])
+                ->label(__('fields.more_settings'))
+//                ->iconSize(IconSize::Large)
+                ->icon('heroicon-o-ellipsis-horizontal-circle')
+                ->color(Color::Gray)
+                ->tooltip(__('fields.more_settings'))
+                ->button(),
 
 //            ClearCache::make(),
         ];

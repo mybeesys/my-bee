@@ -24,8 +24,10 @@ class CreateCashDetTable extends Migration
             $table->integer('account_code')->index();
             $table->foreign('account_code')->references('code')->on('acc4');
             $table->date('date');
-            $table->decimal('amount_in', 19, 4);
-            $table->decimal('amount_out', 19, 4);
+            $table->decimal('amount_in', 21, 6)->index();
+            $table->decimal('amount_out', 21, 6)->index();
+            $table->decimal('balance_pre_transaction', 21, 6);
+            $table->decimal('balance_post_transaction', 21, 6);
             $table->decimal('exchange_rate')->nullable();
             $table->text('statement')->nullable();
             $table->text('meta')->nullable();

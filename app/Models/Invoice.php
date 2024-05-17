@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Filament\Tenant\Resources\PaymentVoucherResource;
 use App\Filament\Tenant\Resources\ReceiptVoucherResource;
 use App\Services\AccountingService;
+use App\Traits\HasPrefixedId;
 use Dompdf\Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Schema;
 
 class Invoice extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, HasPrefixedId;
 
     protected $guarded = [];
 
@@ -35,18 +36,19 @@ class Invoice extends BaseModel
 
         //while creating/inserting set default status
         static::created(function (Invoice $item) {
-            if ($item->type === "purchases") {
-                $attribute = 'purchase_status_id';
-                $default_status_id = PurchaseInvoiceStatus::firstWhere('default', 1)?->id;
-            } elseif ($item->type === "sales") {
-                $attribute = 'sale_status_id';
-                $default_status_id = SaleInvoiceStatus::firstWhere('default', 1)?->id;
-            } else {
-                throw new \Exception("Unknow invoice type: $item->type");
-            }
-            $item->{$attribute} = $default_status_id; //assigning value
+//            if ($item->type === "purchases") {
+//                $attribute = 'purchase_status_id';
+//                $default_status_id = PurchaseInvoiceStatus::firstWhere('default', 1)?->id;
+//            } elseif ($item->type === "sales") {
+//                $attribute = 'sale_status_id';
+//                $default_status_id = SaleInvoiceStatus::firstWhere('default', 1)?->id;
+//            } else {
+//                throw new \Exception("Unknow invoice type: $item->type");
+//            }
+//            $item->{$attribute} = $default_status_id; //assigning value
+//
+//            $item->save();
 
-            $item->save();
         });
     }
 
@@ -60,25 +62,14 @@ class Invoice extends BaseModel
         return $builder->where('type', self::$TYPE_SALES);
     }
 
-
-    public function purchaseStatus(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(PurchaseInvoiceStatus::class, 'purchase_status_id');
-    }
-
-    public function saleStatus(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(SaleInvoiceStatus::class, 'sale_status_id');
-    }
-
     public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(InvoiceItem::class);
+        return $this->hasMany(InvoiceItem::class)->oldest();
     }
 
-    public function additionalCosts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function additionalCosts(): \Illuminate\Database\Eloquent\Relations\MorphMany
     {
-        return $this->hasMany(InvoiceAdditionalCost::class);
+        return $this->morphMany(AdditionalCost::class, 'item')->oldest();
     }
 
 //    public function payments()
@@ -111,6 +102,11 @@ class Invoice extends BaseModel
         return $this->belongsTo(Supplier::class);
     }
 
+    public function warehouse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
+
     public function customer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Customer::class);
@@ -129,32 +125,37 @@ class Invoice extends BaseModel
     public function getItemsCost($withAdditionalCosts = false, $applyDiscount = false, $applyTaxes = false)
     {
         $total = 0;
+        $extras = 0;
+        $services = 0;
 
         foreach ($this->items as $item) {
             $subTotal = $item->price * $item->qty;
 
-            if ($applyDiscount)
-            {
+            //orderDetails available in sale invoice only
+            if ($item->orderDetails)
+                $extras += $item->orderDetails->orderDetailsExtras->sum('unit_price');
+
+            if ($applyDiscount) {
                 $subTotal -= $item->discount;
             }
 
             $total += $subTotal;
         }
 
-        if ($withAdditionalCosts)
-        {
+        if ($withAdditionalCosts) {
             $total += $this->getAdditionalCosts();
         }
 
-        if ($applyTaxes)
-        {
+        if ($applyTaxes) {
             $total += $this->getTaxesAsAmount();
         }
 
-        return $total;
+        $services += $this->getServicesCost(true);
+
+        return $total + $services + $extras;
     }
 
-    public function getAdditionalCosts(): float
+    public function getAdditionalCosts()
     {
         $total = 0;
         foreach ($this->additionalCosts as $item) {
@@ -165,6 +166,7 @@ class Invoice extends BaseModel
 
     public function getDiscountInAmount(): float|int
     {
+        return $this->items->sum('discount');
         $discount = 0;
 
         if ($this->discount_option === "overall") {
@@ -208,23 +210,55 @@ class Invoice extends BaseModel
         $total = 0;
 
         foreach ($this->items as $index => $item) {
-            $subTotal = $item->price * $item->qty;
-            $subTotal -= $item->discount;
 
-            $taxProfile = $item->taxProfile;
-            if ($taxProfile) {
-                $total += $subTotal * ($taxProfile->total_percentages / 100);
+            //for sale invoices calc tax from saved tax profile data
+            if ($item->orderDetails?->tax_profile_data) {
+                $total_percentages = collect([$item->orderDetails->tax_profile_data])->sum(function ($i) {
+                    return collect($i['taxes'])->sum('percent');
+                });
+
+                $subTotal = $item->price * $item->qty;
+                $subTotal -= $item->discount;
+                $total += $subTotal * ($total_percentages / 100);
+
+            } else {
+                $subTotal = $item->price * $item->qty;
+                $subTotal -= $item->discount;
+
+                $taxProfile = $item->taxProfile;
+                if ($taxProfile) {
+                    $total += $subTotal * ($taxProfile->total_percentages / 100);
+                }
             }
+
         }
 
         return $total;
     }
 
+    protected function getServicesCost($withTaxes = false)
+    {
+        $total = 0;
+
+        foreach ($this->services as $service) {
+            $total += $service->price;
+            if ($withTaxes and $service->tax_profile_data) {
+                $total_percentages = collect($service->tax_profile_data['taxes'] ?? null)->sum('percent');
+                if ($total_percentages > 0)
+                    $total += $service->price * ($total_percentages / 100);
+            }
+        }
+        return $total;
+    }
+
+    public function getTotalPaidPercentAttribute()
+    {
+        return percent($this->total_paid, $this->getItemsCost(true, true, true));
+    }
 
     public function getTotalPaidAttribute()
     {
-        if($this->type == 'purchases')
-        {
+        if ($this->type == 'purchases') {
             return $this->purchasePayments->sum('amount');
         }
         return $this->salesPayments->sum('amount');
@@ -232,8 +266,7 @@ class Invoice extends BaseModel
 
     public function getTotalUnpaidAttribute()
     {
-        if($this->type == 'purchases')
-        {
+        if ($this->type == 'purchases') {
             return $this->getItemsCost(true, true, true) - $this->purchasePayments->sum('amount');
         }
         return $this->getItemsCost(true, true, true) - $this->salesPayments->sum('amount');
@@ -255,28 +288,58 @@ class Invoice extends BaseModel
 
         $statuses = app()->getLocale() == "ar" ? $statuses_ar : $statuses_en;
 
-        if($this->paid)
-        {
+        if ($this->paid) {
             return $statuses[2];
         }
 
-        if($this->purchasePayments->isEmpty())
-        {
-            return $statuses[0];
+        if ($this->type == "purchases")
+            if ($this->purchasePayments->isEmpty())
+                return $statuses[0];
+
+        if ($this->type == "sales")
+            if ($this->salesPayments->isEmpty())
+                return $statuses[0];
+
+        return $statuses[1];
+    }
+
+    public function getPaymentStatus($local = null)
+    {
+        if (null == $local)
+            $local = app()->getLocale();
+
+        $statuses_en = [
+            'Post paid',
+            'Partly paid',
+            'Paid',
+        ];
+
+        $statuses_ar = [
+            'دفع بالآجل',
+            'مسدد جزئيا',
+            'تم السداد',
+        ];
+
+        $statuses = $local == "ar" ? $statuses_ar : $statuses_en;
+
+        if ($this->paid) {
+            return $statuses[2];
         }
+
+        if ($this->type == "purchases")
+            if ($this->purchasePayments->isEmpty())
+                return $statuses[0];
+
+        if ($this->type == "sales")
+            if ($this->salesPayments->isEmpty())
+                return $statuses[0];
 
         return $statuses[1];
     }
 
     public function getPaidAttribute(): bool
     {
-        return $this->getItemsCost(true, true, true) == $this->total_paid;
-    }
-
-    protected function checkCurrencySupport($currency)
-    {
-        if (!in_array($currency, ['SDG', 'USD']))
-            throw new \Exception("Unsupported currency ($currency)");
+        return number_format($this->getItemsCost(true, true, true), 2, '.') == number_format($this->total_paid, 2, '.');
     }
 
     public function stocks(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -296,12 +359,12 @@ class Invoice extends BaseModel
         switch ($this->for) {
             case 'customer':
             {
-                break;
+                return $this->customer->name;
             }
 
             case 'representative':
             {
-                break;
+                return 'representative';
             }
 
             case 'supplier':
@@ -317,7 +380,7 @@ class Invoice extends BaseModel
         return empty($description) ? "Unknown" : $description;
     }
 
-    public function lockPurchaseInvoice($status_id)
+    public function lockPurchaseInvoice($status)
     {
         if ($this->type != "purchases") {
             throw new \Exception('Invalid invoice type');
@@ -375,7 +438,7 @@ class Invoice extends BaseModel
 
         $this->update(
             [
-                'purchase_status_id' => $status_id,
+                'status' => $status,
                 'locked_by_id' => auth()->id(),
                 'locked_at' => now(),
             ]
@@ -389,35 +452,45 @@ class Invoice extends BaseModel
             throw new \Exception('Invalid invoice type');
         }
 
+//        $warehouseMethod = "warehouse_for_all_invoice"; // or warehouse_per_invoice_item
+
 
         //this will add the stock to the warehouse
-        $purchases_amount_sdg = 0;
 
-        foreach ($this->items as $item) //loop invoice items and make stocks
+
+        $purchases_amount = 0;
+
+        foreach ($this->items as $invoiceItem) //loop invoice items and make stocks
         {
 
-            $purchases_amount_sdg += $item->qty * $item->price_sdg;
+            $purchases_amount += $invoiceItem->qty * $invoiceItem->price;
 
-            $product = $item->product;
+            $item = $invoiceItem->product_variant_id ? ProductVariant::find($invoiceItem->product_variant_id) : Product::find($invoiceItem->product_id);
 
             ItemStock::create(
                 [
+                    'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
                     'type' => 'purchase',
                     'invoice_id' => $this->id,
-                    'warehouse_id' => $item->warehouse_id,
-                    'item_id' => $product->id,
-                    'item_type' => Product::class,
-                    'date' => now(),
-                    'user_id' => auth()->id(),
-                    'qty_in' => $item->qty,
+                    'warehouse_id' => $this->warehouse_id,//->warehouse_id,
+                    'product_id' => $invoiceItem->product_id,
+                    'item_id' => $item->id,
+                    'item_type' => get_class($item),
+                    'qty_in' => $invoiceItem->qty,
                     'qty_out' => 0,
-                    'currency_iso_code' => setting('main_currency', 'SAR'),
-                    'unit_cost_sdg' => $item->price_sdg,
-                    'unit_cost_usd' => $item->price_usd,
-                    'expiration_date' => $item->expiration_date,
+                    'unit_cost' => $invoiceItem->price,
+                    'date' => now(),
+                    'user_id' => auth()->id() ?? auth('sanctum')->id(),
+                    'expiration_date' => $invoiceItem->expiration_date,
                 ]
             );
         }
+
+        $cat = ExpenseCategory::firstOrCreate(['name' => 'فواتير المشتريات'],
+            [
+                'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
+                'name' => 'فواتير المشتريات'
+            ]);
 
         $op = make_general_voucher_op();
 
@@ -426,28 +499,40 @@ class Invoice extends BaseModel
         $supplier = Supplier::find($this->supplier_id);
 
         foreach ($this->additionalCosts as $additionalCost) {
+
             $accService
                 ->setUp(
                     $op->id,
                     now(),
-                    1,
+                    main_currency_iso_code(),
                     generate_double_entry_transaction_id(),
-                    $additionalCost->cost_sdg,
+                    $additionalCost->cost,
                     $this->exchange_rate,
                     $additionalCost->statement,
                     $additionalCost->statement,
                     $this->id,
                 )->make("122600002", null)
                 ->finish();
+
+
+            //add cost to expenses
+            Expense::create([
+                'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
+                'expense_category_id' => $cat->id,
+                'amount' => $additionalCost->cost,
+                'description' => $additionalCost->type->name . " - " . $additionalCost->statement,
+                'date' => $this->date,
+                'meta' => ['invoice_id' => $this->id, 'invoice_additional_cost_id' => $additionalCost->id]
+            ]);
         }
 
         $accService
             ->setUp(
                 $op->id,
                 now(),
-                1,
+                main_currency_iso_code(),
                 generate_double_entry_transaction_id(),
-                $purchases_amount_sdg,
+                $purchases_amount,
                 $this->exchange_rate,
                 "Purchases from: {$supplier->name}",
                 "Purchases from: {$supplier->name}",
@@ -518,7 +603,7 @@ class Invoice extends BaseModel
         })->pluck('no', 'id')->toArray();
     }
 
-    public static function dropdownUnpaidForSupplier($supplier_id = null, $existsInReceiptVouchers = true, $except = []): array
+    public static function dropdownUnpaidForSupplier($supplier_id = null, $existsInPaymentVouchers = true, $except = []): array
     {
         $invoices = self::with(['items', 'purchasePayments'])->get();
 
@@ -528,8 +613,8 @@ class Invoice extends BaseModel
             return $invoice->paid === false;
         });
 
-        if (!$existsInReceiptVouchers) {
-            $invoice_ids_in_receipts_vouchers = ReceiptVoucher::pluck('invoice_id')->toArray();
+        if (!$existsInPaymentVouchers) {
+            $invoice_ids_in_receipts_vouchers = PaymentVoucher::pluck('invoice_id')->toArray();
 
             return $unpaid->whereNotIn('id', $invoice_ids_in_receipts_vouchers)->pluck('no', 'id')->toArray();
 
@@ -562,7 +647,7 @@ class Invoice extends BaseModel
     {
         $rv = ReceiptVoucher::where('invoice_id', $this->id)->first();
 
-        if($rv){
+        if ($rv) {
             return ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]);
         }
 
@@ -575,25 +660,55 @@ class Invoice extends BaseModel
     {
         $pv = PaymentVoucher::where('invoice_id', $this->id)->first();
 
-        if($pv){
+        if ($pv) {
             return PaymentVoucherResource::getUrl('edit', ['record' => $pv->id]);
         }
 
         return PaymentVoucherResource::getUrl('create', ['invoice_id' => $this->id]);
     }
 
-    public function getDebitAccountCode(): ? string
+    public function getDebitAccountCode(): ?string
     {
-        if($this->for === "supplier")
-        {
+        if ($this->for === "supplier") {
             return $this->supplier->acc4->code;
         }
 
-        if($this->for === "customer")
-        {
+        if ($this->for === "customer") {
             return $this->customer->acc4->code;
         }
 
         return null;
     }
+
+    public function order()
+    {
+        return $this->hasOne(Order::class);
+    }
+
+    public function salesReturns()
+    {
+        return $this->hasMany(SalesReturns::class);
+    }
+
+    public function purchasesReturns()
+    {
+        return $this->hasMany(PurchasesReturns::class);
+    }
+
+    public function services(): \Illuminate\Database\Eloquent\Relations\MorphMany
+    {
+        return $this->morphMany(Service::class, 'item');
+    }
+
+    //bug
+//    public function setStatusAttribute($value)
+//    {
+//        if ($this->type == "purchases" and !in_array($value, ['purchase_order', 'cancelled', 'confirmed']))
+//            throw new \Exception("Invalid status");
+//
+//        if ($this->type == "sales" and !in_array($value, ['sale_order', 'cancelled', 'confirmed']))
+//            throw new \Exception("Invalid status");
+//
+//        $this->status = $value;
+//    }
 }

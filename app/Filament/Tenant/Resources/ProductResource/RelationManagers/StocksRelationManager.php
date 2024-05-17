@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\ProductResource\RelationManagers;
 
+use App\Filament\Tenant\Resources\PurchaseInvoiceResource;
 use App\Models\ItemStock;
 use App\Models\Product;
 use Filament\Facades\Filament;
@@ -16,11 +17,19 @@ use Illuminate\Support\HtmlString;
 
 class StocksRelationManager extends RelationManager
 {
-    protected static string $relationship = 'stocks';
+    protected static string $relationship = 'allStocks';
 
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function getTitle(Model $ownerRecord, string $pageClass): string
+    {
+        return __('fields.stock');
+    }
+
+    /**
+     * @return string|null
+     */
+    public static function getModelLabel(): ?string
     {
         return __('fields.stock');
     }
@@ -36,16 +45,25 @@ class StocksRelationManager extends RelationManager
     {
 
         return $table
+            ->description('يمكنك إضافة مخزون عن طريق فاتورة المشتريات')
             ->columns([
+
+                Tables\Columns\TextColumn::make('no')
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
+                    ->label(__('fields.reference_code')),
+
                 Tables\Columns\TextColumn::make('item.name')
                     ->label(__('fields.product')),
 
                 Tables\Columns\TextColumn::make('warehouse.name')
                     ->label(__('fields.warehouse'))
+                    ->toggleable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('type')
                     ->label(__('fields.type'))
+                    ->toggleable()
                     ->getStateUsing(function ($record) {
                         $local = app()->getLocale();
 
@@ -62,20 +80,24 @@ class StocksRelationManager extends RelationManager
                 Tables\Columns\IconColumn::make('available')
                     ->label(__('fields.available_stock'))
                     ->boolean()
+                    ->toggleable()
                     ->getStateUsing(function ($record) {
                         return $record->available;
                     }),
 
                 Tables\Columns\TextColumn::make('qty_in')
+                    ->toggleable()
                     ->label(__('fields.total_stock')),
 
                 Tables\Columns\TextColumn::make('sold')
+                    ->toggleable()
                     ->label(__('fields.sold_stock'))
                     ->getStateUsing(function ($record) {
                         return $record->qty_out;
                     }),
 
                 Tables\Columns\TextColumn::make('qty_moved')
+                    ->toggleable()
                     ->label(__('fields.moved'))
                     ->action(function (ItemStock $record): void {
 
@@ -93,30 +115,33 @@ class StocksRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('available_stock')
                     ->label(__('fields.available_stock'))
+                    ->toggleable()
                     ->getStateUsing(function ($record) {
                         return $record->available;
                     }),
 
                 Tables\Columns\TextColumn::make('unit_cost')
-                    ->label(__('fields.unit_cost'))
+                    ->label(__('fields.purchase_price'))
+                    ->toggleable()
                     ->tooltip(function ($record) {
-                        return numbers_to_words($record->unit_cost);
+                        return main_currency_iso_code() . " " . format_amount($record->unit_cost);
                     })
                     ->getStateUsing(function ($record) {
-                        return format_amount($record->unit_cost);
+                        return main_currency_iso_code() . " " . format_amount($record->unit_cost);
                     }),
 
                 Tables\Columns\TextColumn::make('unit_retail')
-                    ->label(__('fields.unit_retail_price'))
+                    ->label(__('fields.sale_price'))
+                    ->toggleable()
                     ->tooltip(function ($record) {
-                        if ($record->item->lastPrice)
-                            return numbers_to_words($record->item->lastPrice->price);
+                        if ($record->item?->lastPrice)
+                            return numbers_to_words($record->item->lastPrice->retail_price);
 
                         return "-";
                     })
                     ->getStateUsing(function ($record) {
-                        if ($record->item->lastPrice)
-                            return $record->item->lastPrice->currency_iso_code . " ".format_amount($record->item->lastPrice->price);
+                        if ($record->item?->lastPrice)
+                            return main_currency_iso_code() . " " . format_amount($record->item->lastPrice->retail_price);
 
                         return "-";
                     }),
@@ -131,6 +156,9 @@ class StocksRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
+                Tables\Actions\Action::make('add_stock')
+                    ->label(__('fields.add_purchases'))
+                    ->url(PurchaseInvoiceResource::getUrl('create'))
             ])
             ->actions([
             ])

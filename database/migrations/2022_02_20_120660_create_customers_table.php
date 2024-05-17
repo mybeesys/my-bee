@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -20,6 +19,11 @@ return new class extends Migration
             $table->string('delivery_address')->nullable();
             $table->string('email')->index()->nullable();
             $table->string('notes')->nullable();
+            $table->string('trn')->nullable();
+            $table->foreignId('state_id')->nullable()->index()->references('id')->on('states');
+            $table->foreignId('city_id')->nullable()->index()->references('id')->on('cities');
+            $table->foreignId('area_id')->nullable()->index()->references('id')->on('areas');
+            $table->boolean('auto_registered')->default(1);
             $table->timestamps();
         });
     }

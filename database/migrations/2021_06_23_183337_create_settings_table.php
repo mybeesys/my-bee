@@ -21,7 +21,7 @@ class CreateSettingsTable extends Migration
             $table->string('key')->index();
             $table->text('value')->nullable();
             $table->text('def_val')->nullable();
-            $table->enum('type', ['text', 'rich-text', 'text-area', 'bool', 'file', 'options', 'repeater', 'products-discount'])->index();
+            $table->enum('type', ['text', 'rich-text', 'text-area', 'bool', 'toggle', 'file', 'options', 'repeater', 'products-discount'])->index();
             $table->text('rules')->nullable();
             $table->string('placeholder')->nullable();
             $table->string('helper_text')->nullable();

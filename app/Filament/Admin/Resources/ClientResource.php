@@ -200,6 +200,7 @@ class ClientResource extends Resource
 
                 Tables\Columns\TextColumn::make('subscription.plan.name')
                     ->label(__('fields.subscription'))
+                    ->badge()
                     ->toggleable()
                     ->searchable(),
 

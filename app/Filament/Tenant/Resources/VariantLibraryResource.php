@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\VariantLibraryResource\Pages;
 use App\Filament\Tenant\Resources\VariantLibraryResource\RelationManagers;
+use App\Models\ProductVariant;
 use App\Models\VariantLibrary;
 use Awcodes\FilamentTableRepeater\Components\TableRepeater;
 use Filament\Forms;
@@ -22,7 +23,7 @@ class VariantLibraryResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-circle-stack';
 
-    protected static ?string $slug = "products/variant-library";
+    protected static ?string $slug = "store/variants-library";
 
     protected static ?int $navigationSort = 3;
 
@@ -38,7 +39,7 @@ class VariantLibraryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.products');
+        return user_setting('fav.variant_libraries', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
     }
 
     public static function form(Form $form): Form
@@ -118,10 +119,30 @@ class VariantLibraryResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+
+                Tables\Actions\DeleteAction::make()
+                    ->action(function (VariantLibrary $record, Tables\Actions\Action $action) {
+                        try {
+                            $options_ids = $record->options->pluck('id')->toArray();
+                            $used = collect(ProductVariant::all()->pluck('variant_library_options_ids')->toArray())->flatten()->values()->toArray();
+
+                            foreach ($options_ids as $id) {
+                                if (in_array($id, $used)) {
+                                    fns()->sendRecordInUse();
+                                    $action->cancel();
+                                }
+                            }
+                            $record->options()->delete();
+                            $record->delete();
+                            fns()->deleted();
+
+                        } catch (\Exception $exception) {
+//                            fns()->displayException($exception);
+                        }
+                    })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-
                 ]),
             ]);
     }

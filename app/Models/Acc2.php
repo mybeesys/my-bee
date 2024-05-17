@@ -13,7 +13,7 @@ class Acc2 extends BaseModel
     protected $primaryKey = 'code';
 
 
-    public function acc1Code()
+    public function acc1()
     {
         return $this->belongsTo(Acc1::class, 'acc1_code');
     }

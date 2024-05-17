@@ -17,17 +17,17 @@ class ExpensesOverview extends BaseWidget
         $categories = ExpenseCategory::with(['expenses'])->whereHas('expenses')->get();
 
         $categories = $categories->sortBy(function ($item) {
-            return $item->expenses->sum('amount');
+            return $item->expenses->sum('total');
         }, SORT_REGULAR, SORT_ASC);
 
         foreach ($categories as $category) {
-            $amount = $category->expenses->sum('amount');
+            $amount = $category->expenses->sum('total');
             $amount_words = numbers_to_words($amount);
             $amount_formatted = main_currency_iso_code() . " " . format_amount($amount);
             $cards[] = Stat::make($category->name, $amount_formatted)->description($amount_words)->color('warning');
         }
 
-        $total_amount = $categories->pluck('expenses')->flatten()->sum('amount');
+        $total_amount = $categories->pluck('expenses')->flatten()->sum('total');
         $total_formatted = main_currency_iso_code() . " " .format_amount($total_amount);
         $total_words = numbers_to_words($total_amount);
 

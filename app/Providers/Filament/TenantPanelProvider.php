@@ -2,7 +2,7 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Admin\Pages\Profile;
+use App\Filament\Tenant\Pages\Dashboard;
 use App\Filament\Tenant\Pages\EditTenantProfile;
 use App\Filament\Tenant\Pages\LoginTenant;
 use App\Filament\Tenant\Pages\RegisterClient;
@@ -11,11 +11,6 @@ use App\Filament\Tenant\Pages\TenantUserProfile;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Models\Tenant;
-use App\Services\CookieService;
-use BezhanSalleh\FilamentLanguageSwitch\FilamentLanguageSwitchPlugin;
-use BezhanSalleh\FilamentLanguageSwitch\Http\Livewire\SwitchFilamentLanguage;
-use BezhanSalleh\FilamentLanguageSwitch\Http\Middleware\SwitchLanguageLocale;
-use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -23,13 +18,10 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\SpatieLaravelTranslatablePlugin;
 use Filament\Support\Colors\Color;
-use Filament\Support\Facades\FilamentColor;
-use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -37,6 +29,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Rupadana\FilamentAnnounce\FilamentAnnouncePlugin;
 
 class TenantPanelProvider extends PanelProvider
 {
@@ -51,7 +44,7 @@ class TenantPanelProvider extends PanelProvider
             ->id('tenant')
             ->path('')
             ->domain($domain)
-            ->spa()
+//            ->spa()
             ->brandName(fn() => filament()->getTenant()?->name)
             ->globalSearch(false)
             ->registration(RegisterClient::class)
@@ -85,7 +78,7 @@ class TenantPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Tenant/Resources'), for: 'App\\Filament\\Tenant\\Resources')
             ->discoverPages(in: app_path('Filament/Tenant/Pages'), for: 'App\\Filament\\Tenant\\Pages')
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class
             ])
             ->discoverWidgets(in: app_path('Filament/Tenant/Widgets'), for: 'App\\Filament\\Tenant\\Widgets')
             ->widgets([
@@ -94,12 +87,8 @@ class TenantPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
 
-
-//                    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
-
                 NavigationGroup::make()
-                    ->label(fn(): string => __('fields.products'))
+                    ->label(fn(): string => __('fields.navigation_group_favourites'))
                     ->collapsed(),
 
                 NavigationGroup::make()
@@ -111,8 +100,34 @@ class TenantPanelProvider extends PanelProvider
                     ->collapsed(),
 
                 NavigationGroup::make()
-                    ->label(fn(): string => __('fields.expenses'))
+                    ->label(fn(): string => __('fields.nav_group_purchases'))
                     ->collapsed(),
+
+                NavigationGroup::make()
+                    ->label(fn(): string => __('fields.nav_group_clients_and_suppliers'))
+                    ->collapsed(),
+
+                NavigationGroup::make()
+                    ->label(fn(): string => __('fields.nav_group_transactions'))
+                    ->collapsed(),
+
+                NavigationGroup::make()
+                    ->label(fn(): string => __('fields.nav_group_reports'))
+                    ->collapsed(),
+
+                NavigationGroup::make()
+                    ->label(fn(): string => __('fields.nav_group_store'))
+                    ->collapsed(),
+
+                NavigationGroup::make()
+                    ->label(fn(): string => __('fields.settings'))
+                    ->collapsed(),
+
+            ])
+            ->navigationItems([
+
+//                NavigationItem::make()
+//                    ->label(fn(): string => __('fields.clients')),
 
             ])
             ->middleware([
@@ -148,6 +163,10 @@ class TenantPanelProvider extends PanelProvider
                         'default' => 1,
                         'sm' => 2,
                     ]),
+
+                FilamentAnnouncePlugin::make()
+                    ->pollingInterval('30s') // optional, by default it is set to null
+                    ->defaultColor(Color::Blue)
             ]);
     }
 }

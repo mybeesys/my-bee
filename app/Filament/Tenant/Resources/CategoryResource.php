@@ -22,16 +22,13 @@ class CategoryResource extends Resource
 {
     use Translatable;
 
-
     protected static ?string $model = Category::class;
 
     protected static ?string $recordTitleAttribute = "name";
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
 
-    protected static ?string $slug = "products/categories";
-
-    protected static ?int $navigationSort = 2;
+    protected static ?string $slug = "shop/categories";
 
 
     public static function getTranslatableLocales(): array
@@ -39,9 +36,14 @@ class CategoryResource extends Resource
         return config('system.supported_languages', []);
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return user_setting('fav.products_categories', false);
+    }
+
     public static function getNavigationGroup(): ?string
     {
-        return __('fields.products');
+        return user_setting('fav.products_categories', false) ? __('fields.navigation_group_favourites') :  __('fields.shop');
     }
 
     public static function getLabel(): ?string

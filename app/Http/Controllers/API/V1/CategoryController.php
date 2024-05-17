@@ -19,7 +19,7 @@ class CategoryController extends BaseController
     public function index()
     {
         $data = Category::with(['products', 'parent'])->orderBy('sort')->get();
-        return $this->responder(__('messages_data_retrieved'), 200, CategoryResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, CategoryResource::collection($data))->respond();
     }
 
     /**
@@ -45,7 +45,7 @@ class CategoryController extends BaseController
 
         $cat->load(['products', 'parent']);
 
-        return $this->responder(__('messages_data_stored'), 201, new CategoryResource($cat))->respond();
+        return $this->responder(__('messages.api.created'), 201, new CategoryResource($cat))->respond();
     }
 
     /**
@@ -54,7 +54,7 @@ class CategoryController extends BaseController
     public function show(string $id)
     {
         $cat = Category::with(['products', 'parent'])->find($id);
-        return $this->responder(__('messages_data_retrieved'), 200, new CategoryResource($cat))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, new CategoryResource($cat))->respond();
     }
 
 
@@ -94,7 +94,7 @@ class CategoryController extends BaseController
 
         $category->load(['products', 'parent']);
 
-        return $this->responder(__('messages_data_retrieved'), 200, new CategoryResource($category))->respond();
+        return $this->responder(__('messages.api.updated'), 200, new CategoryResource($category))->respond();
 
     }
 
@@ -104,10 +104,10 @@ class CategoryController extends BaseController
     public function destroy(string $id)
     {
         $category = Category::findOrFail($id);
-        abort_if(!$this->canDelete($category), 403, "Permission denied");
+        abort_if(!$this->canDelete($category), 403, __('messages.api.permission_denied'));
         try {
             $category->delete();
-            return $this->responder(__('messages_data_deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

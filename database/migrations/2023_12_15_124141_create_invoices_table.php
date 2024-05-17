@@ -16,8 +16,12 @@ class CreateInvoicesTable extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
-            $table->string('no', 30)->unique();
+            $table->string('no', 30);
+            $table->string('uid')->unique();
+            $table->enum('status', ['purchase_order', 'sale_order', 'cancelled', 'confirmed'])->index();
             $table->enum('type', ['purchases', 'sales'])->index();
+            $table->string('payment_method')->index()->default("cash_on_delivery"); //cash_on_delivery
+            $table->string('transaction_ref')->nullable();
             $table->enum('for', ['customer', 'representative', 'supplier'])->index();
             $table->foreignId('warehouse_id')->nullable()->index()->references('id')->on('warehouses');
 
@@ -25,12 +29,8 @@ class CreateInvoicesTable extends Migration
             $table->enum('discount_method', ['amount', 'percent', 'none'])->default('none');
             $table->decimal('discount_amount', 19, 4)->nullable();
             $table->decimal('discount_percent', 19, 4)->nullable();
-//            $table->integer('purchases_invoice_no')->nullable();
-//            $table->integer('sales_invoice_no')->nullable();
-            $table->foreignId('purchase_status_id')->nullable()->index()->references('id')->on('purchase_invoice_statuses');
-            $table->foreignId('sale_status_id')->nullable()->index()->references('id')->on('purchase_invoice_statuses');
 
-            $table->foreignId('user_id')->index()->references('id')->on('users')->restrictOnDelete();
+            $table->foreignId('user_id')->nullable()->index()->references('id')->on('users')->restrictOnDelete();
 
             $table->foreignId('customer_id')->index()->nullable()->references('id')->on('customers')->restrictOnDelete();
 //            $table->foreignId('order_id')->index()->nullable()->references('id')->on('orders')->restrictOnDelete();
@@ -42,7 +42,10 @@ class CreateInvoicesTable extends Migration
             $table->timestamp('locked_at')->nullable();
             $table->text('notes')->nullable();
             $table->string('meta')->nullable();
+            $table->boolean('temp')->default(false);
             $table->timestamps();
+
+            $table->unique(['tenant_id', 'no']);
         });
     }
 

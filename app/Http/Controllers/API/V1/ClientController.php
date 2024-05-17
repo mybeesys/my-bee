@@ -176,6 +176,27 @@ class ClientController extends BaseController
         $data = $request->validated();
 
         $tenant = $this->getTenant();
+        $tenant_social_media = $tenant->store_social_media_links ?? [];
+
+        if ($request->filled('store_social_media_links_facebook'))
+            $tenant_social_media['facebook'] = $request->store_social_media_links_facebook;
+
+        if ($request->filled('store_social_media_links_instagram'))
+            $tenant_social_media['instagram'] = $request->store_social_media_links_instagram;
+
+        if ($request->filled('store_social_media_links_twitter'))
+            $tenant_social_media['twitter'] = $request->store_social_media_links_twitter;
+
+        if ($request->filled('store_social_media_links_youtube'))
+            $tenant_social_media['youtube'] = $request->store_social_media_links_youtube;
+
+        if ($request->filled('store_social_media_links_snapchat'))
+            $tenant_social_media['snapchat'] = $request->store_social_media_links_snapchat;
+
+        if ($request->filled('store_social_media_links_whatsapp'))
+            $tenant_social_media['whatsapp'] = $request->store_social_media_links_whatsapp;
+
+        $data['store_social_media_links'] = $tenant_social_media;
 
         //update slug
         if (array_key_exists('name', $data)) {
@@ -184,7 +205,16 @@ class ClientController extends BaseController
 
         }
 
-        $tenant->update($data);
+        $tenant->update(Arr::except($data,
+            [
+                'store_social_media_links_facebook',
+                'store_social_media_links_instagram',
+                'store_social_media_links_twitter',
+                'store_social_media_links_youtube',
+                'store_social_media_links_snapchat',
+                'store_social_media_links_whatsapp'
+            ]
+        ));
 
         return $this->responder(__('messages.updated'), 200, new TenantResource($tenant))->respond();
     }
@@ -193,7 +223,7 @@ class ClientController extends BaseController
     {
         $user = auth('sanctum')->user();
 
-        return $this->responder(__('messages.updated'), 200, TenantResource::collection($user->tenants))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, TenantResource::collection($user->tenants))->respond();
     }
 
     public function me(Request $request)

@@ -17,6 +17,11 @@ class StoreTenantRequest extends BaseRequest
         return auth('sanctum')->user()->hasRole(User::ROLE_CLIENT);
     }
 
+    protected function failedAuthorization()
+    {
+        abort(403, __('messages.api.permission_denied'));
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

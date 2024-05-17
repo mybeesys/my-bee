@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
             $table->foreignId('payment_voucher_id')->index()->references('id')->on('payment_vouchers');
-            $table->enum('method', ['cash', 'bank-transfer', 'cheque']);
+            $table->integer('debit_acc4_code')->index();
+            $table->integer('credit_acc4_code')->index();
+            $table->foreign('debit_acc4_code')->references('code')->on('acc4');
+            $table->foreign('credit_acc4_code')->references('code')->on('acc4');
             $table->morphs('model');
             $table->date('date');
-            $table->string('currency_iso_code')->index();
-            $table->foreign('currency_iso_code')->references('iso_code')->on('currencies');
             $table->decimal('amount', 21,4);
             $table->decimal('exchange_rate',21,4)->nullable();
             $table->foreignId('user_id')->index()->references('id')->on('users');

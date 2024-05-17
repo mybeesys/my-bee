@@ -11,6 +11,8 @@ class TaxProfile extends BaseModel
 
     protected $guarded = [];
 
+    protected $with = ['taxes'];
+
     public function taxes(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Tax::class);

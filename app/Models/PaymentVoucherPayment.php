@@ -13,6 +13,10 @@ class PaymentVoucherPayment extends BaseModel implements HasMedia
 
     protected $guarded = [];
 
+    protected $casts = [
+        'date' => 'datetime',
+    ];
+
     public function paymentVoucher(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(PaymentVoucher::class);
@@ -21,5 +25,15 @@ class PaymentVoucherPayment extends BaseModel implements HasMedia
     public function model()
     {
         return $this->morphTo();
+    }
+
+    public function debitAccount(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Acc4::class, 'debit_acc4_code', 'code');
+    }
+
+    public function creditAccount(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Acc4::class, 'credit_acc4_code', 'code');
     }
 }

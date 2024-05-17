@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,13 +14,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
             $table->foreignId('receipt_voucher_id')->index()->references('id')->on('receipt_vouchers');
-            $table->enum('method', ['cash', 'bank-transfer', 'cheque']);
-            $table->morphs('model');
+            $table->integer('debit_acc4_code')->index();
+            $table->integer('credit_acc4_code')->index();
+            $table->foreign('debit_acc4_code')->references('code')->on('acc4');
+            $table->foreign('credit_acc4_code')->references('code')->on('acc4');
+            $table->nullableMorphs('model');
             $table->date('date');
-            $table->string('currency_iso_code')->index();
-            $table->foreign('currency_iso_code')->references('iso_code')->on('currencies');
-            $table->decimal('amount', 21,4);
-            $table->decimal('exchange_rate',21,4)->nullable();
+            $table->decimal('amount', 21, 4);
+            $table->decimal('exchange_rate', 21, 4)->nullable();
             $table->foreignId('user_id')->index()->references('id')->on('users');
             $table->boolean('transaction_completed')->default(0);
             $table->text('bank_transfer_reference_no')->nullable(); // depends on payment method

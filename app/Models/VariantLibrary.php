@@ -13,7 +13,7 @@ class VariantLibrary extends BaseModel
 
     public function options(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(VariantLibraryOption::class)->orderByDesc('sort');
+        return $this->hasMany(VariantLibraryOption::class)->orderBy('sort');
     }
 
     public function getNameAttribute()

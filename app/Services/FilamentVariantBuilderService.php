@@ -17,23 +17,28 @@ use Livewire\Component as Livewire;
 class FilamentVariantBuilderService
 {
     protected ?Product $product;
-    protected Livewire $livewire;
+    protected $product_name;
+    protected $livewire;
     protected Collection $variantLibraryOptions;
     protected $tenant_id;
 
-    public function __construct(?Product $product, $livewire)
+    public function __construct(?Product $product, $livewire, $product_name = null)
     {
+        $tenant_id = filament()->getTenant()->id ?? request()->header('Tenant-Id');
+
         $this->product = $product;
         $this->livewire = $livewire;
-        $this->variantLibraryOptions = Cache::remember("variantLibraryOptions@" . \filament()->getTenant()->id, 60, function () {
+        $this->variantLibraryOptions = Cache::remember("variantLibraryOptions@" . $tenant_id, 60, function () {
             return VariantLibraryOption::all();
         });
-        $this->tenant_id = filament()->getTenant()->id;
+
+        $this->tenant_id = $tenant_id;
+        $this->product_name = $product_name;
     }
 
-    public static function instance($product, $livewire): self
+    public static function instance($product, $livewire, $product_name = null): self
     {
-        return new self($product, $livewire);
+        return new self($product, $livewire, $product_name);
     }
 
     public function buildOptions(): array
@@ -42,6 +47,59 @@ class FilamentVariantBuilderService
 //            return self::buildFromRecord();
 
         return $this->buildFromLivewire();
+    }
+
+    public function buildFromGivenVariantsOptionsArray(array $variantsOptions)
+    {
+        $combinations = $this->combinations($variantsOptions);
+
+        $data = $this->buildFromRecord();
+
+        $ignore_combinations = collect($data)->pluck('variant_library_options_ids')->toArray();
+
+        foreach ($data as $key => $item) {
+            //if item not i cmb it should be deleted
+
+            $exists = collect($combinations)->filter(function ($combination) use ($item) {
+                $array1 = is_array($combination) ? $combination : [$combination];;
+                $array2 = $item['variant_library_options_ids'];
+                return array_diff($array1, $array2) == array_diff($array2, $array1);
+            })->first();
+
+            if ($exists) {
+                $data[$key]['should_remove'] = false;
+            } else {
+                $data[$key]['should_remove'] = true;
+            }
+        }
+
+        foreach ($combinations as $combination) {
+
+            $cmb = is_array($combination) ? $combination : [$combination];
+
+            if (in_array($cmb, $ignore_combinations))
+                continue;
+
+            if (is_array($combination)) {
+
+                $item = $this->makeOption($combination);
+
+                $data = array_merge($data, $item);
+            } else {
+                $variantLibOption = $this->getVariantLibraryOptionByID($combination);
+
+                $name_ar = $this->getProductName() . " - " . $variantLibOption->name_ar;
+                $name_en = $this->getProductName() . " - " . $variantLibOption->name_en;
+                $name = $this->getProductName() . " - " . $variantLibOption->name;
+
+                $item = $this->buildItem(Str::uuid()->toString(), $name_ar, $name_en, $name, [$combination], false, self::getSku(), 0);
+                $data = array_merge($data, $item);
+
+            }
+        }
+
+        return $data;
+
     }
 
     protected function buildFromLivewire(): array
@@ -67,9 +125,15 @@ class FilamentVariantBuilderService
                 return array_diff($array1, $array2) == array_diff($array2, $array1);
             })->first();
 
-            if (!$exists) {
+            if ($exists) {
+                $data[$key]['should_remove'] = false;
+            } else {
                 $data[$key]['should_remove'] = true;
             }
+
+//            if (!$exists) {
+//                $data[$key]['should_remove'] = true;
+//            }
         }
 
         foreach ($combinations as $combination) {
@@ -90,33 +154,10 @@ class FilamentVariantBuilderService
                 $name = $this->getProductName() . " - " . $variantLibOption->name;
 
                 $item = $this->buildItem(Str::uuid()->toString(), $name_ar, $name_en, $name, [$combination], false, self::getSku(), 0);
-//                $item[Str::uuid()->toString()] = [
-//                    'new_item' => $this->getExistingVariantByCombination([$combination]),
-//                    'name_ar' => $this->getProductName() . " - " . $variantLibOption->name_ar,
-//                    'name_en' => $this->getProductName() . " - " . $variantLibOption->name_en,
-//                    'name' => $this->getProductName() . " - " . $variantLibOption->name,
-//                    'tenant_id' => $this->tenant_id,
-//                    'variant_library_options_ids' => [$combination],
-//                    'warehouse_id' => self::getWarehouseId(),
-//                    'unlimited_qty' => false,
-//                    'sku' => random_int(111111111, 999999999),
-//                    'qty' => 0,
-//                ];
                 $data = array_merge($data, $item);
 
             }
         }
-//        foreach ($libraries as $library) {
-//            $currentLibId = $library['variant_library_id'];
-//            foreach ($library['values'] as $value) {
-//                $targetLibs = $libraries->filter(function ($item) use ($currentLibId) {
-//                    return $item['variant_library_id'] != $currentLibId;
-//                });
-//
-//                $data = array_merge($data, $this->buildOption($value, $targetLibs));
-//            }
-//        }
-
         return $data;
     }
 
@@ -136,13 +177,13 @@ class FilamentVariantBuilderService
                     'name' => $variant->name,
                     'tenant_id' => $this->tenant_id,
                     'variant_library_options_ids' => $variant->variant_library_options_ids,
-                    'warehouse_id' => $variant->warehouse_id ?? self::getWarehouseId(),
-                    'unlimited_qty' => $variant->unlimited_qty,
+//                    'warehouse_id' => $variant->warehouse_id ?? self::getWarehouseId(),
+//                    'unlimited_qty' => $variant->unlimited_qty,
                     'sku' => $variant->sku,
-                    'qty' => $variant->qty,
-                    'unit_cost' => (is_number($variant->unit_cost) and $variant->unit_cost > 0) ? number_format($variant->unit_cost, currency_decimals(), '.', '') : null,
-                    'price' => (is_number($variant->price) and $variant->price > 0) ? number_format($variant->price, currency_decimals(), '.', '') : null,
-                    'discount_price' => (is_number($variant->discount_price) and $variant->discount_price > 0) ? number_format($variant->discount_price, currency_decimals(), '.', '') : null,
+//                    'qty' => $variant->qty,
+//                    'unit_cost' => (is_number($variant->unit_cost) and $variant->unit_cost > 0) ? number_format($variant->unit_cost, currency_decimals(), '.', '') : null,
+//                    'price' => (is_number($variant->price) and $variant->price > 0) ? number_format($variant->price, currency_decimals(), '.', '') : null,
+//                    'discount_price' => (is_number($variant->discount_price) and $variant->discount_price > 0) ? number_format($variant->discount_price, currency_decimals(), '.', '') : null,
                 ];
                 $data = array_merge($data, $item);
             }
@@ -184,13 +225,21 @@ class FilamentVariantBuilderService
         if ($this->product)
             return $this->product->name;
 
-        return $this->livewire->data['name'] ?? "";
+        if ($this->livewire)
+            return $this->livewire->data['name'] ?? "";
+
+        return $this->product_name ?? "";
     }
 
     protected function getSku(): string
     {
-        if ($this->livewire->data['sku'])
-            return $this->livewire->data['sku'] . "." . random_int(111111111, 999999999);
+        if ($this->livewire) {
+            if ($this->livewire->data['sku'])
+                return $this->livewire->data['sku'] . "." . random_int(111111111, 999999999);
+        }
+
+        if ($this->product)
+            return $this->product->sku;
 
         return random_int(100000000, 999999999);
     }
@@ -262,13 +311,13 @@ class FilamentVariantBuilderService
             'name' => $name,
             'tenant_id' => $this->tenant_id,
             'variant_library_options_ids' => $combinations,
-            'warehouse_id' => $warehouse_id ?? self::getWarehouseId(),
-            'unlimited_qty' => $unlimited_qty,
+//            'warehouse_id' => $warehouse_id ?? self::getWarehouseId(),
+//            'unlimited_qty' => $unlimited_qty,
             'sku' => $sku,
-            'unit_cost' => $unit_cost,
-            'price' => $price,
-            'discount_price' => $discount_price,
-            'qty' => $qty
+//            'unit_cost' => $unit_cost,
+//            'price' => $price,
+//            'discount_price' => $discount_price,
+//            'qty' => $qty
         ];
 
 //        if(count($combinations) > 1)
@@ -301,5 +350,14 @@ class FilamentVariantBuilderService
         }
 
         return $result;
+    }
+
+    public function getProductVariantByOptions(array $variant_lib_options):?ProductVariant
+    {
+        return ProductVariant::all()->filter(function ($item) use ($variant_lib_options) {
+            $array1 = $item->variant_library_options_ids;
+            $array2 = $variant_lib_options;
+            return array_diff($array1, $array2) == array_diff($array2, $array1);
+        })->first();
     }
 }

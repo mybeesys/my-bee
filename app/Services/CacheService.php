@@ -12,8 +12,8 @@ class CacheService
     public const HIDDEN_KEYS_LIST = "HIDDEN_CACHED_DATA_KEYS";
 
     public const TTL_MINUTE = 60;
-    public const TTL_DAY = 60 * (60 * 24);
-    public const TTL_TEN_MINUTES = 60 * 10;
+    public const TTL_DAY = 86400;
+    public const TTL_TEN_MINUTES = 600;
     public const TTL_HOUR = 60 * 60;
     public const TTL_WEEK = 60 * (24 * 7);
     public const TTL_MONTH = 60 * (24 * 30);
@@ -126,7 +126,7 @@ class CacheService
 
     }
 
-    public function remember($key, $ttl, $callback)
+    public function remember($key, $ttl, $callback, $hide = false)
     {
         $key = self::evaluateKeyForTenant($key);
 
@@ -137,7 +137,7 @@ class CacheService
         $data = Cache::remember($key, $ttl, $callback);
 
         if ($shouldSync)
-            self::syncPutObserver($key, $ttl, false);
+            self::syncPutObserver($key, $ttl, false, $hide);
 
         return $data;
     }
