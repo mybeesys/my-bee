@@ -68,3 +68,8 @@ use Illuminate\Support\Facades\Route;
 //{
 //    dd($city);
 //}
+
+
+Route::get('/', function () {
+    return redirect('https://client.mybeesystem.com');
+});
