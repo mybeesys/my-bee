@@ -38,8 +38,7 @@ class Kernel extends ConsoleKernel
 
         $schedule->job(new MainJob())
             ->withoutOverlapping()
-            ->everyMinute()
-            ->runInBackground();
+            ->everyMinute();
     }
 
     /**
