@@ -34,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
 
     public function panel(Panel $panel): Panel
     {
-        $domain = "admin.my-bee.monzer.sd";
+        $domain = "admin.mybeesystem.com";
         if (config('app.env') === "local")
             $domain = "admin.my-bee.test";
 

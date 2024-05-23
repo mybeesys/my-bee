@@ -35,7 +35,7 @@ class TenantPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        $domain = "client.my-bee.monzer.sd";
+        $domain = "client.mybeesystem.com";
         if (config('app.env') === "local")
             $domain = "client.my-bee.test";
 
