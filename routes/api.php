@@ -171,10 +171,17 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
 
         Route::group(['prefix' => 'expenses'], function () {
             Route::get('stats', [\App\Http\Controllers\API\V1\StatsController::class, 'expenses']);
-            Route::apiResources([
-                'categories' => \App\Http\Controllers\API\V1\ExpenseCategoryController::class,
-                'expenses' => \App\Http\Controllers\API\V1\ExpenseController::class,
+
+            Route::apiResource('categories', \App\Http\Controllers\API\V1\ExpenseCategoryController::class, [
+                'names' => [
+                    'index' => 'exp-categories.index',
+                    'show' => 'exp-categories.view',
+                    'update' => 'exp-categories.update',
+                    'store' => 'exp-categories.save',
+                    'destroy' => 'exp-categories.delete',
+                ]
             ]);
+            Route::apiResource('expenses', \App\Http\Controllers\API\V1\ExpenseController::class);
         });
 
         Route::group(['prefix' => 'reports'], function () {
@@ -187,6 +194,24 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
         Route::group(['prefix' => 'settings'], function () {
             Route::get('stats', [\App\Http\Controllers\API\V1\StatsController::class, 'settings']);
             Route::get('additional-settings', [\App\Http\Controllers\API\V1\SettingController::class, 'listSettings']);
+            Route::apiResource('suppliers', \App\Http\Controllers\API\V1\SupplierController::class, [
+                'names' => [
+                    'index' => 'settings-suppliers.index',
+                    'show' => 'settings-suppliers.view',
+                    'update' => 'settings-suppliers.update',
+                    'store' => 'settings-suppliers.save',
+                    'destroy' => 'settings-suppliers.delete',
+                ]
+            ]);
+            Route::apiResource('clients', \App\Http\Controllers\API\V1\ClientController::class, [
+                'names' => [
+                    'index' => 'settings-clients.index',
+                    'show' => 'settings-clients.view',
+                    'update' => 'settings-clients.update',
+                    'store' => 'settings-clients.save',
+                    'destroy' => 'settings-clients.delete',
+                ]
+            ]);
             Route::apiResources([
                 'acc3' => \App\Http\Controllers\API\V1\Acc3Controller::class,
                 'acc4' => \App\Http\Controllers\API\V1\Acc4Controller::class,
@@ -194,10 +219,8 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
                 'additional-costs-types' => \App\Http\Controllers\API\V1\AdditionalCostTypeController::class,
                 'warehouses' => \App\Http\Controllers\API\V1\WarehouseController::class,
                 'variants-libraries' => \App\Http\Controllers\API\V1\VariantLibraryController::class,
-                'suppliers' => \App\Http\Controllers\API\V1\SupplierController::class,
                 'extras' => \App\Http\Controllers\API\V1\ExtraController::class,
                 'tax-profiles' => \App\Http\Controllers\API\V1\TaxProfileController::class,
-                'clients' => \App\Http\Controllers\API\V1\CustomerController::class,
             ]);
         });
 
