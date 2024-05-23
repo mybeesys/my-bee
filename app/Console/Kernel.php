@@ -2,6 +2,8 @@
 
 namespace App\Console;
 
+use App\Jobs\CleanTemporaryInvoicesJob;
+use App\Jobs\MainJob;
 use App\Jobs\TrackOrderStatusAutomationJob;
 use App\Models\Invoice;
 use Illuminate\Console\Scheduling\Schedule;
@@ -14,6 +16,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+
         $queueList = [
             'default',
             'update-all-tenants-settings',
@@ -33,15 +36,7 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->runInBackground();
 
-        $schedule->job(new TrackOrderStatusAutomationJob())
-            ->withoutOverlapping()
-            ->everyMinute()
-            ->runInBackground();
-
-
-        $schedule->call(function () {
-            Invoice::where('created_at', '>=', Carbon::now()->subMinutes(20)->toDateTimeString())->delete();
-        })
+        $schedule->job(new MainJob())
             ->withoutOverlapping()
             ->everyMinute()
             ->runInBackground();
