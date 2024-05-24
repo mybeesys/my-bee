@@ -91,8 +91,8 @@ class PurchaseInvoiceController extends BaseController
             'payment_method' => 'cash_on_delivery',
             'for' => 'supplier',
             'date' => now(),
-            'warehouse_id' => Warehouse::first()->id,
-            'supplier_id' => Supplier::first()->id,
+            'warehouse_id' => Warehouse::first()?->id,
+            'supplier_id' => Supplier::first()?->id,
             'user_id' => auth('sanctum')->id(),
             'temp' => true,
         ]);

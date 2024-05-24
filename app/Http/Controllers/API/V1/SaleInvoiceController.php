@@ -91,7 +91,7 @@ class SaleInvoiceController extends BaseController
             'payment_method' => 'cash_on_delivery',
             'for' => 'customer',
             'date' => now(),
-            'supplier_id' => Customer::first()->id,
+            'customer_id' => Customer::first()?->id,
             'user_id' => auth('sanctum')->id(),
             'temp' => true,
         ]);
