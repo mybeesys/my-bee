@@ -658,7 +658,7 @@ class ProductResource extends Resource
 
                         TableRepeater::make('extras_table')
                             ->label("")
-                            ->defaultItems(0)
+//                            ->defaultItems(0)
                             ->relationship('extras')
                             ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
                             ->hideLabels()
