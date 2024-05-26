@@ -42,6 +42,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->domain($domain)
+            ->brandLogo(asset("logo.jpg"))
+            ->brandLogoHeight('2.8rem')
             ->globalSearch(false)
             ->databaseTransactions()
             ->databaseNotifications()

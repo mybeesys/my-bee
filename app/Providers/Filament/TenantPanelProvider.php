@@ -44,6 +44,8 @@ class TenantPanelProvider extends PanelProvider
             ->id('tenant')
             ->path('')
             ->domain($domain)
+            ->brandLogo(asset("logo.jpg"))
+            ->brandLogoHeight('2.8rem')
             ->databaseTransactions()
             ->databaseNotifications()
             ->unsavedChangesAlerts()
