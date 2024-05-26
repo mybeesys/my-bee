@@ -33,7 +33,7 @@ class StoreReceiptVoucherRequest extends BaseRequest
             'payments.*.amount' => ['required', 'numeric', 'min:1', "max:".PHP_INT_MAX],
             'payments.*.statement' => ['required', 'string', 'max:255'],
             'payments.*.attachments' => ['sometimes','array'],
-            'payments.*.attachments.*' => ['required', 'file', File::types(['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG'])->max(1024)],
+            'payments.*.attachments.*' => ['sometimes', 'file', File::types(['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG'])->max(1024)],
         ];
     }
 }
