@@ -173,9 +173,10 @@ class WarehouseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\BasicProductStockRelationManager::class,
-            RelationManagers\VariantProductStockRelationManager::class,
-            RelationManagers\UnitsProductStockRelationManager::class,
+            RelationManagers\StocksRelationManager::class,
+//            RelationManagers\BasicProductStockRelationManager::class,
+//            RelationManagers\VariantProductStockRelationManager::class,
+//            RelationManagers\UnitsProductStockRelationManager::class,
         ];
     }
 
