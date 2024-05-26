@@ -74,61 +74,17 @@ class EditSalesInvoice extends EditRecord
     }
 
 
-    public function save(bool $shouldRedirect = true): void
+
+    protected function afterSave(): void
     {
-        $this->authorizeAccess();
+        $this->record->load(['items']);
 
-        $this->callHook('beforeValidate');
-
-        $data = $this->form->getState();
-
-        $this->callHook('afterValidate');
-
-        try {
-
-            DB::beginTransaction();
-
-            $data = $this->mutateFormDataBeforeSave($data);
-
-            $this->callHook('beforeSave');
-
-            $this->handleRecordUpdate($this->getRecord(), $data);
-
-            $this->record->load(['items']);
-
-            //save items
-            foreach ($this->record->items as $item){
-                $item->extras()->delete();
-                $item->delete();
-            }
-            $this->saveItems($this->data);
-            $this->record->refresh();
-
-            DB::commit();
-
-            $this->callHook('afterSave');
-
-        } catch (Halt $exception) {
-            DB::rollBack();
-            return;
-        } catch (ValidationException $exception) {
-            DB::rollBack();
-            return;
-        } catch (\Throwable $exception) {
-            DB::rollBack();
-            fns()->sendDanger('خطأ', 'فشلت العمليلة الرجاء التواصل مع الدعم الفني');
-            $this->halt();
+        //save items
+        foreach ($this->record->items as $item){
+            $item->extras()->delete();
+            $item->delete();
         }
-
-        $this->getSavedNotification()?->send();
-
-        if ($shouldRedirect && ($redirectUrl = $this->getRedirectUrl())) {
-            if (FilamentView::hasSpaMode()) {
-                $this->redirect($redirectUrl, navigate: is_app_url($redirectUrl));
-            } else {
-                $this->redirect($redirectUrl);
-            }
-        }
+        $this->saveItems($this->data);
     }
 
     protected function saveItems($data)

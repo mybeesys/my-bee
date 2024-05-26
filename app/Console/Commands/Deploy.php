@@ -26,7 +26,7 @@ class Deploy extends Command
      */
     public function handle()
     {
-//        self::artisan('filament:clear-cached-components');
+        self::artisan('filament:clear-cached-components');
         self::artisan('icons:clear');
 //        self::artisan('opcache:clear');
         self::artisan('optimize:clear');
@@ -34,7 +34,7 @@ class Deploy extends Command
 //        self::artisan('migrate:fresh --seed');
 
         self::artisan('filament:assets');
-//        self::artisan('filament:cache-components');
+        self::artisan('filament:cache-components');
         self::artisan('icons:cache');
         self::artisan('optimize');
 //        self::artisan('opcache:compile --force');

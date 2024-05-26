@@ -69,9 +69,12 @@ use Illuminate\Support\Facades\Route;
 //    dd($city);
 //}
 
+if(config('app.env') === "production"){
+    Route::get('/', function () {
+        return redirect('https://client.mybeesystem.com');
+    });
+}
 
-Route::get('/', function () {
-    return redirect('https://client.mybeesystem.com');
-});
+
 
 

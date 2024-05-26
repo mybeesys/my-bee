@@ -176,8 +176,6 @@
       <path value="$PROJECT_DIR$/vendor/dompdf/dompdf" />
       <path value="$PROJECT_DIR$/vendor/laraveldaily/laravel-invoices" />
       <path value="$PROJECT_DIR$/vendor/alkoumi/laravel-arabic-tafqeet" />
-      <path value="$PROJECT_DIR$/vendor/giggsey/locale" />
-      <path value="$PROJECT_DIR$/vendor/giggsey/libphonenumber-for-php" />
       <path value="$PROJECT_DIR$/vendor/propaganistas/laravel-phone" />
       <path value="$PROJECT_DIR$/vendor/maximebf/debugbar" />
       <path value="$PROJECT_DIR$/vendor/barryvdh/laravel-debugbar" />
@@ -195,6 +193,9 @@
       <path value="$PROJECT_DIR$/vendor/guava/filament-icon-picker" />
       <path value="$PROJECT_DIR$/vendor/rupadana/filament-announce" />
       <path value="$PROJECT_DIR$/vendor/awcodes/filament-table-repeater" />
+      <path value="$PROJECT_DIR$/vendor/giggsey/libphonenumber-for-php-lite" />
+      <path value="$PROJECT_DIR$/vendor/giggsey/libphonenumber-for-php" />
+      <path value="$PROJECT_DIR$/vendor/giggsey/locale" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />
