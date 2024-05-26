@@ -12,7 +12,8 @@ use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductVariant;
 use App\Models\Supplier;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -24,6 +25,7 @@ use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -206,14 +208,37 @@ class PaymentVoucherResource extends Resource
                         ->relationship('payments')
                         ->addActionLabel(__('fields.add'))
                         ->defaultItems(1)
-                        ->withoutHeader()
                         ->columnSpan('full')
-                        ->columnWidths([
-                            'credit_acc4_code' => '200px',
-                            'amount' => '200px',
-                            'date' => '200px',
-                            'statement' => '400px',
-                            'attachments' => '120px'
+                        ->headers([
+                            Header::make('credit_acc4_code')
+                                ->width("200px")
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                ->markAsRequired()
+                                ->label(__('fields.account')),
+
+                            Header::make('amount')
+                                ->width("200px")
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                ->markAsRequired()
+                                ->label(__('fields.amount_money')),
+
+                            Header::make('date')
+                                ->width("200px")
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                ->markAsRequired()
+                                ->label(__('fields.date')),
+
+                            Header::make('statement')
+                                ->width("400px")
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                ->markAsRequired()
+                                ->label(__('fields.statement')),
+
+                            Header::make('attachments')
+                                ->width("120px")
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                ->label(__('fields.attachments')),
+
                         ])
                         ->live(true)
                         ->afterStateHydrated(function ($record, $livewire, Set $set) {

@@ -6,11 +6,13 @@ use App\Filament\Tenant\Resources\VariantLibraryResource\Pages;
 use App\Filament\Tenant\Resources\VariantLibraryResource\RelationManagers;
 use App\Models\ProductVariant;
 use App\Models\VariantLibrary;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -63,19 +65,26 @@ class VariantLibraryResource extends Resource
                 Forms\Components\Section::make(__('fields.values'))->schema([
                     TableRepeater::make('options')
                         ->relationship('options')
+                        ->headers([
+                            Header::make('name_ar')
+                                ->label(__('fields.option_name_ar'))
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Right : Alignment::Left)
+                                ->width('200px')
+                                ->markAsRequired(),
+
+                            Header::make('name_en')
+                                ->label(__('fields.option_name_en'))
+                                ->align(fn() => app()->getLocale() == "ar" ? Alignment::Right : Alignment::Left)
+                                ->width('200px')
+                                ->markAsRequired(),
+                        ])
                         ->orderColumn()
                         ->required()
                         ->minItems(1)
                         ->label("")
                         ->addActionLabel(__('fields.add'))
-                        ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
                         ->defaultItems(1)
-                        ->hideLabels()
                         ->columnSpan('full')
-                        ->columnWidths([
-                            'name_ar' => '200px',
-                            'name_en' => '200px',
-                        ])
                         ->live(true)
                         ->schema([
 

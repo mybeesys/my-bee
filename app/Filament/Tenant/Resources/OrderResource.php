@@ -25,8 +25,9 @@ use App\Models\VariantLibraryOption;
 use App\Services\InvoiceService;
 use App\Services\PricingService;
 use App\Services\StockService;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
 use Awcodes\Shout\Components\Shout;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -35,6 +36,7 @@ use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -386,11 +388,40 @@ class OrderResource extends Resource
                     ->schema([
                         TableRepeater::make('details')
                             ->label(__('fields.order_details'))
+                            ->headers([
+                                Header::make('display_name')
+                                    ->width("165px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.name')),
+
+                                Header::make('extras')
+                                    ->width("200px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.product_extras')),
+
+                                Header::make('qty')
+                                    ->width("80px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.qty')),
+
+                                Header::make('tax')
+                                    ->width("120px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.tax')),
+
+                                Header::make('price')
+                                    ->width("150px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.price')),
+                            ])
 //                            ->relationship('details')
                             ->emptyLabel(__('fields.no_records_placeholder'))
                             ->addActionLabel(__('fields.add'))
-                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                            ->hideLabels()
                             ->addable(false)
                             ->defaultItems(0)
                             ->deleteAction(
@@ -403,13 +434,6 @@ class OrderResource extends Resource
                                 return $data;
                             })
                             ->live()
-                            ->columnWidths([
-                                'display_name' => '165px',
-                                'extras' => '200px',
-                                'qty' => '80px',
-                                'tax' => '120px',
-                                'price' => '150px',
-                            ])
                             ->schema([
 
                                 hidden_tenant_id_field(),

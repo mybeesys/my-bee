@@ -7,7 +7,8 @@ use App\Filament\Tenant\Resources\ProductResource\Widgets\PricingOverview;
 use App\Filament\Tenant\Resources\WarehouseResource;
 use App\Models\User;
 use App\Models\Warehouse;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Hidden;
@@ -25,7 +26,7 @@ class ListWarehouses extends ListRecords
 {
     protected static string $resource = WarehouseResource::class;
 
-    protected static string $view = 'filament.resources.warehouse-resource.pages.index';
+//    protected static string $view = 'filament.resources.warehouse-resource.pages.index';
 
 
     public function mount(): void
@@ -77,8 +78,10 @@ class ListWarehouses extends ListRecords
                                     }),
                                 TableRepeater::make('items')
                                     ->label(__('fields.warehouses'))
-                                    ->withoutHeader()
-                                    ->hideLabels()
+                                    ->headers([
+                                        Header::make('warehouse_id'),
+                                    ])
+                                    ->renderHeader(false)
                                     ->deletable(false)
                                     ->addable(false)
                                     ->orderColumn()

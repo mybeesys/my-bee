@@ -26,8 +26,9 @@ use App\Services\InvoiceService;
 use App\Services\PricingService;
 use App\Services\ProductService;
 use App\Services\StockService;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
 use Awcodes\Shout\Components\Shout;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -39,6 +40,7 @@ use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
@@ -379,10 +381,45 @@ class PurchaseInvoiceResource extends Resource
                             TableRepeater::make('items')
                                 ->label(__('fields.purchases'))
                                 ->relationship('items')
+                                ->headers([
+                                    Header::make('name')
+                                        ->width("165px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->markAsRequired()
+                                        ->label(__('fields.name')),
+
+                                    Header::make('qty')
+                                        ->width("110px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->markAsRequired()
+                                        ->label(__('fields.qty')),
+
+                                    Header::make('price')
+                                        ->width("150px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->markAsRequired()
+                                        ->label(__('fields.price')),
+
+                                    Header::make('discount')
+                                        ->width("150px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->markAsRequired()
+                                        ->label(__('fields.discount')),
+
+                                    Header::make('tax_profile_id')
+                                        ->width("200px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->markAsRequired()
+                                        ->label(__('fields.tax_profile')),
+
+                                    Header::make('sub_total')
+                                        ->width("150px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->markAsRequired()
+                                        ->label(__('fields.sub_total')),
+                                ])
                                 ->emptyLabel(__('fields.no_records_placeholder'))
                                 ->addActionLabel(__('fields.add'))
-                                ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                                ->hideLabels()
                                 ->addable(false)
                                 ->defaultItems(0)
                                 ->deletable($form->getRecord() === null)
@@ -406,14 +443,6 @@ class PurchaseInvoiceResource extends Resource
                                 ->afterStateUpdated(function ($livewire) {
                                     self::updateInvoicePropertiesFromLivewire($livewire);
                                 })
-                                ->columnWidths([
-                                    'name' => '165px',
-                                    'qty' => '110px',
-                                    'price' => '150px',
-                                    'discount' => '150px',
-                                    'tax_profile_id' => '200px',
-                                    'sub_total' => '150px',
-                                ])
                                 ->schema([
 
                                     hidden_tenant_id_field(),
@@ -513,265 +542,6 @@ class PurchaseInvoiceResource extends Resource
 
                                 ])
                         ]),
-
-//                    Forms\Components\Section::make(__('fields.purchases'))
-//                        ->disabled($form->getRecord()?->locked_at !== null)
-//                        ->schema([
-//                            TableRepeater::make('items')
-//                                ->relationship('items')
-//                                ->label("")
-//                                ->addActionLabel(__('fields.add'))
-//                                ->withoutHeader()
-//                                ->columnSpan('full')
-//                                ->columnWidths([
-//                                    'product_id' => '200px',
-//                                    'unit_id' => '150px',
-//                                    'qty' => '120px',
-//                                    'price' => '150px',
-//                                    'discount' => '150px',
-//                                    'tax_profile_id' => '200px',
-//                                    'sub_total' => '150px',
-//                                ])
-//                                ->mutateRelationshipDataBeforeFillUsing(function ($data) {
-//                                    $data['price'] = number_format($data['price'], currency_decimals(), '.', '');
-//                                    $data['discount'] = number_format($data['discount'], currency_decimals(), '.', '');
-//                                    $data['total'] = format_amount($data['qty'] * $data['price']);
-//
-//                                    return $data;
-//                                })
-//                                ->afterStateUpdated(function ($livewire) {
-//                                    self::updateInvoicePropertiesFromLivewire($livewire);
-//                                })
-//                                ->schema([
-//
-//                                    hidden_tenant_id_field(),
-//
-//                                    Forms\Components\Hidden::make('barcode_search_result_unit_id')->dehydrated(false),
-//                                    Forms\Components\Hidden::make('barcode_search_result_product_id')->dehydrated(false),
-//
-//                                    Select::make('product_id')
-//                                        ->label(__('fields.product'))
-//                                        ->searchable()
-//                                        ->getSearchResultsUsing(function ($search, $livewire, Set $set) {
-////                                            $start = microtime(true);
-////
-////                                            $products = Cache::remember("products@".filament()->getTenant()->id, 5 * 60 , function (){
-////                                               return Product::with(['units', 'acc4'])->get();
-////                                            });
-////
-////                                            $products = $products->filter(function ($item) use ($search) {
-////                                                return false !== stripos($item, $search);
-////                                            })->pluck('name', 'id')->toArray();
-////
-////                                            $time = microtime(true) - $start;
-////                                            fns()->sendWarning($time);
-////                                            return $products;
-//
-//
-//                                            $products = Product::where('name', 'like', "%{$search}%")
-//                                                ->orWhere('barcode', 'like', "%{$search}%")
-//                                                ->orWhereHas('units', function ($q) use ($search) {
-//                                                    $q->where('barcode', 'like', "%{$search}%");
-//                                                })
-//                                                ->limit(50)->pluck('name', 'id')->toArray();
-//
-//
-//                                            $productUnit = ProductUnit::where('barcode', $search)->first();
-//
-//                                            if ($productUnit) {
-//                                                $set('barcode_search_result_unit_id', $productUnit->unit_id);
-//                                                $set('barcode_search_result_product_id', $productUnit->product_id);
-//                                            } else {
-//                                                $set('barcode_search_result_unit_id', null);
-//                                                $set('barcode_search_result_product_id', null);
-//                                            }
-//
-//                                            return $products;
-//                                        })
-//                                        ->live()
-//                                        ->options(ProductService::instance()->asOptions())
-//                                        ->required()
-//                                        ->disableOptionWhen(function (Get $get, $value, $livewire){
-//                                            //disable when unit is the selected by other products except this index of repeater
-////
-//                                            $product = Product::find($value);
-//
-//                                            $exist = collect($livewire->data['items'])
-//                                                    ->where('product_id', $value)->first() !== null;
-//
-//                                            return $product->type === Product::$TYPE_BASIC and $exist;
-//
-//                                        })
-//                                        ->afterStateUpdated(function (Forms\Set $set, Get $get, $state, $livewire, Select $component) {
-//                                            $set('unit_id', null);
-//                                            $set('price', null);
-//
-//                                            $product = Product::with(['units', 'prices', 'lastPrice'])->find($state);
-//
-//                                            if($product){
-//                                                $set('tax_profile_id', $product->tax_profile_id);
-//
-//                                                if($product->type === Product::$TYPE_BASIC){
-//                                                    $set('price',  number_format(PricingService::instance()->getItemCost($product), currency_decimals(), '.', ''));
-//                                                }
-//
-//                                            }else{
-//                                                $set('tax_profile_id', null);
-//                                                $set('price', null);
-//                                            }
-//
-//                                            $barcode_search_result_unit_id = $get('barcode_search_result_unit_id');
-//                                            $barcode_search_result_product_id = $get('barcode_search_result_product_id');
-//
-//                                            if (str($state)->contains("-") and $data = explode('-', $state)) {
-////                                        product_id - unit_id
-////                                        22-18
-//                                                $component->state($data[0] ?? null);
-//                                                $set('unit_id', $data[1] ?? null);
-//                                            }
-//
-//                                            if ($state and $state == $barcode_search_result_product_id and $barcode_search_result_unit_id) {
-//                                                $set('unit_id', $barcode_search_result_unit_id);
-//                                                $set('barcode_search_result_unit_id', null);
-//                                                $set('barcode_search_result_product_id', null);
-//
-//                                                $unit_id = $barcode_search_result_unit_id;
-//
-//                                                $cost = PricingService::instance()->getItemCost($product->units->firstWhere('unit_id', $unit_id));
-//
-//                                                $set('price', is_number($cost) ? number_format($cost, currency_decimals(), '.', '') : null);
-//
-//                                            }
-//
-//                                            self::updateInvoicePropertiesFromLivewire($livewire);
-//
-//                                        }),
-//
-//                                    Forms\Components\Select::make('unit_id')
-//                                        ->label(__('fields.unit'))
-//                                        ->disableOptionsWhenSelectedInSiblingRepeaterItems()
-//                                        ->visible(function (Get $get){
-//                                            $product = Product::find($get('product_id'));
-//
-//                                            return $product and $product->type === Product::$TYPE_UNITS;
-//                                        })
-//                                        ->required()
-//                                        ->searchable()
-//                                        ->live()
-//                                        ->options(function (Forms\Get $get) {
-//                                            $product = Product::with(['prices', 'availableStocks', 'units.unit'])
-//                                                ->find($get('product_id'));
-//
-//                                            if ($product and $product->type === Product::$TYPE_UNITS) {
-//                                                return $product->unitsAsOptions();
-//                                            }
-//
-//                                            return [];
-//                                        })
-//                                        ->disableOptionWhen(function ($value, Get $get, $livewire) {
-//                                            //disable when unit is the selected by other products except this index of repeater
-////
-//                                            $product_id = $get('product_id');
-//
-//                                            return collect($livewire->data['items'])
-//                                                    ->where('product_id', $product_id)
-//                                                    ->where('unit_id', $value)->first() !== null;
-//                                        })
-//                                        ->afterStateUpdated(function (Forms\Set $set, Get $get, $state, $livewire) {
-//                                            $set('price', null);
-//
-//                                            $product = Product::with(['units', 'lastPrice', 'prices'])->find($get('product_id'));
-//                                            $unit = Unit::find($state);
-//
-//                                            if ($product and $unit and $itemPrice = PricingService::instance()->getLastPrice($product->units->firstWhere('unit_id', $unit->id))) {
-//                                                $set('price', number_format($itemPrice->unit_cost, 0, '.', ''));
-//                                            }
-//
-//                                            self::updateInvoicePropertiesFromLivewire($livewire);
-//
-//                                        }),
-//
-//                                    TextInput::make('qty')
-//                                        ->live(true)
-//                                        ->suffix('x')
-//                                        ->label(__('fields.qty'))
-//                                        ->numeric()
-//                                        ->extraInputAttributes(['min' => 1, 'max' => 250000], true)
-//                                        ->minValue(1)
-//                                        ->maxValue(250000)
-//                                        ->translateFrontValidationGt()
-//                                        ->afterStateUpdated(function ($livewire) {
-//                                            self::updateInvoicePropertiesFromLivewire($livewire);
-//                                        })->required(),
-//
-//                                    TextInput::make('price')
-//                                        ->live(true)
-//                                        ->label(__('fields.purchase_price'))
-//                                        ->numeric()
-//                                        ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX], true)
-//                                        ->minValue(1)
-//                                        ->maxValue(PHP_INT_MAX)
-//                                        ->translateFrontValidationGt()
-//                                        ->afterStateUpdated(function (Set $set, Get $get, $state, $livewire) {
-//                                            self::updateInvoicePropertiesFromLivewire($livewire);
-//                                        })
-//                                        ->required(),
-//
-//
-//                                    TextInput::make('discount')
-//                                        ->readOnly(fn(Forms\Get $get) => $get('data.discount_option_overall', true) === true)
-//                                        ->label(__('fields.discount_amount'))
-//                                        ->numeric()
-//                                        ->default(0)
-//                                        ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
-//                                        ->live(true)
-//                                        ->afterStateUpdated(function (Set $set, Get $get, $livewire) {
-//                                            self::updateInvoicePropertiesFromLivewire($livewire);
-//                                        }),
-//
-//                                    Select::make('tax_profile_id')
-//                                        ->label(__('fields.tax'))
-//                                        ->placeholder('غير خاضع للضريبة')
-//                                        ->options(TaxProfile::asOptions())
-//                                        ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
-//                                        ->createOptionUsing(function ($data) {
-//                                            $data['tenant_id'] = filament()->getTenant()->id;
-//                                            $model = TaxProfile::create(Arr::except($data, ['taxes']));
-//                                            foreach ($data['taxes'] as $tax) {
-//                                                $model->taxes()->create([
-//                                                    'tenant_id' => $data['tenant_id'],
-//                                                    'tax_profile_id' => $model->id,
-//                                                    'description' => $tax['description'],
-//                                                    'percent' => $tax['percent'],
-//                                                ]);
-//                                            }
-//                                            return $model->id;
-//                                        })
-//                                        ->createOptionAction(
-//                                            fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
-//                                        )
-//                                        ->live()
-//                                        ->afterStateUpdated(function ($state, $livewire) {
-//                                            self::updateInvoicePropertiesFromLivewire($livewire);
-//                                        })
-//                                        ->searchable(),
-//
-//
-//                                    TextInput::make('sub_total')
-//                                        ->label(__('fields.sub_total'))
-//                                        ->readOnly()
-//                                        ->dehydrated(false),
-//
-////                            DatePicker::make('expiration_date')
-////                                ->label(__('fields.expiration_date'))
-////                                ->seconds(false)
-////                                ->minDate(now())
-////                                ->maxDate(now()->addYears(20))
-////                                ->displayFormat('d/m/Y'),
-//
-//
-//                                ]),
-//                        ]),
 
                     Forms\Components\Section::make(__('fields.additional_costs'))
                         ->disabled($form->getRecord()?->locked_at !== null)

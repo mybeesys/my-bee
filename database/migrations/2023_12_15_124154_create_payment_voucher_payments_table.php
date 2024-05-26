@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('credit_acc4_code')->index();
             $table->foreign('debit_acc4_code')->references('code')->on('acc4');
             $table->foreign('credit_acc4_code')->references('code')->on('acc4');
-            $table->morphs('model');
+            $table->nullableMorphs('model');
             $table->date('date');
             $table->decimal('amount', 21,4);
             $table->decimal('exchange_rate',21,4)->nullable();

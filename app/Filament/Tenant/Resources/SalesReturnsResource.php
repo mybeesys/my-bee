@@ -7,12 +7,14 @@ use App\Filament\Tenant\Resources\SalesReturnsResource\RelationManagers;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\SalesReturns;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -79,21 +81,38 @@ class SalesReturnsResource extends Resource
                         TableRepeater::make('details')
                             ->relationship('details')
                             ->label(__('fields.items'))
+                            ->headers([
+                                Header::make('invoice_item_id')
+                                    ->width("200px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.name')),
+
+                                Header::make('qty')
+                                    ->width("100px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.qty')),
+
+                                Header::make('unit_price')
+                                    ->width("150px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.unit_price')),
+
+                                Header::make('price')
+                                    ->width("150px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.price')),
+                            ])
                             ->emptyLabel(__('fields.no_records_placeholder'))
                             ->addActionLabel(__('fields.add'))
-                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                            ->hideLabels()
                             ->defaultItems(0)
                             ->deleteAction(
                                 fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
                             )
                             ->live()
-                            ->columnWidths([
-                                'invoice_item_id' => '200px',
-                                'qty' => '100px',
-                                'unit_price' => '150px',
-                                'price' => '150px',
-                            ])
                             ->mutateRelationshipDataBeforeFillUsing(function ($data) {
                                 $price = InvoiceItem::find($data['invoice_item_id'])->price;
 

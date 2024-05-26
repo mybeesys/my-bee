@@ -21,8 +21,9 @@ use App\Rules\UniqueTenantItemRule;
 use App\Services\CacheService;
 use App\Services\PricingService;
 use App\Services\StockService;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
 use Awcodes\Shout\Components\Shout;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -32,6 +33,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -228,7 +230,7 @@ class PriceOfferResource extends Resource
                                         fns()->sendDanger("Option not found");
                                     }
 
-                                    $productExtras = ProductExtra::with('latestPrice')->findMany($productExtrasIds);
+                                    $productExtras = ProductExtra::with('lastPrice')->findMany($productExtrasIds);
 
                                     $tenant_id = $data['tenant_id'];
                                     $type = "variants";
@@ -264,7 +266,7 @@ class PriceOfferResource extends Resource
 
                                 } else {
                                     //basic
-                                    $productExtras = ProductExtra::with('latestPrice')->findMany($productExtrasIds);
+                                    $productExtras = ProductExtra::with('lastPrice')->findMany($productExtrasIds);
 
                                     $tenant_id = $data['tenant_id'];
                                     $type = $data['type'];
@@ -330,11 +332,50 @@ class PriceOfferResource extends Resource
                     ])
                     ->schema([
                         TableRepeater::make('details')
+                            ->headers([
+                                Header::make('display_name')
+                                    ->width("165px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.name')),
+
+                                Header::make('extras')
+                                    ->width("200px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.product_extras')),
+
+                                Header::make('qty')
+                                    ->width("80px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.qty')),
+
+                                Header::make('price')
+                                    ->width("150px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.price')),
+
+                                Header::make('discount')
+                                    ->width("120px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->label(__('fields.discount')),
+
+                                Header::make('tax_profile_id')
+                                    ->width("120px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->label(__('fields.tax_profile')),
+
+                                Header::make('sub_total')
+                                    ->width("150px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->label(__('fields.sub_total')),
+
+                            ])
                             ->label(__('fields.items'))
                             ->emptyLabel(__('fields.no_records_placeholder'))
                             ->addActionLabel(__('fields.add'))
-                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                            ->hideLabels()
                             ->addable(false)
                             ->defaultItems(0)
                             ->deleteAction(
@@ -343,15 +384,6 @@ class PriceOfferResource extends Resource
                             ->afterStateHydrated(fn($livewire) => self::updateInvoicePropertiesFromLivewire($livewire))
                             ->afterStateUpdated(fn($livewire) => self::updateInvoicePropertiesFromLivewire($livewire))
                             ->live()
-                            ->columnWidths([
-                                'display_name' => '165px',
-                                'extras' => '200px',
-                                'qty' => '80px',
-                                'price' => '150px',
-                                'discount' => '120px',
-                                'tax_profile_id' => '200px',
-                                'sub_total' => '150px',
-                            ])
                             ->schema([
 
                                 hidden_tenant_id_field(),

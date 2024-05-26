@@ -27,7 +27,8 @@ use App\Rules\UniqueTenantItemRule;
 use App\Services\FilamentVariantBuilderService;
 use App\Services\PricingService;
 use App\Services\StockService;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms;
@@ -38,6 +39,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
@@ -277,7 +280,7 @@ class ProductResource extends Resource
                                 [
                                     Forms\Components\Actions\Action::make('update_all_price')
                                         ->label(__('fields.variants_update_all_price'))
-                                        ->color('gray')
+                                        ->color(Color::Gray)
                                         ->requiresConfirmation()
                                         ->form([
                                             Forms\Components\Section::make()
@@ -299,7 +302,7 @@ class ProductResource extends Resource
 
                                     Forms\Components\Actions\Action::make('update_all_discount_price')
                                         ->label(__('fields.variants_update_all_discount_price'))
-                                        ->color('gray')
+                                        ->color(Color::Gray)
                                         ->requiresConfirmation()
                                         ->form([
                                             Forms\Components\Section::make()
@@ -321,12 +324,35 @@ class ProductResource extends Resource
                                 ]
                             )->schema([
                                 TableRepeater::make('variants')
-                                    ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == true)
                                     ->relationship('variants')
-                                    ->hideLabels()
+                                    ->visible(fn(Forms\Get $get): bool => $get('enable_variations') == true)
+                                    ->headers([
+
+                                        Header::make('image')
+                                            ->label(__('fields.image'))
+                                            ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                            ->width("200px"),
+
+                                        Header::make('name')
+                                            ->label(__('fields.name'))
+                                            ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                            ->width("200px"),
+
+                                        Header::make('price')
+                                            ->label(__('fields.price'))
+                                            ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                            ->width("200px"),
+
+                                        Header::make('discount_price')
+                                            ->label(__('fields.discount_price'))
+                                            ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                            ->width("200px"),
+
+                                        Header::make('variant_library_options_ids')->label(''),
+
+                                    ])
                                     ->emptyLabel(__('fields.no_records_placeholder'))
-//                                    ->defaultItems(0)
-                                    ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
+                                    ->defaultItems(0)
                                     ->addable(false)
                                     ->label(fn(Forms\Get $get) => __('fields.customize_options') . " (" . $get('variants_count') . ")")
                                     ->addActionLabel(__('fields.add'))
@@ -363,15 +389,6 @@ class ProductResource extends Resource
                                         $data['discount_price'] = PricingService::instance()->getItemDiscountPrice(ProductVariant::find($data['id']), null);
                                         return $data;
                                     })
-                                    ->columnWidths([
-                                        'name' => '200px',
-//                                        'warehouse_id' => '200px',
-//                                        'qty' => '90px',
-//                                        'unlimited_qty' => '10px',
-//                                        'unit_cost' => '135px',
-                                        'price' => '200px',
-                                        'discount_price' => '200px',
-                                    ])
                                     ->schema([
 
                                         hidden_tenant_id_field(),
@@ -467,7 +484,7 @@ class ProductResource extends Resource
 
                                         TextInput::make('price')
                                             ->numeric()
-                                            ->minValue(1)
+                                            ->minValue(0)
                                             ->maxValue(PHP_INT_MAX)
                                             ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
                                             ->nullable()
@@ -658,18 +675,30 @@ class ProductResource extends Resource
 
                         TableRepeater::make('extras_table')
                             ->label("")
-//                            ->defaultItems(0)
+                            ->defaultItems(0)
                             ->relationship('extras')
-                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                            ->hideLabels()
+                            ->headers([
+
+                                Header::make('item_extra_id')
+                                    ->markAsRequired()
+                                    ->label(__('fields.product_extra'))
+                                    ->width("200px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right),
+
+                                Header::make('price')
+                                    ->markAsRequired()
+                                    ->label(__('fields.price'))
+                                    ->width("200px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right),
+
+                                Header::make('discount_price')
+                                    ->markAsRequired()
+                                    ->label(__('fields.discount_price'))
+                                    ->width("200px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right),
+                            ])
                             ->addActionLabel(__('fields.add'))
                             ->emptyLabel(__('fields.no_records_placeholder'))
-                            ->columnWidths([
-                                'item_extra_id' => "200px",
-//                                'unit_cost' => "200px",
-                                'price' => "200px",
-                                'discount_price' => "200px",
-                            ])
                             ->mutateRelationshipDataBeforeFillUsing(function (array $data) use ($form) {
                                 $data['price'] = PricingService::instance()->getItemPrice(ProductExtra::find($data['id']), 0);
                                 $data['discount_price'] = PricingService::instance()->getItemDiscountPrice(ProductExtra::find($data['id']), null);
@@ -702,23 +731,6 @@ class ProductResource extends Resource
                                     ->createOptionAction(
                                         fn(Forms\Components\Actions\Action $action) => $action->modalWidth(MaxWidth::Small),
                                     ),
-
-//                                TextInput::make('unit_cost')
-//                                    ->required()
-//                                    ->label(__('fields.purchase_price'))
-//                                    ->numeric()
-//                                    ->minValue(1)
-//                                    ->maxValue(PHP_INT_MAX)
-//                                    ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
-//                                    ->live(true)
-//                                    ->validationMessages([
-//                                        'gt' => __('fields.validate_unit_price_must_be_bigger_than_main_unit_price'),
-//                                    ])
-//                                    ->formatStateUsing(function ($record, $state) {
-//                                        $value = $record?->unit_cost ?? $state;
-//                                        return is_number($value) ? number_format($value, currency_decimals(), '.', '') : null;
-//                                    })
-//                                    ->mainCurrencySuffix(),
 
                                 TextInput::make('price')
                                     ->required()
@@ -1072,11 +1084,12 @@ class ProductResource extends Resource
 
         $data = FilamentVariantBuilderService::instance($record, $livewire)->buildOptions();
 
+//        dd($data);
         if (count($data) > 0) {
             $livewire->data['variants'] = collect($data)->sortByDesc('should_remove')->toArray();
         }
 
-        $livewire->data['variants_count'] = count($data);
+//        $livewire->data['variants_count'] = count($data);
     }
 
     public static function updateVariantsViewFromRecord($livewire, $source = "unknown"): void

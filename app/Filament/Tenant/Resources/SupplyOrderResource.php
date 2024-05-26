@@ -14,13 +14,15 @@ use App\Models\VariantLibraryOption;
 use App\Rules\UniqueTenantItemRule;
 use App\Services\PricingService;
 use App\Services\StockService;
-use Awcodes\FilamentTableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -271,9 +273,20 @@ class SupplyOrderResource extends Resource
                             ->label(__('fields.order_details'))
 //                            ->relationship('details')
                             ->emptyLabel(__('fields.no_records_placeholder'))
+                            ->headers([
+                                Header::make('display_name')
+                                    ->width("165px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.name')),
+
+                                Header::make('qty')
+                                    ->width("80px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->markAsRequired()
+                                    ->label(__('fields.qty')),
+                            ])
                             ->addActionLabel(__('fields.add'))
-                            ->alignHeaders(fn() => app()->getLocale() == "ar" ? "right" : "left")
-                            ->hideLabels()
                             ->addable(false)
                             ->deleteAction(
                                 fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
@@ -283,10 +296,6 @@ class SupplyOrderResource extends Resource
                                 return $data;
                             })
                             ->live()
-                            ->columnWidths([
-                                'display_name' => '165px',
-                                'qty' => '80px',
-                            ])
                             ->schema([
 
                                 hidden_tenant_id_field(),

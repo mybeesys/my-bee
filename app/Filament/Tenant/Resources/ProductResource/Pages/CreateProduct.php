@@ -91,7 +91,7 @@ class CreateProduct extends CreateRecord
 
         //basic pricing
         if($record->variants->isEmpty()){
-            PricingService::instance()->addPrice($record, null, $this->data['price'], $this->data['discount_price'] ?? null);
+            PricingService::instance()->addPrice($record, null, $this->data['price'] ?? null, $this->data['discount_price'] ?? null);
         }
 
         foreach ($record->variants as $productVariant) {
@@ -99,7 +99,7 @@ class CreateProduct extends CreateRecord
 
             if($itemInData)
             {
-                $itemPrice = PricingService::instance()->addPrice($productVariant, null, $itemInData['price'], $itemInData['discount_price'] ?? null);
+                $itemPrice = PricingService::instance()->addPrice($productVariant, null, $itemInData['price'] ?? null, $itemInData['discount_price'] ?? null);
             }
         }
 
@@ -108,7 +108,7 @@ class CreateProduct extends CreateRecord
 
             if($itemInData)
             {
-                $itemPrice = PricingService::instance()->addPrice($productExtra, null, $itemInData['price'], $itemInData['discount_price']);
+                $itemPrice = PricingService::instance()->addPrice($productExtra, null, $itemInData['price'] ?? null, $itemInData['discount_price']);
             }
         }
     }
