@@ -218,7 +218,7 @@ class ProductResource extends Resource
                             ->downloadable()
                             ->multiple()
                             ->maxSize(2048)
-                            ->disk('cdn')
+                            ->disk('public')
                             ->collection('images')
                             ->directory('products'),
 
@@ -794,7 +794,7 @@ class ProductResource extends Resource
 
                 SpatieMediaLibraryImageColumn::make('images')
                     ->label(__('fields.image'))
-                    ->disk('cdn')
+                    ->disk('public')
                     ->toggleable()
                     ->collection('images'),
 
