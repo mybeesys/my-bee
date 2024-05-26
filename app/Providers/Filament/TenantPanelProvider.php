@@ -47,7 +47,7 @@ class TenantPanelProvider extends PanelProvider
             ->databaseTransactions()
             ->databaseNotifications()
             ->unsavedChangesAlerts()
-//            ->spa()
+            ->spa()
             ->brandName(fn() => filament()->getTenant()?->name)
             ->globalSearch(false)
             ->registration(RegisterClient::class)

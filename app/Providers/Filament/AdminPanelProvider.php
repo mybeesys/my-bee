@@ -46,7 +46,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseTransactions()
             ->databaseNotifications()
             ->unsavedChangesAlerts()
-//            ->spa()
+            ->spa()
             ->sidebarCollapsibleOnDesktop()
 //            ->font('Noto Kufi Arabic', provider: GoogleFontProvider::class)
 //            ->navigationGroups([
