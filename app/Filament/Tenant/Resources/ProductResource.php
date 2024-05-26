@@ -416,7 +416,7 @@ class ProductResource extends Resource
                                             ->downloadable()
                                             ->multiple()
                                             ->maxSize(2048)
-                                            ->disk('cdn')
+                                            ->disk('public')
                                             ->collection('images')
                                             ->directory('variants'),
 
