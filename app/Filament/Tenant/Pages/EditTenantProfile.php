@@ -174,7 +174,7 @@ class EditTenantProfile extends BaseTenantProfile
 //                            ->openable()
 //                            ->downloadable()
 //                            ->maxSize(1024)
-//                            ->disk('cdn')
+//                            ->disk('public')
 //                            ->collection('logos')
 //                            ->directory('logos'),
 
@@ -184,7 +184,7 @@ class EditTenantProfile extends BaseTenantProfile
                                         ->openable()
                                         ->downloadable()
                                         ->maxSize(4080)
-                                        ->disk('cdn')
+                                        ->disk('public')
                                         ->collection('covers')
                                         ->directory('covers'),
 

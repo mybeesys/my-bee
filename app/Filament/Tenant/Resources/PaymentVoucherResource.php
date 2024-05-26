@@ -345,7 +345,7 @@ class PaymentVoucherResource extends Resource
                                 ->downloadable()
                                 ->multiple()
                                 ->maxSize(2048)
-                                ->disk('cdn')
+                                ->disk('public')
                                 ->previewable(false)
                                 ->directory('receipt_voucher_payments'),
 
