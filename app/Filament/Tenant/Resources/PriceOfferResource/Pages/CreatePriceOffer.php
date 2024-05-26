@@ -61,7 +61,7 @@ class CreatePriceOffer extends CreateRecord
                 'item_type' => $detail['item_type'],
                 'unit_price' => $detail['unit_price'],
                 'discount' => 0,
-                'tax' => $detail['tax'],
+                'tax' => $detail['tax'] ?? 0,
                 'tax_profile_id' => $detail['tax_profile_id'] ?? null,
                 'tax_profile_data' => TaxProfile::find($detail['tax_profile_id'] ?? null)?->toArray(),
                 'qty' => $detail['qty'],
