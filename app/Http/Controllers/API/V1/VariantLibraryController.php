@@ -6,7 +6,9 @@ use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\StoreVariantLibraryRequest;
 use App\Http\Requests\UpdateVariantLibraryRequest;
 use App\Http\Resources\VariantLibraryResource;
+use App\Models\ProductVariant;
 use App\Models\VariantLibrary;
+use Filament\Facades\Filament;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -85,6 +87,14 @@ class VariantLibraryController extends BaseController
                         'name_ar' => $option['name_ar'],
                     ]);
                 }
+                if(isset($option['new']) and isset($option['name_en']) and isset($option['name_ar'])){
+                    $item->options()->create([
+                        'tenant_id' => $this->getTenantId(),
+                        'variant_library_id' => $item->id,
+                        'name_en' => $option['name_en'],
+                        'name_ar' => $option['name_ar'],
+                    ]);
+                }
                 if(isset($option['id']) and isset($option['delete']) and $option['delete']){
                     $item->options()->where('id', $option['id'])->delete();
                 }
@@ -111,8 +121,19 @@ class VariantLibraryController extends BaseController
 
         abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
         try {
+
+            $options_ids = $item->options->pluck('id')->toArray();
+            $used = collect(ProductVariant::all()->pluck('variant_library_options_ids')->toArray())->flatten()->values()->toArray();
+
+            foreach ($options_ids as $id) {
+                if (in_array($id, $used)) {
+                    return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
+                }
+            }
+            $item->options()->delete();
+
             $item->delete();
-            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200)->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

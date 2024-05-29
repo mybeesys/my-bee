@@ -31,6 +31,7 @@ class UpdateVariantLibraryRequest extends BaseRequest
             'options' => ['sometimes', 'array', 'min:1'],
             'options.*.id' => ['sometimes', 'exists:variant_library_options,id'],
             'options.*.delete' => ['sometimes', 'boolean'],
+            'options.*.new' => ['sometimes', 'boolean'],
             'options.*.name_en' => ['sometimes', 'min:1', 'max:255'],
             'options.*.name_ar' => ['sometimes', 'min:1', 'max:255'],
         ];

@@ -22,7 +22,7 @@ class VariantLibraryResource extends BaseResource
             'options' => VariantLibraryOptionResource::collection($this->options),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
-            'canDelete' => $this->options->isEmpty(),
+            'canDelete' => true,
         ]);
     }
 }
