@@ -175,6 +175,15 @@ class CustomerResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                ->action(function ($record){
+                    try {
+                        $record->delete();
+                        fns()->deleted();
+                    }catch (\Throwable $throwable){
+                        fns()->displayException($throwable);
+                    }
+                })
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
