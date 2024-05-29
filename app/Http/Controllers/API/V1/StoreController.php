@@ -195,7 +195,7 @@ class StoreController extends BaseController
             'price' => 0,
             'priceFormatted' => 0,
             'extras' => $this->convertExtrasToArray($extras),
-            'createdAt' => now(),
+            'createdAt' => now()->toString(),
             'updatedAt' => null,
         ];
 
@@ -216,7 +216,8 @@ class StoreController extends BaseController
             $new_item['price'] = number_format(PricingService::instance()->getRetailPrice($product), currency_decimals(), '.', '');
             $new_item['priceFormatted'] = number_format(PricingService::instance()->getRetailPrice($product), currency_decimals(), '.', ',') . " " . main_currency_native_symbol();
             $new_item['maxQty'] = $available_stock;
-            $new_item['qty'] = ($request->qty and $available_stock >= $request->qty) ? $request->qty : 0;
+//            $new_item['qty'] = ($request->qty and $available_stock >= $request->qty) ? $request->qty : 0;
+            $new_item['qty'] = $request->input('qty', "1");
 
         } elseif ($product->type == Product::$TYPE_VARIANTS) {
             $productVariant = self::getExistingVariantByCombination($product, $request->variants_options_ids ?? []);
@@ -245,7 +246,8 @@ class StoreController extends BaseController
             $new_item['price'] = number_format(PricingService::instance()->getRetailPrice($productVariant), currency_decimals(), '.', '');
             $new_item['priceFormatted'] = number_format(PricingService::instance()->getRetailPrice($productVariant), currency_decimals(), '.', ',') . " " . main_currency_native_symbol();
             $new_item['maxQty'] = $available_stock;
-            $new_item['qty'] = ($request->qty and $available_stock >= $request->qty) ? $request->qty : 0;
+//            $new_item['qty'] = ($request->qty and $available_stock >= $request->qty) ? $request->qty : 0;
+            $new_item['qty'] = $request->input('qty', "1");
 
         } else {
             throw new \Exception("Unknown product type");
@@ -253,7 +255,7 @@ class StoreController extends BaseController
 
         if ($new_item['qty'] > 0) {
             $items = array_merge($cart['items'] ?? [], [$new_item]);
-
+            
             $newCart = $this->generateCartData($items);
 
             CacheService::instance()->put("cart@$uuid", $newCart);
