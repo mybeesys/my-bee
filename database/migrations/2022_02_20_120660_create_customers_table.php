@@ -20,8 +20,8 @@ return new class extends Migration {
             $table->string('email')->index()->nullable();
             $table->string('notes')->nullable();
             $table->string('trn')->nullable();
-            $table->foreignId('state_id')->nullable()->index()->references('id')->on('states');
-            $table->foreignId('city_id')->nullable()->index()->references('id')->on('cities');
+            $table->foreignId('state_id')->index()->references('id')->on('states');
+            $table->foreignId('city_id')->index()->references('id')->on('cities');
             $table->foreignId('area_id')->nullable()->index()->references('id')->on('areas');
             $table->boolean('auto_registered')->default(1);
             $table->timestamps();

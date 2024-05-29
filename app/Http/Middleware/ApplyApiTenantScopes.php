@@ -29,6 +29,7 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\PaymentVoucher;
 use App\Models\PaymentVoucherPayment;
+use App\Models\PriceOffer;
 use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ReceiptVoucher;
@@ -38,6 +39,7 @@ use App\Models\ServiceType;
 use App\Models\Setting;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\SupplyOrder;
 use App\Models\Tax;
 use App\Models\TaxProfile;
 use App\Models\Tenant;
@@ -258,6 +260,14 @@ class ApplyApiTenantScopes
         );
 
         AdditionalCost::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        PriceOffer::addGlobalScope(
+            fn(Builder $query) => $query->whereBelongsTo($tenant),
+        );
+
+        SupplyOrder::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 

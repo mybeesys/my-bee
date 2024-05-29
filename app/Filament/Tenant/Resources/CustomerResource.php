@@ -100,7 +100,7 @@ class CustomerResource extends Resource
                         ->live()
                         ->required()
                         ->searchable()
-                        ->dehydrated(false)
+//                        ->dehydrated(false)
                         ->afterStateUpdated(function ($state, Forms\Set $set){
                             $set('city_id', null);
                             $set('area_id', null);
