@@ -53,8 +53,8 @@ class ProductController extends BaseController
             ->when($request->tax_profile_id, function (Builder $builder) use ($request) {
                 return $builder->where('tax_profile_id', $request->tax_profile_id);
             })
-            ->when($request->published, function (Builder $builder) use ($request) {
-                return $builder->where('published', $request->published);
+            ->when(isset($request->published), function (Builder $builder) use ($request) {
+                return $builder->where('published', boolval($request->input('published')));
             })
             ->when($request->coupon, function (Builder $builder) use ($request) {
                 return $builder->whereRelation('coupon', 'code', $request->coupon);
@@ -71,7 +71,9 @@ class ProductController extends BaseController
             })
             ->get();
 
-        return $this->responder(__('messages.api.retrieved'), 200, ProductResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, ProductResource::collection($data))
+            ->request($request)
+            ->respond();
     }
 
 

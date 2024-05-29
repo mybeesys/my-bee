@@ -118,9 +118,16 @@ trait HttpResponses
         return $this;
     }
 
-    public function getFilters():array
+    public function getFilters($userFriendly = true): array
     {
-        return array_merge($this->filters ?? [], $this->request ? $this->request->validated() : []);
+        $data = array_merge($this->filters ?? [], $this->request ? $this->request->validated() : []);
+        if ($userFriendly) {
+            foreach ($data as $key => $value) {
+                if (str($value)->is([true, false, 'true', 'false', '0', '1']))
+                    $data[$key] = app()->getLocale() == "ar" ? (boolval($value) ? "نعم" : "لا") : (boolval($value) ? "Yes" : "No");
+            }
+        }
+        return $data;
     }
 
     public function message($message)
@@ -298,10 +305,9 @@ trait HttpResponses
             ]);
 
 
-        if($additionalData)
-        {
+        if ($additionalData) {
             $data = $additionalData->merge($paginator);
-        }else{
+        } else {
             $data = $paginator;
         }
 
