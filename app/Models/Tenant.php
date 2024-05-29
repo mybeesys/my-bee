@@ -114,6 +114,11 @@ class Tenant extends BaseModel implements HasMedia
         return $this->hasMany(Unit::class);
     }
 
+    public function suppliers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
     public function warehouses(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Warehouse::class);

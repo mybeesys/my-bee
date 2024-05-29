@@ -4,6 +4,8 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\SupplierResource\Pages;
 use App\Models\Supplier;
+use App\Rules\InternationalPhoneRule;
+use App\Rules\UniqueClientAttributeRule;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -51,6 +53,7 @@ class SupplierResource extends Resource
 
                 Forms\Components\TextInput::make('phone')
                     ->label(__('fields.phone'))
+                    ->rules([new InternationalPhoneRule(false)])
                     ->required(),
 
                 Forms\Components\TextInput::make('company')
