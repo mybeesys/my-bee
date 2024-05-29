@@ -22,7 +22,7 @@ class TaxProfileResource extends BaseResource
             'taxes' => TaxResource::collection($this->taxes),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
-            'canDelete' => false,
+            'canDelete' => true,
         ]);
     }
 }

@@ -88,6 +88,14 @@ class TaxProfileController extends BaseController
                         'percent' => $tax['percent'],
                     ]);
                 }
+                if(isset($tax['new']) and isset($tax['percent']) and isset($tax['description'])){
+                    $item->taxes()->create([
+                        'tenant_id' => $this->getTenantId(),
+                        'tax_profile_id' => $item->id,
+                        'description' => $tax['description'],
+                        'percent' => $tax['percent'],
+                    ]);
+                }
                 if(isset($tax['id']) and isset($tax['delete']) and $tax['delete']){
                     $item->taxes()->where('id', $tax['id'])->delete();
                 }
@@ -114,7 +122,7 @@ class TaxProfileController extends BaseController
         abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
         try {
             $item->delete();
-            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
+            return $this->responder(__('messages.api.deleted'), 200)->respond();
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }

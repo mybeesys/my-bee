@@ -21,7 +21,7 @@ class TaxResource extends BaseResource
             'percent' => $this->percent,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
-            'canDelete' => false,
+            'canDelete' => true,
         ]);
     }
 }

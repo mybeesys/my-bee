@@ -19,7 +19,7 @@ class VariantLibraryOptionResource extends BaseResource
             'name' => $this->name,
             'name_en' => $this->name_en,
             'name_ar' => $this->name_ar,
-            'canDelete' => false,
+            'canDelete' => true,
         ]);
     }
 }

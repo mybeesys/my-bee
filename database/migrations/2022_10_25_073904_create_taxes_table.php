@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('description');
             $table->integer('percent');
 
-            $table->unique(['description', 'tenant_id', 'tax_profile_id']);
+            $table->unique(['tenant_id', 'tax_profile_id']);
 
             $table->timestamps();
         });
