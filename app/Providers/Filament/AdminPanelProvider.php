@@ -43,6 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('')
             ->domain($domain)
             ->brandLogo(asset("logo.jpg"))
+            ->favicon(asset("logo.jpg"))
             ->brandLogoHeight('2.8rem')
             ->globalSearch(false)
             ->databaseTransactions()
