@@ -36,7 +36,7 @@ class StoreProductRequest extends BaseRequest
             'extras.*.price' => ['required', 'numeric', 'max:'.PHP_INT_MAX],
             'extras.*.discount_price' => ['required', 'numeric', 'lt:extras.*.price', 'max:'.PHP_INT_MAX],
 
-            'barcode' => ['required', 'min:4', 'max:255', new UniqueTenantItemRule(Product::class, 'barcode')],
+            'barcode' => ['sometimes', 'min:4', 'max:255', new UniqueTenantItemRule(Product::class, 'barcode')],
             'sku' => ['required', 'digits:9', new UniqueTenantItemRule(Product::class, 'sku')],
             'calories' => ['sometimes', 'integer'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
