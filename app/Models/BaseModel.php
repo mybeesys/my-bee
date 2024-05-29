@@ -83,8 +83,8 @@ class BaseModel extends Model
 
     public function scopeWhereDateBetween($query, $fieldName, $fromDate, $toDate, $dates_format)
     {
-        $from = $fromDate ?? now()->subYears(10);
-        $to = $toDate ?? now()->addYears(10);
+        $from = is_null($fromDate) ? now()->subYears(10)->format($dates_format) : $fromDate;
+        $to = is_null($toDate) ? now()->addYears(10)->format($dates_format) : $toDate;
 
         $from = Carbon::createFromFormat($dates_format, $from)->format("Y-m-d");
         $to = Carbon::createFromFormat($dates_format, $to)->format("Y-m-d");

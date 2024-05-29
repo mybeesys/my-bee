@@ -60,7 +60,7 @@ class ProductController extends BaseController
                 return $builder->whereRelation('coupon', 'code', $request->coupon);
             })
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
-                return $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, "d-m-Y");
+                return $builder->whereDateBetween('created_at', $request->input('from_date'), $request->input('to_date'), "d-m-Y");
             })
             ->when($request->sort == 'default' or $request->sort == null, function (Builder $builder) use ($request) {
                 return $builder->orderBy('sort');
