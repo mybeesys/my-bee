@@ -88,7 +88,7 @@ class TaxProfileController extends BaseController
                         'percent' => $tax['percent'],
                     ]);
                 }
-                if(isset($tax['new']) and isset($tax['percent']) and isset($tax['description'])){
+                if(isset($tax['new']) and boolval($tax['new']) and isset($tax['percent']) and isset($tax['description'])){
                     $item->taxes()->create([
                         'tenant_id' => $this->getTenantId(),
                         'tax_profile_id' => $item->id,
@@ -96,7 +96,7 @@ class TaxProfileController extends BaseController
                         'percent' => $tax['percent'],
                     ]);
                 }
-                if(isset($tax['id']) and isset($tax['delete']) and $tax['delete']){
+                if(isset($tax['id']) and isset($tax['delete']) and boolval($tax['delete'])){
                     $item->taxes()->where('id', $tax['id'])->delete();
                 }
             }

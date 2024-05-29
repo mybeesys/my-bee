@@ -31,8 +31,8 @@ class UpdateTaxProfileRequest extends BaseRequest
             'taxes.*.id' => ['sometimes', 'exists:taxes,id'],
             'taxes.*.description' => ['sometimes', 'string'],
             'taxes.*.percent' => ['sometimes', 'numeric', 'min:1', 'max:100'],
-            'taxes.*.delete' => ['sometimes', 'boolean'],
-            'taxes.*.new' => ['sometimes', 'boolean'],
+            'taxes.*.delete' => ['sometimes', 'string', 'in:true,false'],
+            'taxes.*.new' => ['sometimes', 'string', 'in:true,false'],
         ];
     }
 }
