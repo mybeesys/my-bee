@@ -255,9 +255,7 @@ class StoreController extends BaseController
 
         if ($new_item['qty'] > 0) {
             $items = array_merge($cart['items'] ?? [], [$new_item]);
-            
             $newCart = $this->generateCartData($items);
-
             CacheService::instance()->put("cart@$uuid", $newCart);
         }
 
