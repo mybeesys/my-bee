@@ -87,7 +87,7 @@ class VariantLibraryController extends BaseController
                         'name_ar' => $option['name_ar'],
                     ]);
                 }
-                if(isset($option['new']) and isset($option['name_en']) and isset($option['name_ar'])){
+                if(isset($option['new']) and boolval($option['new']) and isset($option['name_en']) and isset($option['name_ar'])){
                     $item->options()->create([
                         'tenant_id' => $this->getTenantId(),
                         'variant_library_id' => $item->id,
@@ -95,7 +95,7 @@ class VariantLibraryController extends BaseController
                         'name_ar' => $option['name_ar'],
                     ]);
                 }
-                if(isset($option['id']) and isset($option['delete']) and $option['delete']){
+                if(isset($option['id']) and isset($option['delete']) and boolval($option['delete'])){
                     $item->options()->where('id', $option['id'])->delete();
                 }
             }

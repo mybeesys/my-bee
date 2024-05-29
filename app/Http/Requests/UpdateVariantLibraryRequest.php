@@ -30,8 +30,8 @@ class UpdateVariantLibraryRequest extends BaseRequest
             'name_ar' => ['sometimes', 'max:255', new ApiUniqueTenantItemRule(VariantLibrary::class, 'name_ar', $id)],
             'options' => ['sometimes', 'array', 'min:1'],
             'options.*.id' => ['sometimes', 'exists:variant_library_options,id'],
-            'options.*.delete' => ['sometimes', 'boolean'],
-            'options.*.new' => ['sometimes', 'boolean'],
+            'options.*.delete' => ['sometimes', 'string', 'in:true,false'],
+            'options.*.new' => ['sometimes', 'string', 'in:true,false'],
             'options.*.name_en' => ['sometimes', 'min:1', 'max:255'],
             'options.*.name_ar' => ['sometimes', 'min:1', 'max:255'],
         ];
