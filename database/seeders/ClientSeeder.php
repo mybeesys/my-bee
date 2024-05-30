@@ -34,6 +34,15 @@ class ClientSeeder extends Seeder
                 ]
             );
 
+            $jedoUser = $this->makeUser([
+                    'email' => 'jedo@live.com',
+                    'password' => bcrypt('123456'),
+                    'first_name' => 'Abody',
+                    'second_name' => 'Soma',
+                    'phone' => '249913513236',
+                ]
+            );
+
             $monzerClient = Client::firstOrCreate([
                 'email' => 'monzerosman@live.com',
             ],
@@ -44,6 +53,15 @@ class ClientSeeder extends Seeder
                 ],
             );
 
+            $jedoClient = Client::firstOrCreate([
+                'email' => 'jedo@live.com',
+            ],
+                [
+                    'name' => 'Abody Soma',
+                    'phone' => '2499135132356',
+                    'user_id' => $jedoUser->id,
+                ],
+            );
 
             $muntassirUser = $this->makeUser(
                 [
@@ -90,6 +108,7 @@ class ClientSeeder extends Seeder
             RoleService::instance()->assignRole($monzerUser, User::ROLE_CLIENT);
             RoleService::instance()->assignRole($muntassirUser, User::ROLE_CLIENT);
             RoleService::instance()->assignRole($karamUser, User::ROLE_CLIENT);
+            RoleService::instance()->assignRole($jedoUser, User::ROLE_CLIENT);
 
 
             $freePlan = Plan::first();
@@ -103,6 +122,9 @@ class ClientSeeder extends Seeder
             if (!Subscription::isSubscribedTo($freePlan->id, $karamClient))
                 Subscription::subscribe($freePlan, $karamClient);
 
+            if (!Subscription::isSubscribedTo($freePlan->id, $jedoClient))
+                Subscription::subscribe($freePlan, $jedoClient);
+
             $apple = $this->makeCompanyTenant($monzerClient, "Apple", '249913513235',
                 'monzerosman@live.com', 'Monzer', '234234234234234');
 
@@ -112,6 +134,8 @@ class ClientSeeder extends Seeder
             $actOfKaram = $this->makeIndividualTenant($karamClient, "Karam", '0000000000001',
                 'karam_m3@hotmail.com');
 
+            $actOfJedo = $this->makeIndividualTenant($jedoClient, "Jedo", '0000000000002',
+                'jedo@live.com');
 
             $tenantService = TenantService::instance();
 
@@ -123,6 +147,9 @@ class ClientSeeder extends Seeder
 
             if ($actOfKaram->wasRecentlyCreated)
                 $tenantService->seedData($actOfKaram->id);
+
+            if ($actOfJedo->wasRecentlyCreated)
+                $tenantService->seedData($actOfJedo->id);
 
             DB::commit();
 
