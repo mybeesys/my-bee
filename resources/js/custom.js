@@ -8,11 +8,11 @@ document.addEventListener('livewire:init', () => {
                 // location.reload();
             } else {
 
-                // new FilamentNotification()
-                //     .title('Something went wrong!')
-                //     .danger()
-                //     .persistent()
-                //     .send()
+                new FilamentNotification()
+                    .title('Something went wrong!')
+                    .danger()
+                    .persistent()
+                    .send()
 
                 preventDefault()
             }

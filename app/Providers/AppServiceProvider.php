@@ -43,11 +43,11 @@ class AppServiceProvider extends ServiceProvider
 
         Number::useLocale('en');
 
-//        if (app()->isProduction()) {
-//            FilamentAsset::register([
-//                Js::make('custom-script', __DIR__ . '/../../resources/js/custom.js'),
-//            ]);
-//        }
+        if (app()->isProduction()) {
+            FilamentAsset::register([
+                Js::make('custom-script', __DIR__ . '/../../resources/js/custom.js'),
+            ]);
+        }
         $this->configPublicPath();
         $this->configFilament();
         $this->configMacros();
