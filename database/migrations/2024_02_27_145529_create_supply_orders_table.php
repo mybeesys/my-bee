@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->foreignId('supplier_id')->index()->references('id')->on('suppliers');
             $table->foreignId('user_id')->index()->references('id')->on('users');
 
+            $table->unique(['tenant_id', 'no']);
             $table->timestamps();
         });
     }

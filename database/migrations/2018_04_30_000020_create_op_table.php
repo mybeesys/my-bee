@@ -35,6 +35,9 @@ class CreateOpTable extends Migration
             $table->timestamp('locked_at')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->text('files')->nullable();
+
+            $table->unique(['tenant_id', 'no']);
+
             $table->timestamps();
         });
     }

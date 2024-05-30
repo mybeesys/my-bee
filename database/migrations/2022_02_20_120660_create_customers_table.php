@@ -24,6 +24,8 @@ return new class extends Migration {
             $table->foreignId('city_id')->index()->references('id')->on('cities');
             $table->foreignId('area_id')->nullable()->index()->references('id')->on('areas');
             $table->boolean('auto_registered')->default(1);
+
+            $table->unique(['tenant_id', 'no']);
             $table->timestamps();
         });
     }

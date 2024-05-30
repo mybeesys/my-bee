@@ -44,6 +44,7 @@ class CreateOrdersTable extends Migration
 
             $table->text('coupon_data')->nullable();
 
+            $table->unique(['tenant_id', 'no']);
             $table->timestamps();
         });
     }

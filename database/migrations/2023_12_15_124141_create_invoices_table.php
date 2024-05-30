@@ -16,7 +16,7 @@ class CreateInvoicesTable extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
-            $table->string('no', 30);
+            $table->string('no');
             $table->string('uid')->unique();
             $table->enum('status', ['purchase_order', 'sale_order', 'cancelled', 'confirmed'])->index();
             $table->enum('type', ['purchases', 'sales'])->index();

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->decimal('discount_percent', 21, 6)->nullable();
 
             $table->text('notes')->nullable();
+            $table->unique(['tenant_id', 'no']);
             $table->timestamps();
         });
     }
