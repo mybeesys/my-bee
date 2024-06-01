@@ -30,6 +30,7 @@ use App\Models\TaxProfile;
 use App\Services\FilamentVariantBuilderService;
 use App\Services\PricingService;
 use App\Services\StockService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -504,6 +505,14 @@ class SaleInvoiceController extends BaseController
         $invoice->refresh();
 
         return $this->responder(__('messages.api.retrieved'), 200, new SalesInvoiceResource($invoice))
+            ->respond();
+    }
+
+    public function clearTempInvoices(): \Illuminate\Http\JsonResponse
+    {
+        $cleared = Invoice::where('temp', 1)
+            ->delete();
+        return $this->responder(__('messages.api.retrieved'), 200, $cleared)
             ->respond();
     }
 }

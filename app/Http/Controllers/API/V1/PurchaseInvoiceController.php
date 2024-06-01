@@ -412,4 +412,13 @@ class PurchaseInvoiceController extends BaseController
         return $this->responder(__('messages.api.retrieved'), 200, new PurchaseInvoiceResource($invoice))
             ->respond();
     }
+
+    public function clearTempInvoices(): \Illuminate\Http\JsonResponse
+    {
+        $cleared = Invoice::where('temp', 1)
+            ->delete();
+        return $this->responder(__('messages.api.retrieved'), 200, $cleared)
+            ->respond();
+    }
+
 }

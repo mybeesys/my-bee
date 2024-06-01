@@ -53,15 +53,5 @@
 
             $this->call(PlanSeeder::class);
 
-            if(DB::table('permissions')->count() == 0)
-            {
-                $this->command->info("Please install shield using shield:install");
-//                Artisan::call("shield:install");
-            }else{
-                $this->command->info("Shield is installed, don't forget to update shield resources every time you create new filament resources, pages or widgets. using shield:generate");
-//                Artisan::call("shield:generate");
-            }
-
-            $this->command->warn("reminder: create symlink ");
         }
     }

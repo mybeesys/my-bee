@@ -29,7 +29,7 @@ class ProductResource extends BaseResource
             'published' => $this->published,
             'sort' => $this->sort,
             'price' => number_format(PricingService::instance()->getItemPrice($this->resource), currency_decimals(), '.', ''),
-            'discountPrice' => number_format(PricingService::instance()->getRetailPrice($this->resource), currency_decimals(), '.', ''),
+            'discountPrice' => number_format(PricingService::instance()->getRetailPrice($this->resource, null), currency_decimals(), '.', ''),
             'qty' => StockService::instance()->getAvailableStock($this->resource),
             'calories' => $this->calories,
             'taxProfile' => new TaxProfileResource($this->taxProfile),

@@ -18,7 +18,7 @@ class AdvancedProductVariantResource extends BaseResource
     {
         $pricingService = PricingService::instance();
         $price = number_format($pricingService->getOriginalPrice($this->resource), currency_decimals(), '.', '');
-        $discountPrice = number_format($pricingService->getItemDiscountPrice($this->resource), currency_decimals(), '.', '');
+        $discountPrice = number_format($pricingService->getItemDiscountPrice($this->resource, null), currency_decimals(), '.', '');
 
         return $this->filterFields([
             'id' => $this->id,

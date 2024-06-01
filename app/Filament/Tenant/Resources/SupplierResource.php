@@ -60,9 +60,11 @@ class SupplierResource extends Resource
                     ->label(__('fields.company')),
 
                 Forms\Components\TextInput::make('address')
+                    ->type('address')
                     ->label(__('fields.address')),
 
                 Forms\Components\TextInput::make('email')
+                    ->email()
                     ->label(__('fields.email')),
 
             ])->columns(5),

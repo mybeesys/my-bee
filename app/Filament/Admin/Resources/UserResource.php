@@ -94,6 +94,7 @@ class UserResource extends Resource
                                 ->disabled(fn($context) => $context == "edit")
                                 ->unique(ignorable: fn(?Model $record): ?Model => $record)
                                 ->required()
+                                ->email()
                                 ->type('email'),
 
                             Forms\Components\TextInput::make('address')

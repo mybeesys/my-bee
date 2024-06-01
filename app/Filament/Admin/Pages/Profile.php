@@ -111,6 +111,7 @@ class Profile extends Page implements HasForms
                                         ->label(__('fields.email'))
                                         ->columnSpan(2)
                                         ->disabled()
+                                        ->email()
                                         ->required(),
 
                                 ]),
