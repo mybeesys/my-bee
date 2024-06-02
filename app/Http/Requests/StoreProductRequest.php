@@ -41,7 +41,7 @@ class StoreProductRequest extends BaseRequest
             'calories' => ['sometimes', 'integer'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'security_stock' => ['required', 'integer'],
-            'description' => ['required', 'min:3', 'max:6000'],
+            'description' => ['sometimes', 'min:3', 'max:6000'],
             'tax_profile_id' => ['sometimes', 'integer', 'exists:tax_profiles,id'],
             'published' => ['required', 'boolean'],
             'sort' => ['nullable', 'integer'],
