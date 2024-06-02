@@ -17,6 +17,11 @@ class ProductResource extends BaseResource
      */
     public function toArray($request): array
     {
+        $discountPrice =  number_format(PricingService::instance()->getItemDiscountPrice($this->resource, null), currency_decimals(), '.', '');
+
+        if(floatval($discountPrice) == 0)
+            $discountPrice = null;
+
         return $this->filterFields([
             'id' => $this->id,
             'type' => $this->type,
@@ -29,7 +34,7 @@ class ProductResource extends BaseResource
             'published' => $this->published,
             'sort' => $this->sort,
             'price' => number_format(PricingService::instance()->getItemPrice($this->resource), currency_decimals(), '.', ''),
-            'discountPrice' => number_format(PricingService::instance()->getRetailPrice($this->resource, null), currency_decimals(), '.', ''),
+            'discountPrice' => $discountPrice,
             'qty' => StockService::instance()->getAvailableStock($this->resource),
             'calories' => $this->calories,
             'taxProfile' => new TaxProfileResource($this->taxProfile),

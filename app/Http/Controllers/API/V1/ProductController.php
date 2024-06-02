@@ -165,6 +165,8 @@ class ProductController extends BaseController
 
             $product->loadMissing(['category', 'variantOptions', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks.warehouse', 'taxProfile']);
 
+            $product->refresh();
+
             DB::commit();
 
             return $this->responder(__('messages_data_stored'), 201, new ProductResource($product))->respond();

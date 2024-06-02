@@ -20,6 +20,9 @@ class AdvancedProductVariantResource extends BaseResource
         $price = number_format($pricingService->getOriginalPrice($this->resource), currency_decimals(), '.', '');
         $discountPrice = number_format($pricingService->getItemDiscountPrice($this->resource, null), currency_decimals(), '.', '');
 
+        if(floatval($discountPrice) == 0)
+            $discountPrice = null;
+
         return $this->filterFields([
             'id' => $this->id,
             'image' => MediaService::mediaUrls($this->getMedia('images'), true),
