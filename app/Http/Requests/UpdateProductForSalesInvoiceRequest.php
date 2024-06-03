@@ -24,7 +24,7 @@ class UpdateProductForSalesInvoiceRequest extends BaseRequest
             'item_id' => ['required', 'exists:invoice_items,id'],
             'qty' => ['required', 'numeric', 'min:1', "max:".PHP_INT_MAX],
             'unit_cost' => ['required', 'numeric', 'min:1', "max:".PHP_INT_MAX],
-            'discount' => ['required', 'numeric', 'min:1', "max:".PHP_INT_MAX],
+            'discount' => ['sometimes', 'numeric', 'min:0', "max:".PHP_INT_MAX],
             'tax_profile_id' => ['nullable', 'exists:tax_profiles,id'],
             'extras' => ['sometimes', 'array'],
             'extras.*' => ['required', 'integer'],

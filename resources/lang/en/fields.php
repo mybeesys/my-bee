@@ -231,6 +231,7 @@ return [
     'unlock' => 'Unlock',
 
     'invoice_locked_statement' => 'Invoice is locked and cannot be modified',
+    'invoice_must_at_least_have_one_product' => 'The invoice must contain at least one product',
     'alert_invoice_locked' => 'Invoice locked',
     'status' => 'Status',
     'change_status' => 'Change status',

@@ -111,6 +111,9 @@ class PurchaseInvoiceController extends BaseController
         if ($invoice->status == "confirmed" or $invoice->status == "cancelled")
             return $this->errorBadRequest()->message(__('fields.invoice_locked_statement'))->respond();
 
+        if($invoice->items->isEmpty())
+            return $this->errorBadRequest()->message(__('fields.invoice_must_at_least_have_one_product'))->respond();
+
         $data = $request->validated();
 
         $data['temp'] = false;
@@ -140,6 +143,7 @@ class PurchaseInvoiceController extends BaseController
         $product_variant_id = null;
         $name = $product->name;
         $taxProfile = TaxProfile::find($request->tax_profile_id);
+        $discount = $request->input('discount', 0);
         $tax = 0;
 
         if ($taxProfile)
@@ -156,7 +160,7 @@ class PurchaseInvoiceController extends BaseController
 
         }
 
-        if ($request->discount > 0) {
+        if ($discount > 0) {
             $invoice->update(['discount_option' => 'per-item', 'discount_method' => 'amount']);
         }
 
@@ -175,7 +179,7 @@ class PurchaseInvoiceController extends BaseController
                 'tax_profile_id' => $request->tax_profile_id,
                 'tax_profile_data' => $taxProfile?->toArray(),
                 'price' => $request->unit_cost,
-                'discount' => $request->discount,
+                'discount' => $discount,
                 'qty' => $request->qty,
                 'tax' => $tax,
                 'user_id' => auth('sanctum')->id()
@@ -200,12 +204,13 @@ class PurchaseInvoiceController extends BaseController
         $invoiceItem = InvoiceItem::findOrFail($request->item_id);
 
         $taxProfile = TaxProfile::find($request->tax_profile_id);
+        $discount = $request->input('discount', 0);
         $tax = 0;
 
         if ($taxProfile)
             $tax = PricingService::instance()->getTaxAmountFromProfile($taxProfile, $request->unit_cost, $request->qty);
 
-        if ($request->discount > 0) {
+        if ($discount > 0) {
             $invoice->update(['discount_option' => 'per-item', 'discount_method' => 'amount']);
         }
         $invoice->items()->where('id', $invoiceItem->id)->update(
@@ -213,7 +218,7 @@ class PurchaseInvoiceController extends BaseController
                 'tax_profile_id' => $request->tax_profile_id,
                 'tax_profile_data' => $taxProfile?->toArray(),
                 'price' => $request->unit_cost,
-                'discount' => $request->discount,
+                'discount' => $discount,
                 'qty' => $request->qty,
                 'tax' => $tax,
                 'user_id' => auth('sanctum')->id()

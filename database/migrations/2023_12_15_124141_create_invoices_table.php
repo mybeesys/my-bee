@@ -35,7 +35,7 @@ class CreateInvoicesTable extends Migration
             $table->foreignId('customer_id')->index()->nullable()->references('id')->on('customers')->restrictOnDelete();
 //            $table->foreignId('order_id')->index()->nullable()->references('id')->on('orders')->restrictOnDelete();
             $table->foreignId('representative_id')->index()->nullable()->references('id')->on('representatives')->restrictOnDelete();
-            $table->foreignId('supplier_id')->index()->nullable()->references('id')->on('suppliers')->restrictOnDelete();
+            $table->foreignId('supplier_id')->nullable()->index()->references('id')->on('suppliers')->restrictOnDelete();
             $table->foreignId('reviewed_by_id')->index()->nullable()->references('id')->on('users');
             $table->foreignId('locked_by_id')->index()->nullable()->references('id')->on('users');
             $table->date('date')->index();

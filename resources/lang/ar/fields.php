@@ -232,6 +232,7 @@ return [
     'unlock' => 'إلغاء الإغلاق',
 
     'invoice_locked_statement' => 'الفاتورة مغلقة ولا يمكن تعديلها',
+    'invoice_must_at_least_have_one_product' => 'يجب ان تحتوي الفاتورة على منتج واحد على الأقل',
     'alert_invoice_locked' => 'تم إغلاق الفاتورة بنجاح',
     'status' => 'الحالة',
     'change_status' => 'تغيير الحالة',
