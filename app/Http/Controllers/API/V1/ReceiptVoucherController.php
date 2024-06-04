@@ -26,6 +26,8 @@ class ReceiptVoucherController extends BaseController
 {
     public function index(ListReceiptVoucherRequest $request)
     {
+        $sort = $request->input('sort', 'latest');
+
         $data = ReceiptVoucher::with(['invoice', 'payments.media', 'payments.debitAccount', 'payments.creditAccount', 'user', 'acc4'])
             ->when($request->for, function (Builder $builder) use ($request) {
                 return $builder->where('for', $request->for);
@@ -39,8 +41,8 @@ class ReceiptVoucherController extends BaseController
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
                 return $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, "d-m-Y");
             })
-            ->when($request->sort, function (Builder $builder) use ($request) {
-                if ($request->sort == 'oldest')
+            ->when($sort, function (Builder $builder) use ($request, $sort) {
+                if ($sort == 'oldest')
                     return $builder->orderBy('created_at');
                 return $builder->orderByDesc('created_at');
             })
