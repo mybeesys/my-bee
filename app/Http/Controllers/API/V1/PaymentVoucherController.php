@@ -44,7 +44,7 @@ class PaymentVoucherController extends BaseController
                     return $builder->oldest();
                 return $builder->latest();
             })
-            ->get();
+            ->latest();
 
 
         return $this->responder(__('messages.api.retrieved'), 200, PaymentVoucherResource::collection($data))
