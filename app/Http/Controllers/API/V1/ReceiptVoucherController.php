@@ -102,7 +102,7 @@ class ReceiptVoucherController extends BaseController
             }
             DB::commit();
 
-            return $this->responder(__('messages.api.retrieved'), 200, new ReceiptVoucherResource($receiptVoucher))
+            return $this->responder(__('messages.api.created'), 201, new ReceiptVoucherResource($receiptVoucher))
                 ->respond();
 
         } catch (\Throwable $exception) {

@@ -102,7 +102,7 @@ class PaymentVoucherController extends BaseController
             }
             DB::commit();
 
-            return $this->responder(__('messages.api.retrieved'), 200, new PaymentVoucherResource($paymentVoucher))
+            return $this->responder(__('messages.api.created'), 201, new PaymentVoucherResource($paymentVoucher))
                 ->respond();
 
         } catch (\Throwable $exception) {
