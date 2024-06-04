@@ -64,7 +64,7 @@ class ReceiptVoucherController extends BaseController
 
             if(!$invoice)
                 unset($data['invoice_id']);
-            
+
             DB::beginTransaction();
 
 
