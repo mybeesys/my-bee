@@ -34,6 +34,8 @@ class PurchaseInvoiceController extends BaseController
 {
     public function index(ListPurchaseInvoiceRequest $request)
     {
+        $sort = $request->input('sort', 'latest');
+
         $data = Invoice::purchases()
             ->with(['items.product', 'items.productVariant', 'items.taxProfile', 'items.purchasesReturnsDetails', 'items.invoice', 'items.user', 'additionalCosts.type', 'purchasePayments', 'supplier', 'user', 'reviewedBy', 'stocks', 'purchasesReturns'])
             ->where('temp', 0)
@@ -63,10 +65,10 @@ class PurchaseInvoiceController extends BaseController
             })
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
                 return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
-            })->when($request->sort, function (Builder $builder) use ($request) {
-                if ($request->sort == 'oldest')
-                    return $builder->oldest();
-                return $builder->latest();
+            })->when($sort, function (Builder $builder) use ($request, $sort) {
+                if ($sort == 'oldest')
+                    return $builder->orderBy('created_at');
+                return $builder->orderByDesc('created_at');
             })
             ->get();
 

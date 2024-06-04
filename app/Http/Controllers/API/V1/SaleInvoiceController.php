@@ -38,6 +38,8 @@ class SaleInvoiceController extends BaseController
 {
     public function index(ListSalesInvoiceRequest $request)
     {
+        $sort = $request->input('sort', 'latest');
+
         $data = Invoice::sales()
             ->with(['services.type', 'services.taxProfile', 'items.product', 'items.productVariant', 'items.taxProfile', 'items.salesReturnsDetails', 'items.invoice', 'items.user', 'additionalCosts.type', 'salesPayments', 'customer', 'user', 'reviewedBy', 'stocks', 'salesReturns'])
             ->where('temp', 0)
@@ -64,10 +66,10 @@ class SaleInvoiceController extends BaseController
             })
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
                 return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
-            })->when($request->sort, function (Builder $builder) use ($request) {
-                if ($request->sort == 'oldest')
-                    return $builder->oldest();
-                return $builder->latest();
+            })->when($sort, function (Builder $builder) use ($request, $sort) {
+                if ($sort == 'oldest')
+                    return $builder->orderBy('created_at');
+                return $builder->orderByDesc('created_at');
             })
             ->get();
 
