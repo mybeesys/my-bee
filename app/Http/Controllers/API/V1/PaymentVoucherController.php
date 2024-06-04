@@ -60,7 +60,10 @@ class PaymentVoucherController extends BaseController
             $data['user_id'] = auth('sanctum')->id();
             $data['no'] = generate_payment_voucher();
 
-            $invoice = Invoice::with('items')->find($data['invoice_id']);
+            $invoice = Invoice::with('items')->find($data['invoice_id'] ?? null);
+
+            if(!$invoice)
+                unset($data['invoice_id']);
 
             DB::beginTransaction();
 

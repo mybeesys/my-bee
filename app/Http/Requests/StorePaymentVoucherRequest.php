@@ -25,7 +25,7 @@ class StorePaymentVoucherRequest extends BaseRequest
             'no' => ['required', 'string'],
             'date' => ['required', 'date', 'date_format:d-m-Y'],
             'for' => ['required', 'in:supplier,other_entity'],
-            'invoice_id' => ['required_if:for,==,supplier'],
+            'invoice_id' => ['required_if:for,==,supplier', 'numeric', 'exists:invoices,id'],
             'acc4_code' => ['required', 'exists:acc4,code'],
             'payments' => ['required', 'array', 'min:1'],
             'payments.*.acc4_code' => ['required', 'exists:acc4,code'],

@@ -60,8 +60,11 @@ class ReceiptVoucherController extends BaseController
             $data['user_id'] = auth('sanctum')->id();
             $data['no'] = generate_receipt_voucher();
 
-            $invoice = Invoice::with('items')->find($data['invoice_id']);
+            $invoice = Invoice::with('items')->find($data['invoice_id'] ?? null);
 
+            if(!$invoice)
+                unset($data['invoice_id']);
+            
             DB::beginTransaction();
 
 
