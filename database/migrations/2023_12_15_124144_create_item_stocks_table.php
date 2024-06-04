@@ -16,7 +16,7 @@ class CreateItemStocksTable extends Migration
         Schema::create('item_stocks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
-            $table->string('no')->unique();
+            $table->string('no');
             $table->enum('type', ['opening-stock', 'purchase', 'moved']);
             $table->morphs('item');
 
@@ -34,6 +34,8 @@ class CreateItemStocksTable extends Migration
             $table->decimal('unit_cost', 21, 6);
             $table->date('expiration_date')->nullable();
             $table->text('notes')->nullable();
+
+            $table->unique(['tenant_id', 'no']);
             $table->timestamps();
         });
     }
