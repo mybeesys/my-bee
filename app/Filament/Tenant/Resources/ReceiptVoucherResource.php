@@ -141,7 +141,7 @@ class ReceiptVoucherResource extends Resource
                             $customer_id = Acc4::with('item')->firstWhere('code', $get('acc4_code'))?->item_id;
 
                             if ($customer_id) {
-                                return Invoice::dropdownUnpaidForCustomer($customer_id, true);
+                                return Invoice::dropdownUnpaidForCustomer($customer_id, false);
                             }
 
                             return [];
@@ -152,7 +152,7 @@ class ReceiptVoucherResource extends Resource
                             $invoice = self::getInvoice($livewire, $record);
 
                             if ($invoice) {
-                                $options = Invoice::dropdownUnpaidForCustomer($invoice->customer_id, true);
+                                $options = Invoice::dropdownUnpaidForCustomer($invoice->customer_id, false);
 
                                 $component->helperText($invoice->no);
 
