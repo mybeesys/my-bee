@@ -130,7 +130,7 @@ class ReceiptVoucherController extends BaseController
             return $this->errorBadRequest()->message(__("fields.payments_are_bigger_than_invoice_amount"))->respond();
         }
 
-        ReceiptVoucherPayment::create([
+        $rvp = ReceiptVoucherPayment::create([
             'tenant_id' => $this->getTenantId(),
             'user_id' => auth('sanctum')->id(),
             'receipt_voucher_id' => $receiptVoucher->id,
@@ -145,7 +145,7 @@ class ReceiptVoucherController extends BaseController
 
 
         if ($request->hasFile("attachments")) {
-            $receiptVoucher->addMultipleMediaFromRequest(["attachments"])
+            $rvp->addMultipleMediaFromRequest(["attachments"])
                 ->each(fn(FileAdder $fileAdder) => $fileAdder->toMediaCollection('attachments'));
         }
 

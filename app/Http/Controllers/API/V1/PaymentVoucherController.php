@@ -129,7 +129,7 @@ class PaymentVoucherController extends BaseController
             return $this->errorBadRequest()->message(__("fields.payments_are_bigger_than_invoice_amount"))->respond();
         }
 
-        PaymentVoucherPayment::create([
+        $pvp = PaymentVoucherPayment::create([
             'tenant_id' => $this->getTenantId(),
             'user_id' => auth('sanctum')->id(),
             'payment_voucher_id' => $paymentVoucher->id,
@@ -143,7 +143,7 @@ class PaymentVoucherController extends BaseController
         ]);
 
         if ($request->hasFile("attachments")) {
-            $paymentVoucher->addMultipleMediaFromRequest(["attachments"])
+            $pvp->addMultipleMediaFromRequest(["attachments"])
                 ->each(fn(FileAdder $fileAdder) => $fileAdder->toMediaCollection('attachments'));
         }
 
