@@ -75,6 +75,9 @@ if(config('app.env') === "production"){
     });
 }
 
+Route::get('/login', function () {
+    return redirect(route('filament.tenant.auth.login'));
+})->name('login');
 
 
 
