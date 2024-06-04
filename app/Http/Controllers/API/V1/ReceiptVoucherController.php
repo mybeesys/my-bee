@@ -41,10 +41,10 @@ class ReceiptVoucherController extends BaseController
             })
             ->when($request->sort, function (Builder $builder) use ($request) {
                 if ($request->sort == 'oldest')
-                    return $builder->oldest();
-                return $builder->latest();
+                    return $builder->orderBy('created_at');
+                return $builder->orderByDesc('created_at');
             })
-            ->latest();
+            ->get();
 
 
         return $this->responder(__('messages.api.retrieved'), 200, ReceiptVoucherResource::collection($data))
