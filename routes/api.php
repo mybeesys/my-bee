@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 //V1
 Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localization', 'restrict_requests_by_cors']], function () {
+    Route::post('seed-customers', [App\Http\Controllers\API\V1\DevController::class, 'seedCustomers'])->middleware('auth:sanctum');
     Route::post('app-status', [App\Http\Controllers\API\V1\MobileAppStatusController::class, 'status']);
     Route::get('app-status/versions', [App\Http\Controllers\API\V1\AppVersionController::class, 'versions']);
     Route::get('app-status/versions/latest', [App\Http\Controllers\API\V1\AppVersionController::class, 'latestVersion']);

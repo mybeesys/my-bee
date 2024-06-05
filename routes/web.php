@@ -1,9 +1,5 @@
 <?php
 
-use App\Models\City;
-use App\Models\Tenant;
-use App\Models\User;
-use App\Services\TenantService;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -69,7 +65,12 @@ use Illuminate\Support\Facades\Route;
 //    dd($city);
 //}
 
-if(config('app.env') === "production"){
+//Route::get('/', function (){
+//    dd('x');
+//});
+
+
+if (config('app.env') === "production") {
     Route::get('/', function () {
         return redirect('https://client.mybeesystem.com');
     });
@@ -78,6 +79,5 @@ if(config('app.env') === "production"){
 Route::get('/login', function () {
     return redirect(route('filament.tenant.auth.login'));
 })->name('login');
-
 
 

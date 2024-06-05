@@ -18,7 +18,8 @@ class CustomerController extends BaseController
     public function index()
     {
         $data = Customer::with(['state', 'city', 'area', 'acc4'])->get();
-        return $this->responder(__('messages.api.retrieved'), 200, CustomerResource::collection($data))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200)
+            ->paginate($data);
     }
 
     /**
