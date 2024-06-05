@@ -15,11 +15,16 @@ class CustomerController extends BaseController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $data = Customer::with(['state', 'city', 'area', 'acc4'])->get();
-        return $this->responder(__('messages.api.retrieved'), 200)
-            ->paginate($data);
+
+        if ($request->input('paginate', false)) {
+            return $this->responder(__('messages.api.retrieved'), 200)
+                ->paginate($data);
+        }
+
+        return $this->responder(__('messages.api.retrieved'), 200, $data)->respond();
     }
 
     /**
