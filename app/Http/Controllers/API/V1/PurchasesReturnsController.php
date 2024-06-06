@@ -48,7 +48,7 @@ class PurchasesReturnsController extends BaseController
             $query->whereRelation('invoice', 'supplier_id', $request->supplier_id);
         });
 
-        return $this->responder(__('messages.api.retrieved'), 200, PurchasesReturnsResource::collection($query->latest()))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, PurchasesReturnsResource::collection($query->get()->sortByDesc('created_at')))->respond();
     }
 
     public function store(StorePurchasesReturnsRequest $request)

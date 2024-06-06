@@ -50,7 +50,7 @@ class SalesReturnsController extends BaseController
             $query->whereRelation('invoice', 'customer_id', $request->client_id);
         });
 
-        return $this->responder(__('messages.api.retrieved'), 200, SalesReturnsResource::collection($query->latest()))->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, SalesReturnsResource::collection($query->get()->sortByDesc('created_at')))->respond();
     }
 
     public function store(StoreSalesReturnsRequest $request)
