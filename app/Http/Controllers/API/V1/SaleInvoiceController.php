@@ -471,7 +471,7 @@ class SaleInvoiceController extends BaseController
                 $invoice->update(['discount_percent' => $request->percent]);
             }
 
-            $invoice->items()->update(['discount' => $invoice->items->count()]);
+            $invoice->items()->update(['discount' => $value / $invoice->items->count()]);
 
             $invoice->update(['discount_option' => 'overall', 'discount_method' => $request->discount_method]);
 
