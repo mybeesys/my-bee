@@ -22,7 +22,7 @@ class UpdatePurchaseReturnsRequest extends BaseRequest
         return [
             'notes' => ['sometimes'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required'], //exists:invoice_items,id
+            'items.*.id' => ['required', 'exists:invoice_items,id'],
             'items.*.qty' => ['required', 'integer']
         ];
     }
