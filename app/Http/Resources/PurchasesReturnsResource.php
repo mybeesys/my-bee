@@ -16,7 +16,6 @@ class PurchasesReturnsResource extends BaseResource
     {
         return $this->filterFields([
             'id' => $this->id,
-            'invoiceItemId' => $this->invoice_item_id,
             'invoiceNo' => $this->invoice->no,
             'supplierId' => $this->invoice->supplier_id,
             'notes' => $this->notes,

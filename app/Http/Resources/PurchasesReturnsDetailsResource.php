@@ -16,6 +16,7 @@ class PurchasesReturnsDetailsResource extends BaseResource
     {
         return $this->filterFields([
             'id' => $this->id,
+            'invoiceItemId' => $this->invoice_item_id,
             'name' => $this->invoiceItem->name,
             'qty' => $this->qty,
             'unitPrice' => number_format($this->invoiceItem->price, currency_decimals(), '.', ''),
