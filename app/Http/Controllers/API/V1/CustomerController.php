@@ -24,7 +24,7 @@ class CustomerController extends BaseController
                 ->paginate($data);
         }
 
-        return $this->responder(__('messages.api.retrieved'), 200, $data)->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, CustomerResource::collection($data))->respond();
     }
 
     /**
