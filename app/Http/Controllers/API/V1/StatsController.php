@@ -74,13 +74,15 @@ class StatsController extends BaseController
             [
                 'id' => 'purchases_returns',
                 'name' => __('fields.purchases_returns'),
-                'count' => PurchasesReturns::with('details')->get()->pluck('details')->sum('qty'),
+//                'count' => PurchasesReturns::with('details')->get()->pluck('details')->sum('qty'),
+               'count' => PurchasesReturns::count(),
                 'description' => PurchasesReturns::latest()->first()?->created_at?->diffForHumans() ?? "",
             ],
             [
                 'id' => 'sales_returns',
                 'name' => __('fields.sales_returns'),
-                'count' => SalesReturns::with('details')->get()->pluck('details')->sum('qty'),
+//                'count' => SalesReturns::with('details')->get()->pluck('details')->sum('qty'),
+                'count' => SalesReturns::count(),
                 'description' => SalesReturns::latest()->first()?->created_at?->diffForHumans() ?? "",
             ],
             [
