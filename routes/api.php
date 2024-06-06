@@ -106,8 +106,8 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             ]);
 
             //clear temp invoices
-            Route::post('purchases-clear-temp-invoices', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'clearTempInvoices']);
-            Route::post('sales-clear-temp-invoices', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'clearTempInvoices']);
+            Route::post('purchases-clear-temp-invoices', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'clearTempInvoices']);
+            Route::post('sales-clear-temp-invoices', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'clearTempInvoices']);
 
             //returns
             Route::get('sales-returns-get-available-invoices', [\App\Http\Controllers\API\V1\SalesReturnsController::class, 'getAvailableInvoices']);

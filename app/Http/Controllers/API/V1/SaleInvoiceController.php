@@ -517,9 +517,13 @@ class SaleInvoiceController extends BaseController
 
     public function clearTempInvoices(): \Illuminate\Http\JsonResponse
     {
-        $cleared = Invoice::where('temp', 1)
-            ->delete();
-        return $this->responder(__('messages.api.retrieved'), 200, $cleared)
+        $data = Invoice::sales()->with('items')->where('temp', 1)->get();
+
+        foreach ($data as $invoice) {
+            $invoice->items()->delete();
+            $invoice->delete();
+        }
+        return $this->responder(__('messages.api.retrieved'), 200)
             ->respond();
     }
 }
