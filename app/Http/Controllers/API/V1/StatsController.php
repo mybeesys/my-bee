@@ -62,13 +62,13 @@ class StatsController extends BaseController
             [
                 'id' => 'purchases',
                 'name' => __('fields.purchases'),
-                'count' => Invoice::purchases()->count(),
+                'count' => Invoice::purchases()->where('temp', 0)->count(),
                 'description' => Invoice::purchases()->latest()->first()?->created_at?->diffForHumans() ?? "",
             ],
             [
                 'id' => 'sales',
                 'name' => __('fields.sales'),
-                'count' => Invoice::sales()->count(),
+                'count' => Invoice::sales()->where('temp', 0)->count(),
                 'description' => Invoice::sales()->latest()->first()?->created_at?->diffForHumans() ?? "",
             ],
             [
