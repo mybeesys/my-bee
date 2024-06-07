@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Route;
 //));
 //dd(User::with('tokens')->find(3)->update(['password' => bcrypt(123456)]));
 //dd(\App\Models\Acc4::asOptions());
-//dd(User::with('tokens')->find(3)->createToken("test")->plainTextToken);
+//dd(\App\Models\User::with('tokens')->find(3)->createToken("test")->plainTextToken);
 //Route::get('/', function () {
 //    return view('welcome');
 //});

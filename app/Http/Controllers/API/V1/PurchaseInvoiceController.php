@@ -52,7 +52,7 @@ class PurchaseInvoiceController extends BaseController
                 return $builder->where('warehouse_id', $request->warehouse_id);
             })
             ->when($request->discount_method, function (Builder $builder) use ($request) {
-                return $builder->whereBetween('discount_method', $request->discount_method);
+                return $builder->where('discount_method', $request->discount_method);
             })
             ->when($request->supplier_id, function (Builder $builder) use ($request) {
                 return $builder->where('supplier_id', $request->supplier_id);

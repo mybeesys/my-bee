@@ -53,7 +53,7 @@ class SaleInvoiceController extends BaseController
                 return $builder->where('transaction_ref', $request->transaction_ref);
             })
             ->when($request->discount_method, function (Builder $builder) use ($request) {
-                return $builder->whereBetween('discount_method', $request->discount_method);
+                return $builder->where('discount_method', $request->discount_method);
             })
             ->when($request->customer_id, function (Builder $builder) use ($request) {
                 return $builder->where('customer_id', $request->customer_id);
