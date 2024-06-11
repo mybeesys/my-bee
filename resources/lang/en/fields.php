@@ -866,5 +866,7 @@ return [
 
     'store_enable_stock_tracking' => 'Activate inventory control',
     'store_enable_stock_tracking_hint' => 'When using this feature, you will have to create and adjust purchase invoices to control inventory effectively.',
+
+    'invoice_url' => 'Invoice url',
 ];
 //

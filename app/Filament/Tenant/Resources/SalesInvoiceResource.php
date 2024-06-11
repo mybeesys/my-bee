@@ -58,6 +58,7 @@ class SalesInvoiceResource extends Resource
     {
 
     }
+
     protected static ?string $model = Invoice::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag';
@@ -249,7 +250,7 @@ class SalesInvoiceResource extends Resource
 
                                     ])->columns(2)
                             ])
-                            ->after(function ($livewire){
+                            ->after(function ($livewire) {
                                 $livewire->dispatch('test');
 
                             })
@@ -996,118 +997,120 @@ class SalesInvoiceResource extends Resource
                     })
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
 
-                    Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make(),
 
-                    Tables\Actions\Action::make('status')
-                        ->visible(function ($record) {
-                            return $record->locked_at == null;
-                        })
-                        ->color('warning')
-                        ->icon('heroicon-o-pencil-square')
-                        ->label(__('fields.change_status'))
-                        ->modalWidth('lg')
-                        ->requiresConfirmation()
-                        ->fillForm(function (Invoice $record) {
-                            return [
-                                'current_status' => __('fields.invoice_status_' . $record->status),
-                            ];
-                        })
-                        ->form([
-                            Forms\Components\Section::make([
+                Tables\Actions\Action::make('invoice_url')
+                    ->label(__('fields.invoice_url'))
+                    ->color(Color::Sky)
+                    ->url(fn(Invoice $record) => $record->url, true),
 
-                                Forms\Components\TextInput::make('no')
-                                    ->label("")
-                                    ->formatStateUsing(fn($record) => $record->no)
-                                    ->readOnly()
-                                    ->dehydrated(false),
+                Tables\Actions\Action::make('status')
+                    ->visible(function ($record) {
+                        return $record->locked_at == null;
+                    })
+                    ->color('warning')
+                    ->icon('heroicon-o-pencil-square')
+                    ->label(__('fields.change_status'))
+                    ->modalWidth('lg')
+                    ->requiresConfirmation()
+                    ->fillForm(function (Invoice $record) {
+                        return [
+                            'current_status' => __('fields.invoice_status_' . $record->status),
+                        ];
+                    })
+                    ->form([
+                        Forms\Components\Section::make([
 
-                                Forms\Components\TextInput::make('to')
-                                    ->label("")
-                                    ->formatStateUsing(fn($record) => $record->getInvoicePerson())
-                                    ->readOnly()
-                                    ->dehydrated(false),
+                            Forms\Components\TextInput::make('no')
+                                ->label("")
+                                ->formatStateUsing(fn($record) => $record->no)
+                                ->readOnly()
+                                ->dehydrated(false),
+
+                            Forms\Components\TextInput::make('to')
+                                ->label("")
+                                ->formatStateUsing(fn($record) => $record->getInvoicePerson())
+                                ->readOnly()
+                                ->dehydrated(false),
 
 
-                                TextInput::make('current_status')
-                                    ->label(__('fields.current_status'))
-                                    ->dehydrated(false)
-                                    ->readOnly(),
+                            TextInput::make('current_status')
+                                ->label(__('fields.current_status'))
+                                ->dehydrated(false)
+                                ->readOnly(),
 
-                                Forms\Components\Select::make('status')
-                                    ->label(__('fields.change_status_to'))
-                                    ->default(null)
-                                    ->live()
-                                    ->options([
-                                        'confirmed' => __('fields.invoice_status_confirmed'),
-                                        'cancelled' => __('fields.invoice_status_cancelled'),
-                                    ]),
+                            Forms\Components\Select::make('status')
+                                ->label(__('fields.change_status_to'))
+                                ->default(null)
+                                ->live()
+                                ->options([
+                                    'confirmed' => __('fields.invoice_status_confirmed'),
+                                    'cancelled' => __('fields.invoice_status_cancelled'),
+                                ]),
 
-                                Forms\Components\Placeholder::make('info')
-                                    ->visible(function (Get $get) {
-                                        $status = $get('status');
-                                        return ($status == "confirmed" or $status == "cancelled");
-                                    })
-                                    ->label(function () {
-                                        $msg = __("fields.invoice_will_be_locked_after_this_action");
-                                        return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
-                                    }),
-                            ])
+                            Forms\Components\Placeholder::make('info')
+                                ->visible(function (Get $get) {
+                                    $status = $get('status');
+                                    return ($status == "confirmed" or $status == "cancelled");
+                                })
+                                ->label(function () {
+                                    $msg = __("fields.invoice_will_be_locked_after_this_action");
+                                    return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
+                                }),
                         ])
-                        ->action(function ($record, array $data) {
+                    ])
+                    ->action(function ($record, array $data) {
 
-                            if (!can_lock_invoice()) {
-                                fns()->persist(true)->sendWarning(__('fields.insufficient_permission'));
-                                return;
+                        if (!can_lock_invoice()) {
+                            fns()->persist(true)->sendWarning(__('fields.insufficient_permission'));
+                            return;
+                        }
+
+                        if ($record->locked_at) {
+                            fns()->sendWarning(__('fields.invoice_locked_edit_disabled'));
+                            return;
+                        }
+
+                        try {
+
+                            DB::beginTransaction();
+
+                            if ($data['status'] == "confirmed") {
+                                StockService::instance()->takeStockFromSalesInvoice($record);
+                                $record->update(['status' => $data['status'], 'locked_at' => now()]);
+                                fns()->sendSuccess(__('fields.invoice_updated'));
+                            } else {
+                                $record->update(['status' => $data['status']]);
                             }
 
-                            if ($record->locked_at) {
-                                fns()->sendWarning(__('fields.invoice_locked_edit_disabled'));
-                                return;
-                            }
+                            DB::commit();
 
-                            try {
+                        } catch (\Exception $exception) {
+                            DB::rollBack();
+                            fns()->displayException($exception);
+                        }
 
-                                DB::beginTransaction();
+                    }),
 
-                                if ($data['status'] == "confirmed") {
-                                    StockService::instance()->takeStockFromSalesInvoice($record);
-                                    $record->update(['status' => $data['status'], 'locked_at' => now()]);
-                                    fns()->sendSuccess(__('fields.invoice_updated'));
-                                } else {
-                                    $record->update(['status' => $data['status']]);
-                                }
+                Tables\Actions\Action::make('complete_payment')
+                    ->label(__('fields.complete_payment'))
+                    ->icon('heroicon-o-pencil')
+                    ->color('success')
+                    ->visible(function ($record) {
+                        return !$record->paid;
+                    })
+                    ->action(function (Invoice $record) {
+                        if ($record->salesPayments->isEmpty()) {
+                            return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->id]));
+                        }
 
-                                DB::commit();
+                        $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
 
-                            } catch (\Exception $exception) {
-                                DB::rollBack();
-                                fns()->displayException($exception);
-                            }
+                        if ($rv)
+                            return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id, 'rv' => $rv->id]));
 
-                        }),
-
-                    Tables\Actions\Action::make('complete_payment')
-                        ->label(__('fields.complete_payment'))
-                        ->icon('heroicon-o-pencil')
-                        ->color('success')
-                        ->visible(function ($record) {
-                            return !$record->paid;
-                        })
-                        ->action(function (Invoice $record) {
-                            if ($record->salesPayments->isEmpty()) {
-                                return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->id]));
-                            }
-
-                            $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
-
-                            if ($rv)
-                                return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id, 'rv' => $rv->id]));
-
-                        }),
-
-                ]),
+                    }),
             ])
             ->bulkActions([
             ]);
@@ -1420,10 +1423,10 @@ class SalesInvoiceResource extends Resource
         $discountMethod = $livewire->data['discount_method'] ?? null;
         $discountAmount = 0;
 
-        if($livewire->data['discount_amount'] ?? null > 0)
+        if ($livewire->data['discount_amount'] ?? null > 0)
             $discountAmount = $livewire->data['discount_amount'];
 
-        if($livewire->data['discount_percent'] ?? null > 0)
+        if ($livewire->data['discount_percent'] ?? null > 0)
             $discountAmount = $livewire->data['discount_percent'];
 
         $newItems = [];

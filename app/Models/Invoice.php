@@ -700,6 +700,11 @@ class Invoice extends BaseModel
         return $this->morphMany(Service::class, 'item');
     }
 
+    public function getUrlAttribute()
+    {
+        return config('app.shop_url') . \Filament\Facades\Filament::getTenant()->slug . "/einvoice/" . $this->no;
+    }
+
     //bug
 //    public function setStatusAttribute($value)
 //    {

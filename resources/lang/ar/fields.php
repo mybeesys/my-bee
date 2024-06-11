@@ -873,5 +873,7 @@ return [
 
     'store_enable_stock_tracking' => 'تفعيل خاصية ضبط المخزون',
     'store_enable_stock_tracking_hint' => 'عند إستخدام هذة الخاصية سيتحتم عليك تهيئة وضبط فواتير المشتريات لضبظ المخزون بشكل فعال.',
+
+    'invoice_url' => 'رابط الفاتورة'
 ];
 //
