@@ -273,6 +273,7 @@ class SupplyOrderResource extends Resource
                             ->label(__('fields.order_details'))
 //                            ->relationship('details')
                             ->emptyLabel(__('fields.no_records_placeholder'))
+                            ->defaultItems(0)
                             ->headers([
                                 Header::make('display_name')
                                     ->width("165px")

@@ -62,6 +62,7 @@ class CreatePurchaseInvoice extends CreateRecord
                 'date' => now(),
                 'type' => 'purchases',
                 'for' => 'supplier',
+                'status' => 'purchase_order',
                 'discount_option' => 'per-item',
                 'supply_order_id' => $supplyOder->id,
                 'supplier_id' => $supplyOder->supplier_id,
