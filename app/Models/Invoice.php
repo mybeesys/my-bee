@@ -702,7 +702,7 @@ class Invoice extends BaseModel
 
     public function getUrlAttribute()
     {
-        return config('app.shop_url') . \Filament\Facades\Filament::getTenant()->slug . "/einvoice/" . $this->no;
+        return str(config('app.shop_url') . "/einvoice/" . $this->uid)->remove('shop/')->value();
     }
 
     //bug
