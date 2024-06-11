@@ -102,17 +102,14 @@ class EditTenantProfile extends BaseTenantProfile
                                                 ->schema([
 
                                                     TextInput::make('store_title_ar')
-                                                        ->label(__('fields.store_title'))
-                                                        ->required(),
+                                                        ->label(__('fields.store_title')),
 
                                                     RichEditor::make('store_bio_ar')
-                                                        ->required()
                                                         ->label(__('fields.store_bio'))
                                                         ->columnSpanFull(),
 
                                                     TextInput::make('store_address_ar')
-                                                        ->label(__('fields.store_address'))
-                                                        ->required(),
+                                                        ->label(__('fields.store_address')),
 
                                                     TextInput::make('store_working_hours_ar')
                                                         ->label(__('fields.store_working_hours')),
@@ -122,17 +119,14 @@ class EditTenantProfile extends BaseTenantProfile
                                                 ->schema([
 
                                                     TextInput::make('store_title_en')
-                                                        ->label(__('fields.store_title'))
-                                                        ->required(),
+                                                        ->label(__('fields.store_title')),
 
                                                     RichEditor::make('store_bio_en')
-                                                        ->required()
                                                         ->label(__('fields.store_bio'))
                                                         ->columnSpanFull(),
 
                                                     TextInput::make('store_address_en')
-                                                        ->label(__('fields.store_address'))
-                                                        ->required(),
+                                                        ->label(__('fields.store_address')),
 
                                                     TextInput::make('store_working_hours_en')
                                                         ->label(__('fields.store_working_hours')),
@@ -143,27 +137,21 @@ class EditTenantProfile extends BaseTenantProfile
                                     Fieldset::make(__('fields.social_media_links'))->schema([
 
                                         TextInput::make('store_social_media_links.facebook')
-                                            ->required()
                                             ->label(__('fields.social_label.facebook')),
 
                                         TextInput::make('store_social_media_links.instagram')
-                                            ->required()
                                             ->label(__('fields.social_label.instagram')),
 
                                         TextInput::make('store_social_media_links.twitter')
-                                            ->required()
                                             ->label(__('fields.social_label.twitter')),
 
                                         TextInput::make('store_social_media_links.youtube')
-                                            ->required()
                                             ->label(__('fields.social_label.youtube')),
 
                                         TextInput::make('store_social_media_links.snapchat')
-                                            ->required()
                                             ->label(__('fields.social_label.snapchat')),
 
                                         TextInput::make('store_social_media_links.whatsapp')
-                                            ->required()
                                             ->label(__('fields.social_label.whatsapp')),
 
                                     ]),
