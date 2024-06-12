@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\API\BaseController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DeleteMediaByFileNameRequest;
 use App\Http\Requests\GenerateNoRequest;
 use App\Http\Requests\GetStoreCartRequest;
 use App\Http\Requests\GetStoreCategoriesRequest;
@@ -53,6 +54,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class StoreController extends BaseController
 {
@@ -911,5 +913,15 @@ class StoreController extends BaseController
                 return $this->errorBadRequest()->respond();
             }
         }
+    }
+
+    public function deleteMediaByFileName(DeleteMediaByFileNameRequest $request): \Illuminate\Http\JsonResponse
+    {
+        $file_name = $request->input('file_name');
+        $deleted = Media::where('file_name', $file_name)->first()?->delete();
+
+        return $this
+            ->responder(__('messages.api.deleted'), 200, ['deleted' => boolval($deleted)])
+            ->respond();
     }
 }
