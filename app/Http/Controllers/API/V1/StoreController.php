@@ -273,6 +273,9 @@ class StoreController extends BaseController
         $qty = $request->qty;
         $product_extras_ids_to_add = $request->product_extras_ids_to_add ?? [];
 
+        if ($qty <= 0)
+            return $this->responder(__('messages.api.retrieved'), 200, self::getCart())->respond();
+
         $item = collect($cartItems)->filter(fn($item) => $item['id'] == $id)->first();
         if (count($product_extras_ids_to_add) > 0) {
             if ($item) {
