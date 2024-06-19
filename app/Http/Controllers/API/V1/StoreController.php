@@ -755,7 +755,7 @@ class StoreController extends BaseController
             return collect($item['extras'])->sum('price');
         });
 
-        $subTotal = $this->calculateSubTotal($items) + $extrasTotal + $taxes;
+        $subTotal = $this->calculateSubTotal($items) + $extrasTotal;
 
         $couponData = $this->getCouponInfo($subTotal);
 

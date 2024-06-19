@@ -134,16 +134,18 @@ class PricingService
     {
         $tax = 0;
         if ($product->taxProfile?->total_percentages) {
-            $sub_total = $price * $qty;
-            $tax = $sub_total * ($product->taxProfile->total_percentages / 100);
+            $tax = MathService::instance()->getTax($price * $qty, $product->taxProfile?->total_percentages);
+//            $sub_total = $price * $qty;
+//            $tax = $sub_total * ($product->taxProfile->total_percentages / 100);
         }
         return $tax;
     }
 
     public function getTaxAmountFromProfile(TaxProfile $taxProfile, $price, int $qty)
     {
-        $sub_total = $price * $qty;
-        return $sub_total * ($taxProfile->total_percentages / 100);
+        return MathService::instance()->getTax($price * $qty, $taxProfile->total_percentages);
+//        $sub_total = $price * $qty;
+//        return $sub_total * ($taxProfile->total_percentages / 100);
     }
 
     public function getProductVariantsPriceRange(Product $product, $default = "-")

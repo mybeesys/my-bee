@@ -4,6 +4,11 @@
     "isEntry": true,
     "src": "resources/css/app.css"
   },
+  "resources/css/filament/tenant/theme.css": {
+    "file": "assets/theme-c3c5a354.css",
+    "isEntry": true,
+    "src": "resources/css/filament/tenant/theme.css"
+  },
   "resources/js/app.js": {
     "file": "assets/app-02317797.js",
     "isEntry": true,
