@@ -313,7 +313,7 @@ class StoreController extends BaseController
             if ($item) {
                 $cartItems = collect($cartItems)->map(function ($item, $key) use ($id, $qty) {
                     if ($item['id'] == $id) {
-                        $item['qty'] = $qty < $item['maxQty'] ? intval($qty) : $item['maxQty'];
+                        $item['qty'] = $qty;// < $item['maxQty'] ? intval($qty) : $item['maxQty'];
                         $item['price'] = number_format($item['unitPrice'] * $qty, currency_decimals(), '.', '');
                         $item['priceFormatted'] = number_format($item['unitPrice'] * $qty, currency_decimals(), '.', ',') . " " . main_currency_native_symbol();
                         $item['updatedAt'] = now();
