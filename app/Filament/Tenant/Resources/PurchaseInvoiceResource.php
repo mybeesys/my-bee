@@ -21,8 +21,10 @@ use App\Models\VariantLibrary;
 use App\Models\VariantLibraryOption;
 use App\Models\Warehouse;
 use App\Rules\UniqueTenantItemRule;
+use App\Services\AccountingService;
 use App\Services\CacheService;
 use App\Services\InvoiceService;
+use App\Services\MathService;
 use App\Services\PricingService;
 use App\Services\ProductService;
 use App\Services\StockService;
@@ -932,7 +934,7 @@ class PurchaseInvoiceResource extends Resource
                                     }),
                             ])
                         ])
-                        ->action(function ($record, array $data) {
+                        ->action(function (Invoice $record, array $data) {
 
                             if (!can_lock_invoice()) {
                                 fns()->persist(true)->sendWarning(__('fields.insufficient_permission'));
@@ -951,6 +953,27 @@ class PurchaseInvoiceResource extends Resource
                                 if ($data['status'] == "confirmed") {
                                     $record->lockPurchaseInvoice($data['status']);
                                     $record->approveAndStockWarehouse();
+
+                                    $tax = $record->items->sum('tax');
+                                    if($tax > 0){
+                                        $op = make_taxes_op();
+                                        $accService = new AccountingService();
+                                        $accService
+                                            ->setUp(
+                                                $op->id,
+                                                now(),
+                                                main_currency_iso_code(),
+                                                generate_double_entry_transaction_id(),
+                                                $tax,
+                                                null,
+                                                'Invoice items taxes',
+                                                'Invoice items taxes',
+                                                $record->id,
+                                                meta: ['type' => 'purchase_invoice', 'id' => $record->id],
+                                            )->make('120100001', '122800002')
+                                            ->finish();
+                                    }
+
                                     fns()->persist(__('fields.invoice_stock_released'));
                                     fns()->sendSuccess(__('fields.invoice_updated'));
                                 } else {
@@ -1140,8 +1163,8 @@ class PurchaseInvoiceResource extends Resource
                     if (is_number($discount))
                         $sub_total -= $discount;
 
-                    $tax = $sub_total * ($taxProfile->total_percentages / 100);
-                    $totals['total_taxes'] += $sub_total * ($taxProfile->total_percentages / 100);
+                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total, $taxProfile);
+                    $totals['total_taxes'] += $tax;
                 }
             }
 
@@ -1236,7 +1259,7 @@ class PurchaseInvoiceResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = $subTotal * ($taxProfile->total_percentages / 100);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile);
                         $subTotal += $tax;
                     }
                 }

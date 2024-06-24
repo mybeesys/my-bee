@@ -9,6 +9,7 @@ use App\Models\TaxReport;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,15 +78,29 @@ class TaxReportResource extends Resource
                 Tables\Columns\TextColumn::make('account.name')
                     ->toggleable()
                     ->searchable()
-                    ->description(function ($record){
+                    ->description(function ($record) {
                         return $record->account_code;
                     })
+                    ->color(Color::Sky)
+                    ->url(function (CashDet $record) {
+                        if ($record->meta and ($record->meta['type'] ?? null) == "expense") {
+                            return ExpenseResource::getUrl('edit', ['record' => $record->meta['id']]);
+                        }
+                        if ($record->meta and ($record->meta['type'] ?? null) == "sales_invoice") {
+                            return SalesInvoiceResource::getUrl('edit', ['record' => $record->meta['id']]);
+                        }
+                        if ($record->meta and ($record->meta['type'] ?? null) == "purchase_invoice") {
+                            return PurchaseInvoiceResource::getUrl('edit', ['record' => $record->meta['id']]);
+                        }
+
+                        return null;
+                    }, true)
                     ->label(__('fields.account')),
 
-                Tables\Columns\TextColumn::make('transaction_id')
-                    ->toggleable()
-                    ->searchable()
-                    ->label(__('fields.transaction_id')),
+//                Tables\Columns\TextColumn::make('transaction_id')
+//                    ->toggleable()
+//                    ->searchable()
+//                    ->label(__('fields.transaction_id')),
 
 //                Tables\Columns\TextColumn::make('currency.name')
 //                    ->toggleable()
@@ -97,7 +112,11 @@ class TaxReportResource extends Resource
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_in, 2);
                     })
-                    ->extraAttributes(['class' => 'text-success-700'])
+                    ->color(Color::Green)
+                    ->description(function ($state, $record) {
+                        if ($state > 0)
+                            return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
+                    })
                     ->label(__('fields.debit')),
 
                 Tables\Columns\TextColumn::make('amount_out')
@@ -105,7 +124,11 @@ class TaxReportResource extends Resource
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_out, 2);
                     })
-                    ->extraAttributes(['class' => 'text-danger-700'])
+                    ->color(Color::Red)
+                    ->description(function ($state, $record) {
+                        if ($state > 0)
+                            return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
+                    })
                     ->label(__('fields.credit')),
 
                 Tables\Columns\TextColumn::make('statement')
@@ -115,12 +138,25 @@ class TaxReportResource extends Resource
                     ->toggleable()
                     ->label(__('fields.statement')),
 
-//                Tables\Columns\TextColumn::make('exchange_rate')
+//                Tables\Columns\TextColumn::make('balance_pre_transaction')
 //                    ->toggleable()
+//                    ->label(__('fields.balance_pre_transaction'))
 //                    ->getStateUsing(function ($record) {
-//                        return number_format($record->exchange_rate, 2);
-//                    })
-//                    ->label(__('fields.exchange_rate')),
+//                        return number_format($record->balance_pre_transaction, currency_decimals(), '.', '.');
+//                    }),
+
+                Tables\Columns\TextColumn::make('balance_post_transaction')
+                    ->toggleable()
+                    ->label(__('fields.balance'))
+                    ->color(function ($record) {
+                        if ($record->amount_in > 0) {
+                            return Color::Green;
+                        }
+                        return Color::Red;
+                    })
+                    ->getStateUsing(function ($record) {
+                        return number_format($record->balance_post_transaction, currency_decimals(), '.', '.');
+                    }),
 
                 Tables\Columns\TextColumn::make('operation.files')
                     ->toggleable()
@@ -200,13 +236,14 @@ class TaxReportResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $transaction_ids = CashDet::with('account')->whereHas('account', function (Builder $q) {
-            $q->where('acc3_code', '1227');
+            $q->where('acc3_code', '1228');
         })->pluck('transaction_id')->toArray();
 
         return parent::getEloquentQuery()->with(['operation', 'account.acc3', 'currency', 'invoice'])
             ->whereIn('transaction_id', $transaction_ids)
             ->latest();
     }
+
     public static function getRelations(): array
     {
         return [

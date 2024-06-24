@@ -14,27 +14,6 @@ use Illuminate\Support\Collection;
 
 class AccountingService
 {
-    public static array $types_en = [
-        'general-voucher',  //قيد عام
-        'opening-credit', //رصيد إفتتاحي
-        'cash-receipt-voucher', //سند قبض نقدي
-        'cash-payment-voucher', //سند صرف نقدي
-        'cheque-receipt-voucher', //سند قبض شيك
-        'cheque-payment-voucher', //سند صرف شيك
-        'currency-purchase', //شراء عملة
-        'currency-sale', //بيع عملة
-    ];
-
-    public static array $types_ar = [
-        'قيد عام',
-        'رصيد إفتتاحي',
-        'سند قبض نقدي',
-        'سند صرف نقدي',
-        'سند قبض شيك',
-        'سند صرف شيك',
-        'شراء عملة',
-        'بيع عملة',
-    ];
 
     public $op_id, $date, $currency_iso_code, $transaction_id, $amount,
         $credit_account_code, $debit_account_code, $exchange_rate, $invoice_id,
@@ -43,6 +22,7 @@ class AccountingService
     public $cash_det_credit;
     public $cash_det_debit;
 
+    public $meta;
     public function createAcc4AccountForItem(Model $model): mixed
     {
         //create if not exists
@@ -93,6 +73,7 @@ class AccountingService
         $this->debit_statement = null;
         $this->cash_det_credit = null;
         $this->cash_det_debit = null;
+        $this->meta = null;
 
         return $this;
     }
@@ -133,7 +114,7 @@ class AccountingService
 
 
     public function setUp($op_id, $date, $currency_iso_code, $transaction_id, $amount,
-                          $exchange_rate, $credit_statement, $debit_statement, $invoice_id = null)
+                          $exchange_rate, $credit_statement, $debit_statement, $invoice_id = null, $meta = null)
     {
         $this->op_id = $op_id;
         $this->date = $date;
@@ -144,6 +125,7 @@ class AccountingService
         $this->credit_statement = $credit_statement;
         $this->debit_statement = $debit_statement;
         $this->invoice_id = $invoice_id;
+        $this->meta = $meta;
 
         return $this;
     }
@@ -165,7 +147,8 @@ class AccountingService
             $this->date,
             $this->credit_statement,
             $this->exchange_rate,
-            $this->invoice_id
+            $this->invoice_id,
+            $this->meta,
         );
 
         if ($this->debit_account_code) {
@@ -179,7 +162,8 @@ class AccountingService
                 $this->date,
                 $this->debit_statement,
                 $this->exchange_rate,
-                $this->invoice_id
+                $this->invoice_id,
+                $this->meta,
             );
 
         }

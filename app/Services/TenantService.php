@@ -237,7 +237,7 @@ class TenantService
             array('code' => '1225', 'acc2_code' => '53', 'name' => 'تكلفة المبيعات'),
             array('code' => '1226', 'acc2_code' => '53', 'name' => 'المشتريات'),
             array('code' => '1227', 'acc2_code' => '12', 'name' => 'تحويل بالبنوك'),
-
+            array('code' => '1228', 'acc2_code' => '12', 'name' => 'الضرائب'),
         );
 
 
@@ -276,6 +276,9 @@ class TenantService
             array('code' => '122600002', 'acc3_code' => '1226', 'name' => 'تكاليف المشتريات'),
             array('code' => '122700001', 'acc3_code' => '1227', 'name' => 'تحويل بنكي (الراجحي 1)'),
             array('code' => '122100001', 'acc3_code' => '1221', 'name' => 'الخدمات'),
+            array('code' => '122800001', 'acc3_code' => '1228', 'name' => 'ضرائب المصروفات'),
+            array('code' => '122800002', 'acc3_code' => '1228', 'name' => 'ضرائب المشتريات'),
+            array('code' => '122800003', 'acc3_code' => '1228', 'name' => 'ضرائب المبيعات'),
         );
 
 

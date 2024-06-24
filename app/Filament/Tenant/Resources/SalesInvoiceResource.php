@@ -20,7 +20,9 @@ use App\Models\TaxProfile;
 use App\Models\VariantLibrary;
 use App\Models\VariantLibraryOption;
 use App\Rules\UniqueTenantItemRule;
+use App\Services\AccountingService;
 use App\Services\CacheService;
+use App\Services\MathService;
 use App\Services\PricingService;
 use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
@@ -1060,7 +1062,7 @@ class SalesInvoiceResource extends Resource
                                 }),
                         ])
                     ])
-                    ->action(function ($record, array $data) {
+                    ->action(function (Invoice $record, array $data) {
 
                         if (!can_lock_invoice()) {
                             fns()->persist(true)->sendWarning(__('fields.insufficient_permission'));
@@ -1079,6 +1081,27 @@ class SalesInvoiceResource extends Resource
                             if ($data['status'] == "confirmed") {
                                 StockService::instance()->takeStockFromSalesInvoice($record);
                                 $record->update(['status' => $data['status'], 'locked_at' => now()]);
+
+                                $tax = $record->items->sum('tax');
+                                if($tax > 0){
+                                    $op = make_taxes_op();
+                                    $accService = new AccountingService();
+                                    $accService
+                                        ->setUp(
+                                            $op->id,
+                                            now(),
+                                            main_currency_iso_code(),
+                                            generate_double_entry_transaction_id(),
+                                            $tax,
+                                            null,
+                                            'Invoice items taxes',
+                                            'Invoice items taxes',
+                                            $record->id,
+                                            meta: ['type' => 'sales_invoice', 'id' => $record->id],
+                                        )->make('120100001', '122800003')
+                                        ->finish();
+                                }
+
                                 fns()->sendSuccess(__('fields.invoice_updated'));
                             } else {
                                 $record->update(['status' => $data['status']]);
@@ -1364,8 +1387,8 @@ class SalesInvoiceResource extends Resource
                     if (is_number($discount))
                         $sub_total -= $discount;
 
-                    $tax = $sub_total * ($taxProfile->total_percentages / 100);
-                    $totals['total_taxes'] += $sub_total * ($taxProfile->total_percentages / 100);
+                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total, $taxProfile);
+                    $totals['total_taxes'] += $tax;
                 }
             }
 
@@ -1376,7 +1399,7 @@ class SalesInvoiceResource extends Resource
             $totals['total_services'] += $price;
             $total_percentages = collect($service['tax_profile_data']['taxes'] ?? [])->sum('percent');
             if ($total_percentages > 0) {
-                $totals['total_taxes'] += $price * ($total_percentages / 100);
+                $totals['total_taxes'] += MathService::instance()->getTax($price, $total_percentages);
             }
         }
 
@@ -1470,7 +1493,7 @@ class SalesInvoiceResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = $subTotal * ($taxProfile->total_percentages / 100);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile);
                         $subTotal += $tax;
                     }
                 }

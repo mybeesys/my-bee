@@ -28,6 +28,7 @@ class CreateOpTable extends Migration
                 'cheque-payment-voucher', //سند صرف شيك
                 'currency-purchase', //شراء عملة
                 'currency-sale', //بيع عملة
+                'taxes',
             ]);
             $table->string('payment_voucher_no')->nullable();
             $table->foreignId('user_id')->index()->references('id')->on('users');

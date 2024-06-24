@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Filament\Tenant\Resources\PaymentVoucherResource;
 use App\Filament\Tenant\Resources\ReceiptVoucherResource;
 use App\Services\AccountingService;
+use App\Services\MathService;
 use App\Traits\HasPrefixedId;
 use Dompdf\Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -219,7 +220,7 @@ class Invoice extends BaseModel
 
                 $subTotal = $item->price * $item->qty;
                 $subTotal -= $item->discount;
-                $total += $subTotal * ($total_percentages / 100);
+                $total += MathService::instance()->getTax($subTotal, $total_percentages);
 
             } else {
                 $subTotal = $item->price * $item->qty;
@@ -227,7 +228,7 @@ class Invoice extends BaseModel
 
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
-                    $total += $subTotal * ($taxProfile->total_percentages / 100);
+                    $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile);
                 }
             }
 

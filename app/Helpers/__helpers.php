@@ -328,25 +328,25 @@ function sanitize_sdn_phone($phone, $withPayload = true)
 
 function generate_no($model_class)
 {
-    $item = ($model_class)::latest()->first();
+    $item = ($model_class)::orderByDesc('id')->get()->first();
     return str_pad($item ? $item->id + 1 : 1, 6, '0', STR_PAD_LEFT);
 }
 
 function generate_op()
 {
-    $op = \App\Models\Op::latest()->first();
-    return str_pad($op ? (int)$op->no + 1 : 1, 6, '0', STR_PAD_LEFT);
+    $op = \App\Models\Op::orderByDesc('id')->get()->first();
+    return str_pad($op != null ? (int)$op->no + 1 : 1, 6, '0', STR_PAD_LEFT);
 }
 
 function generate_receipt_voucher()
 {
-    $item = \App\Models\ReceiptVoucher::latest()->first();
+    $item = \App\Models\ReceiptVoucher::orderByDesc('id')->get()->first();
     return str_pad($item ? (int)$item->no + 1 : 1, 6, '0', STR_PAD_LEFT);
 }
 
 function generate_payment_voucher()
 {
-    $item = \App\Models\PaymentVoucher::latest()->first();
+    $item = \App\Models\PaymentVoucher::orderByDesc('id')->get()->first();
     return str_pad($item ? (int)$item->no + 1 : 1, 6, '0', STR_PAD_LEFT);
 }
 
@@ -521,6 +521,23 @@ function make_bank_transfer_payment_voucher_op(): \App\Models\Op
         [
             'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
             'type' => "bank-transfer-payment-voucher",
+            'user_id' => auth()->id(),
+            'no' => generate_op(),
+            'payment_voucher_no' => null,
+            'date' => now(),
+            'locked_at' => null,
+            'submitted_at' => null,
+            'files' => null,
+        ]
+    );
+}
+
+function make_taxes_op(): \App\Models\Op
+{
+    return \App\Models\Op::create(
+        [
+            'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
+            'type' => "taxes",
             'user_id' => auth()->id(),
             'no' => generate_op(),
             'payment_voucher_no' => null,
