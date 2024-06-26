@@ -25,8 +25,8 @@
             $superAdmin = $this->createUser([
                 'first_name' => 'Super',
                 'second_name' => 'Admin',
-                'email' => 'super_admin@test.com',
-                'password' => bcrypt('123456'),
+                'email' => 'super_admin@mybeesystem.com',
+                'password' => bcrypt('#V4rtnd53fg@#rgFE'),
                 'email_verified_at' => now(),
                 'active' => 1,
             ]);

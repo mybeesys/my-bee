@@ -143,14 +143,15 @@ class AdminResource extends Resource
                                 ->required()
                                 ->reactive()
                                 ->password()
+                                ->revealable()
                                 ->rules(['required', new PasswordStrengthRule(8)]),
 
                             Forms\Components\TextInput::make('password_confirmation')
                                 ->label(__('fields.password_confirmation'))
                                 ->required()
                                 ->password()
-                                ->same('password')
-                                ->visible(fn(Forms\Get $get) => $get('password') !== null || $get('password') != "")
+                                ->revealable()
+                                ->same('password'),
                         ])
                         ->columns(1),
                     $layout::make()
@@ -165,6 +166,7 @@ class AdminResource extends Resource
                                 ->label(__('fields.password'))
                                 ->reactive()
                                 ->password()
+                                ->revealable()
                                 ->rules(['required', new PasswordStrengthRule(8)])
                                 ->visible(fn(Forms\Get $get) => $get('change_password') === true),
 
@@ -172,8 +174,9 @@ class AdminResource extends Resource
                                 ->label(__('fields.password_confirmation'))
                                 ->required()
                                 ->password()
+                                ->revealable()
                                 ->same('password')
-                                ->visible(fn(Forms\Get $get) => $get('password') !== null && $get('change_password') === true)
+                                ->visible(fn(Forms\Get $get) => $get('change_password') === true)
                         ])
                         ->columns(1),
                 ])->columnSpan([

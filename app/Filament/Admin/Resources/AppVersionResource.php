@@ -27,6 +27,8 @@
 
         protected static ?int $navigationSort = -1;
 
+        protected static bool $shouldRegisterNavigation = false;
+
         public static function getNavigationBadge(): ?string
         {
             return static::getModel()::count();

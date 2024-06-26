@@ -149,6 +149,8 @@ return [
     'extra_fields_value' => 'قيمة الحقل',
 
     'administrators' => 'مدراء النظام',
+    'admin' => 'مدير',
+    'admins' => 'مدراء',
 
 
     'qty' => 'الكمية',
@@ -497,9 +499,11 @@ return [
 
     'subscription_plan_features' => 'مميزات خطة الإشتراك',
     'max_allowed_companies' => 'أقصى عدد مسموح للشركات',
+    'max_allowed_users' => 'أقصى عدد مسموح للمستخدمين',
     'max_allowed_purchase_invoices' => 'أقصى عدد مسموح لفواتير المشتريات',
     'max_allowed_sales_invoices' => 'أقصى عدد مسموح لفواتير المبيعات',
     'unlimited_companies' => 'عدد الشركات غير محدود',
+    'unlimited_users' => 'عدد المستخدمين غير محدود',
     'unlimited_purchase_invoices' => 'عدد فواتير المشتريات غير محدود',
     'unlimited_sales_invoices' => 'عدد فواتير المبيعات غير محدود',
     'subscribers' => 'المشتركين',

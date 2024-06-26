@@ -97,7 +97,7 @@ class PlanResource extends Resource
                             ->label(__('fields.price'))
                             ->live(true)
                             ->numeric()
-                            ->formatStateUsing(fn($state) => format_amount($state))
+                            ->formatStateUsing(fn($state) => $state ? number_format($state, 2, '.', '') : null)
                             ->minValue(0)
                             ->maxValue(500000)
 
@@ -113,6 +113,16 @@ class PlanResource extends Resource
                         ->numeric()
                         ->default(1)
                         ->minValue(1)
+                        ->maxValue(1000)
+                        ->columnSpan(1)
+                        ->required(),
+
+                    Forms\Components\TextInput::make('max_allowed_users')
+                        ->label(__('fields.max_allowed_users'))
+                        ->visible(fn(Forms\Get $get) => $get('unlimited_users') === false)
+                        ->numeric()
+                        ->default(0)
+                        ->minValue(0)
                         ->maxValue(1000)
                         ->columnSpan(1)
                         ->required(),
@@ -151,6 +161,18 @@ class PlanResource extends Resource
                                 })->columnSpanFull()
                                 ->reactive(),
 
+                            Forms\Components\Checkbox::make('unlimited_users')
+                                ->label(__('fields.unlimited_users'))
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                    if ($state === true) {
+                                        $set('max_allowed_users', -1);
+                                    } else {
+                                        $set('max_allowed_user', 1);
+                                    }
+                                })->columnSpanFull()
+                                ->reactive(),
+
                             Forms\Components\Checkbox::make('unlimited_purchase_invoices')
                                 ->label(__('fields.unlimited_purchase_invoices'))
                                 ->dehydrated(false)
@@ -177,7 +199,7 @@ class PlanResource extends Resource
 
                         ]),
 
-                ])->columns(3),
+                ])->columns(4),
 
                 Forms\Components\Section::make()
                     ->schema([
@@ -227,36 +249,44 @@ class PlanResource extends Resource
                     ->label(__('fields.span'))
                     ->formatStateUsing(fn($state) => __("fields.plan_span_$state"))
                     ->description(fn(Plan $record) => $record->span === Plan::SPAN_ONE_TIME ? "∞" : $record->span_in_days)
+                    ->toggleable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label(__('fields.price'))
                     ->prefix("SAR ")
                     ->formatStateUsing(fn($state) => format_amount($state))
+                    ->toggleable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('max_allowed_companies')
                     ->label(__('fields.max_allowed_companies'))
-                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state)
-                    ->searchable(),
+                    ->toggleable()
+                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state),
+
+                Tables\Columns\TextColumn::make('max_allowed_users')
+                    ->label(__('fields.max_allowed_users'))
+                    ->toggleable()
+                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state),
 
                 Tables\Columns\TextColumn::make('max_allowed_purchase_invoices')
                     ->label(__('fields.max_allowed_purchase_invoices'))
-                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state)
-                    ->searchable(),
+                    ->toggleable()
+                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state),
 
                 Tables\Columns\TextColumn::make('max_allowed_sales_invoices')
                     ->label(__('fields.max_allowed_sales_invoices'))
-                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state)
-                    ->searchable(),
+                    ->toggleable()
+                    ->formatStateUsing(fn($state) => $state == -1 ? __('fields.unlimited') : $state),
 
                 Tables\Columns\TextColumn::make('clients_count')
                     ->label(__('fields.subscribers_count'))
-                    ->counts('clients')
-                    ->searchable(),
+                    ->toggleable()
+                    ->counts('clients'),
 
                 Tables\Columns\IconColumn::make('active')
                     ->label(__('fields.active'))
+                    ->toggleable()
                     ->boolean(),
 
             ])

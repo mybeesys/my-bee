@@ -31,6 +31,14 @@ class ShieldSeeder extends Seeder
             //tenant_id null
             $r = Role::findOrCreate($role, "web");
 
+            if ($role == User::ROLE_SUPER_ADMIN) {
+                $permissions = $roleService->getSuperAdminPermissions();
+                foreach ($permissions as $permission) {
+                    Permission::findOrCreate($permission, 'web');
+                }
+                $r->syncPermissions((new RoleService())->getSuperAdminPermissions());
+            }
+
             if ($role == User::ROLE_CLIENT) {
                 $permissions = $roleService->getTenantAdminDefaultPermissions();
                 foreach ($permissions as $permission) {

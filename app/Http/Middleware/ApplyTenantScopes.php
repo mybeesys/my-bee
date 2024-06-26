@@ -205,7 +205,6 @@ class ApplyTenantScopes
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );
 
-
         Setting::addGlobalScope(
             fn(Builder $query) => $query->whereBelongsTo($tenant),
         );

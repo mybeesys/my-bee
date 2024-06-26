@@ -105,6 +105,56 @@ class RoleService
         return $user;
     }
 
+    public function getSuperAdminPermissions()
+    {
+        return [
+            'view_shield::role',
+            'view_any_shield::role',
+            'create_shield::role',
+            'update_shield::role',
+            'delete_shield::role',
+            'delete_any_shield::role',
+
+            'view_app::version',
+            'view_any_app::version',
+            'create_app::version',
+            'update_app::version',
+            'delete_app::version',
+
+            'view_client',
+            'view_any_client',
+            'create_client',
+            'update_client',
+            'delete_client',
+
+            'view_plan',
+            'view_any_plan',
+            'create_plan',
+            'update_plan',
+            'delete_plan',
+
+            'view_role',
+            'view_any_role',
+            'create_role',
+            'update_role',
+            'delete_role',
+            'delete_any_role',
+
+            'view_admin',
+            'view_any_admin',
+            'create_admin',
+            'update_admin',
+            'delete_admin',
+
+            'view_user',
+            'view_any_user',
+            'create_user',
+            'update_user',
+            'delete_user',
+
+        ];
+    }
+
     public function getTenantAdminDefaultPermissions(): array
     {
         return [
@@ -245,7 +295,7 @@ class RoleService
         return str($role)->title()->value();
     }
 
-    public function getRoles($users_ids):array
+    public function getRoles($users_ids): array
     {
         return User::with('roles')->whereIn('id', $users_ids ?? [])->get()->pluck('roles')->flatten()->pluck('name')->toArray() ?? [];
     }

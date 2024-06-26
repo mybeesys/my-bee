@@ -149,7 +149,8 @@ return [
     'extra_fields_value' => 'Field value',
 
     'administrators' => 'Administrators',
-
+    'admin' => 'Admin',
+    'admins' => 'Admins',
 
     'qty' => 'Quantity',
     'unit_cost' => 'Unit cost',
@@ -492,9 +493,11 @@ return [
 
     'subscription_plan_features' => 'Subscription plan features',
     'max_allowed_companies' => 'Max allowed companies',
+    'max_allowed_users' => 'Max allowed users',
     'max_allowed_purchase_invoices' => 'Max allowed purchase invoices',
     'max_allowed_sales_invoices' => 'Max allowed sales invoices',
     'unlimited_companies' => 'Unlimited companies',
+    'unlimited_users' => 'Unlimited users',
     'unlimited_purchase_invoices' => 'Unlimited purchase invoices',
     'unlimited_sales_invoices' => 'Unlimited sales invoices',
     'unlimited' => 'Unlimited',

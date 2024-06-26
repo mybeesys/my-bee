@@ -18,6 +18,7 @@ return new class extends Migration
             $table->integer('span_in_days');
             $table->decimal('price', 19,4);
             $table->integer('max_allowed_companies');
+            $table->integer('max_allowed_users');
             $table->integer('max_allowed_purchase_invoices');
             $table->integer('max_allowed_sales_invoices');
             $table->integer('restrict_account_after_days');
