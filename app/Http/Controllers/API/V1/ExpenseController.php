@@ -30,7 +30,8 @@ class ExpenseController extends BaseController
             ->when($request->min_amount or $request->max_amount, function (Builder $builder) use ($request) {
                 return $builder->whereBetween('amount', [$request->min_amount ?? 0, $request->max_amount ?? PHP_INT_MAX]);
             })
-            ->latest();
+            ->orderByDesc('created_at')
+            ->get();
 
         return $this->responder(__('messages.api.retrieved'), 200, ExpenseResource::collection($data))
             ->filters($request->validated())
