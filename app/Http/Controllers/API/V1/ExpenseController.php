@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\TaxProfile;
+use App\Services\MathService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
@@ -47,8 +48,7 @@ class ExpenseController extends BaseController
 
         if ($data['tax_profile_id'] ?? null) {
             $taxProfile = TaxProfile::find($data['tax_profile_id']);
-            $percent = collect($taxProfile->taxes)->sum('percent');
-            $data['tax'] = $percent / 100 * $data['amount'];
+            $data['tax'] = MathService::instance()->getTaxFromTaxProfile($data['amount'], $taxProfile);
             $data['tax_profile_data'] = $taxProfile->toArray();
         }
         $expense = Expense::create($data);
