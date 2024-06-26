@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateExpenseRequest;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Expense;
 use App\Models\TaxProfile;
+use App\Services\AccountingService;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -47,13 +48,33 @@ class ExpenseController extends BaseController
 
         $data['tenant_id'] = $this->getTenant()->id;
 
+        $hasTax = false;
         if ($data['tax_profile_id'] ?? null) {
+            $hasTax = true;
             $taxProfile = TaxProfile::find($data['tax_profile_id']);
             $data['tax'] = MathService::instance()->getTaxFromTaxProfile($data['amount'], $taxProfile);
             $data['tax_profile_data'] = $taxProfile->toArray();
         }
         $expense = Expense::create($data);
 
+        if($hasTax){
+            $op = make_taxes_op();
+            $accService = new AccountingService();
+            $accService
+                ->setUp(
+                    $op->id,
+                    now(),
+                    main_currency_iso_code(),
+                    generate_double_entry_transaction_id(),
+                    $expense->tax,
+                    null,
+                    'Vat',
+                    'Vat',
+                    null,
+                    meta: ['type' => 'expense', 'id' => $expense->id],
+                )->make('120100001', '122800001')
+                ->finish();
+        }
         $expense->load('category');
 
         return $this->responder(__('messages.api.created'), 201, new ExpenseResource($expense))->respond();

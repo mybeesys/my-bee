@@ -28,8 +28,8 @@ class CreateExpense extends CreateRecord
                 generate_double_entry_transaction_id(),
                 $this->record->tax,
                 null,
-                'Taxes',
-                'Taxes',
+                'Vat',
+                'Vat',
                 null,
                 meta: ['type' => 'expense', 'id' => $this->record->id],
             )->make('120100001', '122800001')
