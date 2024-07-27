@@ -81,7 +81,7 @@ class CustomerResource extends Resource
                     ->rules([
                         new InternationalPhoneRule(false)
                     ])
-                    ->required(),
+                    ->nullable(),
 
                 Forms\Components\TextInput::make('trn')
                     ->label(__('fields.trn')),

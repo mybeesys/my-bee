@@ -17,7 +17,7 @@ class Acc4Resource extends BaseResource
         return $this->filterFields([
             'name' => $this->name,
             'code' => $this->code,
-            'acc3' => new Acc3Resource($this->acc3),
+            'acc3' => new Acc3Resource($this->whenLoaded('acc3')),
         ]);
     }
 }

@@ -22,7 +22,7 @@ return new class extends Migration
             $table->integer('max_allowed_purchase_invoices');
             $table->integer('max_allowed_sales_invoices');
             $table->integer('restrict_account_after_days');
-
+            $table->boolean('enable_roles')->default(0);
 //            $table->integer('ads_availability_in_hours');
 //            $table->integer('maximum_ad_views');
 //            $table->integer('sms_marketing_count');

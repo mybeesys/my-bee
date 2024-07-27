@@ -6,13 +6,16 @@ use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\ListExpensesRequest;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
+use App\Http\Resources\Acc4Resource;
 use App\Http\Resources\ExpenseResource;
+use App\Models\Acc4;
 use App\Models\Expense;
 use App\Models\TaxProfile;
 use App\Services\AccountingService;
 use App\Services\MathService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class ExpenseController extends BaseController
 {
@@ -21,7 +24,13 @@ class ExpenseController extends BaseController
      */
     public function index(ListExpensesRequest $request)
     {
-        $data = Expense::with(['category', 'taxProfile'])
+        $data = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])
+            ->when($request->debit_acc4_code, function (Builder $builder) use ($request) {
+                return $builder->whereIn('debit_acc4_code', Arr::wrap($request->debit_acc4_code));
+            })
+            ->when($request->credit_acc4_code, function (Builder $builder) use ($request) {
+                return $builder->whereIn('credit_acc4_code', Arr::wrap($request->credit_acc4_code));
+            })
             ->when($request->expense_category_id, function (Builder $builder) use ($request) {
                 return $builder->where('expense_category_id', $request->expense_category_id);
             })
@@ -75,7 +84,7 @@ class ExpenseController extends BaseController
                 )->make('120100001', '122800001')
                 ->finish();
         }
-        $expense->load('category');
+        $expense->load(['category', 'debitAccount', 'creditAccount']);
 
         return $this->responder(__('messages.api.created'), 201, new ExpenseResource($expense))->respond();
     }
@@ -85,7 +94,7 @@ class ExpenseController extends BaseController
      */
     public function show(string $id)
     {
-        $item = Expense::with(['category', 'taxProfile'])->findOrFail($id);
+        $item = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])->findOrFail($id);
         return $this->responder(__('messages.api.retrieved'), 200, new ExpenseResource($item))->respond();
     }
 
@@ -95,7 +104,7 @@ class ExpenseController extends BaseController
     public function update(UpdateExpenseRequest $request, string $id)
     {
         $data = $request->validated();
-        $item = Expense::with(['category', 'taxProfile'])->findOrFail($id);
+        $item = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])->findOrFail($id);
 
         if ($data['tax_profile_id'] ?? null) {
             $taxProfile = TaxProfile::find($data['tax_profile_id']);
@@ -124,5 +133,21 @@ class ExpenseController extends BaseController
         } catch (\Exception $exception) {
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }
+    }
+
+    public function treasuryAccounts()
+    {
+        $data = Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->get();
+
+        return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
+    }
+
+    public function expenseAccounts()
+    {
+        $data = Acc4::whereHas('acc3', function ($q) {
+            return $q->whereIn('acc2_code', [51, 52, 53]);
+        })->get();
+
+        return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
     }
 }

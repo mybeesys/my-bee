@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
+            $table->integer('debit_acc4_code')->index();
+            $table->integer('credit_acc4_code')->index();
+            $table->foreign('debit_acc4_code')->references('code')->on('acc4');
+            $table->foreign('credit_acc4_code')->references('code')->on('acc4');
 
             $table->foreignId('expense_category_id')->index()->references('id')->on('expense_categories');
             $table->foreignId('tax_profile_id')->nullable()->index()->references('id')->on('tax_profiles');

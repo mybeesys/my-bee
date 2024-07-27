@@ -506,6 +506,7 @@ return [
     'unlimited_users' => 'عدد المستخدمين غير محدود',
     'unlimited_purchase_invoices' => 'عدد فواتير المشتريات غير محدود',
     'unlimited_sales_invoices' => 'عدد فواتير المبيعات غير محدود',
+    'enable_roles' => 'تفعيل أدوار المستخمين لهذة الخطة',
     'subscribers' => 'المشتركين',
     'subscribers_count' => 'عدد المشتركين',
     'unlimited' => 'غير محدود',
@@ -878,6 +879,9 @@ return [
     'store_enable_stock_tracking' => 'تفعيل خاصية ضبط المخزون',
     'store_enable_stock_tracking_hint' => 'عند إستخدام هذة الخاصية سيتحتم عليك تهيئة وضبط فواتير المشتريات لضبظ المخزون بشكل فعال.',
 
-    'invoice_url' => 'رابط الفاتورة'
+    'invoice_url' => 'رابط الفاتورة',
+    'store_terms_and_conditions' => 'الشروط والأحكام',
+
+    'expense_account' => 'حساب المصروف'
 ];
 //

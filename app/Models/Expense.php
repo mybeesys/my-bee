@@ -54,4 +54,14 @@ class Expense extends BaseModel implements HasMedia
         }
         return $this->amount;
     }
+
+    public function debitAccount(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Acc4::class, 'debit_acc4_code', 'code');
+    }
+
+    public function creditAccount(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Acc4::class, 'credit_acc4_code', 'code');
+    }
 }

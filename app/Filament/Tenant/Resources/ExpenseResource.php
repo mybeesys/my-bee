@@ -6,6 +6,7 @@ use App\Filament\Tenant\Resources\ExpenseResource\Pages;
 use App\Filament\Tenant\Resources\ExpenseResource\RelationManagers;
 use App\Filament\Tenant\Resources\ExpenseResource\Widgets\ExpensesOverview;
 use App\Livewire\ExpenseChart;
+use App\Models\Acc4;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Invoice;
@@ -18,6 +19,7 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -63,6 +65,34 @@ class ExpenseResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make()->schema([
+
+                    Select::make('debit_acc4_code')
+                        ->live()
+                        ->disabled(fn($record) => $record !== null)
+                        ->label(__('fields.account'))
+                        ->hint(function (Get $get) {
+                            $acc_id = $get('debit_acc4_code');
+
+                            if ($acc_id)
+                                return Acc4::find($acc_id)->acc4_code;
+
+                            return null;
+                        })
+                        ->options(function () {
+                            //add bank transfers accounts
+                            return Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code');
+                        })
+                        ->required(),
+
+                    Forms\Components\Select::make('credit_acc4_code')
+                        ->label(__('fields.expense_account'))
+                        ->required()
+                        ->options(function () {
+                            return Acc4::whereHas('acc3', function ($q) {
+                                return $q->whereIn('acc2_code', [51, 52, 53]);
+                            })->pluck('name', 'code');
+                        }),
+
                     Forms\Components\Select::make('expense_category_id')
                         ->label(__('fields.expense_category'))
                         ->required()
@@ -96,7 +126,7 @@ class ExpenseResource extends Resource
                         ->default(now())
                         ->time(false),
 
-                ])->columns(3),
+                ])->columns(4),
 
                 Section::make()->schema([
 
@@ -253,6 +283,16 @@ class ExpenseResource extends Resource
         return $table
             ->columns([
 
+                Tables\Columns\TextColumn::make('debitAccount.name')
+                    ->label(__('fields.account'))
+                    ->description(fn($record) => $record->debitAccount->code)
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('creditAccount.name')
+                    ->label(__('fields.expense_account'))
+                    ->description(fn($record) => $record->creditAccount->code)
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('description')
                     ->label(__("fields.description"))
                     ->searchable()
@@ -284,8 +324,8 @@ class ExpenseResource extends Resource
                     ->label(__("fields.tax"))
                     ->searchable()
                     ->sortable()
-                    ->description(function ($record){
-                        if($record->taxProfile){
+                    ->description(function ($record) {
+                        if ($record->taxProfile) {
                             return collect($record->taxProfile->taxes)->sum('percent') . "%";
                         }
                     })
@@ -332,6 +372,20 @@ class ExpenseResource extends Resource
                     ->indicator('advanced_filter')
                     ->form([
 
+                        Forms\Components\Select::make('debit_acc4_code')
+                            ->label(__('fields.account'))
+                            ->multiple()
+                            ->options(Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code')),
+
+                        Forms\Components\Select::make('credit_acc4_code')
+                            ->label(__('fields.expense_account'))
+                            ->multiple()
+                            ->options(function () {
+                                return Acc4::whereHas('acc3', function ($q) {
+                                    return $q->whereIn('acc2_code', [51, 52, 53]);
+                                })->pluck('name', 'code');
+                            }),
+
                         Forms\Components\Select::make('expense_category_id')
                             ->label(__('fields.expense_category'))
                             ->multiple()
@@ -350,6 +404,15 @@ class ExpenseResource extends Resource
                     ])->columns(3)
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
+                        if ($data['debit_acc4_code']) {
+                            $indicator = $indicator . __('fields.account');
+                        }
+                        if ($data['credit_acc4_code']) {
+                            $indicator = $indicator . __('fields.expense_account');
+                        }
+                        if ($data['expense_category_id']) {
+                            $indicator = $indicator . __('fields.expense_category');
+                        }
                         if ($data['expense_category_id']) {
                             $indicator = $indicator . __('fields.expense_category');
                         }
@@ -366,6 +429,14 @@ class ExpenseResource extends Resource
                     })
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
+                            ->when(
+                                $data['debit_acc4_code'],
+                                fn(Builder $query, $codes): Builder => $query->whereIn('debit_acc4_code', $codes),
+                            )
+                            ->when(
+                                $data['credit_acc4_code'],
+                                fn(Builder $query, $codes): Builder => $query->whereIn('credit_acc4_code', $codes),
+                            )
                             ->when(
                                 $data['expense_category_id'],
                                 fn(Builder $query, $expense_category_id): Builder => $query->where('expense_category_id', $expense_category_id),
@@ -405,7 +476,7 @@ class ExpenseResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'media', 'taxProfile'])->latest();
+        return parent::getEloquentQuery()->with(['category', 'media', 'taxProfile', 'debitAccount', 'creditAccount'])->latest();
     }
 
     public static function getRelations(): array

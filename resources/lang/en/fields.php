@@ -496,6 +496,7 @@ return [
     'max_allowed_users' => 'Max allowed users',
     'max_allowed_purchase_invoices' => 'Max allowed purchase invoices',
     'max_allowed_sales_invoices' => 'Max allowed sales invoices',
+    'enable_roles' => 'Enable roles',
     'unlimited_companies' => 'Unlimited companies',
     'unlimited_users' => 'Unlimited users',
     'unlimited_purchase_invoices' => 'Unlimited purchase invoices',
@@ -871,5 +872,9 @@ return [
     'store_enable_stock_tracking_hint' => 'When using this feature, you will have to create and adjust purchase invoices to control inventory effectively.',
 
     'invoice_url' => 'Invoice url',
+    'store_terms_and_conditions' => 'Terms and conditions',
+
+    'expense_account' => 'Expense account'
+
 ];
 //

@@ -57,6 +57,7 @@ class UpdateTenantRequest extends BaseRequest
             'store_social_media_links_youtube' => ['sometimes', 'max:255'],
             'store_social_media_links_snapchat' => ['sometimes', 'max:255'],
             'store_social_media_links_whatsapp' => ['sometimes', 'max:255'],
+            'store_terms_and_conditions' => ['sometimes'],
         ];
     }
 }

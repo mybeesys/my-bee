@@ -54,7 +54,7 @@ class SupplierResource extends Resource
                 Forms\Components\TextInput::make('phone')
                     ->label(__('fields.phone'))
                     ->rules([new InternationalPhoneRule(false)])
-                    ->required(),
+                    ->nullable(),
 
                 Forms\Components\TextInput::make('company')
                     ->label(__('fields.company')),

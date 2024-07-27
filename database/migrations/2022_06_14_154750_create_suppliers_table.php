@@ -17,7 +17,7 @@ class CreateSuppliersTable extends Migration
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
             $table->string('name');
-            $table->string('phone');
+            $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->string('company')->nullable();
             $table->string('email')->nullable();

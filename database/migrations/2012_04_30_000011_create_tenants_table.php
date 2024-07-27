@@ -45,6 +45,7 @@ class CreateTenantsTable extends Migration
             $table->integer('store_orders_tracking_delivery_time_hours')->nullable();
             $table->text('store_social_media_links')->nullable();
             $table->text('store_theme')->nullable();
+            $table->text('store_terms_and_conditions')->nullable();
 
             //logo and cover (Spatie file upload)
             //store settings

@@ -100,7 +100,7 @@ class TenantService
 
 
         //categories
-        $this->createCategories($tenant_id);
+//        $this->createCategories($tenant_id);
         //categories
 
         //warehouses
@@ -116,7 +116,7 @@ class TenantService
         //products
 
         //suppliers
-        $this->createSuppliers($tenant_id);
+//        $this->createSuppliers($tenant_id);
         //suppliers
 
 
@@ -261,11 +261,11 @@ class TenantService
 //            array('code' => '120100002', 'acc3_code' => '1201', 'name' => 'الخزينة (دولار)'),
             array('code' => '121800001', 'acc3_code' => '1218', 'name' => 'المبيعات'),
             array('code' => '121900001', 'acc3_code' => '1219', 'name' => 'مردودات المبيعات'),
-            array('code' => '122200001', 'acc3_code' => '1222', 'name' => 'مرتبات مستحقة'),
-            array('code' => '122300001', 'acc3_code' => '1223', 'name' => 'مصروفات المشاريع الإدارية'),
-            array('code' => '122400001', 'acc3_code' => '1224', 'name' => 'مصروفات المشاريع التشغيلية'),
-            array('code' => '122400002', 'acc3_code' => '1224', 'name' => 'مستحقات الموظفين'),
-            array('code' => '122400003', 'acc3_code' => '1224', 'name' => 'حوافز الموظفين'),
+//            array('code' => '122200001', 'acc3_code' => '1222', 'name' => 'مرتبات مستحقة'),
+//            array('code' => '122300001', 'acc3_code' => '1223', 'name' => 'مصروفات المشاريع الإدارية'),
+//            array('code' => '122400001', 'acc3_code' => '1224', 'name' => 'مصروفات المشاريع التشغيلية'),
+//            array('code' => '122400002', 'acc3_code' => '1224', 'name' => 'مستحقات الموظفين'),
+//            array('code' => '122400003', 'acc3_code' => '1224', 'name' => 'حوافز الموظفين'),
             array('code' => '122400004', 'acc3_code' => '1224', 'name' => 'مصروفات توصيل الطلبات'),
             array('code' => '122400005', 'acc3_code' => '1224', 'name' => 'مصروفات توصيل إضافية للطلبات'),
             array('code' => '122000001', 'acc3_code' => '1220', 'name' => 'خصومات الموظفين'),
@@ -1362,7 +1362,7 @@ class TenantService
             Warehouse::create(
                 [
                     'tenant_id' => $tenant_id,
-                    'name' => $tenant->name . " - warehouse " . $i + 1,
+                    'name' => "المخزن الرئيسي",
                 ]
             );
         }
@@ -1380,9 +1380,6 @@ class TenantService
                     'phone' => Str::random(12),
                 ]
             );
-
-//            (new AccountingService())->createAcc4AccountForItem($supplier);
-
         }
     }
 

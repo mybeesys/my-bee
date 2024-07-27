@@ -117,23 +117,13 @@ class PlanResource extends Resource
                         ->columnSpan(1)
                         ->required(),
 
-                    Forms\Components\TextInput::make('max_allowed_users')
-                        ->label(__('fields.max_allowed_users'))
-                        ->visible(fn(Forms\Get $get) => $get('unlimited_users') === false)
-                        ->numeric()
-                        ->default(0)
-                        ->minValue(0)
-                        ->maxValue(1000)
-                        ->columnSpan(1)
-                        ->required(),
-
                     Forms\Components\TextInput::make('max_allowed_purchase_invoices')
                         ->label(__('fields.max_allowed_purchase_invoices'))
                         ->visible(fn(Forms\Get $get) => $get('unlimited_purchase_invoices') === false)
                         ->numeric()
                         ->default(1)
                         ->minValue(1)
-                        ->maxValue(1000)
+                        ->maxValue(9000000)
                         ->required(),
 
 
@@ -143,8 +133,22 @@ class PlanResource extends Resource
                         ->numeric()
                         ->default(1)
                         ->minValue(1)
-                        ->maxValue(1000)
+                        ->maxValue(9000000)
                         ->required(),
+
+                    Forms\Components\TextInput::make('max_allowed_users')
+                        ->label(__('fields.max_allowed_users'))
+                        ->visible(fn(Forms\Get $get) => $get('unlimited_users') === false)
+                        ->numeric()
+                        ->default(1)
+                        ->minValue(1)
+                        ->maxValue(9000000)
+                        ->columnSpan(1)
+                        ->required(),
+
+                    Forms\Components\Toggle::make('enable_roles')
+                        ->label(__('fields.enable_roles'))
+                        ->default(0),
 
                     Forms\Components\Section::make()
                         ->schema([

@@ -219,6 +219,8 @@ class EditTenantProfile extends BaseTenantProfile
 
                                     ])->columns(4),
 
+                                    RichEditor::make('store_terms_and_conditions')
+                                        ->label(__('fields.store_terms_and_conditions')),
                                 ]),
                         ]),
                 ]),

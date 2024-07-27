@@ -518,23 +518,6 @@ class SalesInvoiceResource extends Resource
                                         }
                                     })
                                     ->options(TaxProfile::asOptions())
-                                    ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
-                                    ->createOptionUsing(function ($data) {
-                                        $data['tenant_id'] = filament()->getTenant()->id;
-                                        $model = TaxProfile::create(Arr::except($data, ['taxes']));
-                                        foreach ($data['taxes'] as $tax) {
-                                            $model->taxes()->create([
-                                                'tenant_id' => $data['tenant_id'],
-                                                'tax_profile_id' => $model->id,
-                                                'description' => $tax['description'],
-                                                'percent' => $tax['percent'],
-                                            ]);
-                                        }
-                                        return $model->id;
-                                    })
-                                    ->createOptionAction(
-                                        fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
-                                    )
                                     ->searchable(),
 
 

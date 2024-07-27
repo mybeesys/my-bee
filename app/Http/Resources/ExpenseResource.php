@@ -23,6 +23,8 @@ class ExpenseResource extends BaseResource
             'amountWritten' => numbers_to_words($this->amount),
             'taxWritten' => numbers_to_words($this->tax ?? 0),
             'taxProfile' => new TaxProfileResource($this->taxProfile),
+            'debitAccount' => new Acc4Resource($this->whenLoaded('debitAccount')),
+            'creditAccount' => new Acc4Resource($this->whenLoaded('creditAccount')),
             'date' => $this->date->format('d-m-Y'),
             'dateFormatted' => $this->date->format('F j, Y'),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
