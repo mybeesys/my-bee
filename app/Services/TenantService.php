@@ -1354,10 +1354,8 @@ class TenantService
         }
     }
 
-    public function createWarehouses($tenant_id, $records = 3): void
+    public function createWarehouses($tenant_id): void
     {
-        $tenant = Tenant::find($tenant_id);
-
         Warehouse::create(
             [
                 'tenant_id' => $tenant_id,
