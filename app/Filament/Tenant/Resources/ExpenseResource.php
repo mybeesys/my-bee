@@ -66,7 +66,7 @@ class ExpenseResource extends Resource
             ->schema([
                 Forms\Components\Section::make()->schema([
 
-                    Select::make('debit_acc4_code')
+                    Select::make('credit_acc4_code')
                         ->live()
                         ->disabled(fn($record) => $record !== null)
                         ->label(__('fields.account'))
@@ -84,7 +84,7 @@ class ExpenseResource extends Resource
                         })
                         ->required(),
 
-                    Forms\Components\Select::make('credit_acc4_code')
+                    Forms\Components\Select::make('debit_acc4_code')
                         ->label(__('fields.expense_account'))
                         ->required()
                         ->options(function () {
@@ -283,14 +283,14 @@ class ExpenseResource extends Resource
         return $table
             ->columns([
 
-                Tables\Columns\TextColumn::make('debitAccount.name')
+                Tables\Columns\TextColumn::make('creditAccount.name')
                     ->label(__('fields.account'))
-                    ->description(fn($record) => $record->debitAccount->code)
+                    ->description(fn($record) => $record->creditAccount->code)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('creditAccount.name')
+                Tables\Columns\TextColumn::make('debitAccount.name')
                     ->label(__('fields.expense_account'))
-                    ->description(fn($record) => $record->creditAccount->code)
+                    ->description(fn($record) => $record->debitAccount->code)
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('description')
@@ -372,12 +372,12 @@ class ExpenseResource extends Resource
                     ->indicator('advanced_filter')
                     ->form([
 
-                        Forms\Components\Select::make('debit_acc4_code')
+                        Forms\Components\Select::make('credit_acc4_code')
                             ->label(__('fields.account'))
                             ->multiple()
                             ->options(Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code')),
 
-                        Forms\Components\Select::make('credit_acc4_code')
+                        Forms\Components\Select::make('debit_acc4_code')
                             ->label(__('fields.expense_account'))
                             ->multiple()
                             ->options(function () {
