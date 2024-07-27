@@ -1358,14 +1358,12 @@ class TenantService
     {
         $tenant = Tenant::find($tenant_id);
 
-        for ($i = 0; $i < $records; $i++) {
-            Warehouse::create(
-                [
-                    'tenant_id' => $tenant_id,
-                    'name' => "المخزن الرئيسي",
-                ]
-            );
-        }
+        Warehouse::create(
+            [
+                'tenant_id' => $tenant_id,
+                'name' => "المخزن الرئيسي",
+            ]
+        );
     }
 
     public function createSuppliers($tenant_id, $records = 3): void
