@@ -19,6 +19,8 @@ class LatestOrders extends BaseWidget
     {
         return $table
             ->heading(__('fields.latest_orders'))
+            ->modelLabel(__('fields.order'))
+            ->pluralModelLabel(__('fields.orders'))
             ->query(OrderResource::getEloquentQuery()->take(10))
             ->defaultPaginationPageOption(5)
             ->defaultSort('created_at', 'desc')

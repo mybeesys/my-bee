@@ -13,7 +13,7 @@ class ExpensesPieChart extends ChartWidget
 
     public function getHeading(): ?string
     {
-        $total_expenses = Expense::all()->sum('amount');
+        $total_expenses = Expense::all()->sum('total');
 
         return __("fields.expenses") . " (" . format_amount($total_expenses) . ")";
     }
@@ -23,10 +23,10 @@ class ExpensesPieChart extends ChartWidget
         $data = [];
         $labels = [];
         $categories = ExpenseCategory::with('expenses')->get();
-        $total_expenses = $categories->pluck('expenses')->flatten()->sum('amount');
+        $total_expenses = $categories->pluck('expenses')->flatten()->sum('total');
 
-        foreach ($categories as $category){
-            $expenses = $category->expenses->sum('amount');
+        foreach ($categories as $category) {
+            $expenses = $category->expenses->sum('total');
             $labels[] = $category->name . " (" . number_format(percent($expenses, $total_expenses), currency_decimals(), '.', '') . "%)";
             $data[] = number_format($expenses, currency_decimals(), '.', '');
         }

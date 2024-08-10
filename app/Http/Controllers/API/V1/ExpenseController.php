@@ -56,6 +56,7 @@ class ExpenseController extends BaseController
         $data = $request->validated();
 
         $data['tenant_id'] = $this->getTenant()->id;
+        $data['debit_acc4_code'] = "122300001";
 
         $hasTax = false;
         if ($data['tax_profile_id'] ?? null) {
@@ -66,7 +67,7 @@ class ExpenseController extends BaseController
         }
         $expense = Expense::create($data);
 
-        if($hasTax){
+        if($hasTax and $expense->tax > 0){
             $op = make_taxes_op();
             $accService = new AccountingService();
             $accService
@@ -81,7 +82,7 @@ class ExpenseController extends BaseController
                     'Vat',
                     null,
                     meta: ['type' => 'expense', 'id' => $expense->id],
-                )->make('120100001', '122800001')
+                )->make($expense->credit_acc4_code, $expense->debit_acc4_code)
                 ->finish();
         }
         $expense->load(['category', 'debitAccount', 'creditAccount']);
@@ -106,15 +107,15 @@ class ExpenseController extends BaseController
         $data = $request->validated();
         $item = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])->findOrFail($id);
 
-        if ($data['tax_profile_id'] ?? null) {
-            $taxProfile = TaxProfile::find($data['tax_profile_id']);
-            $percent = collect($taxProfile->taxes)->sum('percent');
-            $data['tax'] = $percent / 100 * $data['amount'];
-            $data['tax_profile_data'] = $taxProfile->toArray();
-        }else{
-            $data['tax'] = 0;
-            $data['tax_profile_data'] = null;
-        }
+//        if ($data['tax_profile_id'] ?? null) {
+//            $taxProfile = TaxProfile::find($data['tax_profile_id']);
+//            $percent = collect($taxProfile->taxes)->sum('percent');
+//            $data['tax'] = $percent / 100 * $data['amount'];
+//            $data['tax_profile_data'] = $taxProfile->toArray();
+//        }else{
+//            $data['tax'] = 0;
+//            $data['tax_profile_data'] = null;
+//        }
 
         $item->update($data);
         return $this->responder(__('messages.api.updated'), 200, new ExpenseResource($item))->respond();
@@ -126,13 +127,14 @@ class ExpenseController extends BaseController
     public function destroy(string $id)
     {
         $item = Expense::findOrFail($id);
-        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
-        try {
-            $item->delete();
-            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
-        } catch (\Exception $exception) {
-            return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
-        }
+        abort( 403, __('messages.api.permission_denied'));
+////        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
+//        try {
+//            $item->delete();
+//            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
+//        } catch (\Exception $exception) {
+//            return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
+//        }
     }
 
     public function treasuryAccounts()
@@ -142,12 +144,12 @@ class ExpenseController extends BaseController
         return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
     }
 
-    public function expenseAccounts()
-    {
-        $data = Acc4::whereHas('acc3', function ($q) {
-            return $q->whereIn('acc2_code', [51, 52, 53]);
-        })->get();
-
-        return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
-    }
+//    public function expenseAccounts()
+//    {
+//        $data = Acc4::whereHas('acc3', function ($q) {
+//            return $q->whereIn('acc2_code', [51, 52, 53]);
+//        })->get();
+//
+//        return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
+//    }
 }

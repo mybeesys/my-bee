@@ -28,7 +28,6 @@ class StoreExpenseRequest extends BaseRequest
             'expense_category_id' => ['required', 'exists:expense_categories,id'],
             'tax_profile_id' => ['nullable', 'exists:tax_profiles,id'],
             'credit_acc4_code' => ['required', 'exists:acc4,code'],
-            'debit_acc4_code' => ['required', 'exists:acc4,code'],
             'description' => ['required'],
         ];
     }

@@ -190,7 +190,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::apiResource('expenses', \App\Http\Controllers\API\V1\ExpenseController::class);
 
             Route::get('acc4-treasury-accounts', [\App\Http\Controllers\API\V1\ExpenseController::class, 'treasuryAccounts']);
-            Route::get('acc4-expense-accounts', [\App\Http\Controllers\API\V1\ExpenseController::class, 'expenseAccounts']);
+//            Route::get('acc4-expense-accounts', [\App\Http\Controllers\API\V1\ExpenseController::class, 'expenseAccounts']);
 
 
         });

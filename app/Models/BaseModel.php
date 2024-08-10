@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\TrackWorkflowModelEvents;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -79,6 +80,11 @@ class BaseModel extends Model
     public function scopeToday($query)
     {
         return $query->whereDate('created_at', Carbon::today());
+    }
+
+    public function scopeThisWeek($query)
+    {
+        return $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
     }
 
     public function scopeWhereDateBetween($query, $fieldName, $fromDate, $toDate, $dates_format)

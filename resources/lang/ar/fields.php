@@ -882,6 +882,7 @@ return [
     'invoice_url' => 'رابط الفاتورة',
     'store_terms_and_conditions' => 'الشروط والأحكام',
 
-    'expense_account' => 'حساب المصروف'
+    'expense_account' => 'حساب المصروف',
+    'this_week' => 'هذا الإسبوع'
 ];
 //

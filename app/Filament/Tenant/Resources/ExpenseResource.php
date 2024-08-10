@@ -84,17 +84,13 @@ class ExpenseResource extends Resource
                         })
                         ->required(),
 
-                    Forms\Components\Select::make('debit_acc4_code')
+                    Forms\Components\Hidden::make('debit_acc4_code')
                         ->label(__('fields.expense_account'))
                         ->required()
-                        ->options(function () {
-                            return Acc4::whereHas('acc3', function ($q) {
-                                return $q->whereIn('acc2_code', [51, 52, 53]);
-                            })->pluck('name', 'code');
-                        }),
+                        ->default('122300001'),
 
                     Forms\Components\Select::make('expense_category_id')
-                        ->label(__('fields.expense_category'))
+                        ->label(__('fields.category'))
                         ->required()
                         ->searchable()
                         ->createOptionForm([
@@ -126,7 +122,7 @@ class ExpenseResource extends Resource
                         ->default(now())
                         ->time(false),
 
-                ])->columns(4),
+                ])->columns(3),
 
                 Section::make()->schema([
 
@@ -136,15 +132,43 @@ class ExpenseResource extends Resource
                         ->numeric()
                         ->minValue(1)
                         ->maxValue(PHP_INT_MAX)
-                        ->currency()
-                        ->required(),
+                        ->afterStateUpdated(function ($state, $livewire, Set $set, Forms\Get $get) {
+                            $taxProfile = TaxProfile::with('taxes')->find($get('tax_profile_id'));
+                            if ($taxProfile) {
+                                if ($state and is_number($state)) {
+                                    $tax = MathService::instance()->getTaxFromTaxProfile($state, $taxProfile);
+                                    $set('amount_without_tax', number_format($state - $tax, currency_decimals(), '.', ''));
+                                    $set('tax', number_format($tax, currency_decimals(), '.', ''));
+                                }
+                                $set('tax_profile_data', json_encode($taxProfile->toArray()));
+                            } else {
+                                $set('tax_profile_data', null);
+                            }
+                        })
+                        ->required()
+                        ->disabledOn('edit')
+                        ->currency(),
 
                     Forms\Components\Toggle::make('amount_includes_tax')
                         ->label(__('fields.amount_includes_tax'))
+                        ->dehydrated(false)
                         ->visible(fn(Forms\Get $get) => is_number($get('amount')))
                         ->live()
-                        ->dehydrated(false)
-                        ->afterStateUpdated(function ($state, Forms\Set $set) {
+                        ->disabledOn('edit')
+                        ->afterStateUpdated(function ($state, Forms\Set $set, Get $get) {
+                            $amount = $get('amount');
+                            $taxProfile = TaxProfile::with('taxes')->find($get('tax_profile_id'));
+
+                            if ($taxProfile) {
+                                if ($amount and is_number($amount)) {
+                                    $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile);
+                                    $set('amount_without_tax', number_format($amount - $tax, currency_decimals(), '.', ''));
+                                    $set('tax', number_format($tax, currency_decimals(), '.', ''));
+                                }
+                                $set('tax_profile_data', json_encode($taxProfile->toArray()));
+                            } else {
+                                $set('tax_profile_data', null);
+                            }
                             if (!$state) {
                                 $set('amount_without_tax', null);
                                 $set('tax', 0);
@@ -160,15 +184,16 @@ class ExpenseResource extends Resource
                         ->visible(fn(Forms\Get $get) => $get('amount_includes_tax') == true and is_number($get('amount')))
                         ->label(__('fields.tax'))
                         ->live()
+                        ->disabledOn('edit')
                         ->afterStateUpdated(function ($state, $livewire, Set $set, Forms\Get $get) {
-                            $taxProfile = TaxProfile::find($state);
+                            $taxProfile = TaxProfile::with('taxes')->find($state);
                             if ($taxProfile) {
                                 if ($amount = $get('amount') and is_number($amount)) {
                                     $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile);
                                     $set('amount_without_tax', number_format($amount - $tax, currency_decimals(), '.', ''));
                                     $set('tax', number_format($tax, currency_decimals(), '.', ''));
                                 }
-                                $set('tax_profile_data', json_encode(TaxProfile::with('taxes')->find($state)->toArray()));
+                                $set('tax_profile_data', json_encode($taxProfile->toArray()));
                             } else {
                                 $set('tax_profile_data', null);
                             }
@@ -194,26 +219,6 @@ class ExpenseResource extends Resource
                         ->searchable(),
 
                     Forms\Components\Hidden::make('tax')->default(0),
-
-//                    Forms\Components\TextInput::make('tax_percent')
-//                        ->visible(fn(Forms\Get $get) => $get('amount_includes_tax') == true and is_number($get('amount')))
-//                        ->label(__("fields.tax_percent"))
-//                        ->numeric()
-//                        ->live(true)
-//                        ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set){
-//                            if(is_number($state) and $amount = $get('amount') and is_number($amount)){
-//                                $tax = $state /100 * $amount;
-//                                fns()->sendDanger($tax, $amount);
-//                                $set('amount_without_tax', $amount - $tax);
-//                                $set('tax', $tax);
-//                            }else{
-//                                $set('amount_without_tax', null);
-//                                $set('tax', null);
-//                            }
-//                        })
-//                        ->minValue(1)
-//                        ->maxValue(100)
-//                        ->required(),
 
                     Forms\Components\Placeholder::make('amount_without_tax')
                         ->visible(fn(Forms\Get $get) => $get('tax_profile_id'))
@@ -288,10 +293,10 @@ class ExpenseResource extends Resource
                     ->description(fn($record) => $record->creditAccount->code)
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('debitAccount.name')
-                    ->label(__('fields.expense_account'))
-                    ->description(fn($record) => $record->debitAccount->code)
-                    ->searchable(),
+//                Tables\Columns\TextColumn::make('debitAccount.name')
+//                    ->label(__('fields.expense_account'))
+//                    ->description(fn($record) => $record->debitAccount->code)
+//                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('description')
                     ->label(__("fields.description"))
@@ -377,14 +382,14 @@ class ExpenseResource extends Resource
                             ->multiple()
                             ->options(Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code')),
 
-                        Forms\Components\Select::make('debit_acc4_code')
-                            ->label(__('fields.expense_account'))
-                            ->multiple()
-                            ->options(function () {
-                                return Acc4::whereHas('acc3', function ($q) {
-                                    return $q->whereIn('acc2_code', [51, 52, 53]);
-                                })->pluck('name', 'code');
-                            }),
+//                        Forms\Components\Select::make('debit_acc4_code')
+//                            ->label(__('fields.expense_account'))
+//                            ->multiple()
+//                            ->options(function () {
+//                                return Acc4::whereHas('acc3', function ($q) {
+//                                    return $q->whereIn('acc2_code', [51, 52, 53]);
+//                                })->pluck('name', 'code');
+//                            }),
 
                         Forms\Components\Select::make('expense_category_id')
                             ->label(__('fields.expense_category'))
@@ -404,9 +409,9 @@ class ExpenseResource extends Resource
                     ])->columns(3)
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
-                        if ($data['debit_acc4_code']) {
-                            $indicator = $indicator . __('fields.account');
-                        }
+//                        if ($data['debit_acc4_code']) {
+//                            $indicator = $indicator . __('fields.account');
+//                        }
                         if ($data['credit_acc4_code']) {
                             $indicator = $indicator . __('fields.expense_account');
                         }
@@ -429,10 +434,10 @@ class ExpenseResource extends Resource
                     })
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['debit_acc4_code'],
-                                fn(Builder $query, $codes): Builder => $query->whereIn('debit_acc4_code', $codes),
-                            )
+//                            ->when(
+//                                $data['debit_acc4_code'],
+//                                fn(Builder $query, $codes): Builder => $query->whereIn('debit_acc4_code', $codes),
+//                            )
                             ->when(
                                 $data['credit_acc4_code'],
                                 fn(Builder $query, $codes): Builder => $query->whereIn('credit_acc4_code', $codes),
@@ -466,7 +471,7 @@ class ExpenseResource extends Resource
             ->filtersFormWidth(MaxWidth::FiveExtraLarge)
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make()
+//                Tables\Actions\DeleteAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

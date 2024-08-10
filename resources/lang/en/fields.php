@@ -874,7 +874,7 @@ return [
     'invoice_url' => 'Invoice url',
     'store_terms_and_conditions' => 'Terms and conditions',
 
-    'expense_account' => 'Expense account'
-
+    'expense_account' => 'Expense account',
+    'this_week' => 'This week'
 ];
 //

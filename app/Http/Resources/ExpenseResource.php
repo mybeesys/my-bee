@@ -23,6 +23,8 @@ class ExpenseResource extends BaseResource
             'amountWritten' => numbers_to_words($this->amount),
             'taxWritten' => numbers_to_words($this->tax ?? 0),
             'taxProfile' => new TaxProfileResource($this->taxProfile),
+            'TotalFormatted' => number_format($this->total, currency_decimals(), '.', '') . " " . main_currency_iso_code(),
+            'totalWritten' => numbers_to_words($this->total),
             'debitAccount' => new Acc4Resource($this->whenLoaded('debitAccount')),
             'creditAccount' => new Acc4Resource($this->whenLoaded('creditAccount')),
             'date' => $this->date->format('d-m-Y'),

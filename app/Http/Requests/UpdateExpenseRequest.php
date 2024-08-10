@@ -25,10 +25,10 @@ class UpdateExpenseRequest extends BaseRequest
         $id = str(request()->getRequestUri())->afterLast('/')->value();
         return [
             'description' => ['sometimes'],
-            'amount' => ['sometimes', 'numeric', "max:". PHP_INT_MAX],
+//            'amount' => ['sometimes', 'numeric', "max:". PHP_INT_MAX],
             'date' => ['sometimes', 'date', 'date_format:d-m-Y'],
             'expense_category_id' => ['sometimes', 'exists:expense_categories,id'],
-            'tax_profile_id' => ['nullable', 'exists:tax_profiles,id'],
+//            'tax_profile_id' => ['nullable', 'exists:tax_profiles,id'],
         ];
     }
 }
