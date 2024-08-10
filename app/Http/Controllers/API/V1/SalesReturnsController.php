@@ -13,6 +13,7 @@ use App\Http\Resources\SalesReturnsResource;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\SalesReturns;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -50,6 +51,10 @@ class SalesReturnsController extends BaseController
             $query->whereRelation('invoice', 'customer_id', $request->client_id);
         });
 
+        $request->whenFilled($request->from_date or $request->to_date, function (Builder $builder) use ($query, $request) {
+            $query->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
+        });
+
         return $this->responder(__('messages.api.retrieved'), 200, SalesReturnsResource::collection($query->get()->sortByDesc('created_at')))->respond();
     }
 
@@ -73,12 +78,12 @@ class SalesReturnsController extends BaseController
                     return $this->errorBadRequest()->message("Invalid qty")->respond();
 
                 $salesReturns->details()->create([
-                        'tenant_id' => $this->getTenantId(),
-                        'sales_returns_id' => $salesReturns->id,
-                        'invoice_item_id' => $item['id'],
-                        'qty' => $item['qty'],
-                        'user_id' => auth('sanctum')->id(),
-                    ]);
+                    'tenant_id' => $this->getTenantId(),
+                    'sales_returns_id' => $salesReturns->id,
+                    'invoice_item_id' => $item['id'],
+                    'qty' => $item['qty'],
+                    'user_id' => auth('sanctum')->id(),
+                ]);
             }
 
             $salesReturns->load(['details.invoiceItem', 'invoice', 'user']);
@@ -101,7 +106,7 @@ class SalesReturnsController extends BaseController
         try {
             DB::beginTransaction();
 
-            $request->whenFilled('notes', function () use($salesReturns, $request){
+            $request->whenFilled('notes', function () use ($salesReturns, $request) {
                 $salesReturns->update([
                     'notes' => $request->notes,
                 ]);

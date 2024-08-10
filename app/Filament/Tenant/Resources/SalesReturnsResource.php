@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\SalesReturnsResource\Pages;
 use App\Filament\Tenant\Resources\SalesReturnsResource\RelationManagers;
+use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\SalesReturns;
@@ -15,6 +16,7 @@ use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -171,7 +173,7 @@ class SalesReturnsResource extends Resource
                                     ->minValue(fn(Forms\Get $get) => $get('min_qty'))
                                     ->maxValue(fn(Forms\Get $get) => $get('max_qty'))
                                     ->live(true)
-                                    ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set){
+                                    ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $item = InvoiceItem::find($get('invoice_item_id'));
 
                                         if ($item and $state) {
@@ -247,8 +249,47 @@ class SalesReturnsResource extends Resource
                     ->dateTime('M j, Y H:i'),
             ])
             ->filters([
-                //
-            ])
+
+                Tables\Filters\Filter::make('date')
+                    ->indicator('advanced_filter')
+                    ->form([
+                        Forms\Components\DatePicker::make('date_from')->label(__('fields.created_from')),
+                        Forms\Components\DatePicker::make('date_until')->label(__('fields.created_until')),
+
+                        Forms\Components\Select::make('customer_id')
+                            ->label(__('fields.client'))
+                            ->searchable()
+                            ->options(Customer::pluck('name', 'id')),
+
+                    ])->columns(3)
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicator = null;
+                        if ($data['date_from'] or $data['date_until']) {
+                            $indicator = $indicator . __('fields.date');
+                        }
+                        if ($data['customer_id']) {
+                            $indicator = $indicator . __('fields.client');
+                        }
+                        return $indicator;
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['customer_id'],
+                                fn(Builder $query, $codes): Builder => $query->whereRelation('invoice', 'customer_id', $data['customer_id']),
+                            )
+                            ->when(
+                                $data['date_from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
+                            )
+                            ->when(
+                                $data['date_until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
+                            );
+                    })
+
+            ], Tables\Enums\FiltersLayout::Modal)
+            ->filtersFormWidth(MaxWidth::FiveExtraLarge)
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make()->action(function (SalesReturns $record) {

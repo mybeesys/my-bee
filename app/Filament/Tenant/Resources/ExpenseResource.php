@@ -392,7 +392,7 @@ class ExpenseResource extends Resource
 //                            }),
 
                         Forms\Components\Select::make('expense_category_id')
-                            ->label(__('fields.expense_category'))
+                            ->label(__('fields.category'))
                             ->multiple()
                             ->options(ExpenseCategory::whereIn('id', Expense::pluck('expense_category_id')->toArray())->pluck('name', 'id')),
 
@@ -406,7 +406,7 @@ class ExpenseResource extends Resource
                         Forms\Components\Checkbox::make('attachments')
                             ->label(__('fields.only_display_records_with_attachments')),
 
-                    ])->columns(3)
+                    ])->columns(4)
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
 //                        if ($data['debit_acc4_code']) {
@@ -416,7 +416,7 @@ class ExpenseResource extends Resource
                             $indicator = $indicator . __('fields.expense_account');
                         }
                         if ($data['expense_category_id']) {
-                            $indicator = $indicator . __('fields.expense_category');
+                            $indicator = $indicator . __('fields.category');
                         }
                         if ($data['expense_category_id']) {
                             $indicator = $indicator . __('fields.expense_category');

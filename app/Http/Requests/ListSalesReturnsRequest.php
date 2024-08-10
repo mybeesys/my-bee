@@ -22,6 +22,8 @@ class ListSalesReturnsRequest extends BaseRequest
         return [
             'client_id' => ['sometimes', 'exists:customers,id'],
             'invoice_no' => ['sometimes', 'exists:invoices,no'],
+            'from_date' => ['sometimes', 'date', 'date_format:d-m-Y'],
+            'to_date' => ['sometimes', 'date', 'date_format:d-m-Y', 'after:from_date'],
         ];
     }
 }
