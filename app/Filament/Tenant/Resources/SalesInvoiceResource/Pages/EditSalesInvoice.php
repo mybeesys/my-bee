@@ -56,6 +56,7 @@ class EditSalesInvoice extends EditRecord
                 "unit_price" => number_format($invoiceItem->price, currency_decimals(), '.', ''),
                 "discount" => number_format($invoiceItem->discount, currency_decimals(), '.', ''),
                 "product_id" => $invoiceItem->product_id,
+                'product_variant_id' => $invoiceItem->product_variant_id,
                 'product_extras_ids' => $invoiceItem->extras->pluck('product_extra_id')->toArray(),
                 'extras_total' => PricingService::instance()->getRetailPrices(ProductExtra::with('lastPrice')->findMany($invoiceItem->extras->pluck('product_extra_id')->toArray())),
                 "extras" => implode(', ', $invoiceItem->extras->pluck('display_name')->toArray()),

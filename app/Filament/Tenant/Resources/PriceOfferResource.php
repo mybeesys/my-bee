@@ -187,7 +187,10 @@ class PriceOfferResource extends Resource
 
 
                                         Forms\Components\Fieldset::make(__('fields.product_extras'))
-                                            ->visible(fn(Forms\Get $get) => Product::where('id', $get('product_id'))->first())
+                                            ->visible(function (Get $get) {
+                                                $product_id = $get('product_id');
+                                                return $product_id != null and count(self::getProductExtras($product_id));
+                                            })
                                             ->schema(function (Forms\Get $get, $livewire) {
                                                 $product_id = $get('product_id');
                                                 if ($product_id)
@@ -305,7 +308,7 @@ class PriceOfferResource extends Resource
                                     ];
                                 }
 
-                                $itemExists = collect($existingDetails)->where('item_id', $model_id)->where('item_type', $model_type)->first();
+                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
 
                                 if ($itemExists) {
                                     fns()->sendWarning(__('fields.order_details_item_already_exists'));
@@ -314,7 +317,7 @@ class PriceOfferResource extends Resource
 
 
                                 foreach ($livewire->data['details'] as $index => $it) {
-                                    if ($it['item_id'] == null and $it['item_type'] == null) {
+                                    if ($it['product_id'] == null) {
                                         unset($livewire->data['details'][$index]);
                                         unset($existingDetails[$index]);
                                     }
@@ -323,7 +326,6 @@ class PriceOfferResource extends Resource
                                 $livewire->data['details'] = array_merge($existingDetails, $item);
 
                                 self::updateInvoicePropertiesFromLivewire($livewire);
-
 
                                 fns()->saved();
 
@@ -504,12 +506,12 @@ class PriceOfferResource extends Resource
                             ->afterStateHydrated(function ($livewire) {
                                 self::updateInvoicePropertiesFromLivewire($livewire);
                             })
-                            ->mutateRelationshipDataBeforeFillUsing(function ($data){
-                                if($data['tax_profile_data']){
+                            ->mutateRelationshipDataBeforeFillUsing(function ($data) {
+                                if ($data['tax_profile_data']) {
                                     $tax = $data['price'] * (collect($data['tax_profile_data']['taxes'] ?? null)->sum('percent') / 100);
 
                                     $data['price_after_tax'] = number_format($data['price'] + $tax, currency_decimals(), '.', '');
-                                }else{
+                                } else {
                                     $data['price_after_tax'] = number_format($data['price'], currency_decimals(), '.', '');
                                 }
                                 return $data;
@@ -567,14 +569,14 @@ class PriceOfferResource extends Resource
                                         }
                                         return $model->id;
                                     })
-                                    ->afterStateUpdated(function ($state, Forms\Get $get, Set $set){
-                                        if($taxProfile = TaxProfile::with('taxes')->find($state) and $price = $get('price')){
+                                    ->afterStateUpdated(function ($state, Forms\Get $get, Set $set) {
+                                        if ($taxProfile = TaxProfile::with('taxes')->find($state) and $price = $get('price')) {
                                             $set('tax_profile_data', $taxProfile->toArray());
                                             $tax = $price * ($taxProfile->total_percentages / 100);
                                             $set('price_after_tax', number_format($price + $tax, currency_decimals(), '.', ''));
-                                        }else{
+                                        } else {
                                             $set('tax_profile_data', null);
-                                            if($price = $get('price')){
+                                            if ($price = $get('price')) {
                                                 $set('price_after_tax', number_format($price, currency_decimals(), '.', ''));
                                             }
                                         }
@@ -590,14 +592,14 @@ class PriceOfferResource extends Resource
                                     ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Set $set, $livewire) {
 
-                                        if($state){
-                                            if($taxProfile = TaxProfile::with('taxes')->find($get('tax_profile_id'))){
+                                        if ($state) {
+                                            if ($taxProfile = TaxProfile::with('taxes')->find($get('tax_profile_id'))) {
                                                 $tax = $state * ($taxProfile->total_percentages / 100);
                                                 $set('price_after_tax', number_format($state + $tax, currency_decimals(), '.', ''));
-                                            }else{
+                                            } else {
                                                 $set('price_after_tax', number_format($state, currency_decimals(), '.', ''));
                                             }
-                                        }else{
+                                        } else {
                                             $set('price_after_tax', null);
                                         }
 
@@ -811,7 +813,7 @@ class PriceOfferResource extends Resource
                         Forms\Components\Placeholder::make('total_invoice_with_taxes')
                             ->label(__('fields.invoice_total_with_tax'))
                             ->dehydrated(false)
-                            ->helperText(function ($livewire){
+                            ->helperText(function ($livewire) {
                                 $value = $livewire->data['total_invoice_with_taxes'];
                                 $value = numbers_to_words($value);
                                 return new HtmlString("<h3 style='color: #ff3e3e;font-weight: bolder'>$value</h3>");
@@ -952,11 +954,11 @@ class PriceOfferResource extends Resource
 
         }
 
-        foreach ($services as $service){
+        foreach ($services as $service) {
             $price = $service['price'] ?? 0;
             $totals['total_services'] += $price;
             $total_percentages = collect($service['tax_profile_data']['taxes'] ?? [])->sum('percent');
-            if($total_percentages > 0){
+            if ($total_percentages > 0) {
                 $totals['total_taxes'] += $price * ($total_percentages / 100);
             }
         }
@@ -979,7 +981,7 @@ class PriceOfferResource extends Resource
         }
 
         if ($updateUIFields) {
-            $livewire->data['total_invoice_pre_discount_pre_tax'] = format_amount($totals['total_purchases'] + $totals['total_services'] +$totals['total_additional_costs']);
+            $livewire->data['total_invoice_pre_discount_pre_tax'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs']);
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
@@ -1004,10 +1006,10 @@ class PriceOfferResource extends Resource
         $discountMethod = $livewire->data['discount_method'] ?? null;
         $discountAmount = 0;
 
-        if($livewire->data['discount_amount'] ?? null > 0)
+        if ($livewire->data['discount_amount'] ?? null > 0)
             $discountAmount = $livewire->data['discount_amount'];
 
-        if($livewire->data['discount_percent'] ?? null > 0)
+        if ($livewire->data['discount_percent'] ?? null > 0)
             $discountAmount = $livewire->data['discount_percent'];
 
         $newItems = [];
@@ -1067,6 +1069,7 @@ class PriceOfferResource extends Resource
 
         $livewire->data['details'] = $newItems;
     }
+
     protected static function getVariantFieldsBasedOnOptions($product_id, $livewire): array
     {
         $fields = [];

@@ -241,7 +241,10 @@ class SalesInvoiceResource extends Resource
                                             }),
 
                                         Forms\Components\Fieldset::make(__('fields.product_extras'))
-                                            ->visible(fn(Forms\Get $get) => Product::where('id', $get('product_id'))->first())
+                                            ->visible(function (Get $get) {
+                                                $product_id = $get('product_id');
+                                                return $product_id != null and count(self::getProductExtras($product_id));
+                                            })
                                             ->schema(function (Forms\Get $get, $livewire) {
                                                 $product_id = $get('product_id');
                                                 if ($product_id)
@@ -252,10 +255,6 @@ class SalesInvoiceResource extends Resource
 
                                     ])->columns(2)
                             ])
-                            ->after(function ($livewire) {
-                                $livewire->dispatch('test');
-
-                            })
                             ->action(function (array $data, $livewire, Forms\Components\Actions\Action $action, array $arguments) {
 
                                 $product = Product::with(['variants'])->findOrFail($data['product_id']);
@@ -337,7 +336,7 @@ class SalesInvoiceResource extends Resource
                                     ];
                                 }
 
-                                $itemExists = collect($existingDetails)->where('item_id', $model_id)->where('item_type', $model_type)->first();
+                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
 
                                 if ($itemExists) {
                                     fns()->sendWarning(__('fields.order_details_item_already_exists'));
@@ -346,13 +345,15 @@ class SalesInvoiceResource extends Resource
 
 
                                 foreach ($livewire->data['items'] as $index => $it) {
-                                    if ($it['item_id'] == null and $it['item_type'] == null) {
+                                    if ($it['product_id'] == null) {
                                         unset($livewire->data['items'][$index]);
                                         unset($existingDetails[$index]);
                                     }
                                 }
 
                                 $livewire->data['items'] = array_merge($existingDetails, $item);
+
+                                self::updateInvoicePropertiesFromLivewire($livewire);
 
                                 fns()->saved();
 
@@ -1066,7 +1067,7 @@ class SalesInvoiceResource extends Resource
                                 $record->update(['status' => $data['status'], 'locked_at' => now()]);
 
                                 $tax = $record->items->sum('tax');
-                                if($tax > 0){
+                                if ($tax > 0) {
                                     $op = make_taxes_op();
                                     $accService = new AccountingService();
                                     $accService

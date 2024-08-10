@@ -234,7 +234,10 @@ class OrderResource extends Resource
 
 
                                         Forms\Components\Fieldset::make(__('fields.product_extras'))
-                                            ->visible(fn(Forms\Get $get) => Product::where('id', $get('product_id'))->first())
+                                            ->visible(function (Get $get) {
+                                                $product_id = $get('product_id');
+                                                return $product_id != null and count(self::getProductExtras($product_id));
+                                            })
                                             ->schema(function (Forms\Get $get, $livewire) {
                                                 $product_id = $get('product_id');
                                                 if ($product_id)
@@ -353,7 +356,7 @@ class OrderResource extends Resource
                                     ];
                                 }
 
-                                $itemExists = collect($existingDetails)->where('item_id', $model_id)->where('item_type', $model_type)->first();
+                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
 
                                 if ($itemExists) {
                                     fns()->sendWarning(__('fields.order_details_item_already_exists'));
@@ -362,7 +365,7 @@ class OrderResource extends Resource
 
 
                                 foreach ($livewire->data['details'] as $index => $it) {
-                                    if ($it['item_id'] == null and $it['item_type'] == null) {
+                                    if ($it['product_id'] == null) {
                                         unset($livewire->data['details'][$index]);
                                         unset($existingDetails[$index]);
                                     }
@@ -570,7 +573,7 @@ class OrderResource extends Resource
                             return new HtmlString("<p><h1 style='text-decoration: line-through; font-weight: lighter; color: #ff5028;'>$originalPrice</h1>  $discountedPrice</p>");
                         }
                         return main_currency_iso_code() . " " . format_amount($record->sub_total);
-                    })->description(function (Order $record){
+                    })->description(function (Order $record) {
                         return $record['coupon_data']['code'] ?? null;
                     }),
 
