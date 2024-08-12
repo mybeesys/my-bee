@@ -127,7 +127,7 @@ class ExpenseResource extends Resource
                 Section::make()->schema([
 
                     Forms\Components\TextInput::make('amount')
-                        ->live()
+                        ->live(true)
                         ->label(__("fields.amount_money"))
                         ->numeric()
                         ->minValue(1)
