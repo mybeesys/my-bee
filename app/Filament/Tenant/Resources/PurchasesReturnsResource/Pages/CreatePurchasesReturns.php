@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePurchasesReturns extends CreateRecord
 {
     protected static string $resource = PurchasesReturnsResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

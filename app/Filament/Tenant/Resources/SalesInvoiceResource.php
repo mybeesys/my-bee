@@ -872,6 +872,7 @@ class SalesInvoiceResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.invoice_no'))
@@ -1082,7 +1083,7 @@ class SalesInvoiceResource extends Resource
                                             'Invoice items taxes',
                                             $record->id,
                                             meta: ['type' => 'sales_invoice', 'id' => $record->id],
-                                        )->make('120100001', '122800003')
+                                        )->make('120100001', '122800001')
                                         ->finish();
                                 }
 

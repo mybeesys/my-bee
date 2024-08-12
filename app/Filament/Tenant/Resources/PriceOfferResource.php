@@ -257,10 +257,10 @@ class PriceOfferResource extends Resource
                                         'type' => $type,
                                         'display_name' => $name,
                                         'max_qty' => $max_qty,
-                                        'qty' => $qty,
+                                        'qty' => 1,
                                         'unit_price' => $price,
-                                        'price' => format_amount($qty * $price),
-                                        'sub_total' => format_amount($qty * $price),
+                                        'price' => number_format($qty * $price, currency_decimals(), '.', ''),
+                                        'sub_total' => number_format($qty * $price, currency_decimals(), '.', ''),
                                         'tax_profile_id' => $variant->product->tax_profile_id,
                                         'product_extras_ids' => $productExtrasIds,
                                         'extras' => implode(', ', $productExtras->pluck('name')->toArray()),
@@ -299,8 +299,8 @@ class PriceOfferResource extends Resource
                                         'max_qty' => $max_qty,
                                         'qty' => $qty,
                                         'unit_price' => $price,
-                                        'price' => format_amount($qty * $price),
-                                        'sub_total' => format_amount($qty * $price),
+                                        'price' => number_format($qty * $price, currency_decimals(), '.', ''),
+                                        'sub_total' => number_format($qty * $price, currency_decimals(), '.', ''),
                                         'tax_profile_id' => $product->tax_profile_id,
                                         'product_extras_ids' => $productExtrasIds,
                                         'extras' => implode(', ', $productExtras->pluck('name')->toArray()),
@@ -317,7 +317,7 @@ class PriceOfferResource extends Resource
 
 
                                 foreach ($livewire->data['details'] as $index => $it) {
-                                    if ($it['product_id'] == null) {
+                                    if ($it['item_id'] == null) {
                                         unset($livewire->data['details'][$index]);
                                         unset($existingDetails[$index]);
                                     }
@@ -427,10 +427,12 @@ class PriceOfferResource extends Resource
 //                                            $set('max_qty', $record->item->inventory_count ?? 0);
                                         }
                                     })
-                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get, $livewire) {
                                         if ($state) {
-                                            $set('price', format_amount($state * $get('unit_price')));
+                                            $set('sub_total', format_amount($state * $get('unit_price')));
                                         }
+                                        self::updateInvoicePropertiesFromLivewire($livewire);
+
                                     })
                                     ->extraInputAttributes(function (Forms\Get $get) {
                                         return [
@@ -442,8 +444,8 @@ class PriceOfferResource extends Resource
                                 TextInput::make('price')
                                     ->label(__('fields.price'))
                                     ->prefixIcon('heroicon-o-calculator')
-                                    ->dehydrated(false)
-                                    ->readOnly(),
+                                    ->numeric()
+                                    ->required(),
 
                                 TextInput::make('discount')
                                     ->readOnly(fn(Forms\Get $get) => $get('data.discount_option_overall', true) === true)
@@ -831,6 +833,7 @@ class PriceOfferResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('no')->label(__('fields.reference_code'))->searchable(),
                 Tables\Columns\TextColumn::make('description')->limit(70)->label(__('fields.description'))->searchable(),

@@ -24,6 +24,11 @@ class CreatePriceOffer extends CreateRecord
 {
     protected static string $resource = PriceOfferResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         unset($data['details']);
@@ -59,7 +64,7 @@ class CreatePriceOffer extends CreateRecord
                 'user_id' => auth()->id(),
                 'item_id' => $detail['item_id'],
                 'item_type' => $detail['item_type'],
-                'unit_price' => $detail['unit_price'],
+                'unit_price' => $detail['price'],
                 'discount' => 0,
                 'tax' => $detail['tax'] ?? 0,
                 'tax_profile_id' => $detail['tax_profile_id'] ?? null,

@@ -18,6 +18,11 @@ class CreatePaymentVoucher extends CreateRecord
     protected static string $resource = PaymentVoucherResource::class;
 
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+
     public function mount(): void
     {
         parent::mount();

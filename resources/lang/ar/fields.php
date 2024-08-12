@@ -883,6 +883,10 @@ return [
     'store_terms_and_conditions' => 'الشروط والأحكام',
 
     'expense_account' => 'حساب المصروف',
-    'this_week' => 'هذا الإسبوع'
+    'this_week' => 'هذا الإسبوع',
+
+    'source' => 'المصدر',
+
+    'table_empty_state' => 'لا توجد سجلات',
 ];
 //

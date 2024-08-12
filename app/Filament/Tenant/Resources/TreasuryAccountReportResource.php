@@ -69,6 +69,7 @@ class TreasuryAccountReportResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('operation.no')
                     ->toggleable()

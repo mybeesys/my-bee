@@ -63,6 +63,7 @@ class TaxReportResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('operation.no')
                     ->toggleable()
@@ -72,7 +73,7 @@ class TaxReportResource extends Resource
 
                 Tables\Columns\TextColumn::make('date')
                     ->toggleable()
-                    ->dateTime('M j, Y')
+                    ->dateTime('F j, Y, g:i a')
                     ->label(__('fields.date')),
 
                 Tables\Columns\TextColumn::make('account.name')
@@ -97,15 +98,25 @@ class TaxReportResource extends Resource
                     }, true)
                     ->label(__('fields.account')),
 
-//                Tables\Columns\TextColumn::make('transaction_id')
-//                    ->toggleable()
-//                    ->searchable()
-//                    ->label(__('fields.transaction_id')),
-
-//                Tables\Columns\TextColumn::make('currency.name')
-//                    ->toggleable()
-//                    ->searchable()
-//                    ->label(__('fields.currency')),
+                Tables\Columns\TextColumn::make('source')
+                    ->label(__('fields.source'))
+                    ->getStateUsing(function (CashDet $record) {
+                        return match ($record->meta['type'] ?? null) {
+                            "sales_invoice" => __('fields.sales_invoice'),
+                            "purchase_invoice" => __('fields.purchases_invoice'),
+                            "expense" => __('fields.expense'),
+                            default => "Unknown",
+                        };
+                    })
+                    ->url(function (CashDet $record) {
+                        return match ($record->meta['type'] ?? null) {
+                            "sales_invoice" => SalesInvoiceResource::getUrl('edit', ['record' => $record->meta['id']]),
+                            "purchase_invoice" => PurchaseInvoiceResource::getUrl('edit', ['record' => $record->meta['id']]),
+                            "expense" => ExpenseResource::getUrl('edit', ['record' => $record->meta['id']]),
+                            default => null,
+                        };
+                    }, true)
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('amount_in')
                     ->toggleable()

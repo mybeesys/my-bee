@@ -154,8 +154,8 @@ class CustomerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
-
                 Tables\Columns\TextColumn::make('no')->label(__('fields.reference_code'))->toggleable()->toggledHiddenByDefault()->searchable(),
                 Tables\Columns\TextColumn::make('name')->label(__('fields.name'))->searchable(),
                 Tables\Columns\TextColumn::make('phone')->label(__('fields.phone'))->searchable(),

@@ -19,6 +19,10 @@ class CreateReceiptVoucher extends CreateRecord
     protected static string $resource = ReceiptVoucherResource::class;
 
 
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
     public function mount(): void
     {
         parent::mount();

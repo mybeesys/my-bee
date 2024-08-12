@@ -9,6 +9,7 @@ use BezhanSalleh\FilamentShield\Facades\FilamentShield;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
 use Filament\Support\Assets\Js;
 use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentAsset;
@@ -83,7 +84,11 @@ class AppServiceProvider extends ServiceProvider
     protected function configFilament()
     {
         Table::configureUsing(function (Table $table) {
-            $table->deferLoading()->striped()->paginationPageOptions([10, 25, 50, 100]);
+            $table
+                ->emptyStateHeading(__('fields.table_empty_state'))
+                ->deferLoading()
+                ->striped()
+                ->paginationPageOptions([10, 25, 50, 100]);
         });
 
         TextColumn::configureUsing(function (TextColumn $textColumn) {
@@ -95,6 +100,7 @@ class AppServiceProvider extends ServiceProvider
         DatePicker::configureUsing(function (DatePicker $datePicker) {
             $datePicker->displayFormat(user_setting('date_picker_format', 'd/m/Y'));
         });
+
 
     }
 

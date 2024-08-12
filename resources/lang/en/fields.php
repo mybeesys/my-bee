@@ -875,6 +875,11 @@ return [
     'store_terms_and_conditions' => 'Terms and conditions',
 
     'expense_account' => 'Expense account',
-    'this_week' => 'This week'
+    'this_week' => 'This week',
+
+    'source' => 'Source',
+
+    'table_empty_state' => 'No records',
+
 ];
 //

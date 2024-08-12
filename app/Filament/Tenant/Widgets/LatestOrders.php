@@ -18,6 +18,7 @@ class LatestOrders extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->heading(__('fields.latest_orders'))
             ->modelLabel(__('fields.order'))
             ->pluralModelLabel(__('fields.orders'))

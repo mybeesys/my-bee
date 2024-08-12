@@ -745,6 +745,7 @@ class PurchaseInvoiceResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.invoice'))
@@ -953,7 +954,7 @@ class PurchaseInvoiceResource extends Resource
                                                 'Invoice items taxes',
                                                 $record->id,
                                                 meta: ['type' => 'purchase_invoice', 'id' => $record->id],
-                                            )->make('120100001', '122800002')
+                                            )->make('120100001', '122800001')
                                             ->finish();
                                     }
 

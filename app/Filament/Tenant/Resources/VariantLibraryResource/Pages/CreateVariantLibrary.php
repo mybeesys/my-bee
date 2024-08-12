@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateVariantLibrary extends CreateRecord
 {
     protected static string $resource = VariantLibraryResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

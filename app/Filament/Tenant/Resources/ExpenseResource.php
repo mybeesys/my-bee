@@ -286,8 +286,8 @@ class ExpenseResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
-
                 Tables\Columns\TextColumn::make('creditAccount.name')
                     ->label(__('fields.account'))
                     ->description(fn($record) => $record->creditAccount->code)

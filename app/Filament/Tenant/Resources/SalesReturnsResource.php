@@ -220,6 +220,7 @@ class SalesReturnsResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.no')
                     ->label(__('fields.invoice'))
