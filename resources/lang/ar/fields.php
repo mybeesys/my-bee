@@ -888,5 +888,7 @@ return [
     'source' => 'المصدر',
 
     'table_empty_state' => 'لا توجد سجلات',
+
+    'products_movement' => 'حركة المنتجات'
 ];
 //

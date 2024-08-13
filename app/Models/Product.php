@@ -164,4 +164,9 @@ class Product extends BaseModel implements HasMedia
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    public function invoiceItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
 }

@@ -881,5 +881,6 @@ return [
 
     'table_empty_state' => 'No records',
 
+    'products_movement' => 'Products movement',
 ];
 //

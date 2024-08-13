@@ -1115,6 +1115,7 @@ class ProductResource extends Resource
         return [
 //            RelationManagers\VariantsRelationManager::class,
             RelationManagers\StocksRelationManager::class,
+            RelationManagers\ItemMovementsRelationManager::class,
 //            RelationManagers\RawMaterialsRelationManager::class,
 //            RelationManagers\CostsRelationManager::class,
         ];
@@ -1129,7 +1130,7 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks'])->latest();
+        return parent::getEloquentQuery()->with(['category', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks', 'invoiceItems.invoice.customer'])->latest();
     }
 
     public static function getPages(): array
