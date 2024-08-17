@@ -889,6 +889,9 @@ return [
 
     'table_empty_state' => 'لا توجد سجلات',
 
-    'products_movement' => 'حركة المنتجات'
+    'products_movement' => 'حركة المنتجات',
+    'products_movements_type_purchases' => 'شراء',
+    'products_movements_type_sales' => 'بيع',
+
 ];
 //

@@ -5,11 +5,14 @@ namespace App\Filament\Tenant\Resources;
 use App\Filament\Tenant\Resources\ProductsMovementResource\Pages;
 use App\Filament\Tenant\Resources\ProductsMovementResource\RelationManagers;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
+use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Support\Colors\Color;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -55,9 +58,28 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.name'))
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('invoice.customer.name')
-                    ->label(__('fields.client'))
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('type')
+                    ->label(__('fields.type'))
+                    ->badge()
+                    ->getStateUsing(function (InvoiceItem $record) {
+                        return $record->invoice->type == "purchases" ?
+                            __('fields.products_movements_type_purchases')
+                            : __('fields.products_movements_type_sales');
+                    }),
+
+                Tables\Columns\TextColumn::make('entity')
+                    ->label(__('fields.entity'))
+                    ->colors(Color::Sky)
+                    ->getStateUsing(function (InvoiceItem $record) {
+                        if ($record->invoice->customer_id)
+                            return $record->invoice->customer->name;
+                        return $record->invoice->supplier_id->name;
+                    })
+                    ->url(function (InvoiceItem $record) {
+                        if ($record->invoice->customer_id)
+                            return CustomerResource::getUrl('edit', ['record' => $record->invoice->customer_id]);
+                        return SupplierResource::getUrl('edit', ['record' => $record->invoice->supplier_id]);
+                    }, true),
 
                 Tables\Columns\TextColumn::make('invoice.no')
                     ->label(__('fields.invoice_no'))
@@ -83,6 +105,16 @@ class ProductsMovementResource extends Resource
                             ->multiple()
                             ->options(Customer::pluck('name', 'id')),
 
+                        Forms\Components\Select::make('suppliers')
+                            ->label(__('fields.supplier'))
+                            ->multiple()
+                            ->options(Supplier::pluck('name', 'id')),
+
+                        Forms\Components\Select::make('invoices')
+                            ->label(__('fields.invoice'))
+                            ->multiple()
+                            ->options(Invoice::pluck('no', 'id')),
+
                         Forms\Components\Select::make('products')
                             ->label(__('fields.products'))
                             ->multiple()
@@ -102,6 +134,12 @@ class ProductsMovementResource extends Resource
                         if ($data['customers']) {
                             $indicator = $indicator . __('fields.client');
                         }
+                        if ($data['suppliers']) {
+                            $indicator = $indicator . __('fields.supplier');
+                        }
+                        if ($data['invoices']) {
+                            $indicator = $indicator . __('fields.invoice');
+                        }
                         if ($data['products']) {
                             $indicator = $indicator . __('fields.products');
                         }
@@ -113,6 +151,12 @@ class ProductsMovementResource extends Resource
                                 fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
                                     $q->whereIn('customer_id', $data['customers']);
                                 }))
+                            ->when($data['suppliers'],
+                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                    $q->whereIn('supplier_id', $data['suppliers']);
+                                }))
+                            ->when($data['invoices'],
+                                fn($query) => $query->whereIn('id', $data['invoices']))
                             ->when($data['products'],
                                 fn($query) => $query->whereIn('product_id', $data['products']))
                             ->when($data['created_from'],
