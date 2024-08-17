@@ -106,6 +106,15 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.created_at'))
                     ->form([
 
+                        Forms\Components\Radio::make('type')
+                            ->label(__('fields.type'))
+                            ->default(null)
+                            ->options([
+                                null => __('fields.all'),
+                                'purchases' => __('fields.products_movements_type_purchases'),
+                                'sales' => __('fields.products_movements_type_sales'),
+                            ]),
+
                         Forms\Components\Select::make('customers')
                             ->label(__('fields.client'))
                             ->multiple()
@@ -134,8 +143,8 @@ class ProductsMovementResource extends Resource
                     ])
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
-                        if ($data['created_from'] or $data['created_until']) {
-                            $indicator = $indicator . __('fields.date');
+                        if ($data['type']) {
+                            $indicator = $indicator . __('fields.type');
                         }
                         if ($data['customers']) {
                             $indicator = $indicator . __('fields.client');
@@ -148,6 +157,9 @@ class ProductsMovementResource extends Resource
                         }
                         if ($data['products']) {
                             $indicator = $indicator . __('fields.products');
+                        }
+                        if ($data['created_from'] or $data['created_until']) {
+                            $indicator = $indicator . __('fields.date');
                         }
                         return $indicator;
                     })
@@ -164,6 +176,10 @@ class ProductsMovementResource extends Resource
                             ->when($data['invoices'],
                                 fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
                                     $q->whereIn('id', $data['invoices']);
+                                }))
+                            ->when($data['type'],
+                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                    $q->where('type', $data['type']);
                                 }))
                             ->when($data['products'],
                                 fn($query) => $query->whereIn('product_id', $data['products']))
