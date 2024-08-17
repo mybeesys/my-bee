@@ -73,7 +73,7 @@ class ProductsMovementResource extends Resource
                     ->getStateUsing(function (InvoiceItem $record) {
                         if ($record->invoice->customer_id)
                             return $record->invoice->customer->name;
-                        return $record->invoice->supplier_id->name;
+                        return $record->invoice->supplier->name;
                     })
                     ->url(function (InvoiceItem $record) {
                         if ($record->invoice->customer_id)
