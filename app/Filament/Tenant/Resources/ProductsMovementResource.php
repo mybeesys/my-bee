@@ -69,7 +69,7 @@ class ProductsMovementResource extends Resource
 
                 Tables\Columns\TextColumn::make('entity')
                     ->label(__('fields.entity'))
-                    ->colors(Color::Sky)
+                    ->color(Color::Sky)
                     ->getStateUsing(function (InvoiceItem $record) {
                         if ($record->invoice->customer_id)
                             return $record->invoice->customer->name;
@@ -83,6 +83,12 @@ class ProductsMovementResource extends Resource
 
                 Tables\Columns\TextColumn::make('invoice.no')
                     ->label(__('fields.invoice_no'))
+                    ->color(Color::Sky)
+                    ->url(function (InvoiceItem $record) {
+                        return $record->invoice->type == "purchases" ?
+                            PurchaseInvoiceResource::getUrl('edit', ['record' => $record->invoice_id])
+                            : SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice_id]);
+                    }, true)
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('qty')
@@ -156,7 +162,9 @@ class ProductsMovementResource extends Resource
                                     $q->whereIn('supplier_id', $data['suppliers']);
                                 }))
                             ->when($data['invoices'],
-                                fn($query) => $query->whereIn('id', $data['invoices']))
+                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                    $q->whereIn('id', $data['invoices']);
+                                }))
                             ->when($data['products'],
                                 fn($query) => $query->whereIn('product_id', $data['products']))
                             ->when($data['created_from'],
