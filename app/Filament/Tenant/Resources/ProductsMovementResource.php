@@ -215,7 +215,7 @@ class ProductsMovementResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['invoice.customer'])->latest();
+        return parent::getEloquentQuery()->with(['invoice.customer', 'invoice.supplier'])->latest();
     }
 
     public static function canEdit(Model $record): bool

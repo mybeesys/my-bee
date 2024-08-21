@@ -200,6 +200,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::get('account/statement/bank', [\App\Http\Controllers\API\V1\ReportController::class, 'bankAccount']);
             Route::get('account/statement/treasury', [\App\Http\Controllers\API\V1\ReportController::class, 'treasuryAccount']);
             Route::get('account/statement/tax', [\App\Http\Controllers\API\V1\ReportController::class, 'taxAccount']);
+            Route::get('account/statement/products-movements', [\App\Http\Controllers\API\V1\ReportController::class, 'productsMovements']);
         });
 
         Route::group(['prefix' => 'settings'], function () {
