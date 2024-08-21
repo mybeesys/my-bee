@@ -85,8 +85,11 @@ class ReportController extends BaseController
     {
         $items = InvoiceItem::with(['invoice.customer', 'invoice.supplier'])
             ->whereHas('invoice', function (Builder $q) use($request) {
+                $request->whenHas('type', function() use($request, $q) {
+                    $q->where('type', $request->type);
+                });
                 $request->whenHas('invoice_no', function() use($request, $q) {
-                    $q->where('invoice_no', $request->invoice_no);
+                    $q->where('no', $request->invoice_no);
                 });
                 $request->whenHas('customers', function() use($request, $q) {
                     $q->whereIn('customer_id', Arr::wrap($request->customers));
@@ -98,11 +101,8 @@ class ReportController extends BaseController
             ->when($request->products, function (Builder $builder) use ($request) {
                 return $builder->whereIn('product_id', Arr::wrap($request->products));
             })
-            ->when($request->type, function (Builder $builder) use ($request) {
-                return $builder->where('type', $request->type);
-            })
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
-                return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
+                return $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, "d-m-Y");
             })
             ->get();
         return $this->responder(__('messages.api.retrieved'), 200, ProductsMovementResource::collection($items))->respond();
