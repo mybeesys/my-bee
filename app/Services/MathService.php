@@ -29,5 +29,5 @@ class MathService
 //        $tax_percent = $taxProfile->total_percentages;
 //        $percent = (float)"1.$tax_percent";
 //        return ($total / $percent) * (float)"0.$tax_percent";
-
+    }
 }
