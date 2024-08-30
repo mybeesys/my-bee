@@ -133,13 +133,13 @@ class AccountStatementResource extends Resource
                         return number_format($record->balance_post_transaction, currency_decimals(), '.', '.');
                     }),
 
-                Tables\Columns\TextColumn::make('operation.files')
-                    ->toggleable()
-                    ->getStateUsing(function ($record) {
-                        if (!$record->operation->files) return 0;
-                        return count($record->operation->files);
-                    })
-                    ->label(__('fields.files')),
+//                Tables\Columns\TextColumn::make('operation.files')
+//                    ->toggleable()
+//                    ->getStateUsing(function ($record) {
+//                        if (!$record->operation->files) return 0;
+//                        return count($record->operation->files);
+//                    })
+//                    ->label(__('fields.files')),
 
 //                Tables\Columns\BooleanColumn::make('operation.locked_at')
 //                    ->toggleable()
@@ -160,16 +160,16 @@ class AccountStatementResource extends Resource
 //                    ->label(__('fields.currency'))
 //                    ->relationship('currency', 'name'),
 
+                Tables\Filters\SelectFilter::make('account_code')
+                    ->label(__('fields.account'))
+                    ->options(Acc4::asOptions())
+                    ->searchable(),
+
                 Tables\Filters\SelectFilter::make('op_id')
                     ->searchable()
 //                        ->multiple()
                     ->label(__('fields.voucher_no'))
                     ->relationship('operation', 'no'),
-
-//                Tables\Filters\SelectFilter::make('account_code')
-//                    ->label(__('fields.account'))
-//                    ->options(Acc4::asOptions())
-//                    ->searchable(),
 
                 Tables\Filters\Filter::make('created_at')
                     ->label(__('fields.created_at'))
@@ -181,6 +181,9 @@ class AccountStatementResource extends Resource
                     ])
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
+                        if ($data['account_code']) {
+                            $indicator = $indicator . __('fields.account');
+                        }
                         if ($data['created_from'] or $data['created_until']) {
                             $indicator = $indicator . __('fields.date');
                         }
@@ -189,6 +192,8 @@ class AccountStatementResource extends Resource
                     ->query(function ($query, array $data) {
 
                         return $query
+                            ->when($data['account_code'],
+                                fn($query) => $query->where('account_code', $data['account_code']))
                             ->when($data['created_from'],
                                 fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
                             ->when($data['created_until'],

@@ -35,6 +35,23 @@ class CreateExpense extends CreateRecord
 
     protected function afterCreate()
     {
+        $op = make_taxes_op();
+        $accService = new AccountingService();
+        $accService
+            ->setUp(
+                $op->id,
+                now(),
+                main_currency_iso_code(),
+                generate_double_entry_transaction_id(),
+                $this->record->amount,
+                null,
+                __('fields.expenses'),
+                __('fields.expenses'),
+                null,
+                meta: ['type' => 'expense', 'id' => $this->record->id],
+            )->make('120100001', '122300001')
+            ->finish();
+
         if ($this->record->tax > 0) {
             $op = make_taxes_op();
             $accService = new AccountingService();

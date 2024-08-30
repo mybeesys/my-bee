@@ -205,6 +205,7 @@ class ReceiptVoucherResource extends Resource
                         ->relationship('payments')
                         ->addActionLabel(__('fields.add'))
                         ->defaultItems(1)
+                        ->minItems(1)
                         ->emptyLabel(__('fields.no_records_placeholder'))
                         ->columnSpan('full')
                         ->headers([
