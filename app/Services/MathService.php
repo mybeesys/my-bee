@@ -21,10 +21,12 @@ class MathService
 
     public function getTaxFromTaxProfile($total, TaxProfile $taxProfile): float
     {
+//        Excluding VAT from sale price:
 //        =115/1.15*.15
         $tax_percent = $taxProfile->total_percentages;
         $percent = (float)$tax_percent;
-        return ($total * ($percent / 100));
+        $x = 100 + $percent;
+        return ($total * ($percent / $x));
 
 //        $tax_percent = $taxProfile->total_percentages;
 //        $percent = (float)"1.$tax_percent";
