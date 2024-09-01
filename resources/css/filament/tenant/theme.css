@@ -1,4 +1,12 @@
 @import '/vendor/filament/filament/resources/css/theme.css';
 @import '../../../../vendor/awcodes/filament-table-repeater/resources/css/plugin.css';
 
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
 @config 'tailwind.config.js';
+
+.lg\:grid-cols-6 {
+    grid-template-columns: repeat(6,minmax(0,1fr))
+}

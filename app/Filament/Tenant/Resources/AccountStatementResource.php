@@ -51,6 +51,11 @@ class AccountStatementResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->modifyQueryUsing(function (Builder $query) use ($table) {
+                if (empty($table->getFilter('account_code')->getState())) {
+                    return $query->where('id', 'x');
+                }
+            })
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('operation.no')
@@ -89,7 +94,7 @@ class AccountStatementResource extends Resource
                     })
                     ->color(Color::Green)
                     ->description(function ($state, $record) {
-                        if($state > 0)
+                        if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
                     ->label(__('fields.debit')),
@@ -101,7 +106,7 @@ class AccountStatementResource extends Resource
                     })
                     ->color(Color::Red)
                     ->description(function ($state, $record) {
-                        if($state > 0)
+                        if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
                     ->label(__('fields.credit')),
@@ -123,8 +128,8 @@ class AccountStatementResource extends Resource
                 Tables\Columns\TextColumn::make('balance_post_transaction')
                     ->toggleable()
                     ->label(__('fields.balance'))
-                    ->color(function ($record){
-                        if($record->amount_in > 0){
+                    ->color(function ($record) {
+                        if ($record->amount_in > 0) {
                             return Color::Green;
                         }
                         return Color::Red;
@@ -181,7 +186,7 @@ class AccountStatementResource extends Resource
                     ])
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
-                        if ($data['account_code']) {
+                        if ($data['account_code'] ?? null) {
                             $indicator = $indicator . __('fields.account');
                         }
                         if ($data['created_from'] or $data['created_until']) {
@@ -192,7 +197,9 @@ class AccountStatementResource extends Resource
                     ->query(function ($query, array $data) {
 
                         return $query
-                            ->when($data['account_code'],
+                            ->when(1,
+                                fn(Builder $query) => $query->orWhere('id', 'x'))
+                            ->when($data['account_code'] ?? null,
                                 fn($query) => $query->where('account_code', $data['account_code']))
                             ->when($data['created_from'],
                                 fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
@@ -255,7 +262,7 @@ class AccountStatementResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['account', 'operation', 'account.acc3', 'currency', 'invoice'])
-            ->whereRelation('account', 'item_type', null) // banks (not customer not supplier)
+//            ->whereRelation('account', 'item_type', null) // banks (not customer not supplier)
             ->orderByDesc('id');
     }
 

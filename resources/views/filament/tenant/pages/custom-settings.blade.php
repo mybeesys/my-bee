@@ -2,7 +2,6 @@
 
 {{--</x-filament-panels::page>--}}
 
-
 <x-filament-panels::page>
 
     <!--
@@ -15,14 +14,14 @@
     </style>
     <style>body { font-family: 'Inter', sans-serif; --font-sans-serif: 'Inter'; }
     </style>
-    <div class="w-full py-12 md:py-24 lg:py-32">
+    <div class="w-full">
         <div class="container px-4 md:px-6">
             <div class="space-y-6">
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
                     <a
                         href="#"
-                        class="group relative aspect-square rounded-full bg-muted p-4 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                     >
                         <div class="flex flex-col items-center justify-center h-full">
                             <svg
@@ -44,7 +43,7 @@
                         </div>
                     </a>
                     <a
-                        class="group relative aspect-square rounded-full bg-muted p-4 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                         href="#"
                     >
                         <div class="flex flex-col items-center justify-center h-full">
@@ -67,7 +66,7 @@
                         </div>
                     </a>
                     <a
-                        class="group relative aspect-square rounded-full bg-muted p-4 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                         href="#"
                     >
                         <div class="flex flex-col items-center justify-center h-full">
@@ -90,7 +89,7 @@
                         </div>
                     </a>
                     <a
-                        class="group relative aspect-square rounded-full bg-muted p-4 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                         href="#"
                     >
                         <div class="flex flex-col items-center justify-center h-full">
@@ -120,7 +119,7 @@
                         </div>
                     </a>
                     <a
-                        class="group relative aspect-square rounded-full bg-muted p-4 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                         href="#"
                     >
                         <div class="flex flex-col items-center justify-center h-full">
@@ -145,7 +144,7 @@
                         </div>
                     </a>
                     <a
-                        class="group relative aspect-square rounded-full bg-muted p-4 transition-all hover:scale-105 hover:bg-blue-500 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                        class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-500 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                         href="#"
                     >
                         <div class="flex flex-col items-center justify-center h-full">
