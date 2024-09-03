@@ -142,14 +142,17 @@ class TreasuryAccountReportResource extends Resource
                     ->toggleable()
                     ->label(__('fields.balance'))
                     ->color(function ($record) {
-                        if ($record->amount_in > 0) {
+                        if ($record->balance_post_transaction > 0) {
                             return Color::Green;
                         }
                         return Color::Red;
                     })
                     ->getStateUsing(function ($record) {
                         return number_format($record->balance_post_transaction, currency_decimals(), '.', '.');
-                    }),
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
 //                Tables\Columns\TextColumn::make('exchange_rate')
 //                    ->toggleable()

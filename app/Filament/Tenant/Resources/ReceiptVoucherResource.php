@@ -201,11 +201,12 @@ class ReceiptVoucherResource extends Resource
                 Forms\Components\Section::make([
 
                     TableRepeater::make('payments')
+                        ->required()
+                        ->minItems(1)
                         ->label(__('fields.payments'))
                         ->relationship('payments')
                         ->addActionLabel(__('fields.add'))
                         ->defaultItems(1)
-                        ->minItems(1)
                         ->emptyLabel(__('fields.no_records_placeholder'))
                         ->columnSpan('full')
                         ->headers([

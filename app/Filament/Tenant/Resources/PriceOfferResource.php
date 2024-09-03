@@ -19,6 +19,7 @@ use App\Models\VariantLibrary;
 use App\Models\VariantLibraryOption;
 use App\Rules\UniqueTenantItemRule;
 use App\Services\CacheService;
+use App\Services\MathService;
 use App\Services\PricingService;
 use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
@@ -1045,6 +1046,8 @@ class PriceOfferResource extends Resource
                     $discount = 0;
 
                 $subTotal = ($price * $qty) + $extras_total;
+                $original_sub_total = ($price * $qty) + $extras_total;
+
                 $subTotal -= $discount;
 
                 if (is_number($item['tax_profile_id'] ?? null)) {
@@ -1056,7 +1059,7 @@ class PriceOfferResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = $subTotal * ($taxProfile->total_percentages / 100);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($original_sub_total, $taxProfile);
                         $subTotal += $tax;
                     }
                 }

@@ -95,6 +95,36 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.qty'))
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('discount')
+                    ->label(__('fields.discount'))
+                    ->getStateUsing(fn($record) => number_format($record->discount, currency_decimals(), '.', ','))
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
+
+                Tables\Columns\TextColumn::make('tax')
+                    ->label(__('fields.tax'))
+                    ->getStateUsing(fn($record) => number_format($record->tax, currency_decimals(), '.', ','))
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
+
+                Tables\Columns\TextColumn::make('price')
+                    ->label(__('fields.unit_price'))
+                    ->getStateUsing(fn($record) => number_format($record->price, currency_decimals(), '.', ','))
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
+
+                Tables\Columns\TextColumn::make('sub_total')
+                    ->label(__('fields.sub_total'))
+                    ->getStateUsing(fn($record) => number_format($record->sub_total, currency_decimals(), '.', ','))
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('sub_total'));
+                        })
+                    ),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('fields.date'))
                     ->dateTime('F j, Y, g:i a')

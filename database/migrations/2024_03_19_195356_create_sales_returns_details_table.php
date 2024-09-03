@@ -15,10 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->index()->references('id')->on('tenants');
             $table->foreignId('sales_returns_id')->index()->references('id')->on('sales_returns');
-
             $table->foreignId('invoice_item_id')->index()->references('id')->on('invoice_items');
+            $table->decimal('discount', 21, 8)->default(0);
+            $table->decimal('tax', 21, 8)->default(0);
+            $table->decimal('price', 21, 8)->default(0);
+            $table->decimal('total', 21, 8)->default(0);
             $table->unsignedInteger('qty');
             $table->foreignId('user_id')->index()->references('id')->on('users');
+            $table->boolean('transaction_completed')->default(false);
             $table->timestamps();
         });
     }

@@ -885,5 +885,8 @@ return [
 
     'products_movements_type_purchases' => 'Purchase',
     'products_movements_type_sales' => 'Sale',
+
+    'you_need_to_confirm_invoice_before_this_operation' => 'You need to confirm the invoice before inorder to complete operation',
+    'to_be_returned_amount_is_greater_than_paid_amount' => 'To-be returned amount is greater than paid amount',
 ];
 //

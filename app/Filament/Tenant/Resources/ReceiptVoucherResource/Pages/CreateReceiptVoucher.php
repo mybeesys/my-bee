@@ -23,6 +23,7 @@ class CreateReceiptVoucher extends CreateRecord
     {
         return $this->getResource()::getUrl('index');
     }
+
     public function mount(): void
     {
         parent::mount();
@@ -40,7 +41,7 @@ class CreateReceiptVoucher extends CreateRecord
                 'acc4_code' => $inv->customer->acc4->code,
                 'invoice_id' => $inv->id,
             ]);
-        }else{
+        } else {
             $this->form->fill([
                 'no' => generate_receipt_voucher(),
                 'user_id' => auth()->id(),
@@ -62,8 +63,7 @@ class CreateReceiptVoucher extends CreateRecord
     protected function getPaymentsAmount()
     {
         $paymentsAmount = 0;
-        foreach ($this->data['payments'] ?? [] as $item)
-        {
+        foreach ($this->data['payments'] ?? [] as $item) {
             $amount = $item['amount'] ?? 0;
             $paymentsAmount += $amount;
         }
@@ -72,14 +72,12 @@ class CreateReceiptVoucher extends CreateRecord
 
     protected function beforeCreate()
     {
-        if($this->data['invoice_id'])
-        {
+        if ($this->data['invoice_id']) {
             $invoice = Invoice::with(['salesPayments'])->findOrFail($this->data['invoice_id']);
 
             $totalToPay = $invoice->getItemsCost(true, true, true);
 
-            if($this->getPaymentsAmount() > $totalToPay)
-            {
+            if ($this->getPaymentsAmount() > $totalToPay) {
                 fns()->sendWarning(__("fields.payments_are_bigger_than_invoice_amount"));
                 $this->halt();
             }
@@ -118,7 +116,7 @@ class CreateReceiptVoucher extends CreateRecord
 
             foreach ($this->record->payments as $payment) {
                 if (!$payment->transaction_completed) {
-                    $op = $payment->debitAccount->acc3_code = 1227 ? make_bank_transfer_receipt_voucher_op() :  make_cash_receipt_voucher_op();
+                    $op = $payment->debitAccount->acc3_code = 1227 ? make_bank_transfer_receipt_voucher_op() : make_cash_receipt_voucher_op();
 
                     $accService = new AccountingService();
 

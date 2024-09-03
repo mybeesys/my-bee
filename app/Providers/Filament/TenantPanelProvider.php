@@ -42,6 +42,8 @@ class TenantPanelProvider extends PanelProvider
 
         return $panel
             ->id('tenant')
+//            ->tenantBillingProvider(new SparkBillingProvider())
+//            ->requiresTenantSubscription()
             ->path('')
             ->domain($domain)
             ->viteTheme('resources/css/filament/tenant/theme.css')

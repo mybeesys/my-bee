@@ -1232,6 +1232,8 @@ class PurchaseInvoiceResource extends Resource
                     $discount = 0;
 
                 $subTotal = $price * $qty;
+                $original_sub_total = $price * $qty;
+
                 $subTotal -= $discount;
 
                 if (is_number($item['tax_profile_id'] ?? null)) {
@@ -1243,7 +1245,7 @@ class PurchaseInvoiceResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($original_sub_total, $taxProfile);
                         $subTotal += $tax;
                     }
                 }
@@ -1251,7 +1253,6 @@ class PurchaseInvoiceResource extends Resource
                 $item['tax'] = $tax;
 
                 $item['sub_total'] = format_amount($subTotal);
-
 
             }
             $newItems[] = $item;

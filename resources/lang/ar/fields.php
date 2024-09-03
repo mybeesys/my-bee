@@ -893,5 +893,8 @@ return [
     'products_movements_type_purchases' => 'شراء',
     'products_movements_type_sales' => 'بيع',
 
+    'you_need_to_confirm_invoice_before_this_operation' => 'يجب إغلاق الفاتورة قبل إكمال هذة العملية',
+    'to_be_returned_amount_is_greater_than_paid_amount' => 'المبلغ المراد إرجاعة أكبر من المبلغ المدفوع',
+
 ];
 //

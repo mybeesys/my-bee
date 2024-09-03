@@ -985,7 +985,7 @@ class SalesInvoiceResource extends Resource
             ])
             ->actions([
 
-                Tables\Actions\ViewAction::make(),
+//                Tables\Actions\ViewAction::make(),
 
                 Tables\Actions\Action::make('invoice_url')
                     ->label(__('fields.invoice_url'))
@@ -1368,11 +1368,12 @@ class SalesInvoiceResource extends Resource
 
                 if ($taxProfile) {
                     $sub_total = ($price * $qty) + $extras_total;
+                    $original_sub_total = ($price * $qty) + $extras_total;
 
                     if (is_number($discount))
                         $sub_total -= $discount;
 
-                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total, $taxProfile);
+                    $tax = MathService::instance()->getTaxFromTaxProfile($original_sub_total, $taxProfile);
                     $totals['total_taxes'] += $tax;
                 }
             }
@@ -1459,6 +1460,7 @@ class SalesInvoiceResource extends Resource
                 }
             }
 
+
             //set sub_total
             if (is_number($price) and is_number($qty)) {
                 $discount = $item['discount'] ?? null;
@@ -1467,6 +1469,8 @@ class SalesInvoiceResource extends Resource
                     $discount = 0;
 
                 $subTotal = ($price * $qty) + $extras_total;
+                $original_sub_total = ($price * $qty) + $extras_total;
+
                 $subTotal -= $discount;
 
                 if (is_number($item['tax_profile_id'] ?? null)) {
@@ -1478,7 +1482,7 @@ class SalesInvoiceResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($original_sub_total, $taxProfile);
                         $subTotal += $tax;
                     }
                 }
