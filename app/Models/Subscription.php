@@ -52,7 +52,6 @@ class Subscription extends BaseModel
             'plan_id' => $plan->id,
             'client_id' => $client->id,
             'start_date' => now(),
-            'next_billing_date' => $plan->span === Plan::SPAN_SPECIFIED ? now()->addDays($plan->span_in_days) : null,
             'subscribed' => 1,
             'expired' => 0,
             'price' => $plan->price,

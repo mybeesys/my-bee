@@ -11,12 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        //span_in_days
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
             $table->json('name');
             $table->enum('span', ['one-time', 'specified']);
-            $table->integer('span_in_days');
-            $table->decimal('price', 19,4);
+            $table->enum('span_duration', ['unlimited', 'monthly', 'yearly'])->default('unlimited');
+            $table->decimal('price', 21,8);
             $table->integer('max_allowed_companies');
             $table->integer('max_allowed_users');
             $table->integer('max_allowed_purchase_invoices');

@@ -494,6 +494,9 @@ return [
 
     'span' => 'الفترة الزمنية',
     'span_in_days' => 'الفترة بالأيام',
+    'span_duration' => 'مدة الفترة',
+    'monthly' => 'شهري',
+    'yearly' => 'سنوي',
     'specified' => 'محددة',
     'one_time_subscription' => 'إشتراك لمرة واحدة (دائم)',
 
@@ -895,6 +898,7 @@ return [
 
     'you_need_to_confirm_invoice_before_this_operation' => 'يجب إغلاق الفاتورة قبل إكمال هذة العملية',
     'to_be_returned_amount_is_greater_than_paid_amount' => 'المبلغ المراد إرجاعة أكبر من المبلغ المدفوع',
+    'sales_invoices_maxed_out_alert' => 'لقد وصلت إلى الحد الأقصى لعدد فواتير المبيعات المسموح بها. قم بترقية خطتك لإنشاء المزيد.',
 
 ];
 //

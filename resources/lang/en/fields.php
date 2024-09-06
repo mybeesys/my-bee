@@ -488,6 +488,9 @@ return [
 
     'span' => 'Span',
     'span_in_days' => 'Span in days',
+    'span_duration' => 'Span duration',
+    'monthly' => 'Monthly',
+    'yearly' => 'Annually',
     'specified' => 'Specified',
     'one_time_subscription' => 'One time subscription (permanent)',
 
@@ -888,5 +891,7 @@ return [
 
     'you_need_to_confirm_invoice_before_this_operation' => 'You need to confirm the invoice before inorder to complete operation',
     'to_be_returned_amount_is_greater_than_paid_amount' => 'To-be returned amount is greater than paid amount',
+
+    'sales_invoices_maxed_out_alert' => 'You have reached the maximum number of allowed sale invoices. upgrade your plan to create more.',
 ];
 //

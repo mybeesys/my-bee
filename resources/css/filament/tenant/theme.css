@@ -7,6 +7,3 @@
 
 @config 'tailwind.config.js';
 
-.lg\:grid-cols-6 {
-    grid-template-columns: repeat(6,minmax(0,1fr))
-}

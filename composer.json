@@ -42,7 +42,8 @@
     },
     "autoload": {
         "files": [
-            "app/Helpers/__helpers.php"
+            "app/Helpers/__helpers.php",
+            "app/Helpers/__subscription.php"
         ],
         "psr-4": {
             "App\\": "app/",

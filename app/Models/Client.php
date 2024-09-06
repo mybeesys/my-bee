@@ -12,6 +12,8 @@ class Client extends BaseModel
 
     protected $guarded = [];
 
+    protected $with = ['subscription.plan'];
+
     //companies
     public function tenants(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

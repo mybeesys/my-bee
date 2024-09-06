@@ -54,12 +54,6 @@ use Illuminate\Support\Str;
 
 class SalesInvoiceResource extends Resource
 {
-    protected $listeners = ['test' => 'incrementPostCount'];
-
-    public function incrementPostCount()
-    {
-
-    }
 
     protected static ?string $model = Invoice::class;
 
@@ -79,7 +73,6 @@ class SalesInvoiceResource extends Resource
     {
         return __('fields.sales_invoice');
     }
-
 
     public static function getPluralLabel(): ?string
     {

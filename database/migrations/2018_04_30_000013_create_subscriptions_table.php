@@ -16,10 +16,9 @@ return new class extends Migration
             $table->foreignId('plan_id')->index()->references('id')->on('plans');
             $table->foreignId('client_id')->index()->references('id')->on('clients');
             $table->dateTime('start_date');
-            $table->dateTime('next_billing_date')->nullable();
             $table->boolean('subscribed')->default(1);
             $table->boolean('expired')->default(0);
-            $table->decimal('price', 19,4);
+            $table->decimal('price', 21,8);
             $table->timestamps();
         });
     }

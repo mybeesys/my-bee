@@ -77,21 +77,21 @@ class PlanResource extends Resource
                             ])
                             ->afterStateUpdated(function (Forms\Set $set, $state) {
                                 if ($state == Plan::SPAN_ONE_TIME)
-                                    $set('span_in_days', -1);
+                                    $set('span_duration', 'unlimited');
                                 else
-                                    $set('span_in_days', 30);
+                                    $set('span_duration', null);
 
                             })
                             ->required(),
 
-                        Forms\Components\TextInput::make('span_in_days')
-                            ->label(__('fields.span_in_days'))
+                        Forms\Components\Select::make('span_duration')
+                            ->label(__('fields.span_duration'))
                             ->visible(fn(Forms\Get $get) => $get('span') === Plan::SPAN_SPECIFIED)
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(1096) //3 years
+                            ->options([
+                                'monthly' => __('fields.monthly'),
+                                'yearly' => __('fields.yearly'),
+                            ])
                             ->required(),
-
 
                         Forms\Components\TextInput::make('price')
                             ->label(__('fields.price'))

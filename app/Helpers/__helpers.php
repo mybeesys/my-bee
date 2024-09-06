@@ -136,15 +136,12 @@ if (!function_exists('get_client')) {
      * if false returns null
      * </p>
      */
-    function get_client($throwError = false): ?\App\Models\Client
+    function get_client(): ?\App\Models\Client
     {
-        if (auth()->check()) {
-            return auth()->user()->client;
+        if ($user = get_user()) {
+            return $user->client;
         }
-        if ($throwError) {
-            throw new Exception("User not logged in");
-        }
-        return null;
+        throw new Exception("User not logged in");
     }
 }
 
@@ -915,6 +912,13 @@ if (!function_exists('get_tenant')) {
             return Tenant::firstWhere('slug', request()->header('Store-Slug'));
 
         return null;
+    }
+}
+
+if (!function_exists('get_user')) {
+    function get_user(): \Illuminate\Contracts\Auth\Authenticatable
+    {
+        return auth()->user() ?? auth('sanctum')->user();
     }
 }
 

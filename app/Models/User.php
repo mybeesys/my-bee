@@ -70,7 +70,7 @@ class User extends Authenticatable implements MustVerifyEmail, HasTenants, Filam
     ];
 
 
-    protected $with = ['tenants'];
+    protected $with = ['tenants', 'client'];
 
     public function tenant(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
