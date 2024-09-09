@@ -28,7 +28,7 @@ class ListSalesInvoices extends ListRecords
                 $link_text = "بترقية خطتك";
                 $msg = str($msg)->replace('بترقية خطتك', "<a style='color: #0000cc; text-decoration: underline' href='$url'> $link_text </a>");
             }else{
-
+                $msg = str($msg)->replace('upgrade your plan', "<a style='color: #0000cc; text-decoration: underline' href='$url'> upgrade your plan </a>");
             }
             return new HtmlString("<span class='text-sm font-bold' style='color: #e15858;'>$msg</span>");
         }
