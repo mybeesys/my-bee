@@ -6,6 +6,7 @@ use App\Filament\Tenant\Resources\PaymentVoucherResource;
 use App\Filament\Tenant\Resources\ReceiptVoucherResource;
 use App\Services\AccountingService;
 use App\Services\MathService;
+use App\Services\PricingService;
 use App\Traits\HasPrefixedId;
 use Dompdf\Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -137,9 +138,7 @@ class Invoice extends BaseModel
         foreach ($this->items as $item) {
             $subTotal = $item->price * $item->qty;
 
-            //orderDetails available in sale invoice only
-            if ($item->orderDetails)
-                $extras += $item->orderDetails->orderDetailsExtras->sum('unit_price');
+            $extras += PricingService::instance()->getItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
 
             if ($applyDiscount) {
                 $subTotal -= $item->discount;

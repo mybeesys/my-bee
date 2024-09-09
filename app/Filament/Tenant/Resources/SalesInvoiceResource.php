@@ -28,6 +28,7 @@ use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -163,10 +164,11 @@ class SalesInvoiceResource extends Resource
                     ->key('items-section')
                     ->headerActions([
                         Forms\Components\Actions\Action::make('add_product')
-                            ->color(Color::Slate)
+                            ->color('primary')
                             ->label(__('fields.add_product'))
                             ->disabled($form->getRecord()?->locked_at !== null)
-                            ->modalSubmitActionLabel(__('fields.add'))
+                            ->modalSubmitAction(fn(StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
+                            ->modalCancelAction(fn(StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
                             ->form([
                                 Forms\Components\Section::make()
                                     ->schema([
@@ -187,7 +189,8 @@ class SalesInvoiceResource extends Resource
                                             ->required()
                                             ->live()
                                             ->searchable()
-                                            ->options(Product::groupedAsOptions())
+                                            ->options(Product::pluck('name', 'id'))
+//                                            ->options(Product::groupedAsOptions())
                                             ->afterStateUpdated(function ($state, Forms\Set $set) {
                                                 if ($state) {
                                                     $product = Product::find($state);
@@ -250,7 +253,7 @@ class SalesInvoiceResource extends Resource
                             ])
                             ->action(function (array $data, $livewire, Forms\Components\Actions\Action $action, array $arguments) {
 
-                                $product = Product::with(['variants'])->findOrFail($data['product_id']);
+                                $product = Product::with(['variants', 'extras'])->findOrFail($data['product_id']);
 
                                 $existingDetails = $livewire->data['items'] ?? [];
 
@@ -324,6 +327,7 @@ class SalesInvoiceResource extends Resource
                                         'tax_profile_id' => null,
                                         'tax_profile_data' => null,
                                         'product_extras_ids' => $productExtrasIds,
+                                        'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
                                         'extras' => implode(', ', $productExtras->pluck('name')->toArray()),
                                         'extras_total' => PricingService::instance()->getRetailPrices($productExtras),
                                     ];
@@ -331,10 +335,10 @@ class SalesInvoiceResource extends Resource
 
                                 $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
 
-                                if ($itemExists) {
-                                    fns()->sendWarning(__('fields.order_details_item_already_exists'));
-                                    $action->halt();
-                                }
+//                                if ($itemExists) {
+//                                    fns()->sendWarning(__('fields.order_details_item_already_exists'));
+//                                    $action->halt();
+//                                }
 
 
                                 foreach ($livewire->data['items'] as $index => $it) {
@@ -442,19 +446,37 @@ class SalesInvoiceResource extends Resource
 
                                 Forms\Components\Hidden::make('tax'),
 
-                                Forms\Components\Hidden::make('product_extras_ids')->dehydrated(false),
+//                                Forms\Components\Hidden::make('product_extras_ids')->dehydrated(false),
 
                                 TextInput::make('name')->label(__('fields.product'))->readOnly(),
 
-                                TextInput::make('extras')
+                                Forms\Components\Select::make('product_extras_ids')
                                     ->label(__('fields.product_extras'))
-                                    ->suffix(function (Get $get) {
-                                        if ($extras_total = $get('extras_total')) {
-                                            return format_amount($extras_total);
-                                        }
+                                    ->live()
+                                    ->default(function (Get $get) {
+                                        return ProductExtra::findMany($get('available_product_extras_ids'))->pluck('name', 'id');
                                     })
-                                    ->dehydrated(false)
-                                    ->readOnly(),
+                                    ->options(function (Get $get) {
+                                        return ProductExtra::findMany($get('available_product_extras_ids'))->pluck('name', 'id');
+                                    })
+                                    ->afterStateUpdated(function (Get $get, $livewire) {
+                                        self::updateInvoicePropertiesFromLivewire($livewire, true);
+                                    })
+                                    ->suffix(function (Get $get) {
+                                        $exts = ProductExtra::findMany($get('product_extras_ids'));
+                                        return format_amount(PricingService::instance()->getItemsPrices($exts));
+                                    })
+                                    ->multiple(),
+
+//                                TextInput::make('extras')
+//                                    ->label(__('fields.product_extras'))
+//                                    ->suffix(function (Get $get) {
+//                                        if ($extras_total = $get('extras_total')) {
+//                                            return format_amount($extras_total);
+//                                        }
+//                                    })
+//                                    ->dehydrated(false)
+//                                    ->readOnly(),
 
                                 TextInput::make('qty')
                                     ->live(true)
@@ -1339,9 +1361,12 @@ class SalesInvoiceResource extends Resource
 
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
-            $extras_total = $item['extras_total'] ?? 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
+
+            if(is_number($qty))
+                $extras_total = $extras_total * $qty;
 
             if (is_number($qty) and is_number($price))
                 $totals['total_purchases'] += $qty * $price;
@@ -1433,11 +1458,13 @@ class SalesInvoiceResource extends Resource
 
         $newItems = [];
         foreach ($livewire->data['items'] ?? [] as $item) {
-            $extras_total = $item['extras_total'] ?? 0;
-
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
             $tax = 0;
+
+            if(is_number($qty))
+                $extras_total = $extras_total * $qty;
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {

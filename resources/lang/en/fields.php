@@ -893,5 +893,10 @@ return [
     'to_be_returned_amount_is_greater_than_paid_amount' => 'To-be returned amount is greater than paid amount',
 
     'sales_invoices_maxed_out_alert' => 'You have reached the maximum number of allowed sale invoices. upgrade your plan to create more.',
+
+    'close' => 'Close',
+
+    'product_tax_hint' => 'This tax will be used to display it in the shop',
+
 ];
 //

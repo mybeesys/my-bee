@@ -45,11 +45,12 @@ class EditProduct extends EditRecord
         }
     }
 
-    protected function afterSave(): void
+    protected function beforeSave(): void
     {
         $this->handlePricing($this->record, $this->data);
 //        $this->redirect($this->getResource()::getUrl('edit', ['record' => $this->record->id]));
     }
+
 
     protected function handlePricing($record, $data): void
     {

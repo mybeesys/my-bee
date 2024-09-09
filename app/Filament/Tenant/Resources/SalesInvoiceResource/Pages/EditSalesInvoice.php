@@ -58,6 +58,7 @@ class EditSalesInvoice extends EditRecord
                 "product_id" => $invoiceItem->product_id,
                 'product_variant_id' => $invoiceItem->product_variant_id,
                 'product_extras_ids' => $invoiceItem->extras->pluck('product_extra_id')->toArray(),
+                'available_product_extras_ids' => $invoiceItem->product->extras->pluck('id')->toArray(),
                 'extras_total' => PricingService::instance()->getRetailPrices(ProductExtra::with('lastPrice')->findMany($invoiceItem->extras->pluck('product_extra_id')->toArray())),
                 "extras" => implode(', ', $invoiceItem->extras->pluck('display_name')->toArray()),
                 "qty" => $invoiceItem->qty,

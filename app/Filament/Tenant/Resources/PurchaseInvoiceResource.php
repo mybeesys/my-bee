@@ -31,6 +31,7 @@ use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -218,10 +219,11 @@ class PurchaseInvoiceResource extends Resource
                         ->key('items-section')
                         ->headerActions([
                             Forms\Components\Actions\Action::make('add_product')
-                                ->color(Color::Slate)
+                                ->color('primary')
                                 ->label(__('fields.add_product'))
                                 ->disabled($form->getRecord()?->locked_at !== null)
-                                ->modalSubmitActionLabel(__('fields.add'))
+                                ->modalSubmitAction(fn (StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
+                                ->modalCancelAction(fn (StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
                                 ->form([
                                     Forms\Components\Section::make()
                                         ->schema([
@@ -242,7 +244,8 @@ class PurchaseInvoiceResource extends Resource
                                                 ->required()
                                                 ->live()
                                                 ->searchable()
-                                                ->options(Product::groupedAsOptions())
+//                                                ->options(Product::groupedAsOptions())
+                                                ->options(Product::pluck('name', 'id'))
                                                 ->afterStateUpdated(function ($state, Forms\Set $set) {
                                                     if ($state) {
                                                         $product = Product::find($state);
@@ -726,7 +729,7 @@ class PurchaseInvoiceResource extends Resource
                             Forms\Components\Placeholder::make('total_invoice_with_taxes')
                                 ->label(__('fields.invoice_total_with_tax'))
                                 ->dehydrated(false)
-                                ->helperText(function ($livewire){
+                                ->helperText(function ($livewire) {
                                     $value = $livewire->data['total_invoice_with_taxes'];
                                     $value = numbers_to_words($value);
                                     return new HtmlString("<h3 style='color: #ff3e3e;font-weight: bolder'>$value</h3>");
@@ -758,7 +761,7 @@ class PurchaseInvoiceResource extends Resource
 
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label(__('fields.supplier'))
-                    ->url(function ($record){
+                    ->url(function ($record) {
                         return SupplierResource::getUrl('edit', ['record' => $record->supplier_id]);
                     }, true)
                     ->color(Color::Sky)
@@ -843,7 +846,7 @@ class PurchaseInvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('invoice_total')
                     ->label(__('fields.amount_money'))
                     ->color(Color::Violet)
-                    ->description(function ($record){
+                    ->description(function ($record) {
                         return numbers_to_words($record->getItemsCost(true, true, true));
                     })
                     ->getStateUsing(function ($record) {
@@ -939,7 +942,7 @@ class PurchaseInvoiceResource extends Resource
                                     $record->approveAndStockWarehouse();
 
                                     $tax = $record->items->sum('tax');
-                                    if($tax > 0){
+                                    if ($tax > 0) {
                                         $op = make_taxes_op();
                                         $accService = new AccountingService();
                                         $accService
@@ -1198,10 +1201,10 @@ class PurchaseInvoiceResource extends Resource
 
         $discountAmount = 0;
 
-        if($livewire->data['discount_amount'] ?? null > 0)
+        if ($livewire->data['discount_amount'] ?? null > 0)
             $discountAmount = $livewire->data['discount_amount'];
 
-        if($livewire->data['discount_percent'] ?? null > 0)
+        if ($livewire->data['discount_percent'] ?? null > 0)
             $discountAmount = $livewire->data['discount_percent'];
         $newItems = [];
         foreach ($livewire->data['items'] ?? [] as $item) {

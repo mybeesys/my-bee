@@ -17,6 +17,7 @@ class ProductExtra extends BaseModel
 
     protected $table = "product_extra";
 
+    protected $with = ['extra'];
     public function getFinanceNameAttribute()
     {
         return $this->product->name ." ". $this->extra->name;

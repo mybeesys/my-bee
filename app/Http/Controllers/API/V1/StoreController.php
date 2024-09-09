@@ -513,15 +513,6 @@ class StoreController extends BaseController
                 foreach ($item['extras'] ?? [] as $extra) {
                     $productExtra = ProductExtra::with(['lastPrice', 'extra'])->findOrFail($extra['id']);
 
-                    $od->orderDetailsExtras()->create([
-                        'tenant_id' => $tenant->id,
-                        'order_details_id' => $od->id,
-                        'product_extra_id' => $productExtra->id,
-                        'unit_price' => PricingService::instance()->getRetailPrice($productExtra),
-                        'display_name' => $productExtra->extra->name,
-                        'qty' => 1,
-                    ]);
-
                     $invoiceItem->extras()->create([
                         'tenant_id' => $tenant->id,
                         'invoice_item_id' => $invoiceItem->id,

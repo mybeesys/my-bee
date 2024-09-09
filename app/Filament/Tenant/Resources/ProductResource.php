@@ -576,6 +576,7 @@ class ProductResource extends Resource
                             ->label(__('fields.tax'))
                             ->placeholder('غير خاضع للضريبة')
                             ->options(TaxProfile::asOptions())
+                            ->helperText(__('fields.product_tax_hint'))
                             ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
                             ->createOptionUsing(function ($data) {
                                 $data['tenant_id'] = filament()->getTenant()->id;
