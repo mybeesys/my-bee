@@ -70,6 +70,7 @@ use Illuminate\Support\Facades\Route;
 //});
 
 
+//dd(\App\Services\MathService::instance()->getTax(100, 15, true));
 if (config('app.env') === "production") {
     Route::get('/', function () {
         return redirect('https://client.mybeesystem.com');

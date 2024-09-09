@@ -224,7 +224,7 @@ class Invoice extends BaseModel
 
                 $subTotal = $item->price * $item->qty;
                 $subTotal -= $item->discount;
-                $total += MathService::instance()->getTax($subTotal, $total_percentages);
+                $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->prices_includes_taxes);
 
             } else {
                 $subTotal = $item->price * $item->qty;
@@ -232,7 +232,7 @@ class Invoice extends BaseModel
 
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
-                    $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile);
+                    $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->prices_includes_taxes);
                 }
             }
 

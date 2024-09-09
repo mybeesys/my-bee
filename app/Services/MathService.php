@@ -12,24 +12,26 @@ class MathService
         return new self();
     }
 
-    public function getTax($total, $tax_percent): float
+    public function getTax($total, $tax_percent, bool $prices_includes_taxes = false): float
     {
-//        =115/1.15*.15
-        $percent = floatval("1.$tax_percent");
-        return floatval(($total / $percent) * floatval("0.$tax_percent"));
+        if ($prices_includes_taxes) {
+            $result = 1 + ($tax_percent / 100);
+            $result = $total / $result;
+            return $total - $result;
+        } else {
+            return $total * ($tax_percent / 100);
+        }
     }
 
-    public function getTaxFromTaxProfile($total, TaxProfile $taxProfile): float
+    public function getTaxFromTaxProfile($total, TaxProfile $taxProfile, bool $prices_includes_taxes = false): float
     {
-//        Excluding VAT from sale price:
-//        =115/1.15*.15
-        $tax_percent = $taxProfile->total_percentages;
-        $percent = (float)$tax_percent;
-        $x = 100 + $percent;
-        return ($total * ($percent / $x));
-
-//        $tax_percent = $taxProfile->total_percentages;
-//        $percent = (float)"1.$tax_percent";
-//        return ($total / $percent) * (float)"0.$tax_percent";
+        $tax_percent = (float)$taxProfile->total_percentages;
+        if ($prices_includes_taxes) {
+            $result = 1 + ($tax_percent / 100);
+            $result = $total / $result;
+            return $total - $result;
+        } else {
+            return $total * ($tax_percent / 100);
+        }
     }
 }

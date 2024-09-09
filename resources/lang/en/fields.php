@@ -898,5 +898,6 @@ return [
 
     'product_tax_hint' => 'This tax will be used to display it in the shop',
 
+    'prices_includes_taxes' => 'Is Sale Inclusive of VAT',
 ];
 //

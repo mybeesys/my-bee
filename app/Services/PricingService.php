@@ -130,22 +130,18 @@ class PricingService
         return $model?->lastPrice ?? $default;
     }
 
-    public function getTaxAmount(Product $product, $price, int $qty)
+    public function getTaxAmount(Product $product, $price, int $qty, $prices_includes_taxes = false)
     {
         $tax = 0;
         if ($product->taxProfile?->total_percentages) {
-            $tax = MathService::instance()->getTax($price * $qty, $product->taxProfile?->total_percentages);
-//            $sub_total = $price * $qty;
-//            $tax = $sub_total * ($product->taxProfile->total_percentages / 100);
+            $tax = MathService::instance()->getTax($price * $qty, $product->taxProfile?->total_percentages, $prices_includes_taxes);
         }
         return $tax;
     }
 
-    public function getTaxAmountFromProfile(TaxProfile $taxProfile, $price, int $qty)
+    public function getTaxAmountFromProfile(TaxProfile $taxProfile, $price, int $qty, $prices_includes_taxes = false)
     {
-        return MathService::instance()->getTax($price * $qty, $taxProfile->total_percentages);
-//        $sub_total = $price * $qty;
-//        return $sub_total * ($taxProfile->total_percentages / 100);
+        return MathService::instance()->getTax($price * $qty, $taxProfile->total_percentages, $prices_includes_taxes);
     }
 
     public function getProductVariantsPriceRange(Product $product, $default = "-")
