@@ -26,7 +26,7 @@ class ListSalesInvoices extends ListRecords
             $url = Subscription::getUrl();
             if(str($msg)->contains('بترقية')){
                 $link_text = "بترقية خطتك";
-                $msg = str($msg)->replace('بترقية خطتك', "<a style='color: #0000cc; text-decoration: underline' href='{{$url}}'> $link_text </a>");
+                $msg = str($msg)->replace('بترقية خطتك', "<a style='color: #0000cc; text-decoration: underline' href='$url'> $link_text </a>");
             }else{
 
             }
