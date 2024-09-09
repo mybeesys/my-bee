@@ -25,7 +25,8 @@ class ListSalesInvoices extends ListRecords
             $msg = __('fields.sales_invoices_maxed_out_alert');
             $url = Subscription::getUrl();
             if(str($msg)->contains('بترقية')){
-                $msg = str($msg)->replace('بترقية خطتك', "<a style='color: #0000cc; text-decoration: underline ' href='{{$url}}'> بترقية خطتك </a>");
+                $link_text = "بترقية خطتك";
+                $msg = str($msg)->replace('بترقية خطتك', "<a style='color: #0000cc; text-decoration: underline' href='{{$url}}'> $link_text </a>");
             }else{
 
             }
