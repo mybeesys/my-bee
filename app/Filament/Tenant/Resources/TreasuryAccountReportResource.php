@@ -261,12 +261,13 @@ class TreasuryAccountReportResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-//        $transaction_ids = CashDet::with('account')->whereHas('account', function (Builder $q) {
+//        $transaction_ids = CashDet::with(['account', 'operation', 'account.acc3', 'currency', 'invoice'])->whereHas('account', function (Builder $q) {
 //            $q->where('acc3_code', '1201');
 //        })->pluck('transaction_id')->toArray();
 //
 //        return parent::getEloquentQuery()->with(['operation', 'account.acc3', 'currency', 'invoice'])
 //            ->whereIn('transaction_id', $transaction_ids)
+//        ->whereRelation('account', 'item_type', null)
 //            ->latest();
 
 

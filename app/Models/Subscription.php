@@ -41,19 +41,17 @@ class Subscription extends BaseModel
             throw new \Exception("Client is not valid for subscription.");
         }
 
-        if ($client->subscription) {
-            if ($client->subscription->plan_id === $plan->id)
-                throw new \Exception("Tenant already subscribed to this plan.");
-
-            $client->subscription->update(['subscribed' => 0]);
-        }
+//        if ($client->subscription) {
+//            if ($client->subscription->plan_id === $plan->id)
+//                throw new \Exception("Tenant already subscribed to this plan.");
+//
+//            $client->subscription->update(['subscribed' => 0]);
+//        }
 
         Subscription::create([
             'plan_id' => $plan->id,
             'client_id' => $client->id,
             'start_date' => now(),
-            'subscribed' => 1,
-            'expired' => 0,
             'price' => $plan->price,
         ]);
 

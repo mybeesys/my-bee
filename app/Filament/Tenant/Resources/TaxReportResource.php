@@ -248,13 +248,19 @@ class TaxReportResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $transaction_ids = CashDet::with('account')->whereHas('account', function (Builder $q) {
-            $q->where('acc3_code', '1228');
-        })->pluck('transaction_id')->toArray();
+//        $transaction_ids = CashDet::with('account')->whereHas('account', function (Builder $q) {
+//            $q->where('acc3_code', '1228');
+//        })->pluck('transaction_id')->toArray();
+//
+//        return parent::getEloquentQuery()->with(['operation', 'account.acc3', 'currency', 'invoice'])
+//            ->whereIn('transaction_id', $transaction_ids)
+//            ->latest();
 
-        return parent::getEloquentQuery()->with(['operation', 'account.acc3', 'currency', 'invoice'])
-            ->whereIn('transaction_id', $transaction_ids)
-            ->latest();
+        return parent::getEloquentQuery()->with(['account', 'operation', 'account.acc3', 'currency', 'invoice'])
+            ->whereHas('account', function (Builder $q) {
+                $q->where('acc3_code', '1228');
+            })
+            ->orderByDesc('id');
     }
 
     public static function getRelations(): array

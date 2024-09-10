@@ -551,6 +551,7 @@ class SalesInvoiceResource extends Resource
                     ]),
 
                 Forms\Components\Toggle::make('prices_includes_taxes')
+                    ->default(true)
                     ->label(__('fields.prices_includes_taxes'))
                     ->live()
                     ->afterStateUpdated(fn($livewire) => self::updateInvoicePropertiesFromLivewire($livewire)),

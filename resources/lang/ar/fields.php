@@ -904,7 +904,7 @@ return [
 
     'product_tax_hint' => 'سيتم الإستفاده من هذه الضريبة لعرضها في المتجر',
 
-    'prices_includes_taxes' => 'الأسعار شمالة الضريبة',
+    'prices_includes_taxes' => 'الأسعار شاملة الضريبة',
 
 ];
 //

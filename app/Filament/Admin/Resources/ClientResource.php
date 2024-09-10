@@ -384,10 +384,10 @@ class ClientResource extends Resource
                                 TextEntry::make('subscription.plan.name')->label(__('fields.subscription')),
                                 TextEntry::make('subscription.plan.span')->label(__('fields.span')),
                                 TextEntry::make('subscription.start_date')->label(__('fields.start_date')),
-                                TextEntry::make('subscription.subscribed')
-                                    ->formatStateUsing(fn($state) => __("fields.$state"))
-                                    ->badge()
-                                    ->label(__('fields.subscribed')),
+//                                TextEntry::make('subscription.subscribed')
+//                                    ->formatStateUsing(fn($state) => __("fields.$state"))
+//                                    ->badge()
+//                                    ->label(__('fields.subscribed')),
                             ])->columns(2),
                     ]),
                 Tabs\Tab::make(__('fields.account_and_login_details'))

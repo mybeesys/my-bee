@@ -75,11 +75,11 @@ class Acc4 extends BaseModel
             if ($acc4->item) {
                 $id = $useItemId ? $acc4->item->id : $acc4->code;
                 $name = $with_code ? $acc4->item->finance_name . " - $acc4->code" : $acc4->item->finance_name;
-                $options[$id] = $name;
+                $options[$id] = $name ?? "N/A";
             } else {
                 if (!$useItemId){
                     $name = $with_code ? $acc4->name . " - $acc4->code" : $acc4->name;
-                    $options[$acc4->code] = $name;
+                    $options[$acc4->code] = $name ?? "N/A";;
                 }
             }
         }

@@ -21,6 +21,10 @@ class Service extends BaseModel
         return ['name' => $this->type->name, 'acc3_code' => 1204];
     }
 
+    public function getNameAttributes(): array
+    {
+        return $this->type->name;
+    }
     public function type(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(ServiceType::class, 'service_type_id');

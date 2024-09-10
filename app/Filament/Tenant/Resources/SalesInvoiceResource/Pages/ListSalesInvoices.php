@@ -21,7 +21,7 @@ class ListSalesInvoices extends ListRecords
 
     public function getSubheading(): string|Htmlable|null
     {
-        if(!sales_invoices_maxed_out()){
+        if(sales_invoices_maxed_out()){
             $msg = __('fields.sales_invoices_maxed_out_alert');
             $url = Subscription::getUrl();
             if(str($msg)->contains('بترقية')){

@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('plan_id')->index()->references('id')->on('plans');
             $table->foreignId('client_id')->index()->references('id')->on('clients');
+            $table->string('payment_gateway')->nullable();
+            $table->string('payment_ref_no')->nullable();
             $table->dateTime('start_date');
-            $table->boolean('subscribed')->default(1);
-            $table->boolean('expired')->default(0);
             $table->decimal('price', 21,8);
+            $table->dateTime('paid_at')->nullable();
             $table->timestamps();
         });
     }
