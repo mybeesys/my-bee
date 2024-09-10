@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Exports\CashDetExporter;
 use App\Filament\Tenant\Resources\AccountStatementResource\Pages;
 use App\Filament\Tenant\Resources\AccountStatementResource\RelationManagers;
 use App\Models\Acc4;
@@ -163,6 +164,14 @@ class AccountStatementResource extends Resource
                     ->sortable(),
 
             ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(CashDetExporter::class)
+            ])
+            ->bulkActions([
+                Tables\Actions\ExportBulkAction::make()
+                    ->exporter(CashDetExporter::class)
+            ])
             ->filters([
 //                Tables\Filters\SelectFilter::make('currency_id')
 //                    ->label(__('fields.currency'))
@@ -241,8 +250,6 @@ class AccountStatementResource extends Resource
 //                        })
                 ]),
 
-            ])
-            ->bulkActions([
             ]);
     }
 

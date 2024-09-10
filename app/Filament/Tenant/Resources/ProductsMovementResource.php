@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Exports\ProductMovementExporter;
 use App\Filament\Tenant\Resources\ProductsMovementResource\Pages;
 use App\Filament\Tenant\Resources\ProductsMovementResource\RelationManagers;
 use App\Models\Customer;
@@ -129,6 +130,14 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.date'))
                     ->dateTime('F j, Y, g:i a')
                     ->sortable(),
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(ProductMovementExporter::class)
+            ])
+            ->bulkActions([
+                Tables\Actions\ExportBulkAction::make()
+                    ->exporter(ProductMovementExporter::class)
             ])
             ->filters([
 

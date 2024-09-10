@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Exports\CashDetExporter;
 use App\Filament\Tenant\Resources\TreasuryAccountReportResource\Pages;
 use App\Filament\Tenant\Resources\TreasuryAccountReportResource\RelationManagers;
 use App\Models\CashDet;
@@ -182,6 +183,14 @@ class TreasuryAccountReportResource extends Resource
                     ->dateTime('M j, Y')
                     ->sortable(),
 
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(CashDetExporter::class)
+            ])
+            ->bulkActions([
+                Tables\Actions\ExportBulkAction::make()
+                    ->exporter(CashDetExporter::class)
             ])
             ->filters([
 //                Tables\Filters\SelectFilter::make('currency_id')

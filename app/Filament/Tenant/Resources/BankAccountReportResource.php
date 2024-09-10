@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Exports\CashDetExporter;
 use App\Filament\Tenant\Resources\BankAccountReportResource\Pages;
 use App\Filament\Tenant\Resources\BankAccountReportResource\RelationManagers;
 use App\Models\BankAccountReport;
@@ -168,6 +169,14 @@ class BankAccountReportResource extends Resource
                     ->dateTime('M j, Y')
                     ->sortable(),
 
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(CashDetExporter::class)
+            ])
+            ->bulkActions([
+                Tables\Actions\ExportBulkAction::make()
+                    ->exporter(CashDetExporter::class)
             ])
             ->filters([
 //                Tables\Filters\SelectFilter::make('currency_id')
