@@ -6,8 +6,10 @@ use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Settings;
 use App\Filament\Tenant\Resources\SupplierResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\ActionSize;
 
 class ListSuppliers extends ListRecords
 {
@@ -19,6 +21,11 @@ class ListSuppliers extends ListRecords
             AddToFavourites::make('fav')
                 ->settingKey('fav.suppliers'),
             CreateAction::make(),
+            Action::make('back')
+                ->icon('heroicon-m-arrow-uturn-left')
+                ->size(ActionSize::Large)
+                ->url(CustomSettings::getUrl())
+                ->iconButton(),
         ];
     }
 

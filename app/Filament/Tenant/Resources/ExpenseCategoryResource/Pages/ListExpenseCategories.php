@@ -7,7 +7,9 @@ use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Settings;
 use App\Filament\Tenant\Resources\ExpenseCategoryResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\ActionSize;
 
 class ListExpenseCategories extends ListRecords
 {
@@ -26,6 +28,11 @@ class ListExpenseCategories extends ListRecords
             AddToFavourites::make('fav')
                 ->settingKey('fav.expenses_categories'),
             Actions\CreateAction::make(),
+            Action::make('back')
+                ->icon('heroicon-m-arrow-uturn-left')
+                ->size(ActionSize::Large)
+                ->url(CustomSettings::getUrl())
+                ->iconButton(),
         ];
     }
 }

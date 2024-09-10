@@ -6,7 +6,9 @@ use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Settings;
 use App\Filament\Tenant\Resources\Shield\RoleResource;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\ActionSize;
 
 class ListRoles extends ListRecords
 {
@@ -16,6 +18,11 @@ class ListRoles extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+            Action::make('back')
+                ->icon('heroicon-m-arrow-uturn-left')
+                ->size(ActionSize::Large)
+                ->url(CustomSettings::getUrl())
+                ->iconButton(),
         ];
     }
 

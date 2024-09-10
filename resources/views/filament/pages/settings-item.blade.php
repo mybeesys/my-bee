@@ -1,6 +1,6 @@
 
 <a
-    href="{{ $url }}"
+    href="{{ $url }}" wire:navigate
     class="group relative aspect-square rounded-full bg-muted p-1 transition-all hover:scale-105 hover:bg-blue-400 hover:text-blue-50 focus:scale-105 focus:bg-muted focus:text-accent-foreground"
 >
     <div class="flex flex-col items-center justify-center h-full">

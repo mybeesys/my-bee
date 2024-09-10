@@ -20,6 +20,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\ActionSize;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
@@ -108,6 +109,11 @@ class ListWarehouses extends ListRecords
 
             CreateAction::make(),
 
+            Action::make('back')
+                ->icon('heroicon-m-arrow-uturn-left')
+                ->size(ActionSize::Large)
+                ->url(CustomSettings::getUrl())
+                ->iconButton(),
         ];
     }
 

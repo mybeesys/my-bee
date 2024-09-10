@@ -5,8 +5,10 @@ namespace App\Filament\Tenant\Resources\UserResource\Pages;
 use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Settings;
 use App\Filament\Tenant\Resources\UserResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\ActionSize;
 
 class ListUsers extends ListRecords
 {
@@ -16,6 +18,11 @@ class ListUsers extends ListRecords
     {
         return [
             CreateAction::make(),
+            Action::make('back')
+                ->icon('heroicon-m-arrow-uturn-left')
+                ->size(ActionSize::Large)
+                ->url(CustomSettings::getUrl())
+                ->iconButton(),
         ];
     }
 

@@ -6,9 +6,11 @@ use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Settings;
 use App\Filament\Tenant\Resources\CategoryResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\LocaleSwitcher;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Support\Enums\ActionSize;
 
 class ListCategories extends ListRecords
 {
@@ -23,6 +25,11 @@ class ListCategories extends ListRecords
                 ->settingKey('fav.products_categories'),
             LocaleSwitcher::make(),
             CreateAction::make(),
+            Action::make('back')
+                ->icon('heroicon-m-arrow-uturn-left')
+                ->size(ActionSize::Large)
+                ->url(CustomSettings::getUrl())
+                ->iconButton(),
         ];
     }
 
