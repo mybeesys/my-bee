@@ -156,16 +156,6 @@ class EditTenantProfile extends BaseTenantProfile
 
                                     ]),
 
-//                        SpatieMediaLibraryFileUpload::make('logo')
-//                            ->label(__('fields.store_logo'))
-//                            ->image()
-//                            ->openable()
-//                            ->downloadable()
-//                            ->maxSize(1024)
-//                            ->disk('public')
-//                            ->collection('logos')
-//                            ->directory('logos'),
-
                                     SpatieMediaLibraryFileUpload::make('cover')
                                         ->label(__('fields.store_cover'))
                                         ->image()
