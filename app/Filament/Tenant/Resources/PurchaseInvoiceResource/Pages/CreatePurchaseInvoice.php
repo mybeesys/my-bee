@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources\PurchaseInvoiceResource\Pages;
 
 use App\Filament\Tenant\Resources\PurchaseInvoiceResource;
 use App\Filament\Tenant\Resources\TaxProfileResource;
+use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceStatus;
 use App\Models\Product;
@@ -84,10 +85,11 @@ class CreatePurchaseInvoice extends CreateRecord
         return [
         ];
     }
-
-    protected function afterCreate(): void
+    protected function mutateFormDataBeforeCreate(array $data): array
     {
-        // Runs after the form fields are saved to the database.
+        if(Invoice::firstWhere('no', $this->data['no'])){
+            $data['no'] = generate_invoice_no();
+        }
+        return $data;
     }
-
 }

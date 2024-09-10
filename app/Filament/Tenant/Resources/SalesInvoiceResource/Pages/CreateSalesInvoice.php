@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources\SalesInvoiceResource\Pages;
 
 use App\Filament\Tenant\Resources\SalesInvoiceResource;
 use App\Models\AdditionalCost;
+use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\PriceOffer;
 use App\Models\PriceOfferDetails;
@@ -129,6 +130,14 @@ class CreateSalesInvoice extends CreateRecord
 
             self::updateInvoicePropertiesFromLivewire($this);
         }
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        if(Invoice::firstWhere('no', $this->data['no'])){
+            $data['no'] = generate_invoice_no();
+        }
+        return $data;
     }
 
     protected function afterCreate(): void

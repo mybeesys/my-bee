@@ -417,6 +417,11 @@ class PurchaseInvoiceResource extends Resource
                                         ->markAsRequired()
                                         ->label(__('fields.tax_profile')),
 
+                                    Header::make('tax')
+                                        ->width("120px")
+                                        ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                        ->label(__('fields.tax')),
+
                                     Header::make('sub_total')
                                         ->width("150px")
                                         ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
@@ -458,8 +463,6 @@ class PurchaseInvoiceResource extends Resource
                                     Forms\Components\Hidden::make('product_id'),
                                     Forms\Components\Hidden::make('product_variant_id'),
                                     Forms\Components\Hidden::make('tax_profile_data'),
-
-                                    Forms\Components\Hidden::make('tax'),
 
                                     TextInput::make('name')->label(__('fields.product'))->readOnly(),
 
@@ -522,6 +525,10 @@ class PurchaseInvoiceResource extends Resource
                                         ->options(TaxProfile::asOptions())
                                         ->searchable(),
 
+                                    TextInput::make('tax')
+                                        ->label(__('fields.tax'))
+                                        ->readOnly(),
+
 
                                     TextInput::make('sub_total')
                                         ->label(__('fields.sub_total'))
@@ -530,6 +537,12 @@ class PurchaseInvoiceResource extends Resource
 
                                 ])
                         ]),
+
+                    Forms\Components\Toggle::make('prices_includes_taxes')
+                        ->default(true)
+                        ->label(__('fields.prices_includes_taxes'))
+                        ->live()
+                        ->afterStateUpdated(fn($livewire) => self::updateInvoicePropertiesFromLivewire($livewire)),
 
                     Forms\Components\Section::make(__('fields.additional_costs'))
                         ->disabled($form->getRecord()?->locked_at !== null)
@@ -1103,7 +1116,9 @@ class PurchaseInvoiceResource extends Resource
     {
         $startTime = microtime(true);
 
-        self::updateItemsDiscount($livewire);
+        self::updateItems($livewire);
+
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
 
         $items = $livewire->data['items'] ?? [];
         $additionalCosts = $livewire->data['additional_costs'] ?? [];
@@ -1150,7 +1165,7 @@ class PurchaseInvoiceResource extends Resource
                     if (is_number($discount))
                         $sub_total -= $discount;
 
-                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total, $taxProfile);
+                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total, $taxProfile, $prices_includes_taxes);
                     $totals['total_taxes'] += $tax;
                 }
             }
@@ -1179,7 +1194,12 @@ class PurchaseInvoiceResource extends Resource
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+
+            if($prices_includes_taxes){
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount']);
+            }else{
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            }
         }
 
         $endTime = microtime(true);
@@ -1189,12 +1209,14 @@ class PurchaseInvoiceResource extends Resource
         return $totals;
     }
 
-    public static function updateItemsDiscount($livewire)
+    public static function updateItems($livewire)
     {
 
         $taxProfiles = CacheService::instance()->remember('taxProfiles', 5 * 60, function () {
             return TaxProfile::all();
         });
+
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
 
         $discountOption = $livewire->data['discount_option'] ?? null;
         $discountMethod = $livewire->data['discount_method'] ?? null;
@@ -1248,12 +1270,15 @@ class PurchaseInvoiceResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = MathService::instance()->getTaxFromTaxProfile($original_sub_total, $taxProfile);
-                        $subTotal += $tax;
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $prices_includes_taxes);
+
+                        if(!$prices_includes_taxes){
+                            $subTotal += $tax;
+                        }
                     }
                 }
 
-                $item['tax'] = $tax;
+                $item['tax'] = number_format($tax, currency_decimals(), '.', '');
 
                 $item['sub_total'] = format_amount($subTotal);
 

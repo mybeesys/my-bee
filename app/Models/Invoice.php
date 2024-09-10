@@ -151,7 +151,7 @@ class Invoice extends BaseModel
             $total += $this->getAdditionalCosts();
         }
 
-        if ($applyTaxes) {
+        if ($applyTaxes and !$this->prices_includes_taxes) {
             $total += $this->getTaxesAsAmount();
         }
 
