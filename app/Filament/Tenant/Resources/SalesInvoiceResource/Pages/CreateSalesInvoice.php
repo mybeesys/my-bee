@@ -13,6 +13,7 @@ use App\Models\ProductExtra;
 use App\Models\ProductVariant;
 use App\Models\TaxProfile;
 use App\Services\CacheService;
+use App\Services\MathService;
 use App\Services\PricingService;
 use App\Services\StockService;
 use Filament\Resources\Pages\CreateRecord;
@@ -49,6 +50,15 @@ class CreateSalesInvoice extends CreateRecord
             $additional_costs = [];
 
             foreach ($priceOffer->details as $detail) {
+
+                $product = null;
+                if ($detail->item instanceof Product){
+                    $product = $detail->item;
+                }
+                if ($detail->item instanceof ProductVariant) {
+                    $product = $detail->item->product;
+                }
+
                 $items[Str::uuid()->toString()] = [
                     'tenant_id' => $detail->tenant_id,
                     'product_id' => $detail->item instanceof Product ? $detail->item->id : $detail->item->product->id,
@@ -62,14 +72,17 @@ class CreateSalesInvoice extends CreateRecord
                     'qty' => $detail->qty,
                     'discount' => number_format($detail->discount, currency_decimals(), '.', ''),
                     'price' => number_format($detail->unit_price, currency_decimals(), '.', ''),
-                    'tax' => PricingService::instance()->getTaxAmount($detail->item instanceof Product ? $detail->item : $detail->item->product, $detail->unit_price, $detail->qty),
+                    'tax_profile_id' => $detail['tax_profile_data']['id'] ?? null,
+                    'tax' => number_format($detail->tax, currency_decimals(), '.', ''),
                     'product_extras_ids' => $detail->offerDetailsExtras->pluck('product_extra_id')->toArray(),
-                    'extras_total' => PricingService::instance()->getRetailPrices(ProductExtra::with('lastPrice')->findMany($detail->offerDetailsExtras->pluck('product_extra_id')->toArray())),
-                    'extras' => implode(', ', ProductExtra::findMany($detail->offerDetailsExtras->pluck('product_extra_id')->toArray())->pluck('name')->toArray()),
+                    'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
+//                    'extras_total' => PricingService::instance()->getRetailPrices(ProductExtra::with('lastPrice')->findMany($detail->offerDetailsExtras->pluck('product_extra_id')->toArray())),
+//                    'extras' => implode(', ', ProductExtra::findMany($detail->offerDetailsExtras->pluck('product_extra_id')->toArray())->pluck('name')->toArray()),
                     'tax_profile_id' => $detail->tax_profile_id,
                     'tax_profile_data' => TaxProfile::find($detail->tax_profile_id)?->toArray(),
                     'sub_total' => format_amount(($detail->qty * $detail->unit_price)),
                 ];
+
             }
 
             foreach ($priceOffer->services as $service) {
@@ -121,6 +134,7 @@ class CreateSalesInvoice extends CreateRecord
                 'discount_method' => $priceOffer->discount_method,
                 'discount_amount' => $priceOffer->discount_amount,
                 'discount_percent' => $priceOffer->discount_percent,
+                'prices_includes_taxes' => $priceOffer->prices_includes_taxes,
                 'items' => $items,
                 'services' => $services,
                 'additional_costs' => $additional_costs,
@@ -198,7 +212,7 @@ class CreateSalesInvoice extends CreateRecord
     {
         $startTime = microtime(true);
 
-        self::updateItemsDiscount($createSalesInvoice);
+        self::updateItems($createSalesInvoice);
 
         $items = $createSalesInvoice->data['items'] ?? [];
         $services = $createSalesInvoice->data['services'] ?? [];
@@ -207,6 +221,8 @@ class CreateSalesInvoice extends CreateRecord
         $discountMethod = $createSalesInvoice->data['discount_method'] ?? null;
         $discountAmount = $createSalesInvoice->data['discount_amount'] ?? null;
         $discountPercent = $createSalesInvoice->data['discount_percent'] ?? [];
+
+        $prices_includes_taxes = $createSalesInvoice->data['prices_includes_taxes'] ?? false;
 
         $totals = [
             'total_purchases' => 0,
@@ -225,7 +241,7 @@ class CreateSalesInvoice extends CreateRecord
 
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
-            $extras_total = $item['extras_total'] ?? 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
@@ -247,12 +263,12 @@ class CreateSalesInvoice extends CreateRecord
 
                 if ($taxProfile) {
                     $sub_total = ($price * $qty) + $extras_total;
-
+                    $original_sub_total = ($price * $qty) + $extras_total;
                     if (is_number($discount))
                         $sub_total -= $discount;
 
-                    $tax = $sub_total * ($taxProfile->total_percentages / 100);
-                    $totals['total_taxes'] += $sub_total * ($taxProfile->total_percentages / 100);
+                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total - $extras_total, $taxProfile, $prices_includes_taxes);
+                    $totals['total_taxes'] += $tax;
                 }
             }
 
@@ -261,9 +277,12 @@ class CreateSalesInvoice extends CreateRecord
         foreach ($services as $service) {
             $price = $service['price'] ?? 0;
             $totals['total_services'] += $price;
-            $total_percentages = collect($service['tax_profile_data']['taxes'] ?? [])->sum('percent');
-            if ($total_percentages > 0) {
-                $totals['total_taxes'] += $price * ($total_percentages / 100);
+
+            $taxProfileId = $service['tax_profile_id'] ?? null;
+            $taxProfile = TaxProfile::find($taxProfileId);
+
+            if ($taxProfile) {
+                $totals['total_taxes'] += MathService::instance()->getTaxFromTaxProfile($price, $taxProfile, true);
             }
         }
 
@@ -290,6 +309,11 @@ class CreateSalesInvoice extends CreateRecord
         $createSalesInvoice->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
         $createSalesInvoice->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
 
+        if($prices_includes_taxes){
+            $createSalesInvoice->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
+        }else{
+            $createSalesInvoice->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+        }
 
         $endTime = microtime(true);
 
@@ -298,7 +322,7 @@ class CreateSalesInvoice extends CreateRecord
         return $totals;
     }
 
-    public function updateItemsDiscount($createSalesInvoice)
+    public function updateItems($createSalesInvoice)
     {
 
         $taxProfiles = CacheService::instance()->remember('taxProfiles', 5 * 60, function () {
@@ -309,13 +333,18 @@ class CreateSalesInvoice extends CreateRecord
         $discountMethod = $createSalesInvoice->data['discount_method'] ?? null;
         $discountAmount = $createSalesInvoice->data['discount_amount'] ?? $createSalesInvoice->data['discount_percent'] ?? null;
 
+        $prices_includes_taxes = $createSalesInvoice->data['prices_includes_taxes'] ?? false;
+
         $newItems = [];
         foreach ($createSalesInvoice->data['items'] ?? [] as $item) {
-            $extras_total = $item['extras_total'] ?? 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
 
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
             $tax = 0;
+
+            if(is_number($qty))
+                $extras_total = $extras_total * $qty;
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {
@@ -350,12 +379,15 @@ class CreateSalesInvoice extends CreateRecord
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = $subTotal * ($taxProfile->total_percentages / 100);
-                        $subTotal += $tax;
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal - $extras_total, $taxProfile, $prices_includes_taxes);
+
+                        if(!$prices_includes_taxes){
+                            $subTotal += $tax;
+                        }
                     }
                 }
 
-                $item['tax'] = $tax;
+                $item['tax'] = number_format($tax, currency_decimals(), '.', '');
 
                 $item['sub_total'] = format_amount($subTotal);
 

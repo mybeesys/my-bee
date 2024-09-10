@@ -29,6 +29,8 @@ return new class extends Migration
             $table->decimal('discount_percent', 21, 6)->nullable();
 
             $table->text('notes')->nullable();
+
+            $table->boolean('prices_includes_taxes')->default(true);
             $table->unique(['tenant_id', 'no']);
             $table->timestamps();
         });

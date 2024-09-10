@@ -25,6 +25,7 @@ use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -117,9 +118,10 @@ class PriceOfferResource extends Resource
                     ->key('details-section')
                     ->headerActions([
                         Forms\Components\Actions\Action::make('add_product')
-                            ->color(Color::Slate)
+                            ->color('primary')
                             ->label(__('fields.add_product'))
-                            ->modalSubmitActionLabel(__('fields.add'))
+                            ->modalSubmitAction(fn(StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
+                            ->modalCancelAction(fn(StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
                             ->form([
                                 Forms\Components\Section::make()
                                     ->schema([
@@ -140,7 +142,8 @@ class PriceOfferResource extends Resource
                                             ->required()
                                             ->live()
                                             ->searchable()
-                                            ->options(Product::groupedAsOptions())
+                                            ->options(Product::pluck('name', 'id'))
+//                                            ->options(Product::groupedAsOptions())
                                             ->afterStateUpdated(function ($state, Forms\Set $set) {
                                                 if ($state) {
                                                     $product = Product::find($state);
@@ -264,6 +267,7 @@ class PriceOfferResource extends Resource
                                         'sub_total' => number_format($qty * $price, currency_decimals(), '.', ''),
                                         'tax_profile_id' => $variant->product->tax_profile_id,
                                         'product_extras_ids' => $productExtrasIds,
+                                        'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
                                         'extras' => implode(', ', $productExtras->pluck('name')->toArray()),
                                         'extras_total' => PricingService::instance()->getRetailPrices($productExtras),
                                     ];
@@ -304,17 +308,18 @@ class PriceOfferResource extends Resource
                                         'sub_total' => number_format($qty * $price, currency_decimals(), '.', ''),
                                         'tax_profile_id' => $product->tax_profile_id,
                                         'product_extras_ids' => $productExtrasIds,
+                                        'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
                                         'extras' => implode(', ', $productExtras->pluck('name')->toArray()),
                                         'extras_total' => PricingService::instance()->getRetailPrices($productExtras),
                                     ];
                                 }
 
-                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
-
-                                if ($itemExists) {
-                                    fns()->sendWarning(__('fields.order_details_item_already_exists'));
-                                    $action->halt();
-                                }
+//                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
+//
+//                                if ($itemExists) {
+//                                    fns()->sendWarning(__('fields.order_details_item_already_exists'));
+//                                    $action->halt();
+//                                }
 
 
                                 foreach ($livewire->data['details'] as $index => $it) {
@@ -366,9 +371,14 @@ class PriceOfferResource extends Resource
                                     ->label(__('fields.discount')),
 
                                 Header::make('tax_profile_id')
-                                    ->width("120px")
+                                    ->width("150px")
                                     ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
                                     ->label(__('fields.tax_profile')),
+
+                                Header::make('tax')
+                                    ->width("120px")
+                                    ->align(fn() => app()->getLocale() == "ar" ? Alignment::Left : Alignment::Right)
+                                    ->label(__('fields.tax')),
 
                                 Header::make('sub_total')
                                     ->width("150px")
@@ -402,18 +412,36 @@ class PriceOfferResource extends Resource
                                 Forms\Components\Hidden::make('item_type'),
                                 Forms\Components\Hidden::make('unit_price'),
 
-                                Forms\Components\Hidden::make('product_extras_ids'),
+//                                Forms\Components\Hidden::make('product_extras_ids'),
 
                                 TextInput::make('display_name')->label(__('fields.product'))->readOnly(),
 
-                                TextInput::make('extras')
+                                Forms\Components\Select::make('product_extras_ids')
                                     ->label(__('fields.product_extras'))
-                                    ->suffix(function (Get $get) {
-                                        if ($extras_total = $get('extras_total')) {
-                                            return format_amount($extras_total);
-                                        }
+                                    ->live()
+                                    ->default(function (Get $get) {
+                                        return ProductExtra::findMany($get('available_product_extras_ids'))->pluck('name', 'id');
                                     })
-                                    ->readOnly(),
+                                    ->options(function (Get $get) {
+                                        return ProductExtra::findMany($get('available_product_extras_ids'))->pluck('name', 'id');
+                                    })
+                                    ->afterStateUpdated(function (Get $get, $livewire) {
+                                        self::updateInvoicePropertiesFromLivewire($livewire, true);
+                                    })
+                                    ->suffix(function (Get $get) {
+                                        $exts = ProductExtra::findMany($get('product_extras_ids'));
+                                        return format_amount(PricingService::instance()->getItemsPrices($exts));
+                                    })
+                                    ->multiple(),
+
+//                                TextInput::make('extras')
+//                                    ->label(__('fields.product_extras'))
+//                                    ->suffix(function (Get $get) {
+//                                        if ($extras_total = $get('extras_total')) {
+//                                            return format_amount($extras_total);
+//                                        }
+//                                    })
+//                                    ->readOnly(),
 
 
                                 TextInput::make('qty')
@@ -444,7 +472,7 @@ class PriceOfferResource extends Resource
 
                                 TextInput::make('price')
                                     ->label(__('fields.price'))
-                                    ->prefixIcon('heroicon-o-calculator')
+//                                    ->prefixIcon('heroicon-o-calculator')
                                     ->numeric()
                                     ->required(),
 
@@ -489,6 +517,10 @@ class PriceOfferResource extends Resource
                                         fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
                                     ),
 
+                                TextInput::make('tax')
+                                    ->label(__('fields.tax'))
+                                    ->readOnly(),
+
                                 TextInput::make('sub_total')
                                     ->label(__('fields.sub_total'))
                                     ->readOnly()
@@ -496,6 +528,12 @@ class PriceOfferResource extends Resource
 
                             ])
                     ]),
+
+                Forms\Components\Toggle::make('prices_includes_taxes')
+                    ->default(true)
+                    ->label(__('fields.prices_includes_taxes'))
+                    ->live()
+                    ->afterStateUpdated(fn($livewire) => self::updateInvoicePropertiesFromLivewire($livewire)),
 
 
                 Forms\Components\Section::make(__('fields.services'))
@@ -899,7 +937,9 @@ class PriceOfferResource extends Resource
     {
         $startTime = microtime(true);
 
-        self::updateItemsDiscount($livewire);
+        self::updateItems($livewire);
+
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
 
         $items = $livewire->data['details'] ?? [];
         $services = $livewire->data['services'] ?? [];
@@ -925,7 +965,7 @@ class PriceOfferResource extends Resource
         foreach ($items as $item) {
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
-            $extras_total = $item['extras_total'] ?? 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
@@ -951,8 +991,9 @@ class PriceOfferResource extends Resource
                     if (is_number($discount))
                         $sub_total -= $discount;
 
-                    $tax = $sub_total * ($taxProfile->total_percentages / 100);
-                    $totals['total_taxes'] += $sub_total * ($taxProfile->total_percentages / 100);
+                    $tax = MathService::instance()->getTaxFromTaxProfile($sub_total - $extras_total, $taxProfile, $prices_includes_taxes);
+//                    $totals['total_taxes'] += $sub_total * ($taxProfile->total_percentages / 100);
+                    $totals['total_taxes'] += $tax;
                 }
             }
 
@@ -961,10 +1002,14 @@ class PriceOfferResource extends Resource
         foreach ($services as $service) {
             $price = $service['price'] ?? 0;
             $totals['total_services'] += $price;
-            $total_percentages = collect($service['tax_profile_data']['taxes'] ?? [])->sum('percent');
-            if ($total_percentages > 0) {
-                $totals['total_taxes'] += $price * ($total_percentages / 100);
+
+            $taxProfileId = $service['tax_profile_id'] ?? null;
+            $taxProfile = TaxProfile::find($taxProfileId);
+
+            if ($taxProfile) {
+                $totals['total_taxes'] += MathService::instance()->getTaxFromTaxProfile($price, $taxProfile, true);
             }
+
         }
 
         if ($discountOption == "overall" and $discountMethod == "amount" and is_number($discountAmount))
@@ -989,7 +1034,12 @@ class PriceOfferResource extends Resource
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+//            $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            if($prices_includes_taxes){
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
+            }else{
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            }
         }
 
         $endTime = microtime(true);
@@ -999,12 +1049,14 @@ class PriceOfferResource extends Resource
         return $totals;
     }
 
-    public static function updateItemsDiscount($livewire)
+    public static function updateItems($livewire)
     {
 
         $taxProfiles = CacheService::instance()->remember('taxProfiles', 5 * 60, function () {
             return TaxProfile::all();
         });
+
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
 
         $discountOption = $livewire->data['discount_option'] ?? null;
         $discountMethod = $livewire->data['discount_method'] ?? null;
@@ -1018,11 +1070,14 @@ class PriceOfferResource extends Resource
 
         $newItems = [];
         foreach ($livewire->data['details'] ?? [] as $item) {
-            $extras_total = $item['extras_total'] ?? 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
 
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
             $tax = 0;
+
+            if(is_number($qty))
+                $extras_total = $extras_total * $qty;
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {
@@ -1059,13 +1114,14 @@ class PriceOfferResource extends Resource
                         $taxProfile = TaxProfile::find($taxProfileId);
 
                     if ($taxProfile) {
-                        $tax = MathService::instance()->getTaxFromTaxProfile($original_sub_total, $taxProfile);
-                        $subTotal += $tax;
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal - $extras_total, $taxProfile, $prices_includes_taxes);
+                        if(!$prices_includes_taxes){
+                            $subTotal += $tax;
+                        }
                     }
                 }
 
-//                dd($tax);
-                $item['tax'] = $tax;
+                $item['tax'] = number_format($tax, currency_decimals(), '.', '');
 
                 $item['sub_total'] = format_amount($subTotal);
 

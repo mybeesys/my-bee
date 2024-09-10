@@ -54,11 +54,14 @@ class EditPriceOffer extends EditRecord
         $details = [];
         foreach ($this->record->details as $detail) {
 
-            if ($detail->item instanceof Product)
+            $product = null;
+            if ($detail->item instanceof Product){
                 $product_id = $detail->item_id;
-
+                $product = $detail->item;
+            }
             if ($detail->item instanceof ProductVariant) {
                 $product_id = $detail->item->product->id;
+                $product = $detail->item->product;
             }
 
             $details[Str::uuid()->toString()] = [
@@ -72,6 +75,7 @@ class EditPriceOffer extends EditRecord
                 "discount" => number_format($detail->discount, currency_decimals(), '.', ''),
                 "product_id" => $product_id,
                 'product_extras_ids' => $detail->offerDetailsExtras->pluck('product_extra_id')->toArray(),
+                'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
                 'extras_total' => PricingService::instance()->getRetailPrices(ProductExtra::with('lastPrice')->findMany($detail->offerDetailsExtras->pluck('product_extra_id')->toArray())),
                 "extras" => implode(', ', $detail->offerDetailsExtras->pluck('display_name')->toArray()),
                 "qty" => $detail->qty,
@@ -115,7 +119,7 @@ class EditPriceOffer extends EditRecord
                 'item_id' => $detail['item_id'],
                 'item_type' => $detail['item_type'],
                 'unit_price' => $detail['price'],
-                'discount' => 0,
+                'discount' => $detail['discount'],
                 'tax_profile_id' => $detail['tax_profile_id'] ?? null,
                 'tax_profile_data' => TaxProfile::find($detail['tax_profile_id'] ?? null)?->toArray(),
                 'tax' => $detail['tax'],

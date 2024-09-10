@@ -29,7 +29,7 @@ class CreateInvoicesTable extends Migration
             $table->enum('discount_method', ['amount', 'percent', 'none'])->default('none');
             $table->decimal('discount_amount', 19, 4)->nullable();
             $table->decimal('discount_percent', 19, 4)->nullable();
-            $table->boolean('prices_includes_taxes')->default(false);
+            $table->boolean('prices_includes_taxes')->default(true);
 
             $table->foreignId('user_id')->nullable()->index()->references('id')->on('users')->restrictOnDelete();
 

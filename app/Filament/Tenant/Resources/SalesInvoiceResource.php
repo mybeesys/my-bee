@@ -298,6 +298,7 @@ class SalesInvoiceResource extends Resource
                                         'discount' => 0,
                                         'tax' => 0,
                                         'product_extras_ids' => $productExtrasIds,
+                                        'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
                                         'extras' => implode(', ', $productExtras->pluck('name')->toArray()),
                                         'tax_profile_id' => null,
                                         'tax_profile_data' => null,
@@ -333,7 +334,7 @@ class SalesInvoiceResource extends Resource
                                     ];
                                 }
 
-                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
+//                                $itemExists = collect($existingDetails)->where('product_id', $product->id)->where('product_variant_id', $product->product_variant_id)->first();
 
 //                                if ($itemExists) {
 //                                    fns()->sendWarning(__('fields.order_details_item_already_exists'));
@@ -1344,6 +1345,7 @@ class SalesInvoiceResource extends Resource
 
     public static function updateInvoicePropertiesFromLivewire($livewire, $updateUIFields = true): array
     {
+
         $startTime = microtime(true);
 
         self::updateItems($livewire);
@@ -1415,9 +1417,12 @@ class SalesInvoiceResource extends Resource
         foreach ($services as $service) {
             $price = $service['price'] ?? 0;
             $totals['total_services'] += $price;
-            $total_percentages = collect($service['tax_profile_data']['taxes'] ?? [])->sum('percent');
-            if ($total_percentages > 0) {
-                $totals['total_taxes'] += MathService::instance()->getTax($price, $total_percentages);
+
+            $taxProfileId = $service['tax_profile_id'] ?? null;
+            $taxProfile = TaxProfile::find($taxProfileId);
+
+            if ($taxProfile) {
+                $totals['total_taxes'] += MathService::instance()->getTaxFromTaxProfile($price, $taxProfile, true);
             }
         }
 
@@ -1479,6 +1484,7 @@ class SalesInvoiceResource extends Resource
 
         $newItems = [];
         foreach ($livewire->data['items'] ?? [] as $item) {
+
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
@@ -1534,7 +1540,6 @@ class SalesInvoiceResource extends Resource
                 $item['tax'] = number_format($tax, currency_decimals(), '.', '');
 
                 $item['sub_total'] = format_amount($subTotal);
-
 
             }
             $newItems[] = $item;
