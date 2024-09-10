@@ -906,5 +906,7 @@ return [
 
     'prices_includes_taxes' => 'الأسعار شاملة الضريبة',
 
+    'currency_and_invoices' => "العملة والفواتير"
+
 ];
 //

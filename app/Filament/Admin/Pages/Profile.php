@@ -59,7 +59,6 @@ class Profile extends Page implements HasForms
             'enable_top_navigation' => (bool)user_setting('enable_top_navigation', false),
             'date_picker_format' => user_setting('date_picker_format', "d/m/Y"),
             'date_column_format' => user_setting('date_column_format', "d/m/Y g:i a"),
-
         ]);
 
     }

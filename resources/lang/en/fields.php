@@ -722,9 +722,9 @@ return [
     'order_status_completed' => 'Completed',
     'order_status_cancelled' => 'Cancelled',
 
-    'alert_created' => 'Record created',
-    'alert_deleted' => 'Record deleted',
-    'alert_saved' => 'Record saved',
+    'alert_created' => 'Created',
+    'alert_deleted' => 'Deleted',
+    'alert_saved' => 'Saved',
 
 
     'product_extras' => 'Product Extras',
@@ -899,5 +899,7 @@ return [
     'product_tax_hint' => 'This tax will be used to display it in the shop',
 
     'prices_includes_taxes' => 'Is Sale Inclusive of VAT',
+
+    'currency_and_invoices' => 'Currency and invoices',
 ];
 //
