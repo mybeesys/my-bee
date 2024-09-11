@@ -89,6 +89,7 @@ class AccountStatementResource extends Resource
 //                    ->label(__('fields.currency')),
 
                 Tables\Columns\TextColumn::make('amount_in')
+                    ->label(__('fields.debit'))
                     ->toggleable()
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_in, 2);
@@ -98,9 +99,12 @@ class AccountStatementResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->label(__('fields.debit')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('amount_out')
+                    ->label(__('fields.credit'))
                     ->toggleable()
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_out, 2);
@@ -110,7 +114,9 @@ class AccountStatementResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->label(__('fields.credit')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('statement')
                     ->getStateUsing(function ($record) {

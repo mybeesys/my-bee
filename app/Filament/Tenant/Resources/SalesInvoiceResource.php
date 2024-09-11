@@ -1115,6 +1115,28 @@ class SalesInvoiceResource extends Resource
                                         ->finish();
                                 }
 
+                                foreach ($record->services as $service) {
+                                    $service_tax = MathService::instance()->getTaxFromTaxProfile($service->price, $service->taxProfile, false);
+
+                                    if ($service_tax > 0) {
+                                        $op = make_taxes_op();
+                                        $accService = new AccountingService();
+                                        $accService
+                                            ->setUp(
+                                                $op->id,
+                                                now(),
+                                                main_currency_iso_code(),
+                                                generate_double_entry_transaction_id(),
+                                                $service_tax,
+                                                null,
+                                                'Service tax',
+                                                'Service tax',
+                                                null,
+                                                meta: ['type' => 'service', 'id' => $service->id],
+                                            )->make('120100001', '122800001')
+                                            ->finish();
+                                    }
+                                }
                                 fns()->sendSuccess(__('fields.invoice_updated'));
                             } else {
                                 $record->update(['status' => $data['status']]);
@@ -1350,7 +1372,7 @@ class SalesInvoiceResource extends Resource
 
         self::updateItems($livewire);
 
-        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? true;
 
         $items = $livewire->data['items'] ?? [];
         $services = $livewire->data['services'] ?? [];
@@ -1381,7 +1403,7 @@ class SalesInvoiceResource extends Resource
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
-            if(is_number($qty))
+            if (is_number($qty))
                 $extras_total = $extras_total * $qty;
 
             if (is_number($qty) and is_number($price))
@@ -1448,9 +1470,9 @@ class SalesInvoiceResource extends Resource
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            if($prices_includes_taxes){
+            if ($prices_includes_taxes) {
                 $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            }else{
+            } else {
                 $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
             }
 
@@ -1470,7 +1492,7 @@ class SalesInvoiceResource extends Resource
             return TaxProfile::all();
         });
 
-        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? true;
 
         $discountOption = $livewire->data['discount_option'] ?? null;
         $discountMethod = $livewire->data['discount_method'] ?? null;
@@ -1490,7 +1512,7 @@ class SalesInvoiceResource extends Resource
             $qty = $item['qty'] ?? null;
             $tax = 0;
 
-            if(is_number($qty))
+            if (is_number($qty))
                 $extras_total = $extras_total * $qty;
 
             if ($discountOption == "overall") {
@@ -1531,7 +1553,7 @@ class SalesInvoiceResource extends Resource
                     if ($taxProfile) {
                         $tax = MathService::instance()->getTaxFromTaxProfile($subTotal - $extras_total, $taxProfile, $prices_includes_taxes);
 
-                        if(!$prices_includes_taxes){
+                        if (!$prices_includes_taxes) {
                             $subTotal += $tax;
                         }
                     }

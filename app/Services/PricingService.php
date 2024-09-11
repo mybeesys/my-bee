@@ -130,7 +130,7 @@ class PricingService
         return $model?->lastPrice ?? $default;
     }
 
-    public function getTaxAmount(Product $product, $price, int $qty, $prices_includes_taxes = false)
+    public function getTaxAmount(Product $product, $price, int $qty, $prices_includes_taxes = true)
     {
         $tax = 0;
         if ($product->taxProfile?->total_percentages) {
@@ -139,7 +139,7 @@ class PricingService
         return $tax;
     }
 
-    public function getTaxAmountFromProfile(TaxProfile $taxProfile, $price, int $qty, $prices_includes_taxes = false)
+    public function getTaxAmountFromProfile(TaxProfile $taxProfile, $price, int $qty, $prices_includes_taxes = true)
     {
         return MathService::instance()->getTax($price * $qty, $taxProfile->total_percentages, $prices_includes_taxes);
     }

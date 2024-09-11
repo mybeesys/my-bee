@@ -939,7 +939,7 @@ class PriceOfferResource extends Resource
 
         self::updateItems($livewire);
 
-        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? true;
 
         $items = $livewire->data['details'] ?? [];
         $services = $livewire->data['services'] ?? [];
@@ -1056,7 +1056,7 @@ class PriceOfferResource extends Resource
             return TaxProfile::all();
         });
 
-        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? true;
 
         $discountOption = $livewire->data['discount_option'] ?? null;
         $discountMethod = $livewire->data['discount_method'] ?? null;

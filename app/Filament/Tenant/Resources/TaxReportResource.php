@@ -6,6 +6,8 @@ use App\Filament\Exports\CashDetExporter;
 use App\Filament\Tenant\Resources\TaxReportResource\Pages;
 use App\Filament\Tenant\Resources\TaxReportResource\RelationManagers;
 use App\Models\CashDet;
+use App\Models\Expense;
+use App\Models\Service;
 use App\Models\TaxReport;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -101,12 +103,21 @@ class TaxReportResource extends Resource
 
                 Tables\Columns\TextColumn::make('source')
                     ->label(__('fields.source'))
+                    ->color(Color::Sky)
                     ->getStateUsing(function (CashDet $record) {
                         return match ($record->meta['type'] ?? null) {
                             "sales_invoice" => __('fields.sales_invoice'),
                             "purchase_invoice" => __('fields.purchases_invoice'),
                             "expense" => __('fields.expense'),
+                            'service' => __('fields.service'),
                             default => "Unknown",
+                        };
+                    })
+                    ->description(function (CashDet $record) {
+                        return match ($record->meta['type'] ?? null) {
+                            'service' => Service::with('type')->find($record->meta['id'])?->type->name,
+                            'expense' => Expense::find($record->meta['id'])?->description,
+                            default => null,
                         };
                     })
                     ->url(function (CashDet $record) {
@@ -120,6 +131,7 @@ class TaxReportResource extends Resource
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('amount_in')
+                    ->label(__('fields.debit'))
                     ->toggleable()
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_in, 2);
@@ -129,9 +141,12 @@ class TaxReportResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->label(__('fields.debit')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('amount_out')
+                    ->label(__('fields.credit'))
                     ->toggleable()
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_out, 2);
@@ -141,7 +156,9 @@ class TaxReportResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->label(__('fields.credit')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('statement')
                     ->getStateUsing(function ($record) {

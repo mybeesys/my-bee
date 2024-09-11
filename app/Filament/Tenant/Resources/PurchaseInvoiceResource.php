@@ -1118,7 +1118,7 @@ class PurchaseInvoiceResource extends Resource
 
         self::updateItems($livewire);
 
-        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? true;
 
         $items = $livewire->data['items'] ?? [];
         $additionalCosts = $livewire->data['additional_costs'] ?? [];
@@ -1216,7 +1216,7 @@ class PurchaseInvoiceResource extends Resource
             return TaxProfile::all();
         });
 
-        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $livewire->data['prices_includes_taxes'] ?? true;
 
         $discountOption = $livewire->data['discount_option'] ?? null;
         $discountMethod = $livewire->data['discount_method'] ?? null;

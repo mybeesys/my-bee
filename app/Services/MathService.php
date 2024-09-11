@@ -12,7 +12,7 @@ class MathService
         return new self();
     }
 
-    public function getTax($total, $tax_percent, bool $prices_includes_taxes = false): float
+    public function getTax($total, $tax_percent, bool $prices_includes_taxes = true): float
     {
         if ($prices_includes_taxes) {
             $result = 1 + ($tax_percent / 100);
@@ -23,7 +23,7 @@ class MathService
         }
     }
 
-    public function getTaxFromTaxProfile($total, TaxProfile $taxProfile, bool $prices_includes_taxes = false): float
+    public function getTaxFromTaxProfile($total, TaxProfile $taxProfile, bool $prices_includes_taxes = true): float
     {
         $tax_percent = (float)$taxProfile->total_percentages;
         if ($prices_includes_taxes) {

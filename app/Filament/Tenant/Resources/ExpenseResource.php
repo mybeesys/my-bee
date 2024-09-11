@@ -136,7 +136,7 @@ class ExpenseResource extends Resource
                             $taxProfile = TaxProfile::with('taxes')->find($get('tax_profile_id'));
                             if ($taxProfile) {
                                 if ($state and is_number($state)) {
-                                    $tax = MathService::instance()->getTaxFromTaxProfile($state, $taxProfile);
+                                    $tax = MathService::instance()->getTaxFromTaxProfile($state, $taxProfile, true);
                                     $set('amount_without_tax', number_format($state - $tax, currency_decimals(), '.', ''));
                                     $set('tax', number_format($tax, currency_decimals(), '.', ''));
                                 }
@@ -161,7 +161,7 @@ class ExpenseResource extends Resource
 
                             if ($taxProfile) {
                                 if ($amount and is_number($amount)) {
-                                    $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile);
+                                    $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile, true);
                                     $set('amount_without_tax', number_format($amount - $tax, currency_decimals(), '.', ''));
                                     $set('tax', number_format($tax, currency_decimals(), '.', ''));
                                 }
@@ -189,7 +189,7 @@ class ExpenseResource extends Resource
                             $taxProfile = TaxProfile::with('taxes')->find($state);
                             if ($taxProfile) {
                                 if ($amount = $get('amount') and is_number($amount)) {
-                                    $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile);
+                                    $tax = MathService::instance()->getTaxFromTaxProfile($amount, $taxProfile, true);
                                     $set('amount_without_tax', number_format($amount - $tax, currency_decimals(), '.', ''));
                                     $set('tax', number_format($tax, currency_decimals(), '.', ''));
                                 }

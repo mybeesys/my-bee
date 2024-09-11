@@ -96,28 +96,34 @@ class BankAccountReportResource extends Resource
 //                    ->label(__('fields.currency')),
 
                 Tables\Columns\TextColumn::make('amount_in')
+                    ->label(__('fields.debit'))
                     ->toggleable()
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_in, 2);
                     })
                     ->color(Color::Green)
                     ->description(function ($state, $record) {
-                        if($state > 0)
+                        if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->label(__('fields.debit')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('amount_out')
+                    ->label(__('fields.credit'))
                     ->toggleable()
                     ->getStateUsing(function ($record) {
                         return number_format($record->amount_out, 2);
                     })
                     ->color(Color::Red)
                     ->description(function ($state, $record) {
-                        if($state > 0)
+                        if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->label(__('fields.credit')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                        return main_currency_iso_code() . " " . format_amount($state);
+                    })),
 
                 Tables\Columns\TextColumn::make('statement')
                     ->getStateUsing(function ($record) {
@@ -136,8 +142,8 @@ class BankAccountReportResource extends Resource
                 Tables\Columns\TextColumn::make('balance_post_transaction')
                     ->toggleable()
                     ->label(__('fields.balance'))
-                    ->color(function ($record){
-                        if($record->balance_post_transaction > 0){
+                    ->color(function ($record) {
+                        if ($record->balance_post_transaction > 0) {
                             return Color::Green;
                         }
                         return Color::Red;

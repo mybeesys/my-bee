@@ -222,7 +222,7 @@ class CreateSalesInvoice extends CreateRecord
         $discountAmount = $createSalesInvoice->data['discount_amount'] ?? null;
         $discountPercent = $createSalesInvoice->data['discount_percent'] ?? [];
 
-        $prices_includes_taxes = $createSalesInvoice->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $createSalesInvoice->data['prices_includes_taxes'] ?? true;
 
         $totals = [
             'total_purchases' => 0,
@@ -333,7 +333,7 @@ class CreateSalesInvoice extends CreateRecord
         $discountMethod = $createSalesInvoice->data['discount_method'] ?? null;
         $discountAmount = $createSalesInvoice->data['discount_amount'] ?? $createSalesInvoice->data['discount_percent'] ?? null;
 
-        $prices_includes_taxes = $createSalesInvoice->data['prices_includes_taxes'] ?? false;
+        $prices_includes_taxes = $createSalesInvoice->data['prices_includes_taxes'] ?? true;
 
         $newItems = [];
         foreach ($createSalesInvoice->data['items'] ?? [] as $item) {
