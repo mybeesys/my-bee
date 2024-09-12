@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\MathService;
+use App\Services\PricingService;
 use App\Traits\HasPrefixedId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -46,7 +48,9 @@ class PriceOffer extends BaseModel
             $subTotal = $detail->unit_price * $detail->qty;
 
             if ($detail->offerDetailsExtras)
-                $extras += $detail->offerDetailsExtras->sum('unit_price');
+                $extras += PricingService::instance()->getItemsPrices($detail->offerDetailsExtras->pluck('productExtra')) * $detail->qty;
+
+//            $extras += $detail->offerDetailsExtras->sum('unit_price');
 
             if ($applyDiscount) {
                 $subTotal -= $detail->discount;
@@ -88,7 +92,8 @@ class PriceOffer extends BaseModel
 
                 $subTotal = $detail->unit_price * $detail->qty;
                 $subTotal -= $detail->discount;
-                $total += $subTotal * ($total_percentages / 100);
+                $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->prices_includes_taxes);
+//                $total += $subTotal * ($total_percentages / 100);
 
             }
         }

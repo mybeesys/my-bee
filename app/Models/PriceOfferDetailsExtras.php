@@ -11,4 +11,9 @@ class PriceOfferDetailsExtras extends BaseModel
 
     protected $guarded = [];
 
+    protected $with = ['productExtra'];
+    public function productExtra(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ProductExtra::class, 'product_extra_id');
+    }
 }
