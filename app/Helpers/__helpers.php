@@ -634,6 +634,7 @@ function percent($amount, $total): float|int|string
 
 function can_delete_product(\App\Models\Product $product): bool
 {
+    return false;
     $product->loadMissing('acc4');
 
     $invoices = \App\Models\InvoiceItem::where('product_id', $product->id)->count();

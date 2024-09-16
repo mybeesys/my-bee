@@ -382,15 +382,6 @@ class ExpenseResource extends Resource
                             ->multiple()
                             ->options(Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code')),
 
-//                        Forms\Components\Select::make('debit_acc4_code')
-//                            ->label(__('fields.expense_account'))
-//                            ->multiple()
-//                            ->options(function () {
-//                                return Acc4::whereHas('acc3', function ($q) {
-//                                    return $q->whereIn('acc2_code', [51, 52, 53]);
-//                                })->pluck('name', 'code');
-//                            }),
-
                         Forms\Components\Select::make('expense_category_id')
                             ->label(__('fields.category'))
                             ->multiple()
@@ -400,13 +391,11 @@ class ExpenseResource extends Resource
                         Forms\Components\DatePicker::make('date_from')->label(__('fields.created_from')),
                         Forms\Components\DatePicker::make('date_until')->label(__('fields.created_until')),
 
-//                        Forms\Components\TextInput::make('amount_from')->money()->label(__('fields.created_from')),
-//                        Forms\Components\TextInput::make('amount_until')->money()->label(__('fields.created_until')),
-
                         Forms\Components\Checkbox::make('attachments')
+                            ->visible(false)
                             ->label(__('fields.only_display_records_with_attachments')),
 
-                    ])->columns(4)
+                    ])
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
 //                        if ($data['debit_acc4_code']) {
@@ -467,11 +456,9 @@ class ExpenseResource extends Resource
                             );
                     })
 
-            ], Tables\Enums\FiltersLayout::Modal)
-            ->filtersFormWidth(MaxWidth::FiveExtraLarge)
+            ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-//                Tables\Actions\DeleteAction::make()
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

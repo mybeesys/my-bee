@@ -53,7 +53,8 @@ class AccountStatementResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) use ($table) {
-                if (empty($table->getFilter('account_code')->getState())) {
+//                dd($table->getFilter('created_at')->getState()['account_code'], empty($table->getFilter('created_at')->getState()['account_code']));
+                if (empty($table->getFilter('created_at')->getState()['account_code'])) {
                     return $query->where('id', 'x');
                 }
             })
@@ -99,7 +100,7 @@ class AccountStatementResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
@@ -114,7 +115,7 @@ class AccountStatementResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
@@ -143,10 +144,7 @@ class AccountStatementResource extends Resource
                     })
                     ->getStateUsing(function ($record) {
                         return number_format($record->balance_post_transaction, currency_decimals(), '.', ',');
-                    })
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
-                        return main_currency_iso_code() . " " . format_amount($state);
-                    })),
+                    }),
 
 //                Tables\Columns\TextColumn::make('operation.files')
 //                    ->toggleable()
@@ -183,29 +181,35 @@ class AccountStatementResource extends Resource
 //                    ->label(__('fields.currency'))
 //                    ->relationship('currency', 'name'),
 
-                Tables\Filters\SelectFilter::make('account_code')
-                    ->label(__('fields.account'))
-                    ->options(Acc4::asOptions())
-                    ->searchable(),
-
-                Tables\Filters\SelectFilter::make('op_id')
-                    ->searchable()
-//                        ->multiple()
-                    ->label(__('fields.voucher_no'))
-                    ->relationship('operation', 'no'),
-
                 Tables\Filters\Filter::make('created_at')
                     ->label(__('fields.created_at'))
+                    ->columnSpanFull()
                     ->form([
+
+                        Forms\Components\Select::make('account_code')
+                            ->label(__('fields.account'))
+                            ->options(Acc4::asOptions())
+                            ->searchable(),
+
+                        Forms\Components\Select::make('op_id')
+                            ->searchable()
+//                        ->multiple()
+                            ->label(__('fields.voucher_no'))
+                            ->relationship('operation', 'no'),
+
                         Forms\Components\DatePicker::make('created_from')
                             ->label(__('fields.created_from')),
                         Forms\Components\DatePicker::make('created_until')
                             ->label(__('fields.created_until')),
                     ])
+                    ->columns(4)
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
                         if ($data['account_code'] ?? null) {
                             $indicator = $indicator . __('fields.account');
+                        }
+                        if ($data['op_id'] ?? null) {
+                            $indicator = $indicator . __('fields.voucher_no');
                         }
                         if ($data['created_from'] or $data['created_until']) {
                             $indicator = $indicator . __('fields.date');
@@ -215,16 +219,16 @@ class AccountStatementResource extends Resource
                     ->query(function ($query, array $data) {
 
                         return $query
-                            ->when(1,
-                                fn(Builder $query) => $query->orWhere('id', 'x'))
                             ->when($data['account_code'] ?? null,
                                 fn($query) => $query->where('account_code', $data['account_code']))
+                            ->when($data['op_id'] ?? null,
+                                fn($query) => $query->where('op_id', $data['op_id']))
                             ->when($data['created_from'],
                                 fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
                             ->when($data['created_until'],
                                 fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
                     })
-            ])
+            ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\ActionGroup::make([
 //                        Tables\Actions\EditAction::make(),

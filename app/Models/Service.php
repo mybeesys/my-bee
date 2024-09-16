@@ -14,11 +14,11 @@ class Service extends BaseModel
 
     protected $casts = ['tax_profile_data' => 'array'];
 
-    public $finance = ['name' => 'name', 'acc3_code' => 1204]; //المخزون
+    public $finance = ['name' => 'name', 'acc3_code' => 1221]; //الخدمات
 
     public function getFinanceAttributes(): array
     {
-        return ['name' => $this->type->name, 'acc3_code' => 1204];
+        return ['name' => $this->type->name, 'acc3_code' => 1221];
     }
 
     public function getNameAttributes(): array

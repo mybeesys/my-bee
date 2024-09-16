@@ -93,10 +93,7 @@ class EditSalesInvoice extends EditRecord
     {
         foreach ($data['items'] as $index => $invoiceItem) {
 
-            $taxProfile = TaxProfile::find($invoiceItem['tax_profile_id'] ?? null);
-
-            if ($taxProfile)
-                $taxProfile->load('taxes');
+            $taxProfile = TaxProfile::with('taxes')->find($invoiceItem['tax_profile_id'] ?? null);
 
             $ii = InvoiceItem::create([
                 'user_id' => auth()->id(),

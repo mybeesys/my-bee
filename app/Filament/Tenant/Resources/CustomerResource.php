@@ -77,6 +77,7 @@ class CustomerResource extends Resource
 
                 Forms\Components\TextInput::make('phone')
                     ->label(__('fields.phone'))
+                    ->placeholder('966xxxxxxxxx')
                     ->tel()
                     ->rules([
                         new InternationalPhoneRule(false)
@@ -156,13 +157,42 @@ class CustomerResource extends Resource
         return $table
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
-                Tables\Columns\TextColumn::make('no')->label(__('fields.reference_code'))->toggleable()->toggledHiddenByDefault()->searchable(),
-                Tables\Columns\TextColumn::make('name')->label(__('fields.name'))->searchable(),
-                Tables\Columns\TextColumn::make('phone')->label(__('fields.phone'))->searchable(),
-                Tables\Columns\TextColumn::make('delivery_address')->label(__('fields.delivery_address'))->searchable(),
-                Tables\Columns\TextColumn::make('email')->label(__('fields.email'))->searchable(),
-                Tables\Columns\TextColumn::make('orders_count')->label(__('fields.orders'))->counts('orders'),
-                Tables\Columns\TextColumn::make('trn')->label(__('fields.trn'))->searchable(),
+
+                Tables\Columns\TextColumn::make('no')
+                    ->label(__('fields.reference_code'))
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('name')
+                    ->label(__('fields.name'))
+                    ->toggleable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('phone')
+                    ->label(__('fields.phone'))
+                    ->toggleable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('delivery_address')
+                    ->label(__('fields.delivery_address'))
+                    ->toggleable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('email')
+                    ->label(__('fields.email'))
+                    ->toggleable()
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('orders_count')
+                    ->label(__('fields.orders'))
+                    ->toggleable()
+                    ->counts('orders'),
+
+                Tables\Columns\TextColumn::make('trn')
+                    ->label(__('fields.trn'))
+                    ->toggleable()
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('fields.join_date'))
@@ -170,7 +200,29 @@ class CustomerResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\Filter::make('created_at')
+                    ->label(__('fields.created_at'))
+                    ->form([
+
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label(__('fields.created_from')),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label(__('fields.created_until')),
+                    ])
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicator = null;
+                        if ($data['created_from'] or $data['created_until']) {
+                            $indicator = $indicator . __('fields.date');
+                        }
+                        return $indicator;
+                    })
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['created_from'],
+                                fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
+                            ->when($data['created_until'],
+                                fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
+                    })
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

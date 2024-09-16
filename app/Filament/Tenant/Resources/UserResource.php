@@ -90,6 +90,7 @@ class UserResource extends Resource
 
                             Forms\Components\TextInput::make('phone')
                                 ->label(__('fields.phone'))
+                                ->placeholder('966xxxxxxxxx')
                                 ->unique(ignorable: fn(?Model $record): ?Model => $record)
                                 ->required()
                                 ->type('tel'),

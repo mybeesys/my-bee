@@ -856,6 +856,7 @@ return [
     'service_type' => 'Service type',
     'service_types' => 'Service types',
     'price_after_tax' => 'price_after_tax',
+    'cost_after_tax' => 'cost_after_tax',
 
     'requested_qty_out_of_stock' => 'Requested qty out of stock',
 
@@ -901,5 +902,9 @@ return [
     'prices_includes_taxes' => 'Is Sale Inclusive of VAT',
 
     'currency_and_invoices' => 'Currency and invoices',
+
+    'qty_after_movement' => 'qty after movement',
+
+    'clients_and_orders_chart' => 'Clients and orders chart',
 ];
 //

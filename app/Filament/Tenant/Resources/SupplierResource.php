@@ -53,6 +53,7 @@ class SupplierResource extends Resource
 
                 Forms\Components\TextInput::make('phone')
                     ->label(__('fields.phone'))
+                    ->placeholder('966xxxxxxxxx')
                     ->rules([new InternationalPhoneRule(false)])
                     ->nullable(),
 
@@ -106,8 +107,32 @@ class SupplierResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+
+                Tables\Filters\Filter::make('created_at')
+                    ->label(__('fields.created_at'))
+                    ->form([
+
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label(__('fields.created_from')),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label(__('fields.created_until')),
+                    ])
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicator = null;
+                        if ($data['created_from'] or $data['created_until']) {
+                            $indicator = $indicator . __('fields.date');
+                        }
+                        return $indicator;
+                    })
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['created_from'],
+                                fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
+                            ->when($data['created_until'],
+                                fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
+                    })
             ])
+
             ->actions([
                 Tables\Actions\EditAction::make(),
             ])

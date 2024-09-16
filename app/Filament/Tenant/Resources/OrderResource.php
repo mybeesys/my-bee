@@ -660,26 +660,25 @@ class OrderResource extends Resource
             ])
             ->filters([
 
-                Tables\Filters\SelectFilter::make('status')
-                    ->label(__('fields.status'))
-                    ->multiple()
-                    ->options([
-                        Order::$STATUS_NEW => __('fields.order_status_' . Order::$STATUS_NEW),
-                        Order::$STATUS_PACKAGING => __('fields.order_status_' . Order::$STATUS_PACKAGING),
-                        Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_' . Order::$STATUS_DELIVERY_IN_PROGRESS),
-                        Order::$STATUS_CANCELLED => __('fields.order_status_' . Order::$STATUS_CANCELLED),
-                        Order::$STATUS_COMPLETED => __('fields.order_status_' . Order::$STATUS_COMPLETED),
-                    ]),
-
-                Tables\Filters\SelectFilter::make('customer_id')
-                    ->label(__('fields.client'))
-                    ->multiple()
-                    ->options(Order::with('customer')->get()->pluck('customer.name', 'customer.id')),
-
-
                 Tables\Filters\Filter::make('created_at')
                     ->label(__('fields.created_at'))
+                    ->columnSpanFull()
                     ->form([
+                        Select::make('status')
+                            ->label(__('fields.status'))
+                            ->multiple()
+                            ->options([
+                                Order::$STATUS_NEW => __('fields.order_status_' . Order::$STATUS_NEW),
+                                Order::$STATUS_PACKAGING => __('fields.order_status_' . Order::$STATUS_PACKAGING),
+                                Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_' . Order::$STATUS_DELIVERY_IN_PROGRESS),
+                                Order::$STATUS_CANCELLED => __('fields.order_status_' . Order::$STATUS_CANCELLED),
+                                Order::$STATUS_COMPLETED => __('fields.order_status_' . Order::$STATUS_COMPLETED),
+                            ]),
+
+                        Select::make('customers')
+                            ->label(__('fields.client'))
+                            ->multiple()
+                            ->options(Order::with('customer')->get()->pluck('customer.name', 'customer.id')),
 
                         Forms\Components\DatePicker::make('created_from')
                             ->label(__('fields.created_from')),
@@ -691,10 +690,20 @@ class OrderResource extends Resource
                         if ($data['created_from'] or $data['created_until']) {
                             $indicator = $indicator . __('fields.date');
                         }
+                        if ($data['customers']) {
+                            $indicator = $indicator . __('fields.client');
+                        }
+                        if ($data['status']) {
+                            $indicator = $indicator . __('fields.status');
+                        }
                         return $indicator;
                     })
                     ->query(function ($query, array $data) {
                         return $query
+                            ->when($data['status'],
+                                fn($query) => $query->whereDate('status', $data['status']))
+                            ->when($data['customers'],
+                                fn($query) => $query->whereIn('customer_id', $data['customers']))
                             ->when($data['created_from'],
                                 fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
                             ->when($data['created_until'],

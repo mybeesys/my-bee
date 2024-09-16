@@ -862,6 +862,7 @@ return [
     'service_type' => 'نوع الخدمة',
     'service_types' => 'أنواع الخدمات',
     'price_after_tax' => 'السعر بعد الضريبة',
+    'cost_after_tax' => 'التكلفة بعد الضريبة',
 
     'requested_qty_out_of_stock' => 'لا توجد كمية كافية في المخزن',
 
@@ -906,7 +907,10 @@ return [
 
     'prices_includes_taxes' => 'الأسعار شاملة الضريبة',
 
-    'currency_and_invoices' => "العملة والفواتير"
+    'currency_and_invoices' => "العملة والفواتير",
 
+    'qty_after_movement' => 'الكمية بعد الحركة',
+
+    'clients_and_orders_chart' => 'مخطط العملاء والطلبات',
 ];
 //

@@ -20,9 +20,9 @@ return new class extends Migration
 
             $table->morphs('item');
             $table->integer('qty');
-            $table->decimal('unit_price', 21, 6);
-            $table->decimal('discount', 21, 6)->default(0);
-            $table->decimal('tax', 21, 6)->default(0);
+            $table->decimal('unit_price', 21, 8);
+            $table->decimal('discount', 21, 8)->default(0);
+            $table->decimal('tax', 21, 8)->default(0);
 
             $table->foreignId('user_id')->index()->references('id')->on('users');
 

@@ -16,6 +16,7 @@ use App\Services\PricingService;
 use App\Services\StockService;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -100,9 +101,11 @@ class SupplyOrderResource extends Resource
                     ->key('details-section')
                     ->headerActions([
                         Forms\Components\Actions\Action::make('add_product')
-                            ->color(Color::Slate)
+                            ->color('primary')
                             ->label(__('fields.add_product'))
-                            ->modalSubmitActionLabel(__('fields.add'))
+                            ->disabled($form->getRecord()?->locked_at !== null)
+                            ->modalSubmitAction(fn(StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
+                            ->modalCancelAction(fn(StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
                             ->form([
                                 Forms\Components\Section::make()
                                     ->schema([

@@ -40,43 +40,50 @@ class PriceOffer extends BaseModel
 
     public function getItemsCost($withAdditionalCosts = false, $applyDiscount = false, $applyTaxes = false)
     {
-        $total = 0;
+        $items = 0;
         $extras = 0;
         $services = 0;
+        $additionalCosts = 0;
+        $taxes = 0;
 
         foreach ($this->details as $detail) {
             $subTotal = $detail->unit_price * $detail->qty;
 
-            if ($detail->offerDetailsExtras)
-                $extras += PricingService::instance()->getItemsPrices($detail->offerDetailsExtras->pluck('productExtra')) * $detail->qty;
-
-//            $extras += $detail->offerDetailsExtras->sum('unit_price');
+            $extras += PricingService::instance()->getItemsPrices($detail->offerDetailsExtras->pluck('productExtra')) * $detail->qty;
 
             if ($applyDiscount) {
                 $subTotal -= $detail->discount;
             }
-
-            $total += $subTotal;
+            $items += $subTotal;
         }
 
         if ($withAdditionalCosts) {
-            $total += $this->getAdditionalCosts();
+            $additionalCosts = $this->getAdditionalCosts(true);
         }
+
+        $services = $this->getServicesCost(true);
 
         if ($applyTaxes) {
-            $total += $this->getTaxesAsAmount();
+            $taxes = $this->getTaxesAsAmount();
         }
 
-        $services += $this->getServicesCost(true);
-
-        return $total + $services + $extras;
+        return $items + $extras + $additionalCosts + $services + $taxes;
     }
 
-    public function getAdditionalCosts()
+    public function getAdditionalCosts($withTaxes = false)
     {
         $total = 0;
-        foreach ($this->additionalCosts as $item) {
-            $total += $item->cost;
+
+        foreach ($this->additionalCosts as $additionalCost) {
+            $cost = $additionalCost->cost;
+            $tax = 0;
+            if ($withTaxes and $additionalCost->tax_profile_data) {
+                $total_percentages = collect($additionalCost->tax_profile_data['taxes'] ?? null)->sum('percent');
+                if ($total_percentages > 0 and !$this->prices_includes_taxes){
+                    $tax = MathService::instance()->getTax($cost, $total_percentages, $this->prices_includes_taxes);
+                }
+            }
+            $total += $cost + $tax;
         }
         return $total;
     }
@@ -85,33 +92,71 @@ class PriceOffer extends BaseModel
     {
         $total = 0;
 
-        foreach ($this->details as $index => $detail) {
-
-            if ($detail->tax_profile_data) {
-                $total_percentages = collect($detail->tax_profile_data['taxes'] ?? [])->sum('percent');
-
-                $subTotal = $detail->unit_price * $detail->qty;
-                $subTotal -= $detail->discount;
+        foreach ($this->details as $item) {
+            if ($item->tax_profile_data) {
+                $total_percentages = collect([$item->tax_profile_data])->sum(function ($i) use($item) {
+                    return collect($i['taxes'])->sum('percent');
+                });
+                $subTotal = $item->unit_price * $item->qty;
+                $subTotal -= $item->discount;
+                $subTotal += PricingService::instance()->getItemsPrices($item->offerDetailsExtras->pluck('productExtra')) * $item->qty;
                 $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->prices_includes_taxes);
-//                $total += $subTotal * ($total_percentages / 100);
+            } else {
+                $subTotal = $item->unit_price * $item->qty;
+                $subTotal -= $item->discount;
 
+                $taxProfile = $item->taxProfile;
+                if ($taxProfile) {
+                    $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->prices_includes_taxes);
+                }
+            }
+        }
+
+        foreach ($this->additionalCosts as $item) {
+            if ($item->tax_profile_data) {
+                $total_percentages = collect([$item->tax_profile_data])->sum(function ($i) {
+                    return collect($i['taxes'])->sum('percent');
+                });
+                $total += MathService::instance()->getTax($item->cost, $total_percentages, $this->prices_includes_taxes);
+            } else {
+                $taxProfile = $item->taxProfile;
+                if ($taxProfile) {
+                    $total += MathService::instance()->getTaxFromTaxProfile($item->cost, $taxProfile, $this->prices_includes_taxes);
+                }
+            }
+        }
+
+        foreach ($this->services as $item) {
+            if ($item->tax_profile_data) {
+                $total_percentages = collect([$item->tax_profile_data])->sum(function ($i) {
+                    return collect($i['taxes'])->sum('percent');
+                });
+                $total += MathService::instance()->getTax($item->price, $total_percentages, $this->prices_includes_taxes);
+            } else {
+                $taxProfile = $item->taxProfile;
+                if ($taxProfile) {
+                    $total += MathService::instance()->getTaxFromTaxProfile($item->price, $taxProfile, $this->prices_includes_taxes);
+                }
             }
         }
 
         return $total;
     }
 
-    protected function getServicesCost($withTaxes = false)
+    public function getServicesCost($withTaxes = false)
     {
         $total = 0;
 
         foreach ($this->services as $service) {
-            $total += $service->price;
+            $price = $service->price;
+            $tax = 0;
             if ($withTaxes and $service->tax_profile_data) {
                 $total_percentages = collect($service->tax_profile_data['taxes'] ?? null)->sum('percent');
-                if ($total_percentages > 0)
-                    $total += $service->price * ($total_percentages / 100);
+                if ($total_percentages > 0 and !$this->prices_includes_taxes){
+                    $tax = MathService::instance()->getTax($price, $total_percentages, $this->prices_includes_taxes);
+                }
             }
+            $total += $price + $tax;
         }
         return $total;
     }

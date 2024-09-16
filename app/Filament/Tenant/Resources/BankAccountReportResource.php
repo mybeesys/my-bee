@@ -106,7 +106,7 @@ class BankAccountReportResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
@@ -121,7 +121,7 @@ class BankAccountReportResource extends Resource
                         if ($state > 0)
                             return CashDet::with('account')->where('op_id', $record->op_id)->where('account_code', '!=', $record->account_code)?->first()->account?->name;
                     })
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
@@ -150,9 +150,7 @@ class BankAccountReportResource extends Resource
                     })
                     ->getStateUsing(function ($record) {
                         return number_format($record->balance_post_transaction, currency_decimals(), '.', '.');
-                    })->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
-                        return main_currency_iso_code() . " " . format_amount($state);
-                    })),
+                    }),
 
                 Tables\Columns\TextColumn::make('operation.files')
                     ->toggleable()

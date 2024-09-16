@@ -415,9 +415,11 @@ class ReceiptVoucherResource extends Resource
                     ->getStateUsing(function ($record) {
                         return main_currency_iso_code() . " " . format_amount($record->payments->sum('amount'));
                     })
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
-                        return main_currency_iso_code() . " " . format_amount($state);
-                    })),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()
+                        ->label(__('fields.total'))
+                        ->formatStateUsing(function ($state) {
+                            return main_currency_iso_code() . " " . format_amount($state);
+                        })),
 
                 Tables\Columns\TextColumn::make('paid_amount_percent')
                     ->extraAttributes(function ($record) {
@@ -442,6 +444,7 @@ class ReceiptVoucherResource extends Resource
                     }),
             ])
             ->filters([
+
                 Tables\Filters\SelectFilter::make('for')
                     ->label(__('fields.entity'))
                     ->multiple()
@@ -453,20 +456,45 @@ class ReceiptVoucherResource extends Resource
                 Tables\Filters\SelectFilter::make('invoice_id')
                     ->label(__('fields.invoice_no'))
                     ->multiple()
-                    ->options(function (){
+                    ->options(function () {
                         return Invoice::whereIn('id', ReceiptVoucher::all()->pluck('invoice_id')->toArray())->pluck('no', 'id')->toArray();
                     }),
 
                 Tables\Filters\SelectFilter::make('acc4_code')
                     ->label(__('fields.account'))
                     ->multiple()
-                    ->options(function (){
+                    ->options(function () {
                         $options = [];
-                        foreach (Acc4::whereIn('code', ReceiptVoucher::all()->pluck('acc4_code')->toArray())->get() as $acc){
-                            $options[$acc->code] = $acc->code . " - ".$acc->name;
+                        foreach (Acc4::whereIn('code', ReceiptVoucher::all()->pluck('acc4_code')->toArray())->get() as $acc) {
+                            $options[$acc->code] = $acc->code . " - " . $acc->name;
                         }
                         return $options;
                     }),
+
+                Tables\Filters\Filter::make('created_at')
+                    ->label(__('fields.created_at'))
+                    ->form([
+
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label(__('fields.created_from')),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label(__('fields.created_until')),
+                    ])
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicator = null;
+                        if ($data['created_from'] or $data['created_until']) {
+                            $indicator = $indicator . __('fields.date');
+                        }
+                        return $indicator;
+                    })
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['created_from'],
+                                fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
+                            ->when($data['created_until'],
+                                fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
+                    })
+
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([

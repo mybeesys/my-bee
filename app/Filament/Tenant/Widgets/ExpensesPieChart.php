@@ -11,11 +11,14 @@ class ExpensesPieChart extends ChartWidget
 
     protected static ?int $sort = 2;
 
+    protected static ?string $maxHeight = '253px';
+
+
     public function getHeading(): ?string
     {
         $total_expenses = Expense::all()->sum('total');
 
-        return __("fields.expenses") . " (" . format_amount($total_expenses) . ")";
+        return __("fields.expenses") . " (" . format_amount($total_expenses, includeCurrencyCode: true) . ")";
     }
 
     protected function getData(): array

@@ -29,13 +29,13 @@ class ListProducts extends ListRecords
             AddToFavourites::make('fav')
                 ->settingKey('fav.products'),
 
-            Action::make('shop_settings')
-                ->label(__('fields.shop_settings'))
-                ->color('gray')
-                ->url(function () {
-                    $slug = filament()->getTenant()->slug;
-                    return "/$slug/profile";
-                }),
+//            Action::make('shop_settings')
+//                ->label(__('fields.shop_settings'))
+//                ->color('gray')
+//                ->url(function () {
+//                    $slug = filament()->getTenant()->slug;
+//                    return "/$slug/profile";
+//                }),
 
             CreateAction::make()
         ];

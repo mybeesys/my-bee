@@ -62,6 +62,13 @@ class ProductsMovementResource extends Resource
                 Tables\Columns\TextColumn::make('type')
                     ->label(__('fields.type'))
                     ->badge()
+                    ->color(function (InvoiceItem $record) {
+                        return match ($record->invoice->type) {
+                            'purchases' => 'danger',
+                            'sales' => 'success',
+                            default => 'warning',
+                        };
+                    })
                     ->getStateUsing(function (InvoiceItem $record) {
                         return $record->invoice->type == "purchases" ?
                             __('fields.products_movements_type_purchases')
@@ -96,31 +103,44 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.qty'))
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('current_qty_movement_balance')
+                    ->label(__('fields.qty_after_movement'))
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('discount')
                     ->label(__('fields.discount'))
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->getStateUsing(fn($record) => number_format($record->discount, currency_decimals(), '.', ','))
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->tooltip(fn($record) => numbers_to_words($record->discount))
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
                 Tables\Columns\TextColumn::make('tax')
                     ->label(__('fields.tax'))
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->getStateUsing(fn($record) => number_format($record->tax, currency_decimals(), '.', ','))
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->tooltip(fn($record) => numbers_to_words($record->tax))
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label(__('fields.unit_price'))
                     ->getStateUsing(fn($record) => number_format($record->price, currency_decimals(), '.', ','))
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->formatStateUsing(function ($state) {
+                    ->tooltip(fn($record) => numbers_to_words($record->price))
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label(__('fields.total'))->formatStateUsing(function ($state) {
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
                 Tables\Columns\TextColumn::make('sub_total')
                     ->label(__('fields.sub_total'))
                     ->getStateUsing(fn($record) => number_format($record->sub_total, currency_decimals(), '.', ','))
+                    ->tooltip(fn($record) => numbers_to_words($record->sub_total))
                     ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
                         ->using(function (Table $table) {
                             return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('sub_total'));
                         })

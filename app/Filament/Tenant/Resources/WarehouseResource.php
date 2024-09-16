@@ -69,6 +69,7 @@ class WarehouseResource extends Resource
                         ->label(__('fields.address')),
 
                     Forms\Components\TextInput::make('phone')
+                        ->placeholder('966xxxxxxxxx')
                         ->label(__('fields.phone')),
 
                 ])->columns(3),

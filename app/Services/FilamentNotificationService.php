@@ -154,6 +154,13 @@ class FilamentNotificationService
         $this->send();
     }
 
+    public function sendInfo($title, $body = null)
+    {
+        $this->status = "info";
+        $this->title = $title;
+        $this->body = $body;
+        $this->send();
+    }
     public function sendDanger($title, $body = null)
     {
         $this->status = "danger";

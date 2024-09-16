@@ -12,6 +12,7 @@ class AdditionalCost extends BaseModel
 
     protected $casts = [
         'meta' => 'array',
+        'tax_profile_data' => 'array',
     ];
 
     public function type(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -23,4 +24,10 @@ class AdditionalCost extends BaseModel
     {
         return $this->morphTo();
     }
+
+    public function taxProfile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(TaxProfile::class, 'tax_profile_id');
+    }
+
 }

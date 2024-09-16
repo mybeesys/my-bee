@@ -39,12 +39,15 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
@@ -222,8 +225,8 @@ class PurchaseInvoiceResource extends Resource
                                 ->color('primary')
                                 ->label(__('fields.add_product'))
                                 ->disabled($form->getRecord()?->locked_at !== null)
-                                ->modalSubmitAction(fn (StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
-                                ->modalCancelAction(fn (StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
+                                ->modalSubmitAction(fn(StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
+                                ->modalCancelAction(fn(StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
                                 ->form([
                                     Forms\Components\Section::make()
                                         ->schema([
@@ -386,6 +389,10 @@ class PurchaseInvoiceResource extends Resource
                             TableRepeater::make('items')
                                 ->label(__('fields.purchases'))
                                 ->relationship('items')
+                                ->mutateRelationshipDataBeforeCreateUsing(function ($data) {
+                                    $data['tax_profile_data'] = TaxProfile::with('taxes')->find($data['tax_profile_id'])?->toArray();
+                                    return $data;
+                                })
                                 ->headers([
                                     Header::make('name')
                                         ->width("165px")
@@ -432,6 +439,7 @@ class PurchaseInvoiceResource extends Resource
                                 ->addActionLabel(__('fields.add'))
                                 ->addable(false)
                                 ->defaultItems(0)
+                                ->minItems(1)
                                 ->deletable($form->getRecord() === null)
                                 ->deleteAction(
                                     fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
@@ -545,6 +553,7 @@ class PurchaseInvoiceResource extends Resource
                         ->afterStateUpdated(fn($livewire) => self::updateInvoicePropertiesFromLivewire($livewire)),
 
                     Forms\Components\Section::make(__('fields.additional_costs'))
+                        ->collapsible()
                         ->disabled($form->getRecord()?->locked_at !== null)
                         ->schema([
                             Repeater::make('additional_costs')
@@ -559,6 +568,8 @@ class PurchaseInvoiceResource extends Resource
                                 ->schema([
 
                                     hidden_tenant_id_field(),
+
+                                    Forms\Components\Hidden::make('tax_profile_data'),
 
                                     Select::make('additional_cost_type_id')
                                         ->label(__('fields.invoice_additional_cost_type'))
@@ -588,16 +599,54 @@ class PurchaseInvoiceResource extends Resource
                                         )
                                         ->searchable(),
 
+                                    Select::make('tax_profile_id')
+                                        ->live()
+                                        ->label(__('fields.tax'))
+                                        ->placeholder('غير خاضع للضريبة')
+                                        ->options(TaxProfile::asOptions())
+                                        ->createOptionForm(TaxProfileResource::getSchemaForCreateOption())
+                                        ->createOptionUsing(function ($data) {
+                                            $data['tenant_id'] = filament()->getTenant()->id;
+                                            $model = TaxProfile::create(Arr::except($data, ['taxes']));
+                                            foreach ($data['taxes'] as $tax) {
+                                                $model->taxes()->create([
+                                                    'tenant_id' => $data['tenant_id'],
+                                                    'tax_profile_id' => $model->id,
+                                                    'description' => $tax['description'],
+                                                    'percent' => $tax['percent'],
+                                                ]);
+                                            }
+                                            return $model->id;
+                                        })
+                                        ->afterStateUpdated(function ($state, Forms\Get $get, Set $set, $livewire) {
+                                            self::updateInvoicePropertiesFromLivewire($livewire);
+                                        })
+                                        ->createOptionAction(
+                                            fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
+                                        ),
+
                                     TextInput::make('cost')
                                         ->live(true)
                                         ->label(__('fields.cost'))
                                         ->numeric()
                                         ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
-                                        ->afterStateUpdated(function (Set $set, $livewire) {
+                                        ->afterStateUpdated(function ($state, Forms\Get $get, Set $set, $livewire) {
                                             self::updateInvoicePropertiesFromLivewire($livewire);
                                         })
                                         ->currency()
                                         ->required(),
+
+                                    TextInput::make('tax')
+                                        ->readOnly()
+                                        ->label(__('fields.tax'))
+                                        ->dehydrated(false)
+                                        ->readOnly(),
+
+                                    TextInput::make('total')
+                                        ->readOnly()
+                                        ->label(__('fields.total'))
+                                        ->dehydrated(false)
+                                        ->readOnly(),
 
                                     TextInput::make('statement')
                                         ->label(__('fields.statement'))
@@ -607,9 +656,8 @@ class PurchaseInvoiceResource extends Resource
                                 ])
                                 ->addActionLabel(__('fields.add'))
                                 ->grid(1)
-                                ->collapsible()
                                 ->defaultItems(0)
-                                ->columns(4),
+                                ->columns(7),
                         ]),
 
                     Forms\Components\Section::make(__('fields.discounts'))
@@ -634,9 +682,15 @@ class PurchaseInvoiceResource extends Resource
                                         $set('discount_option', 'overall');
                                     } else {
                                         $set('discount_option', 'per-item');
-                                        $set('discount_method', 'none');
+                                        $set('discount_method', null);
                                         $set('discount_amount', null);
                                         $set('discount_percent', null);
+                                        $newItems = [];
+                                        foreach ($livewire->data['items'] as $item) {
+                                            $item['discount'] = 0;
+                                            $newItems[] = $item;
+                                        }
+                                        $livewire->data['items'] = $newItems;
                                     }
 
                                     self::updateInvoicePropertiesFromLivewire($livewire);
@@ -783,9 +837,16 @@ class PurchaseInvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('fields.type'))
                     ->badge()
-                    ->color(Color::Neutral)
                     ->getStateUsing(function ($record) {
-                        return __("fields.invoice_status_$record->status");
+                        return __("fields.invoice_status_" . $record->status);
+                    })
+                    ->color(function (Invoice $record) {
+                        return match ($record->status) {
+                            'purchase_order' => 'gray',
+                            'cancelled' => 'danger',
+                            'confirmed' => 'success',
+                            default => 'warning',
+                        };
                     })
                     ->searchable(),
 
@@ -798,23 +859,37 @@ class PurchaseInvoiceResource extends Resource
                     ->label(__('fields.paid_amount'))
                     ->getStateUsing(function ($record) {
                         return main_currency_iso_code() . " " . format_amount($record->total_paid);
-                    }),
-
-                Tables\Columns\TextColumn::make('paid_amount_percent')
-                    ->extraAttributes(function ($record) {
-                        if (percent($record->total_paid, $record->getItemsCost(true, true, true)) > 0) {
-                            return ['class' => 'text-success-700'];
-                        }
-
-                        return ['class' => 'text-danger-700'];
                     })
-                    ->label(__('fields.paid_amount_percent'))
-                    ->getStateUsing(function ($record) {
+                    ->description(function (Invoice $record) {
                         return format_amount(percent($record->total_paid, $record->getItemsCost(true, true, true))) . "%";
-                    }),
+                    })
+                    ->tooltip(function (Invoice $record) {
+                        return numbers_to_words($record->total_paid);
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('total_paid'));
+                        })
+                    ),
+
+//                Tables\Columns\TextColumn::make('paid_amount_percent')
+//                    ->extraAttributes(function ($record) {
+//                        if (percent($record->total_paid, $record->getItemsCost(true, true, true)) > 0) {
+//                            return ['class' => 'text-success-700'];
+//                        }
+//
+//                        return ['class' => 'text-danger-700'];
+//                    })
+//                    ->label(__('fields.paid_amount_percent'))
+//                    ->getStateUsing(function ($record) {
+//                        return format_amount(percent($record->total_paid, $record->getItemsCost(true, true, true))) . "%";
+//                    }),
 
                 Tables\Columns\TextColumn::make('purchases_total')
                     ->label(__('fields.purchases'))
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->description(function ($record) {
                         $amount = $record->getDiscountInAmount();
 
@@ -836,16 +911,26 @@ class PurchaseInvoiceResource extends Resource
                     })
                     ->getStateUsing(function ($record) {
                         return setting('main_currency', 'SAR') . " " . format_amount($record->getItemsCost());
-                    }),
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('items_cost'));
+                        })
+                    ),
 
                 Tables\Columns\TextColumn::make('tax')
                     ->label(__('fields.tax'))
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->getStateUsing(function ($record) {
                         return setting('main_currency', 'SAR') . " " . format_amount($record->getTaxesAsAmount());
                     }),
 
                 Tables\Columns\TextColumn::make('additional_costs_total')
                     ->label(__('fields.additional_costs'))
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->getStateUsing(function ($record) {
                         return setting('main_currency', 'SAR') . " " . format_amount($record->getAdditionalCosts(setting('main_currency', 'SAR')));
                     }),
@@ -857,137 +942,142 @@ class PurchaseInvoiceResource extends Resource
 //                    }),
 
                 Tables\Columns\TextColumn::make('invoice_total')
-                    ->label(__('fields.amount_money'))
+                    ->label(__('fields.invoice_total'))
                     ->color(Color::Violet)
-                    ->description(function ($record) {
+                    ->tooltip(function ($record) {
                         return numbers_to_words($record->getItemsCost(true, true, true));
                     })
                     ->getStateUsing(function ($record) {
                         return format_amount($record->getItemsCost(true, true, true));
-                    }),
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('items_cost'));
+                        })
+                    ),
 
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make(),
 
-                    Tables\Actions\Action::make('status')
-                        ->visible(function ($record) {
-                            return $record->locked_at == null;
-                        })
-                        ->color('warning')
-                        ->icon('heroicon-o-pencil-square')
-                        ->label(__('fields.change_status'))
-                        ->modalWidth('lg')
-                        ->requiresConfirmation()
-                        ->fillForm(function (Invoice $record) {
-                            return [
-                                'current_status' => __('fields.invoice_status_' . $record->status),
-                            ];
-                        })
-                        ->form([
-                            Forms\Components\Section::make([
+                Tables\Actions\Action::make('status')
+                    ->visible(function ($record) {
+                        return $record->locked_at == null;
+                    })
+                    ->color('warning')
+                    ->icon('heroicon-o-pencil-square')
+                    ->label(__('fields.change_status'))
+                    ->modalWidth('lg')
+                    ->requiresConfirmation()
+                    ->fillForm(function (Invoice $record) {
+                        return [
+                            'current_status' => __('fields.invoice_status_' . $record->status),
+                        ];
+                    })
+                    ->form([
+                        Forms\Components\Section::make([
 
-                                Forms\Components\TextInput::make('no')
-                                    ->label("")
-                                    ->formatStateUsing(fn($record) => $record->no)
-                                    ->readOnly()
-                                    ->dehydrated(false),
+                            Forms\Components\TextInput::make('no')
+                                ->label("")
+                                ->formatStateUsing(fn($record) => $record->no)
+                                ->readOnly()
+                                ->dehydrated(false),
 
-                                Forms\Components\TextInput::make('to')
-                                    ->label("")
-                                    ->formatStateUsing(fn($record) => $record->getInvoicePerson())
-                                    ->readOnly()
-                                    ->dehydrated(false),
+                            Forms\Components\TextInput::make('to')
+                                ->label("")
+                                ->formatStateUsing(fn($record) => $record->getInvoicePerson())
+                                ->readOnly()
+                                ->dehydrated(false),
 
 
-                                TextInput::make('current_status')
-                                    ->label(__('fields.current_status'))
-                                    ->dehydrated(false)
-                                    ->helperText(function (Invoice $record) {
+                            TextInput::make('current_status')
+                                ->label(__('fields.current_status'))
+                                ->dehydrated(false)
+                                ->helperText(function (Invoice $record) {
 //                                        if ($record->purchaseStatus) {
 //                                            $service = StatusService::instance(UmrahApplication::class);
 //                                            $canChange = $service->canChangeLocked($record->currentStatus());
 //                                            if ($canChange === false)
 //                                                return "You do not have permission to change the current status.";
 //                                        }
-                                    })
-                                    ->readOnly(),
+                                })
+                                ->readOnly(),
 
-                                Forms\Components\Select::make('status')
-                                    ->label(__('fields.change_status_to'))
-                                    ->default(null)
-                                    ->live()
-                                    ->options([
-                                        'confirmed' => __('fields.invoice_status_confirmed'),
-                                        'cancelled' => __('fields.invoice_status_cancelled'),
-                                    ]),
+                            Forms\Components\Select::make('status')
+                                ->label(__('fields.change_status_to'))
+                                ->default(null)
+                                ->live()
+                                ->options([
+                                    'confirmed' => __('fields.invoice_status_confirmed'),
+                                    'cancelled' => __('fields.invoice_status_cancelled'),
+                                ]),
 
-                                Forms\Components\Placeholder::make('info')
-                                    ->visible(function (Get $get) {
-                                        $status = $get('status');
-                                        return ($status == "confirmed" or $status == "cancelled");
-                                    })
-                                    ->label(function () {
-                                        $msg = __("fields.invoice_will_be_locked_after_this_action");
-                                        return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
-                                    }),
-                            ])
+                            Forms\Components\Placeholder::make('info')
+                                ->visible(function (Get $get) {
+                                    $status = $get('status');
+                                    return ($status == "confirmed" or $status == "cancelled");
+                                })
+                                ->label(function () {
+                                    $msg = __("fields.invoice_will_be_locked_after_this_action");
+                                    return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
+                                }),
                         ])
-                        ->action(function (Invoice $record, array $data) {
+                    ])
+                    ->action(function (Invoice $record, array $data) {
 
-                            if (!can_lock_invoice()) {
-                                fns()->persist(true)->sendWarning(__('fields.insufficient_permission'));
-                                return;
-                            }
+                        if (!can_lock_invoice()) {
+                            fns()->persist(true)->sendWarning(__('fields.insufficient_permission'));
+                            return;
+                        }
 
-                            if ($record->locked_at) {
-                                fns()->sendWarning(__('fields.invoice_locked_edit_disabled'));
-                                return;
-                            }
+                        if ($record->locked_at) {
+                            fns()->sendWarning(__('fields.invoice_locked_edit_disabled'));
+                            return;
+                        }
 
-                            try {
+                        try {
 
-                                DB::beginTransaction();
+                            DB::beginTransaction();
 
-                                if ($data['status'] == "confirmed") {
-                                    $record->lockPurchaseInvoice($data['status']);
-                                    $record->approveAndStockWarehouse();
+                            if ($data['status'] == "confirmed") {
+                                $record->lockPurchaseInvoice($data['status']);
+                                $record->approveAndStockWarehouse();
 
-                                    $tax = $record->items->sum('tax');
-                                    if ($tax > 0) {
-                                        $op = make_taxes_op();
-                                        $accService = new AccountingService();
-                                        $accService
-                                            ->setUp(
-                                                $op->id,
-                                                now(),
-                                                main_currency_iso_code(),
-                                                generate_double_entry_transaction_id(),
-                                                $tax,
-                                                null,
-                                                'Invoice items taxes',
-                                                'Invoice items taxes',
-                                                $record->id,
-                                                meta: ['type' => 'purchase_invoice', 'id' => $record->id],
-                                            )->make('120100001', '122800001')
-                                            ->finish();
-                                    }
-
-                                    fns()->persist(__('fields.invoice_stock_released'));
-                                    fns()->sendSuccess(__('fields.invoice_updated'));
-                                } else {
-                                    $record->update(['status' => $data['status']]);
+                                $tax = $record->items->sum('tax');
+                                if ($tax > 0) {
+                                    $op = make_taxes_op();
+                                    $accService = new AccountingService();
+                                    $accService
+                                        ->setUp(
+                                            $op->id,
+                                            now(),
+                                            main_currency_iso_code(),
+                                            generate_double_entry_transaction_id(),
+                                            $tax,
+                                            null,
+                                            'Invoice items taxes',
+                                            'Invoice items taxes',
+                                            $record->id,
+                                            meta: ['type' => 'purchase_invoice', 'id' => $record->id],
+                                        )->make('120100001', '122800001')
+                                        ->finish();
                                 }
 
-                                DB::commit();
-
-                            } catch (\Exception $exception) {
-                                DB::rollBack();
-                                fns()->displayException($exception);
+                                fns()->persist(__('fields.invoice_stock_released'));
+                                fns()->sendSuccess(__('fields.invoice_updated'));
+                            } else {
+                                $record->update(['status' => $data['status']]);
                             }
 
-                        }),
+                            DB::commit();
+
+                        } catch (\Exception $exception) {
+                            DB::rollBack();
+                            fns()->displayException($exception);
+                        }
+
+                    }),
 
 //                    Tables\Actions\Action::make('download_invoice')
 //                        ->label(__('fields.download_invoice'))
@@ -1025,12 +1115,19 @@ class PurchaseInvoiceResource extends Resource
 //
 //                        }),
 
-                    Tables\Actions\Action::make('payment_details')
-                        ->label(__('fields.payment_details'))
-                        ->icon('heroicon-o-currency-dollar')
-                        ->color('danger')
-                        ->url(fn(Invoice $record) => $record->getPaymentVoucherResourceUrl(), true),
-                ]),
+                Tables\Actions\Action::make('payment_details')
+                    ->label(__('fields.complete_payment'))
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->url(fn(Invoice $record) => $record->getPaymentVoucherResourceUrl(), true),
+            ])
+            ->groups([
+                Tables\Grouping\Group::make('supplier.name')
+                    ->label(__('fields.supplier')),
+
+                Tables\Grouping\Group::make('created_at')
+                    ->getTitleFromRecordUsing(fn(Invoice $record): string => $record->created_at->format('d-m-Y'))
+                    ->label(__('fields.date')),
             ])
             ->filters([
 
@@ -1172,6 +1269,19 @@ class PurchaseInvoiceResource extends Resource
 
         }
 
+        foreach ($additionalCosts as $additionalCost) {
+            $cost = $additionalCost['cost'] ?? 0;
+            $totals['total_additional_costs'] += $cost;
+
+            $taxProfileId = $additionalCost['tax_profile_id'] ?? null;
+            $taxProfile = TaxProfile::find($taxProfileId);
+
+            if ($taxProfile) {
+                $totals['total_taxes'] += MathService::instance()->getTaxFromTaxProfile($cost, $taxProfile, $prices_includes_taxes);
+            }
+        }
+
+
         if ($discountOption == "overall" and $discountMethod == "amount" and is_number($discountAmount))
             $totals['total_discount'] = $discountAmount;
 
@@ -1183,23 +1293,12 @@ class PurchaseInvoiceResource extends Resource
 
         }
 
-        foreach ($additionalCosts as $item) {
-            if (is_number($cost = $item['cost'])) {
-                $totals['total_additional_costs'] += $cost;
-            }
-        }
-
         if ($updateUIFields) {
             $livewire->data['total_invoice_pre_discount_pre_tax'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs']);
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount']);
-
-            if($prices_includes_taxes){
-                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            }else{
-                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
-            }
+            $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
         }
 
         $endTime = microtime(true);
@@ -1228,7 +1327,9 @@ class PurchaseInvoiceResource extends Resource
 
         if ($livewire->data['discount_percent'] ?? null > 0)
             $discountAmount = $livewire->data['discount_percent'];
+
         $newItems = [];
+
         foreach ($livewire->data['items'] ?? [] as $item) {
 
             $price = $item['price'] ?? null;
@@ -1272,7 +1373,7 @@ class PurchaseInvoiceResource extends Resource
                     if ($taxProfile) {
                         $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $prices_includes_taxes);
 
-                        if(!$prices_includes_taxes){
+                        if (!$prices_includes_taxes) {
                             $subTotal += $tax;
                         }
                     }
@@ -1287,6 +1388,29 @@ class PurchaseInvoiceResource extends Resource
         }
 
         $livewire->data['items'] = $newItems;
+
+        $newAdditionalCosts = [];
+
+        foreach ($livewire->data['additional_costs'] ?? [] as $additionalCost) {
+            $taxProfile = TaxProfile::with('taxes')->find($additionalCost['tax_profile_id']);
+            $cost = $additionalCost['cost'] ?? null;
+            if ($taxProfile and $cost) {
+                $additionalCost['tax_profile_data'] = $taxProfile->toArray();
+                $tax = MathService::instance()->getTaxFromTaxProfile($cost, $taxProfile, $prices_includes_taxes);
+                $additionalCost['tax'] = number_format($tax, currency_decimals(), '.', '');
+                if ($prices_includes_taxes) {
+                    $additionalCost['total'] = number_format($cost, currency_decimals(), '.', '');
+                } else {
+                    $additionalCost['total'] = number_format($cost + $tax, currency_decimals(), '.', '');
+                }
+            } else {
+                $additionalCost['tax'] = number_format(0, currency_decimals(), '.', '');
+                $additionalCost['total'] = number_format($cost, currency_decimals(), '.', '');
+            }
+            $newAdditionalCosts[] = $additionalCost;
+        }
+
+        $livewire->data['additional_costs'] = $newAdditionalCosts;
     }
 
 

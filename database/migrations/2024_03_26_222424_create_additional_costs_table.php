@@ -18,6 +18,10 @@ return new class extends Migration
             $table->foreignId('additional_cost_type_id')->index()->references('id')->on('additional_cost_types');
             $table->string('statement');
             $table->decimal('cost', 21, 6);
+
+            $table->foreignId('tax_profile_id')->nullable()->index()->references('id')->on('tax_profiles');
+            $table->text('tax_profile_data')->nullable();
+
             $table->text('meta')->nullable();
             $table->timestamps();
 

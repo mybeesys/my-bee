@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\StockService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,6 +22,17 @@ class InvoiceItem extends BaseModel
         'updated_at' => 'datetime',
     ];
 
+    public static function boot()
+    {
+        parent::boot();
+
+        static::created(function (InvoiceItem $item) {
+            $item->loadMissing(['product', 'productVariant']);
+
+            $item->current_qty_movement_balance = StockService::instance()->getAvailableStock($item->productVariant ?? $item->product) + $item->qty;
+            $item->save();
+        });
+    }
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
