@@ -43,6 +43,11 @@ class CreateInvoiceItemsTable extends Migration
             $table->foreignId('user_id')->nullable()->index()->references('id')->on('users')->restrictOnDelete();
 
             $table->bigInteger('current_qty_movement_balance')->default(0); // calculated during boot of invoiceitem:created
+
+            $table->boolean('cancelled')->default(false);
+            $table->timestamp('cancelled_date')->nullable();
+            $table->foreignId('cancelled_by_id')->nullable()->index()->references('id')->on('users');
+
             $table->timestamps();
         });
     }

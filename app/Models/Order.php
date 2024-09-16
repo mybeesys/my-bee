@@ -24,6 +24,8 @@ class Order extends BaseModel implements HasMedia
         'coupon_data' => 'array',
     ];
 
+    protected $with = ['invoice'];
+
     public static string $STATUS_NEW = "new";
     public static string $STATUS_DELIVERY_IN_PROGRESS = "delivery-in-progress";
     public static string $STATUS_PACKAGING = "packaging";
@@ -132,8 +134,9 @@ class Order extends BaseModel implements HasMedia
     {
         $value = 0;
         foreach ($this->details as $detail) {
-            if (!$detail->cancelled)
-                $value += $detail->orderDetailsExtras->sum('unit_price');
+            if (!$detail->cancelled){
+                $value += $detail->orderDetailsExtras->sum('unit_price') * $detail->qty;
+            }
         }
         return $value;
     }
