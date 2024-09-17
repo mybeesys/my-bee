@@ -532,71 +532,83 @@ class OrderResource extends Resource
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
-            ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.order_no'))
+                    ->toggleable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('customer.name')
                     ->label(__('fields.client'))
-                    ->searchable(),
-//                    ->url(function (Order $record) {
-//                        return CustomerRe::getUrl("edit", $record->client_id);
-//                    }),
+                    ->toggleable()
+                    ->searchable()
+                    ->color(Color::Sky)
+                    ->url(function (Order $record) {
+                        return CustomerResource::getUrl("edit", ['record' => $record->customer_id]);
+                    }, true),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('fields.status'))
                     ->badge()
-//                    ->colors([
-//                        'new' => 'gray',
-//                        'packaging' => 'warning',
-//                        'delivery-in-progress' => 'success',
-//                        'completed' => Color::Green,
-//                        'cancelled' => 'danger',
-//                    ])
+                    ->color(function (Order $record) {
+                        return match ($record->status) {
+                            'new' => 'gray',
+                            'packaging' => 'warning',
+                            'delivery-in-progress' => 'success',
+                            'completed' => Color::Green,
+                            'cancelled' => 'danger',
+                            default => 'danger',
+                        };
+                    })
                     ->getStateUsing(fn($record) => __('fields.order_status_' . $record->status))
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('payment_status')
                     ->badge()
                     ->label(__('fields.payment_status'))
-                    ->getStateUsing(fn(Order $record) => $record->invoice?->payment_status),
-
-                Tables\Columns\TextColumn::make('sub_total')
                     ->toggleable()
-                    ->label(__('fields.sub_total'))
-                    ->tooltip(function ($record) {
-                        return format_amount($record->sub_total);
-                    })
-                    ->getStateUsing(function (Order $record) {
-                        if ($record->discount > 0) {
-                            $originalPrice = format_amount($record->sub_total + $record->discount) . " " . main_currency_iso_code();
-                            $discountedPrice = format_amount($record->sub_total) . " " . main_currency_iso_code();
-                            return new HtmlString("<p><h1 style='text-decoration: line-through; font-weight: lighter; color: #ff5028;'>$originalPrice</h1>  $discountedPrice</p>");
-                        }
-                        return main_currency_iso_code() . " " . format_amount($record->sub_total);
-                    })->description(function (Order $record) {
-                        return $record['coupon_data']['code'] ?? null;
-                    }),
+                    ->toggledHiddenByDefault()
+                    ->getStateUsing(fn(Order $record) => $record->invoice?->payment_status),
 
                 Tables\Columns\TextColumn::make('delivery')
                     ->toggleable()
                     ->label(__('fields.delivery_price'))
                     ->getStateUsing(function (Order $record) {
                         return main_currency_iso_code() . " " . format_amount($record->delivery);
-                    }),
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()
+                        ->label(__('fields.total'))
+                        ->formatStateUsing(function ($state) {
+                            return main_currency_iso_code() . " " . format_amount($state);
+                        })),
+
+//                Tables\Columns\TextColumn::make('sub_total')
+//                    ->toggleable()
+//                    ->label(__('fields.sub_total'))
+//                    ->tooltip(function ($record) {
+//                        return format_amount($record->sub_total);
+//                    })
+//                    ->getStateUsing(function (Order $record) {
+//                        if ($record->discount > 0) {
+//                            $originalPrice = format_amount($record->sub_total + $record->discount) . " " . main_currency_iso_code();
+//                            $discountedPrice = format_amount($record->sub_total) . " " . main_currency_iso_code();
+//                            return new HtmlString("<p><h1 style='text-decoration: line-through; font-weight: lighter; color: #ff5028;'>$originalPrice</h1>  $discountedPrice</p>");
+//                        }
+//                        return main_currency_iso_code() . " " . format_amount($record->sub_total);
+//                    })->description(function (Order $record) {
+//                        return $record['coupon_data']['code'] ?? null;
+//                    }),
 
                 Tables\Columns\TextColumn::make('total')
                     ->toggleable()
                     ->label(__('fields.total'))
-//                    ->tooltip('sub total + delivery price + additional delivery price - discount')
                     ->getStateUsing(function (Order $record) {
                         return main_currency_iso_code() . " " . format_amount($record->total);
                     }),
 
                 Tables\Columns\TextColumn::make('delivery_type')
                     ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->label(__('fields.delivery_type'))
                     ->searchable(),
 //
@@ -614,6 +626,7 @@ class OrderResource extends Resource
 
                 Tables\Columns\TextColumn::make('delivery_address')
                     ->toggleable()
+                    ->toggledHiddenByDefault()
                     ->label(__('fields.delivery_address'))
                     ->searchable(),
 
@@ -714,9 +727,8 @@ class OrderResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
 
-                    Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make(),
 
 //                    Tables\Actions\Action::make('download_invoice')
 //                        ->label(__('fields.download_invoice'))
@@ -745,147 +757,146 @@ class OrderResource extends Resource
 //                                ->send();
 //                        }),
 
-                    Tables\Actions\Action::make('change_status')
-                        ->label(__('fields.change_status'))
-                        ->icon('heroicon-o-pencil')
-                        ->color('warning')
-                        ->disabled(fn($record) => $record and $record->status === Order::$STATUS_CANCELLED or $record->status == Order::$STATUS_COMPLETED)
-                        ->modalWidth(MaxWidth::Small)
-                        ->form(function (Order $record) {
-                            return [
-                                Forms\Components\Section::make()->schema([
+                Tables\Actions\Action::make('change_status')
+                    ->label(__('fields.change_status'))
+                    ->icon('heroicon-o-pencil')
+                    ->color('warning')
+                    ->disabled(fn($record) => $record and $record->status === Order::$STATUS_CANCELLED or $record->status == Order::$STATUS_COMPLETED)
+                    ->modalWidth(MaxWidth::Small)
+                    ->form(function (Order $record) {
+                        return [
+                            Forms\Components\Section::make()->schema([
 
-                                    Select::make('status')
-                                        ->label(__('fields.status'))
-                                        ->live()
-                                        ->options([
-                                            Order::$STATUS_PACKAGING => __('fields.order_status_' . Order::$STATUS_PACKAGING),
-                                            Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_' . Order::$STATUS_DELIVERY_IN_PROGRESS),
-                                            Order::$STATUS_CANCELLED => __('fields.order_status_' . Order::$STATUS_CANCELLED),
-                                            Order::$STATUS_COMPLETED => __('fields.order_status_' . Order::$STATUS_COMPLETED),
-                                        ])
-                                        ->default($record->status)
-                                        ->required(),
+                                Select::make('status')
+                                    ->label(__('fields.status'))
+                                    ->live()
+                                    ->options([
+                                        Order::$STATUS_PACKAGING => __('fields.order_status_' . Order::$STATUS_PACKAGING),
+                                        Order::$STATUS_DELIVERY_IN_PROGRESS => __('fields.order_status_' . Order::$STATUS_DELIVERY_IN_PROGRESS),
+                                        Order::$STATUS_CANCELLED => __('fields.order_status_' . Order::$STATUS_CANCELLED),
+                                        Order::$STATUS_COMPLETED => __('fields.order_status_' . Order::$STATUS_COMPLETED),
+                                    ])
+                                    ->default($record->status)
+                                    ->required(),
 
-                                    Forms\Components\DatePicker::make('delivery_date')
-                                        ->label(__('fields.delivery_date'))
-                                        ->required()
-                                        ->default(today())
-                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_COMPLETED),
+                                Forms\Components\DatePicker::make('delivery_date')
+                                    ->label(__('fields.delivery_date'))
+                                    ->required()
+                                    ->default(today())
+                                    ->visible(fn(Get $get) => $get('status') === Order::$STATUS_COMPLETED),
 
-                                    Forms\Components\DatePicker::make('canceled_date')
-                                        ->label(__('fields.canceled_date'))
-                                        ->required()
-                                        ->default(today())
-                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_CANCELLED),
+                                Forms\Components\DatePicker::make('canceled_date')
+                                    ->label(__('fields.canceled_date'))
+                                    ->required()
+                                    ->default(today())
+                                    ->visible(fn(Get $get) => $get('status') === Order::$STATUS_CANCELLED),
 
-                                    Forms\Components\Textarea::make('canceled_reason')
-                                        ->label(__('fields.canceled_reason'))
-                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_CANCELLED)
-                                        ->cols(5)
-                                        ->rows(5),
+                                Forms\Components\Textarea::make('canceled_reason')
+                                    ->label(__('fields.canceled_reason'))
+                                    ->visible(fn(Get $get) => $get('status') === Order::$STATUS_CANCELLED)
+                                    ->cols(5)
+                                    ->rows(5),
 
-                                    TextInput::make('delivery')
-                                        ->label(__('fields.delivery_price'))
-                                        ->visible(fn(Get $get) => $get('status') === Order::$STATUS_COMPLETED or $get('status') === Order::$STATUS_DELIVERY_IN_PROGRESS)
-                                        ->default($record->delivery)
-                                        ->required()
-                                        ->numeric()
-                                        ->minValue(0)
-                                        ->maxValue(PHP_INT_MAX)
-                                        ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, currency_decimals(), '.', '') : null)
-                                        ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX]),
+                                TextInput::make('delivery')
+                                    ->label(__('fields.delivery_price'))
+                                    ->visible(fn(Get $get) => $get('status') === Order::$STATUS_COMPLETED or $get('status') === Order::$STATUS_DELIVERY_IN_PROGRESS)
+                                    ->default($record->delivery)
+                                    ->required()
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->maxValue(PHP_INT_MAX)
+                                    ->formatStateUsing(fn($state) => is_number($state) ? number_format($state, currency_decimals(), '.', '') : null)
+                                    ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX]),
 
 
-                                    Forms\Components\Placeholder::make('info')
-                                        ->visible(function (Get $get) {
-                                            return ($get('status') === Order::$STATUS_COMPLETED or $get('status') === Order::$STATUS_CANCELLED);
-                                        })
-                                        ->label(function () {
-                                            $msg = __("fields.order_will_be_locked_after_this_action");
-                                            return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
-                                        }),
-                                ]),
-                            ];
-                        })
-                        ->modalWidth(MaxWidth::Small)
-                        ->action(function (Order $record, array $data) {
-                            try {
-                                DB::beginTransaction();
+                                Forms\Components\Placeholder::make('info')
+                                    ->visible(function (Get $get) {
+                                        return ($get('status') === Order::$STATUS_COMPLETED or $get('status') === Order::$STATUS_CANCELLED);
+                                    })
+                                    ->label(function () {
+                                        $msg = __("fields.order_will_be_locked_after_this_action");
+                                        return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
+                                    }),
+                            ]),
+                        ];
+                    })
+                    ->modalWidth(MaxWidth::Small)
+                    ->action(function (Order $record, array $data) {
+                        try {
+                            DB::beginTransaction();
 
-                                if (array_key_exists('delivery', $data)) {
-                                    //sync additional cost
-                                    $invoice = $record->invoice;
-                                    $invAdditionalCost = AdditionalCost::where('meta->type', 'delivery_fees')->where('item_type', Invoice::class)->where('item_id', $invoice->id)->first();
+                            if (array_key_exists('delivery', $data)) {
+                                //sync additional cost
+                                $invoice = $record->invoice;
+                                $invAdditionalCost = AdditionalCost::where('meta->type', 'delivery_fees')->where('item_type', Invoice::class)->where('item_id', $invoice->id)->first();
 
-                                    if ($invAdditionalCost) {
-                                        $invAdditionalCost->update([
-                                            'cost' => $data['delivery'],
-                                        ]);
-                                    }
-
-                                }
-
-                                if ($data['status'] == Order::$STATUS_CANCELLED) {
-                                    //cancel invoice
-                                    $record->invoice->update([
-                                        'status' => 'cancelled',
-                                        'locked_by_id' => auth()->id(),
-                                        'locked_at' => now(),
+                                if ($invAdditionalCost) {
+                                    $invAdditionalCost->update([
+                                        'cost' => $data['delivery'],
                                     ]);
                                 }
 
-                                if ($data['status'] == Order::$STATUS_COMPLETED) {
-                                    //confirmed invoice
-                                    $record->invoice->update([
-                                        'status' => 'confirmed',
-                                        'locked_by_id' => auth()->id(),
-                                        'locked_at' => now(),
-                                    ]);
-
-                                    StockService::instance()->takeStockFromSalesInvoice($record->invoice);
-
-                                }
-
-                                $record->update($data);
-
-                                DB::commit();
-
-                                fns()->saved();
-
-                            } catch (\Throwable $exception) {
-                                DB::rollBack();
-                                fns()->displayException($exception);
-                            }
-                        }),
-
-
-                    Tables\Actions\Action::make('view_invoice')
-                        ->label(__('fields.view_invoice'))
-                        ->icon('heroicon-o-pencil')
-                        ->color('gray')
-                        ->url(fn(Order $record) => SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice->id]), true),
-
-                    Tables\Actions\Action::make('complete_payment')
-                        ->label(__('fields.complete_payment'))
-                        ->icon('heroicon-o-pencil')
-                        ->color('success')
-                        ->visible(function ($record) {
-                            return !$record->invoice?->paid;
-                        })
-                        ->action(function (Order $record) {
-                            if ($record->invoice->salesPayments->isEmpty()) {
-                                return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->invoice->id, 'order_id' => $record->id]));
                             }
 
-                            $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
+                            if ($data['status'] == Order::$STATUS_CANCELLED) {
+                                //cancel invoice
+                                $record->invoice->update([
+                                    'status' => 'cancelled',
+                                    'locked_by_id' => auth()->id(),
+                                    'locked_at' => now(),
+                                ]);
+                            }
 
-                            if ($rv)
-                                return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]));
+                            if ($data['status'] == Order::$STATUS_COMPLETED) {
+                                //confirmed invoice
+                                $record->invoice->update([
+                                    'status' => 'confirmed',
+                                    'locked_by_id' => auth()->id(),
+                                    'locked_at' => now(),
+                                ]);
 
-                        }),
+                                StockService::instance()->takeStockFromSalesInvoice($record->invoice);
 
-                ]),
+                            }
+
+                            $record->update($data);
+
+                            DB::commit();
+
+                            fns()->saved();
+
+                        } catch (\Throwable $exception) {
+                            DB::rollBack();
+                            fns()->displayException($exception);
+                        }
+                    }),
+
+
+                Tables\Actions\Action::make('view_invoice')
+                    ->label(__('fields.view_invoice'))
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->color('gray')
+                    ->url(fn(Order $record) => SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice->id]), true),
+
+                Tables\Actions\Action::make('complete_payment')
+                    ->label(__('fields.complete_payment'))
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->visible(function ($record) {
+                        return !$record->invoice?->paid;
+                    })
+                    ->action(function (Order $record) {
+                        if ($record->invoice->salesPayments->isEmpty()) {
+                            return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->invoice->id, 'order_id' => $record->id]));
+                        }
+
+                        $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
+
+                        if ($rv)
+                            return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]));
+
+                    }),
+
             ])
             ->bulkActions([
             ]);

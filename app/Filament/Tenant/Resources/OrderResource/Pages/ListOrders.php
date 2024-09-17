@@ -10,11 +10,14 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Pages\Actions;
+use Filament\Pages\Concerns\ExposesTableToWidgets;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
 
 class ListOrders extends ListRecords
 {
+    use ExposesTableToWidgets;
+
     protected static string $resource = OrderResource::class;
 
     protected function getActions(): array
@@ -25,8 +28,8 @@ class ListOrders extends ListRecords
         ];
     }
 
-//    protected function getHeaderWidgets(): array
-//    {
-//        return OrderResource::getWidgets();
-//    }
+    protected function getHeaderWidgets(): array
+    {
+        return OrderResource::getWidgets();
+    }
 }

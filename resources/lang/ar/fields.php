@@ -722,8 +722,6 @@ return [
     'no_stock_available' => 'الخيار غير متوفر في المخزن',
     'order_details_item_already_exists' => 'العنصر موجود مسبقا',
 
-    'new_orders' => 'الطلبات الجديدة',
-
     'order_status_new' => 'جديد',
     'order_status_packaging' => 'جاري التجهيز',
     'order_status_delivery-in-progress' => 'جاري التوصيل',
@@ -751,7 +749,7 @@ return [
     'new_clients' => 'العملاء الجدد',
     'latest_orders' => 'أحدث الطلبات',
 
-    'order_will_be_locked_after_this_action' => "هذا الإجراء سيقوم بإغلاق الطلب",
+    'order_will_be_locked_after_this_action' => "هذا الإجراء سيقوم بإغلاق الطلب والفاتورة",
 
     'canceled_reason' => 'سبب الإلغاء',
 
@@ -912,5 +910,15 @@ return [
     'qty_after_movement' => 'الكمية بعد الحركة',
 
     'clients_and_orders_chart' => 'مخطط العملاء والطلبات',
+
+    'all_orders' => 'كل الطلبات',
+    'new_orders' => 'الطلبات الجديدة',
+    'in_packaging_orders' => 'جاري التجهيز',
+    'delivery_in_progress_orders' => 'جاري التوصيل',
+    'completed_orders' => 'مكتملة',
+    'cancelled_orders' => 'ملغية',
+    'revenue' => 'الإيرادات',
+    'revenue_stat_desc' => 'الإيرادات على أساس الطلبات المكتملة والمسددة',
+
 ];
 //

@@ -42,6 +42,11 @@ class Order extends BaseModel implements HasMedia
         return $builder->where('status', self::$STATUS_NEW);
     }
 
+    public function scopePackaging(Builder $builder): Builder
+    {
+        return $builder->where('status', self::$STATUS_PACKAGING);
+    }
+
     public function scopeDeliveryInProgress(Builder $builder): Builder
     {
         return $builder->where('status', self::$STATUS_DELIVERY_IN_PROGRESS);
@@ -143,6 +148,7 @@ class Order extends BaseModel implements HasMedia
 
     public function getTotalAttribute()
     {
+//        dd($this->sub_total, $this->delivery , $this->extras_total, $this->delivery_extra);
         return $this->sub_total + $this->delivery + $this->delivery_extra;
     }
 }

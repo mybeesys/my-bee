@@ -714,8 +714,6 @@ return [
     'no_stock_available' => 'No stock available',
     'order_details_item_already_exists' => 'Item already exists',
 
-    'new_orders' => 'New orders',
-
     'order_status_new' => 'New',
     'order_status_packaging' => 'Packaging',
     'order_status_delivery-in-progress' => 'Delivery in-progress',
@@ -744,7 +742,7 @@ return [
     'new_clients' => 'New clients ',
     'latest_orders' => 'Latest orders',
 
-    'order_will_be_locked_after_this_action' => "Order will be locked after this action",
+    'order_will_be_locked_after_this_action' => "Order and invoice will be locked after this action",
 
     'canceled_reason' => 'Cancelled reason',
 
@@ -906,5 +904,15 @@ return [
     'qty_after_movement' => 'qty after movement',
 
     'clients_and_orders_chart' => 'Clients and orders chart',
+
+    'all_orders' => 'All',
+    'new_orders' => 'New',
+    'in_packaging_orders' => 'In packaging',
+    'delivery_in_progress_orders' => 'Delivery in progress',
+    'completed_orders' => 'Completed',
+    'cancelled_orders' => 'Cancelled',
+    'revenue' => 'Revenue',
+    'revenue_stat_desc' => 'Revenue based on completed/paid orders',
+
 ];
 //
