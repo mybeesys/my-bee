@@ -503,6 +503,7 @@ class StoreController extends BaseController
                         'product_variant_id' => $product_variant_id,
                         'order_details_id' => $od->id,
                         'tax_profile_id' => $tax_profile_id,
+                        'tax_profile_data' => $tax_profile_data,
                         'discount' => $discount, //handled as overall discount
                         'tax' => $tax,
                         'qty' => $item['qty'],

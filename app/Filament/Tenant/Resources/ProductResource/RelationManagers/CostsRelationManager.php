@@ -39,7 +39,7 @@ class CostsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('cost')
                     ->label('القيمة')
                     ->required()
-                    ->minValue(1)
+                    ->minValue(0)
                     ->numeric(),
                 Forms\Components\RichEditor::make('description')
                     ->label('الوصف')

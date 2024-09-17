@@ -140,9 +140,11 @@ class Invoice extends BaseModel
         foreach ($this->items as $item) {
             $subTotal = $item->price * $item->qty;
             $extras += PricingService::instance()->getItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
+
             if ($applyDiscount) {
                 $subTotal -= $item->discount;
             }
+
             $items += $subTotal;
         }
 
@@ -234,7 +236,7 @@ class Invoice extends BaseModel
             } else {
                 $subTotal = $item->price * $item->qty;
                 $subTotal -= $item->discount;
-
+                $subTotal += PricingService::instance()->getItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
                     $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->prices_includes_taxes);

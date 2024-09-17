@@ -629,7 +629,7 @@ class PurchaseInvoiceResource extends Resource
                                         ->live(true)
                                         ->label(__('fields.cost'))
                                         ->numeric()
-                                        ->extraInputAttributes(['min' => 1, 'max' => PHP_INT_MAX])
+                                        ->extraInputAttributes(['min' => 0, 'max' => PHP_INT_MAX])
                                         ->afterStateUpdated(function ($state, Forms\Get $get, Set $set, $livewire) {
                                             self::updateInvoicePropertiesFromLivewire($livewire);
                                         })
