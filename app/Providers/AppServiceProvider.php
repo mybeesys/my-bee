@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Services\CouponService;
 use App\Tables\Columns\DateColumn;
 use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
@@ -19,6 +20,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configPublicPath();
         $this->configFilament();
         $this->configMacros();
+        $this->configSpatieBackupPluginPermissions();
 
         Page::$reportValidationErrorUsing = function (ValidationException $exception) {
             fns()->sendWarning($exception->getMessage());
@@ -151,5 +154,16 @@ class AppServiceProvider extends ServiceProvider
             return $this;
         });
 
+    }
+
+    protected function configSpatieBackupPluginPermissions()
+    {
+        Gate::define('download-backup', function (User $user) {
+            return in_array($user->email, explode(',', env('BACKUP_MANAGERS')));
+        });
+
+        Gate::define('delete-backup', function (User $user) {
+            return in_array($user->email, explode(',', env('BACKUP_MANAGERS')));
+        });
     }
 }

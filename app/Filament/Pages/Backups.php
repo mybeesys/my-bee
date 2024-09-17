@@ -13,7 +13,7 @@ use ShuvroRoy\FilamentSpatieLaravelBackup\Pages\Backups as BaseBackups;
 class Backups extends BaseBackups
 {
 
-    protected static ?int $navigationSort = 7;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $navigationIcon = 'heroicon-o-cpu-chip';
 
@@ -30,7 +30,7 @@ class Backups extends BaseBackups
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return true;
     }
 
     public function create(string $option = ''): void
