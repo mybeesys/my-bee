@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\MathService;
+use App\Services\PricingService;
 use App\Services\StockService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -94,16 +96,19 @@ class InvoiceItem extends BaseModel
             });
 
             $subTotal = $this->price * $this->qty;
+            $subTotal += PricingService::instance()->getItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
             $subTotal -= $this->discount;
-            $total += $subTotal * ($total_percentages / 100);
+
+            $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->invoice->prices_includes_taxes);
 
         } else {
             $subTotal = $this->price * $this->qty;
+            $subTotal += PricingService::instance()->getItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
             $subTotal -= $this->discount;
 
             $taxProfile = $this->taxProfile;
             if ($taxProfile) {
-                $total += $subTotal * ($taxProfile->total_percentages / 100);
+                $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->invoice->prices_includes_taxes);
             }
         }
 

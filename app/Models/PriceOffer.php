@@ -104,6 +104,7 @@ class PriceOffer extends BaseModel
             } else {
                 $subTotal = $item->unit_price * $item->qty;
                 $subTotal -= $item->discount;
+                $subTotal += PricingService::instance()->getItemsPrices($item->offerDetailsExtras->pluck('productExtra')) * $item->qty;
 
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
