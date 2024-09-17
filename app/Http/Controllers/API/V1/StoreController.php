@@ -542,7 +542,7 @@ class StoreController extends BaseController
                         'display_name' => $productExtra->name,
                         'qty' => 1,
                     ]);
-                    
+
                     $invoiceItem->extras()->create([
                         'tenant_id' => $tenant->id,
                         'invoice_item_id' => $invoiceItem->id,
