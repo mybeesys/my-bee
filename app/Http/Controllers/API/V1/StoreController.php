@@ -578,6 +578,7 @@ class StoreController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
             return $this->error($exception)->message("حدث خطأ أثناء عمل الطلب, قم بإفراغ السلة وحاول مجددآ")->respond();
         }
     }
