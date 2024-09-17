@@ -475,7 +475,7 @@ class StoreController extends BaseController
                     $subTotal = $unit_price * $item['qty'];
                     $subTotal -= $discount;
 
-                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item->qty;
+                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
                     if($product->taxProfile){
                         $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
@@ -491,7 +491,7 @@ class StoreController extends BaseController
                     $subTotal = $unit_price * $item['qty'];
                     $subTotal -= $discount;
 
-                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item->qty;
+                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
                     if($productVariant->product->taxProfile){
                         $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $productVariant->product->taxProfile, true);
