@@ -100,6 +100,16 @@ class PricingService
         return $price;
     }
 
+    public function getRetailItemsPrices($items)
+    {
+        $price = 0;
+
+        foreach ($items as $item) {
+            $price += $item?->lastPrice?->retail_price ?? 0;
+        }
+        return $price;
+    }
+
     public function getOriginalPrice(?Model $model, $default = 0)
     {
         return $model?->lastPrice?->price ?? $default;

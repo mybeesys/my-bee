@@ -430,7 +430,7 @@ class PriceOfferResource extends Resource
                                     })
                                     ->suffix(function (Get $get) {
                                         $exts = ProductExtra::findMany($get('product_extras_ids'));
-                                        return format_amount(PricingService::instance()->getItemsPrices($exts));
+                                        return format_amount(PricingService::instance()->getRetailItemsPrices($exts));
                                     })
                                     ->multiple(),
 
@@ -1054,7 +1054,7 @@ class PriceOfferResource extends Resource
         foreach ($items as $item) {
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
-            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
@@ -1160,7 +1160,7 @@ class PriceOfferResource extends Resource
         $newItems = [];
 
         foreach ($livewire->data['details'] ?? [] as $item) {
-            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
 
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;

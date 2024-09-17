@@ -44,6 +44,7 @@ use App\Models\SupplyOrder;
 use App\Models\Tenant;
 use App\Services\CacheService;
 use App\Services\CouponService;
+use App\Services\MathService;
 use App\Services\MediaService;
 use App\Services\PricingService;
 use App\Services\StockService;
@@ -461,6 +462,8 @@ class StoreController extends BaseController
                 $item_type = null;
                 $unit_price = 0;
                 $tax = 0;
+                $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
+
                 $discount = $cart['coupon']['valid'] ? ($cart['coupon']['amount'] / count($items)) : 0;
 
                 if ($item['type'] == "basic") {
@@ -468,14 +471,31 @@ class StoreController extends BaseController
                     $item_id = $product->id;
                     $item_type = get_class($product);
                     $unit_price = PricingService::instance()->getRetailPrice($product);
-                    $tax = PricingService::instance()->getTaxAmount($product, PricingService::instance()->getRetailPrice($product), $item['qty']);
+
+                    $subTotal = $unit_price * $item['qty'];
+                    $subTotal -= $discount;
+
+                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item->qty;
+
+                    if($product->taxProfile){
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
+                    }
+
                 } else if ($item['type'] == "variants") {
                     $productVariant = ProductVariant::find($item['productVariantId']);
                     $itemModel = $productVariant;
                     $item_id = $productVariant->id;
                     $item_type = get_class($productVariant);
                     $unit_price = PricingService::instance()->getRetailPrice($productVariant);
-                    $tax = PricingService::instance()->getTaxAmount($productVariant->product, PricingService::instance()->getRetailPrice($productVariant), $item['qty']);
+
+                    $subTotal = $unit_price * $item['qty'];
+                    $subTotal -= $discount;
+
+                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item->qty;
+
+                    if($productVariant->product->taxProfile){
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $productVariant->product->taxProfile, true);
+                    }
                 } else {
                     throw new \Exception("Unknown product type");
                 }
@@ -744,8 +764,6 @@ class StoreController extends BaseController
 
     protected function generateCartData(array $items): array
     {
-        $taxes = $this->calculateTaxes(array_values($items));
-
         $extrasTotal = collect($items)->sum(function ($item) {
             return collect($item['extras'])->sum('price');
         });
@@ -753,6 +771,8 @@ class StoreController extends BaseController
         $subTotal = $this->calculateSubTotal($items) + $extrasTotal;
 
         $couponData = $this->getCouponInfo($subTotal);
+
+        $taxes = $this->calculateTaxes(array_values($items), $couponData);
 
         return [
             'subTotal' => $subTotal,
@@ -782,13 +802,23 @@ class StoreController extends BaseController
         ];
     }
 
-    protected function calculateTaxes(array $items)
+    protected function calculateTaxes(array $items, $couponData)
     {
-//        'type', 'productId', 'productVariantId'
         $taxes = 0;
         foreach ($items as $item) {
-            $product = Product::find($item['productId']);
-            $taxes += PricingService::instance()->getTaxAmount($product, $item['price'], $item['qty']);
+            $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
+
+            $discount = $couponData['valid'] ? ($couponData['amount'] / count($items)) : 0;
+
+            $product = Product::with(['taxProfile', 'lastPrice'])->find($item['productId']);
+            if($product->taxProfile){
+                $unit_price = PricingService::instance()->getRetailPrice($product);
+                $subTotal = $unit_price * $item['qty'];
+                $subTotal -= $discount;
+                $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item->qty;
+
+                $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
+            }
         }
         return $taxes;
     }

@@ -233,7 +233,7 @@ class CreateSalesInvoice extends CreateRecord
 
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
-            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
@@ -330,7 +330,7 @@ class CreateSalesInvoice extends CreateRecord
 
         $newItems = [];
         foreach ($createSalesInvoice->data['items'] ?? [] as $item) {
-            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
 
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;

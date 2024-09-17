@@ -52,6 +52,8 @@ class OrderResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $recordTitleAttribute = 'no';
+
     protected static ?string $slug = "orders";
 
     protected static ?int $navigationSort = 1;

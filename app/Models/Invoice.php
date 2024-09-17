@@ -139,7 +139,7 @@ class Invoice extends BaseModel
 
         foreach ($this->items as $item) {
             $subTotal = $item->price * $item->qty;
-            $extras += PricingService::instance()->getItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
+            $extras += PricingService::instance()->getRetailItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
 
             if ($applyDiscount) {
                 $subTotal -= $item->discount;
@@ -230,13 +230,13 @@ class Invoice extends BaseModel
                     return collect($i['taxes'])->sum('percent');
                 });
                 $subTotal = $item->price * $item->qty;
-                $subTotal += PricingService::instance()->getItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
+                $subTotal += PricingService::instance()->getRetailItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
                 $subTotal -= $item->discount;
                 $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->prices_includes_taxes);
             } else {
                 $subTotal = $item->price * $item->qty;
                 $subTotal -= $item->discount;
-                $subTotal += PricingService::instance()->getItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
+                $subTotal += PricingService::instance()->getRetailItemsPrices($item->extras->pluck('productExtra')) * $item->qty;
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
                     $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->prices_includes_taxes);

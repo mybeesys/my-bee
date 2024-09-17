@@ -96,14 +96,14 @@ class InvoiceItem extends BaseModel
             });
 
             $subTotal = $this->price * $this->qty;
-            $subTotal += PricingService::instance()->getItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
+            $subTotal += PricingService::instance()->getRetailItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
             $subTotal -= $this->discount;
 
             $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->invoice->prices_includes_taxes);
 
         } else {
             $subTotal = $this->price * $this->qty;
-            $subTotal += PricingService::instance()->getItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
+            $subTotal += PricingService::instance()->getRetailItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
             $subTotal -= $this->discount;
 
             $taxProfile = $this->taxProfile;
