@@ -66,7 +66,7 @@ class PriceOffer extends BaseModel
         if ($applyTaxes) {
             $taxes = $this->getTaxesAsAmount();
         }
-        
+
         $taxes = $this->prices_includes_taxes ? 0 : $taxes;
 
         return $items + $extras + $additionalCosts + $services + $taxes;

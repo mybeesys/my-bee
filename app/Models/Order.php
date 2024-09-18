@@ -132,38 +132,19 @@ class Order extends BaseModel implements HasMedia
     {
         return $this->belongsTo(Coupon::class);
     }
-
-
-    public function getSubTotalAttribute()
-    {
-        $price = 0;
-        $taxes = 0;
-        $discount = 0;
-
-        foreach ($this->details as $detail) {
-            if (!$detail->cancelled){
-                $price += $detail->unit_price * $detail->qty;
-                $taxes += $detail->tax;
-                $discount += $detail->discount;
-            }
-        }
-        return $price + $this->extras_total + $taxes - $discount;
-    }
-
+    
     public function getExtrasTotalAttribute()
     {
-        $value = 0;
-        foreach ($this->details as $detail) {
-            if (!$detail->cancelled){
-                $value += $detail->orderDetailsExtras->sum('unit_price') * $detail->qty;
-            }
+        $total = 0;
+        foreach ($this->invoice->items as $item) {
+            $total += $item->extras_total;
         }
-        return $value;
+        return $total;
     }
 
     public function getTotalAttribute()
     {
-        return $this->sub_total + $this->delivery + $this->delivery_extra;
+        return $this->invoice->getItemsCost(true, true, true);
     }
 
     public function getFullAddressAttribute()
