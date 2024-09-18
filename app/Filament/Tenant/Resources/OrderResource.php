@@ -10,6 +10,7 @@ use App\Models\City;
 use App\Models\Country;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\PriceOffer;
@@ -28,15 +29,22 @@ use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
+use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Get;
+use Filament\Infolists\Components\RepeatableEntry;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Alignment;
+use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -162,12 +170,10 @@ class OrderResource extends Resource
                     ->headerActions([
                         Forms\Components\Actions\Action::make('add_product')
                             ->hidden(fn($record) => $record != null and $record->status == Order::$STATUS_COMPLETED or $record and $record->status == Order::$STATUS_CANCELLED)
-                            ->color(Color::Slate)
+                            ->color('primary')
                             ->label(__('fields.add_product'))
-                            ->modalSubmitActionLabel(__('fields.add'))
-//                            ->extraModalFooterActions(fn (Forms\Components\Actions\Action $action): array => [
-//                                $action->makeModalSubmitAction('createAnother', ['another' => true]),
-//                            ])
+                            ->modalSubmitAction(fn(StaticAction $action) => $action->label(__('fields.add'))->color('primary'))
+                            ->modalCancelAction(fn(StaticAction $action) => $action->label(__('fields.close'))->color('danger'))
                             ->form([
                                 Forms\Components\Section::make()
                                     ->schema([
@@ -316,6 +322,7 @@ class OrderResource extends Resource
                                         'price' => format_amount($qty * $price),
                                         'tax' => PricingService::instance()->getTaxAmount($product, $price, $qty),
                                         'product_extras_ids' => $productExtrasIds,
+                                        'available_product_extras_ids' => $product->extras->pluck('id')->toArray(),
                                         'extras' => implode(', ', ProductExtra::findMany($productExtrasIds)->pluck('name')->toArray()),
                                     ];
 
@@ -452,12 +459,29 @@ class OrderResource extends Resource
                                 Forms\Components\Hidden::make('item_type'),
                                 Forms\Components\Hidden::make('unit_price'),
 
-                                Forms\Components\Hidden::make('product_extras_ids'),
+//                                Forms\Components\Hidden::make('product_extras_ids'),
 
                                 TextInput::make('display_name')->label(__('fields.product'))->readOnly(),
 
-                                TextInput::make('extras')->label(__('fields.product_extras'))->readOnly(),
+//                                TextInput::make('extras')->label(__('fields.product_extras'))->readOnly(),
 
+                                Select::make('product_extras_ids')
+                                    ->label(__('fields.product_extras'))
+                                    ->live()
+                                    ->default(function (Get $get) {
+                                        return ProductExtra::findMany($get('available_product_extras_ids'))->pluck('name', 'id');
+                                    })
+                                    ->options(function (Get $get) {
+                                        return ProductExtra::findMany($get('available_product_extras_ids'))->pluck('name', 'id');
+                                    })
+                                    ->afterStateUpdated(function (Get $get, $livewire) {
+                                        self::updateTotal($livewire);
+                                    })
+                                    ->suffix(function (Get $get) {
+                                        $exts = ProductExtra::findMany($get('product_extras_ids'));
+                                        return format_amount(PricingService::instance()->getRetailItemsPrices($exts));
+                                    })
+                                    ->multiple(),
 
                                 TextInput::make('qty')
                                     ->label(__('fields.qty'))
@@ -485,8 +509,6 @@ class OrderResource extends Resource
 
                                 TextInput::make('price')
                                     ->label(__('fields.price'))
-                                    ->prefixIcon('heroicon-o-calculator')
-                                    ->suffix(fn() => main_currency_iso_code())
                                     ->dehydrated(false)
                                     ->readOnly(),
 
@@ -729,7 +751,6 @@ class OrderResource extends Resource
             ->actions([
 
                 Tables\Actions\ViewAction::make(),
-
 //                    Tables\Actions\Action::make('download_invoice')
 //                        ->label(__('fields.download_invoice'))
 //                        ->icon('heroicon-o-download')
@@ -904,6 +925,9 @@ class OrderResource extends Resource
 
     protected static function updateTotal($livewire)
     {
+        if (!isset($livewire->data))
+            return;
+
         $extras = 0;
         $taxes = 0;
         $delivery = $livewire->data['delivery'];
@@ -1005,11 +1029,15 @@ class OrderResource extends Resource
         return parent::getEloquentQuery()->with(
             [
                 'invoice.items.orderDetails.orderDetailsExtras',
+                'invoice.items.extras.productExtra.extra',
                 'invoice.salesPayments',
                 'customer',
                 'user',
                 'details.item',
                 'details.orderDetailsExtras.productExtra.extra',
+                'state',
+                'city',
+                'area'
             ])->latest();
     }
 
@@ -1030,9 +1058,110 @@ class OrderResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => \App\Filament\Tenant\Resources\OrderResource\Pages\ListOrders::route('/'),
-            'create' => \App\Filament\Tenant\Resources\OrderResource\Pages\CreateOrder::route('/create'),
-            'edit' => \App\Filament\Tenant\Resources\OrderResource\Pages\EditOrder::route('/{record}/edit'),
+            'index' => Pages\ListOrders::route('/'),
+            'create' => Pages\CreateOrder::route('/create'),
+            'edit' => Pages\EditOrder::route('/{record}/edit'),
+            'view' => Pages\ViewOrder::route('/{record}/view'),
         ];
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            Section::make([
+
+                TextEntry::make('status')
+                    ->label(__('fields.status'))
+                    ->weight(FontWeight::ExtraBold)
+                    ->size(TextEntry\TextEntrySize::Large)
+                    ->color(function (Order $record) {
+                        return match ($record->status) {
+                            'new' => 'gray',
+                            'packaging' => 'warning',
+                            'delivery-in-progress' => 'success',
+                            'completed' => Color::Green,
+                            'cancelled' => 'danger',
+                            default => 'danger',
+                        };
+                    })
+                    ->formatStateUsing(fn($state) => __('fields.order_status_' . $state)),
+
+                TextEntry::make('no')
+                    ->label(__('fields.order_no'))
+                    ->copyable()
+                    ->weight(FontWeight::Bold),
+
+                TextEntry::make('customer.name')
+                    ->label(__('fields.client'))
+                    ->color(Color::Sky)
+                    ->url(fn($record) => CustomerResource::getUrl('edit', ['record' => $record->customer_id]), true),
+
+                TextEntry::make('created_at')
+                    ->label(__('fields.order_date'))
+                    ->dateTime('l jS \of F h:i A'),
+
+
+                TextEntry::make('delivery_address')
+                    ->label(__('fields.delivery_address')),
+
+                TextEntry::make('delivery')
+                    ->label(__('fields.delivery_price'))
+                    ->formatStateUsing(fn($state) => number_format($state, currency_decimals(), '.', ',')),
+
+                TextEntry::make('invoice.no')
+                    ->label(__('fields.invoice'))
+                    ->color(Color::Sky)
+                    ->url(fn($record) => SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice_id]), true),
+
+                TextEntry::make('invoice_total')
+                    ->label(__('fields.invoice_total'))
+                    ->color(Color::Sky)
+                    ->tooltip(function (Order $record) {
+                        return numbers_to_words(number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ','));
+                    })
+                    ->getStateUsing(function (Order $record) {
+                        return number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ',');
+                    })
+            ])->columns(2),
+
+            RepeatableEntry::make('invoice.items')
+                ->label(__('fields.items'))
+                ->schema([
+
+                    TextEntry::make('name')
+                        ->label(__('fields.name')),
+
+                    TextEntry::make('extras')
+                        ->label(__('fields.product_extras'))
+                        ->size(TextEntry\TextEntrySize::ExtraSmall)
+                        ->listWithLineBreaks()
+                        ->getStateUsing(function (InvoiceItem $record) {
+                            return $record->extras_names;
+                        }),
+
+                    TextEntry::make('extras_total')
+                        ->label(__('fields.extras_total'))
+                        ->getStateUsing(function (InvoiceItem $record) {
+                            return number_format($record->extras_total, currency_decimals(), '.', ',');
+                        }),
+
+                    TextEntry::make('qty')
+                        ->label(__('fields.qty')),
+
+                    TextEntry::make('discount')
+                        ->formatStateUsing(fn($state) => number_format($state, currency_decimals(), '.', ','))
+                        ->label(__('fields.discount')),
+
+                    TextEntry::make('tax')
+                        ->formatStateUsing(fn($state) => number_format($state, currency_decimals(), '.', ','))
+                        ->label(__('fields.tax')),
+
+                    TextEntry::make('price')
+                        ->formatStateUsing(fn($state) => number_format($state, currency_decimals(), '.', ','))
+                        ->label(__('fields.price')),
+
+                ])->columns(7),
+
+        ])->columns(1);
     }
 }

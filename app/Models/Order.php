@@ -113,6 +113,21 @@ class Order extends BaseModel implements HasMedia
         return $this->belongsTo(User::class);
     }
 
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
+
     public function coupon(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Coupon::class);
@@ -150,5 +165,12 @@ class Order extends BaseModel implements HasMedia
     {
 //        dd($this->sub_total, $this->delivery , $this->extras_total, $this->delivery_extra);
         return $this->sub_total + $this->delivery + $this->delivery_extra;
+    }
+
+    public function getFullAddressAttribute()
+    {
+        $address = "";
+
+        return $address;
     }
 }

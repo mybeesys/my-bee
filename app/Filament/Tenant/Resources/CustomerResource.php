@@ -58,9 +58,8 @@ class CustomerResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make()
-                    ->schema(self::getSchema())->columns(4)
-            ]);
+                self::getSchema()[0]
+            ])->columns(4);
     }
 
     public static function getSchema(): array

@@ -140,14 +140,21 @@ class InvoiceItem extends BaseModel
         return $returned;
     }
 
-//    public function getNameAttribute()
-//    {
-//        if ($this->productVariant) {
-//            return $this->productVariant->name;
-//        }
-//        if ($this->product) {
-//            return $this->product->name;
-//        }
-//        return "N/A";
-//    }
+    public function getExtrasNamesAttribute()
+    {
+        $names = [];
+        foreach ($this->extras as $invoiceItemExtra) {
+            $names[] = $invoiceItemExtra->display_name."(".number_format($invoiceItemExtra->unit_price, currency_decimals(), '.', '').")";
+        }
+        return $names;
+    }
+
+    public function getExtrasTotalAttribute()
+    {
+        $amount = 0;
+        foreach ($this->extras as $invoiceItemExtra) {
+            $amount += $invoiceItemExtra->unit_price * $this->qty;
+        }
+        return $amount;
+    }
 }

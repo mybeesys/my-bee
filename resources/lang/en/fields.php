@@ -914,5 +914,7 @@ return [
     'revenue' => 'Revenue',
     'revenue_stat_desc' => 'Revenue based on completed/paid orders',
 
+    'extras_total' => 'Extras total',
+
 ];
 //

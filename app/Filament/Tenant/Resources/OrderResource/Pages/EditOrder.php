@@ -97,6 +97,7 @@ class EditOrder extends EditRecord
                 "product_id" => $product_id,
                 "unit_id" => $unit_id,
                 'product_extras_ids' => $detail->orderDetailsExtras->pluck('product_extra_id')->toArray(),
+                'available_product_extras_ids' => $detail->orderDetailsExtras->pluck('productExtra.extra')->pluck('id')->toArray(),
                 "extras" => implode(', ', $detail->orderDetailsExtras->pluck('productExtra.extra')->pluck('name')->toArray()),
                 "qty" => $detail->qty,
                 'display_name' => $detail->item->name,
