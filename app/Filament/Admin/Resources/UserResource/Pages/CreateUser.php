@@ -58,6 +58,7 @@ class CreateUser extends CreateRecord
             \DB::commit();
         } catch (\Exception $exception) {
             \DB::rollBack();
+            report($exception);
             Notification::make()
                 ->title("Error")
                 ->body($exception->getMessage())

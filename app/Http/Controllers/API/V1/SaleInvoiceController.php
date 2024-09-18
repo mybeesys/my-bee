@@ -438,6 +438,8 @@ class SaleInvoiceController extends BaseController
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 
@@ -478,6 +480,8 @@ class SaleInvoiceController extends BaseController
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 
@@ -506,6 +510,8 @@ class SaleInvoiceController extends BaseController
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 

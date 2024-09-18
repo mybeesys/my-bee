@@ -104,6 +104,7 @@ class RegisterClient extends SimplePage
             DB::commit();
         } catch (TooManyRequestsException $exception) {
             DB::rollBack();
+            report($exception);
             Notification::make()
                 ->title(__('filament-panels::pages/auth/register.notifications.throttled.title', [
                     'seconds' => $exception->secondsUntilAvailable,
@@ -119,6 +120,8 @@ class RegisterClient extends SimplePage
             return null;
         } catch (QueryException $exception) {
             DB::rollBack();
+            report($exception);
+
             fns()->displayException($exception);
 //            fns()->sendDanger("تعذر إضافة النشاط", 'حدث خطأ أثناء إنشاء النشاط.');
             return null;

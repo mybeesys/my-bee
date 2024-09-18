@@ -1074,6 +1074,7 @@ class PurchaseInvoiceResource extends Resource
 
                         } catch (\Exception $exception) {
                             DB::rollBack();
+                            report($exception);
                             fns()->displayException($exception);
                         }
 
@@ -1116,7 +1117,7 @@ class PurchaseInvoiceResource extends Resource
 //                        }),
 
                 Tables\Actions\Action::make('payment_details')
-                    ->label(__('fields.complete_payment'))
+                    ->label(__('fields.payment_details'))
                     ->icon('heroicon-o-currency-dollar')
                     ->color('success')
                     ->url(fn(Invoice $record) => $record->getPaymentVoucherResourceUrl(), true),
@@ -1298,7 +1299,12 @@ class PurchaseInvoiceResource extends Resource
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            if ($prices_includes_taxes) {
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount']);
+
+            } else {
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            }
         }
 
         $endTime = microtime(true);

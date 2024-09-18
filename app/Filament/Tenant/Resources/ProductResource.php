@@ -957,6 +957,7 @@ class ProductResource extends Resource
 
                                 } catch (\Exception $exception) {
                                     DB::rollBack();
+                                    report($exception);
                                     fns()->displayException($exception);
                                 }
                             } else {

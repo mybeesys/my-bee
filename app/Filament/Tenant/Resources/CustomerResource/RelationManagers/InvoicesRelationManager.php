@@ -235,13 +235,15 @@ class InvoicesRelationManager extends RelationManager
 
                             } catch (\Exception $exception) {
                                 DB::rollBack();
+                                report($exception);
+
                                 fns()->displayException($exception);
                             }
 
                         }),
 
                     Tables\Actions\Action::make('complete_payment')
-                        ->label(__('fields.complete_payment'))
+                        ->label(__('fields.payment_details'))
                         ->icon('heroicon-o-pencil')
                         ->color('success')
                         ->visible(function ($record) {

@@ -154,8 +154,8 @@ class CreateReceiptVoucher extends CreateRecord
             return;
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
             fns()->sendDanger('خطأ', 'فشلت العمليلة الرجاء التواصل مع الدعم الفني');
-            dd($exception);
             $this->halt();
         }
 

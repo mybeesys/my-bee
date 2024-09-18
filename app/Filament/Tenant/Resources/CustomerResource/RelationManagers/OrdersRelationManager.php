@@ -356,6 +356,8 @@ class OrdersRelationManager extends RelationManager
 
                             } catch (\Throwable $exception) {
                                 DB::rollBack();
+                                report($exception);
+
                                 fns()->displayException($exception);
                             }
                         }),
@@ -368,7 +370,7 @@ class OrdersRelationManager extends RelationManager
                         ->url(fn(Order $record) => SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice->id]), true),
 
                     Tables\Actions\Action::make('complete_payment')
-                        ->label(__('fields.complete_payment'))
+                        ->label(__('fields.payment_details'))
                         ->icon('heroicon-o-pencil')
                         ->color('success')
                         ->visible(function ($record) {

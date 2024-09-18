@@ -80,6 +80,7 @@ class CreateClient extends CreateRecord
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
             fns()->displayException($exception);
             $this->halt();
         }

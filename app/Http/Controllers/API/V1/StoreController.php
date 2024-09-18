@@ -500,19 +500,19 @@ class StoreController extends BaseController
                     throw new \Exception("Unknown product type");
                 }
 
-                $od = OrderDetail::create(
-                    [
-                        'tenant_id' => $tenant->id,
-                        'order_id' => $order->id,
-                        'item_id' => $item_id,
-                        'item_type' => $item_type,
-                        'qty' => $item['qty'],
-                        'discount' => $discount,
-                        'tax' => $tax,
-                        'unit_price' => $unit_price,
-                        'tax_profile_data' => $tax_profile_data,
-                    ]
-                );
+//                $od = OrderDetail::create(
+//                    [
+//                        'tenant_id' => $tenant->id,
+//                        'order_id' => $order->id,
+//                        'item_id' => $item_id,
+//                        'item_type' => $item_type,
+//                        'qty' => $item['qty'],
+//                        'discount' => $discount,
+//                        'tax' => $tax,
+//                        'unit_price' => $unit_price,
+//                        'tax_profile_data' => $tax_profile_data,
+//                    ]
+//                );
 
                 $invoiceItem = $invoice->items()->create(
                     [
@@ -521,7 +521,7 @@ class StoreController extends BaseController
                         'product_id' => $item['productId'],
                         'name' => $itemModel->name,
                         'product_variant_id' => $product_variant_id,
-                        'order_details_id' => $od->id,
+                        'order_details_id' => null,//$od->id,
                         'tax_profile_id' => $tax_profile_id,
                         'tax_profile_data' => $tax_profile_data,
                         'discount' => $discount, //handled as overall discount
@@ -534,14 +534,14 @@ class StoreController extends BaseController
                 foreach ($item['extras'] ?? [] as $extra) {
                     $productExtra = ProductExtra::with(['lastPrice', 'extra'])->findOrFail($extra['id']);
 
-                    $od->orderDetailsExtras()->create([
-                        'tenant_id' => $tenant->id,
-                        'order_details_id' => $od->id,
-                        'product_extra_id' => $productExtra->id,
-                        'unit_price' => PricingService::instance()->getRetailPrice($productExtra),
-                        'display_name' => $productExtra->name,
-                        'qty' => 1,
-                    ]);
+//                    $od->orderDetailsExtras()->create([
+//                        'tenant_id' => $tenant->id,
+//                        'order_details_id' => $od->id,
+//                        'product_extra_id' => $productExtra->id,
+//                        'unit_price' => PricingService::instance()->getRetailPrice($productExtra),
+//                        'display_name' => $productExtra->name,
+//                        'qty' => 1,
+//                    ]);
 
                     $invoiceItem->extras()->create([
                         'tenant_id' => $tenant->id,

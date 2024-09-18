@@ -49,7 +49,7 @@ class PriceOffer extends BaseModel
         foreach ($this->details as $detail) {
             $subTotal = $detail->unit_price * $detail->qty;
 
-            $extras += PricingService::instance()->getRetailItemsPrices($detail->offerDetailsExtras->pluck('productExtra')) * $detail->qty;
+            $extras += $this->extras_total;
 
             if ($applyDiscount) {
                 $subTotal -= $detail->discount;
@@ -66,6 +66,8 @@ class PriceOffer extends BaseModel
         if ($applyTaxes) {
             $taxes = $this->getTaxesAsAmount();
         }
+        
+        $taxes = $this->prices_includes_taxes ? 0 : $taxes;
 
         return $items + $extras + $additionalCosts + $services + $taxes;
     }
@@ -99,12 +101,12 @@ class PriceOffer extends BaseModel
                 });
                 $subTotal = $item->unit_price * $item->qty;
                 $subTotal -= $item->discount;
-                $subTotal += PricingService::instance()->getRetailItemsPrices($item->offerDetailsExtras->pluck('productExtra')) * $item->qty;
+                $subTotal += $this->extras_total;
                 $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->prices_includes_taxes);
             } else {
                 $subTotal = $item->unit_price * $item->qty;
                 $subTotal -= $item->discount;
-                $subTotal += PricingService::instance()->getRetailItemsPrices($item->offerDetailsExtras->pluck('productExtra')) * $item->qty;
+                $subTotal += $this->extras_total;
 
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
@@ -160,6 +162,15 @@ class PriceOffer extends BaseModel
             $total += $price + $tax;
         }
         return $total;
+    }
+
+    public function getExtrasTotalAttribute()
+    {
+        $amount = 0;
+        foreach ($this->details as $offerDetailsExtras) {
+            $amount += $offerDetailsExtras->unit_price * $offerDetailsExtras->qty;
+        }
+        return $amount;
     }
 
     public function getUrlAttribute()

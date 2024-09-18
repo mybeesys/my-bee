@@ -87,6 +87,8 @@ class PurchasesReturnsController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 
@@ -128,7 +130,9 @@ class PurchasesReturnsController extends BaseController
             return $this->responder(__('messages.api.retrieved'), 200, new PurchasesReturnsResource($purchasesReturns))->respond();
 
         } catch (\Throwable $exception) {
-            DB::rollBack();
+            DB::rollBack();]
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }

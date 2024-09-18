@@ -109,6 +109,8 @@ class PaymentVoucherController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }

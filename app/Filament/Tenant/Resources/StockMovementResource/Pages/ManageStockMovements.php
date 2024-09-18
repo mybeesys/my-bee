@@ -73,6 +73,7 @@
 
                     } catch (\Exception $exception) {
                         DB::rollBack();
+                        report($exception);
                         Notification::make()
                             ->title(__('fields.alert_info'))
                             ->body($exception->getMessage())

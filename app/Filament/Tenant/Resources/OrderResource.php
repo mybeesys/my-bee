@@ -888,6 +888,8 @@ class OrderResource extends Resource
 
                         } catch (\Throwable $exception) {
                             DB::rollBack();
+                            report($exception);
+
                             fns()->displayException($exception);
                         }
                     }),
@@ -900,23 +902,23 @@ class OrderResource extends Resource
                     ->url(fn(Order $record) => SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice->id]), true),
 
                 Tables\Actions\Action::make('complete_payment')
-                    ->label(__('fields.complete_payment'))
+                    ->label(__('fields.payment_details'))
                     ->icon('heroicon-o-currency-dollar')
                     ->color('success')
                     ->visible(function ($record) {
                         return !$record->invoice?->paid;
                     })
-                    ->action(function (Order $record) {
+                    ->url(function (Order $record) {
                         if ($record->invoice->salesPayments->isEmpty()) {
-                            return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->invoice->id, 'order_id' => $record->id]));
+                            return ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->invoice->id, 'order_id' => $record->id]);
                         }
 
                         $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
 
                         if ($rv)
-                            return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]));
+                            return ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]);
 
-                    }),
+                    }, true),
 
             ])
             ->bulkActions([
@@ -1102,7 +1104,8 @@ class OrderResource extends Resource
 
 
                 TextEntry::make('delivery_address')
-                    ->label(__('fields.delivery_address')),
+                    ->label(__('fields.delivery_address'))
+                    ->getStateUsing(fn(Order $record) => $record->full_address),
 
                 TextEntry::make('delivery')
                     ->label(__('fields.delivery_price'))
@@ -1120,12 +1123,12 @@ class OrderResource extends Resource
                         return numbers_to_words(number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ','));
                     })
                     ->getStateUsing(function (Order $record) {
-                        return number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ',');
+                        return main_currency_iso_code() . " " . number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ',');
                     })
             ])->columns(2),
 
             RepeatableEntry::make('invoice.items')
-                ->label(__('fields.items'))
+                ->label(__('fields.items') . "(".$infolist->getRecord()->invoice->items->count().")")
                 ->schema([
 
                     TextEntry::make('name')
@@ -1160,7 +1163,15 @@ class OrderResource extends Resource
                         ->formatStateUsing(fn($state) => number_format($state, currency_decimals(), '.', ','))
                         ->label(__('fields.price')),
 
-                ])->columns(7),
+                    TextEntry::make('sub_total')
+                        ->label(__('fields.sub_total'))
+                        ->weight(FontWeight::ExtraBold)
+                        ->tooltip(function (InvoiceItem $record) {
+                            return numbers_to_words(number_format($record->sub_total, currency_decimals(), '.', ','));
+                        })
+                        ->getStateUsing(fn(InvoiceItem $record) => main_currency_iso_code() . " " .number_format($record->sub_total,  currency_decimals(), '.', ',')),
+
+                ])->columns(8),
 
         ])->columns(1);
     }

@@ -78,6 +78,7 @@ class ClientController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
 
             return $this->responder(__('fields.messages.client_registration_failed'), 500,
                 [
@@ -167,6 +168,8 @@ class ClientController extends BaseController
             return $this->responder(__('messages.created'), 201, new TenantResource($t))->respond();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }

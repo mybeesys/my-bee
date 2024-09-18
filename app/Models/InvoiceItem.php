@@ -89,27 +89,13 @@ class InvoiceItem extends BaseModel
     {
         $total = 0;
 
-        //for sale invoices calc tax from saved tax profile data
-        if ($this->orderDetails?->tax_profile_data) {
-            $total_percentages = collect([$this->orderDetails->tax_profile_data])->sum(function ($i) {
-                return collect($i['taxes'])->sum('percent');
-            });
+        $subTotal = $this->price * $this->qty;
+        $subTotal += $this->extras_total;
+        $subTotal -= $this->discount;
 
-            $subTotal = $this->price * $this->qty;
-            $subTotal += PricingService::instance()->getRetailItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
-            $subTotal -= $this->discount;
-
-            $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->invoice->prices_includes_taxes);
-
-        } else {
-            $subTotal = $this->price * $this->qty;
-            $subTotal += PricingService::instance()->getRetailItemsPrices($this->extras->pluck('productExtra')) * $this->qty;
-            $subTotal -= $this->discount;
-
-            $taxProfile = $this->taxProfile;
-            if ($taxProfile) {
-                $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->invoice->prices_includes_taxes);
-            }
+        $taxProfile = $this->taxProfile;
+        if ($taxProfile) {
+            $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->invoice->prices_includes_taxes);
         }
 
         return $total;
@@ -117,7 +103,8 @@ class InvoiceItem extends BaseModel
 
     public function getSubTotalAttribute()
     {
-        return $this->price * $this->qty + $this->tax - $this->discount;
+        $tax = $this->invoice->prices_includes_taxes ? 0 : $this->tax;
+        return ($this->price * $this->qty) + $this->extras_total + $tax - $this->discount;
     }
 
     public function getQtyAttribute($value)

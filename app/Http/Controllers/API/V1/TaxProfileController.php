@@ -53,6 +53,8 @@ class TaxProfileController extends BaseController
 
         } catch (\Exception $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 
@@ -109,6 +111,8 @@ class TaxProfileController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }

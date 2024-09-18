@@ -325,6 +325,7 @@ class ClientResource extends Resource
 
                         } catch (\Throwable $exception) {
                             DB::rollBack();
+                            report($exception);
                             fns()->sendDanger("تعذر إضافة النشاط", 'حدث خطأ أثناء إنشاء النشاط.');
                             $action->halt();
                         }

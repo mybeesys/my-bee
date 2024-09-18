@@ -106,6 +106,7 @@ class EditPaymentVoucher extends EditRecord
 
         } catch (\Exception $exception) {
             DB::rollBack();
+            report($exception);
             fns()->sendDanger("Transaction failed");
         }
 

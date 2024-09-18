@@ -450,6 +450,7 @@ class WorkflowResource extends Resource
 
                         } catch (\Exception $exception) {
                             \DB::rollBack();
+                            report($exception);
                             fns()->displayException($exception);
                         }
                     })

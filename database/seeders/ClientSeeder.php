@@ -155,6 +155,7 @@ class ClientSeeder extends Seeder
 
         } catch (\Exception $exception) {
             DB::rollBack();
+            report($exception);
             dd($exception);
         }
     }

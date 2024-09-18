@@ -157,6 +157,7 @@
                     DB::commit();
                 } catch (\Exception $exception) {
                     DB::rollBack();
+                    report($exception);
                     throw new \Exception($exception->getMessage());
                 }
             }

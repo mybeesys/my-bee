@@ -173,6 +173,8 @@ class ProductController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }
@@ -293,6 +295,8 @@ class ProductController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }

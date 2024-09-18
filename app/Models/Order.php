@@ -163,7 +163,6 @@ class Order extends BaseModel implements HasMedia
 
     public function getTotalAttribute()
     {
-//        dd($this->sub_total, $this->delivery , $this->extras_total, $this->delivery_extra);
         return $this->sub_total + $this->delivery + $this->delivery_extra;
     }
 
@@ -171,6 +170,12 @@ class Order extends BaseModel implements HasMedia
     {
         $address = "";
 
-        return $address;
+        if($this->state)
+            $address = $this->state->name;
+
+        if($this->city)
+            $address = $address . " - " . $this->city->name;
+
+        return $address . " - " . $this->delivery_address;
     }
 }

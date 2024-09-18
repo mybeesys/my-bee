@@ -53,6 +53,8 @@ class VariantLibraryController extends BaseController
 
         } catch (\Exception $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }
@@ -108,6 +110,8 @@ class VariantLibraryController extends BaseController
 
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
     }

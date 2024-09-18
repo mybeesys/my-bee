@@ -343,6 +343,8 @@ class PurchaseInvoiceController extends BaseController
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 
@@ -383,6 +385,8 @@ class PurchaseInvoiceController extends BaseController
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 
@@ -411,6 +415,8 @@ class PurchaseInvoiceController extends BaseController
             DB::commit();
         } catch (\Throwable $exception) {
             DB::rollBack();
+            report($exception);
+
             return $this->error($exception)->respond();
         }
 

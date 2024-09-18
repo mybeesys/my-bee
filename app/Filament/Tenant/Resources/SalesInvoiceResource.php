@@ -1256,13 +1256,14 @@ class SalesInvoiceResource extends Resource
 
                         } catch (\Exception $exception) {
                             DB::rollBack();
+                            report($exception);
                             fns()->displayException($exception);
                         }
 
                     }),
 
                 Tables\Actions\Action::make('complete_payment')
-                    ->label(__('fields.complete_payment'))
+                    ->label(__('fields.payment_details'))
                     ->icon('heroicon-o-currency-dollar')
                     ->color('success')
                     ->visible(function ($record) {
@@ -1587,7 +1588,11 @@ class SalesInvoiceResource extends Resource
             $livewire->data['total_discount'] = format_amount($totals['total_discount']);
             $livewire->data['total_taxes'] = format_amount($totals['total_taxes']);
             $livewire->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
-            $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            if($prices_includes_taxes){
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
+            }else{
+                $livewire->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+            }
         }
 
         $endTime = microtime(true);

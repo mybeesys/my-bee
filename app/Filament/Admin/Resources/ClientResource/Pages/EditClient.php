@@ -113,8 +113,8 @@ class EditClient extends EditRecord
 
                     } catch (\Throwable $exception) {
                         DB::rollBack();
+                        report($exception);
                         fns()->sendDanger("تعذر إضافة النشاط", 'حدث خطأ أثناء إنشاء النشاط.');
-                        dd($exception);
                         $action->halt();
                     }
                 }),
@@ -155,6 +155,7 @@ class EditClient extends EditRecord
 
         } catch (\Throwable $e) {
             DB::rollBack();
+            report($e);
             fns()->displayException($e);
             $this->halt();
         }
