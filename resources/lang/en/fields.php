@@ -916,5 +916,6 @@ return [
 
     'extras_total' => 'Extras total',
 
+    'paid' => 'Paid',
 ];
 //

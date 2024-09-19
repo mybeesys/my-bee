@@ -382,7 +382,7 @@ class Invoice extends BaseModel
 
     public function getPaidAttribute(): bool
     {
-        return number_format($this->getItemsCost(true, true, true), 2, '.') == number_format($this->total_paid, 2, '.');
+        return $this->total_paid >= $this->getItemsCost(true, true, true);
     }
 
     public function stocks(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -728,12 +728,12 @@ class Invoice extends BaseModel
         return $this->hasOne(Order::class);
     }
 
-    public function salesReturns()
+    public function salesReturns(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(SalesReturns::class);
     }
 
-    public function purchasesReturns()
+    public function purchasesReturns(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PurchasesReturns::class);
     }
@@ -743,9 +743,9 @@ class Invoice extends BaseModel
         return $this->morphMany(Service::class, 'item');
     }
 
-    public function getUrlAttribute()
+    public function getUrlAttribute(): string
     {
-        return "https://shop.mybeesystem.com/". "einvoice/" . $this->uid;
+        return config('app.shop_url'). "einvoice/" . $this->uid;
     }
 
     //bug

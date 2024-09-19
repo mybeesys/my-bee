@@ -53,6 +53,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use function PHPUnit\TestFixture\Generator\f;
 
 class OrderResource extends Resource
 {
@@ -673,6 +674,13 @@ class OrderResource extends Resource
                     ->dateTime('M j, Y')
                     ->sortable(),
 
+                Tables\Columns\IconColumn::make('is_paid')
+                    ->label(__('fields.paid'))
+                    ->boolean()
+                    ->toggleable()
+                    ->toggledHiddenByDefault()
+                    ->getStateUsing(fn(Order $record) => $record->invoice->paid),
+
                 Tables\Columns\TextColumn::make('delivery_date')
                     ->toggleable()
                     ->toggledHiddenByDefault()
@@ -680,12 +688,12 @@ class OrderResource extends Resource
                     ->dateTime('M j, Y')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('paid_date')
-                    ->toggleable()
-                    ->toggledHiddenByDefault()
-                    ->label(__('fields.paid_date'))
-                    ->dateTime('M j, Y')
-                    ->sortable(),
+//                Tables\Columns\TextColumn::make('paid_date')
+//                    ->toggleable()
+//                    ->toggledHiddenByDefault()
+//                    ->label(__('fields.paid_date'))
+//                    ->dateTime('M j, Y')
+//                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('canceled_date')
                     ->toggleable()
