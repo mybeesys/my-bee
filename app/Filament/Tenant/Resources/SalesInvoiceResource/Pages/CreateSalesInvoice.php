@@ -240,7 +240,7 @@ class CreateSalesInvoice extends CreateRecord
             if (is_number($qty) and is_number($price))
                 $totals['total_purchases'] += $qty * $price;
 
-            $totals['total_purchases'] += $extras_total;
+            $totals['total_purchases'] += $extras_total * $qty;
 
             if ($discountOption == "per-item" and is_number($discount))
                 $totals['total_discount'] += $discount;
