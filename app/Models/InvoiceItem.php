@@ -30,11 +30,15 @@ class InvoiceItem extends BaseModel
 
         static::created(function (InvoiceItem $item) {
             $item->loadMissing(['product', 'productVariant']);
-
-            $item->current_qty_movement_balance = StockService::instance()->getAvailableStock($item->productVariant ?? $item->product) + $item->qty;
+            if ($item->invoice->type == "purchases") {
+                $item->current_qty_movement_balance = StockService::instance()->getAvailableStock($item->productVariant ?? $item->product) + $item->qty;
+            } elseif ($item->invoice->type == "sales") {
+                $item->current_qty_movement_balance = StockService::instance()->getAvailableStock($item->productVariant ?? $item->product) - $item->qty;
+            }
             $item->save();
         });
     }
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
@@ -131,7 +135,7 @@ class InvoiceItem extends BaseModel
     {
         $names = [];
         foreach ($this->extras as $invoiceItemExtra) {
-            $names[] = $invoiceItemExtra->display_name."(".number_format($invoiceItemExtra->unit_price, currency_decimals(), '.', '').")";
+            $names[] = $invoiceItemExtra->display_name . "(" . number_format($invoiceItemExtra->unit_price, currency_decimals(), '.', '') . ")";
         }
         return $names;
     }

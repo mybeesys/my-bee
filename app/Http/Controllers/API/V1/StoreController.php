@@ -839,12 +839,16 @@ class StoreController extends BaseController
     {
         $subTotal = 0;
         foreach ($items as $item) {
+            $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
+
             if ($item['type'] == "basic") {
                 $product = Product::find($item['productId']);
                 $subTotal += PricingService::instance()->getRetailPrice($product) * $item['qty'];
+                $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
             } else if ($item['type'] == "variants") {
                 $productVariant = ProductVariant::find($item['productVariantId']);
                 $subTotal += PricingService::instance()->getRetailPrice($productVariant) * $item['qty'];
+                $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
             } else {
                 throw new \Exception("Unknown product type");
             }
