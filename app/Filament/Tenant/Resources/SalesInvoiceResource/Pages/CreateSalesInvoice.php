@@ -234,13 +234,14 @@ class CreateSalesInvoice extends CreateRecord
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = $extras_total * $qty;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
             if (is_number($qty) and is_number($price))
                 $totals['total_purchases'] += $qty * $price;
 
-            $totals['total_purchases'] += $extras_total * $qty;
+            $totals['total_purchases'] += $extras_total;
 
             if ($discountOption == "per-item" and is_number($discount))
                 $totals['total_discount'] += $discount;
@@ -306,7 +307,12 @@ class CreateSalesInvoice extends CreateRecord
         $createSalesInvoice->data['total_discount'] = format_amount($totals['total_discount']);
         $createSalesInvoice->data['total_taxes'] = format_amount($totals['total_taxes']);
         $createSalesInvoice->data['total_invoice_post_discount'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
-        $createSalesInvoice->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+
+        if($prices_includes_taxes){
+            $createSalesInvoice->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount']);
+        }else{
+            $createSalesInvoice->data['total_invoice_with_taxes'] = format_amount($totals['total_purchases'] + $totals['total_services'] + $totals['total_additional_costs'] - $totals['total_discount'] + $totals['total_taxes']);
+        }
 
         $endTime = microtime(true);
 
@@ -336,8 +342,7 @@ class CreateSalesInvoice extends CreateRecord
             $qty = $item['qty'] ?? null;
             $tax = 0;
 
-            if (is_number($qty))
-                $extras_total = $extras_total * $qty;
+            $extras_total = $extras_total * $qty ?? 0;
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {

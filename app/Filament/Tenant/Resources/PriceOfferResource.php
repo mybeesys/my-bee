@@ -1055,13 +1055,14 @@ class PriceOfferResource extends Resource
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = $extras_total * $qty ?? 0;
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
             if (is_number($qty) and is_number($price))
                 $totals['total_purchases'] += $qty * $price;
 
-            $totals['total_purchases'] += $extras_total * $qty;
+            $totals['total_purchases'] += $extras_total;
 
             if ($discountOption == "per-item" and is_number($discount))
                 $totals['total_discount'] += $discount;
@@ -1165,13 +1166,11 @@ class PriceOfferResource extends Resource
 
         foreach ($livewire->data['details'] ?? [] as $item) {
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
-
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
             $tax = 0;
 
-            if(is_number($qty))
-                $extras_total = $extras_total * $qty;
+            $extras_total = $extras_total * $qty ?? 0;
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {
