@@ -132,7 +132,7 @@ class Order extends BaseModel implements HasMedia
     {
         return $this->belongsTo(Coupon::class);
     }
-    
+
     public function getExtrasTotalAttribute()
     {
         $total = 0;

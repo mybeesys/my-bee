@@ -167,8 +167,10 @@ class PriceOffer extends BaseModel
     public function getExtrasTotalAttribute()
     {
         $amount = 0;
-        foreach ($this->details as $offerDetailsExtras) {
-            $amount += $offerDetailsExtras->unit_price * $offerDetailsExtras->qty;
+        foreach ($this->details as $detail) {
+            foreach ($detail->offerDetailsExtras as $offerDetailsExtra) {
+                $amount += $offerDetailsExtra->unit_price * $detail->qty;
+            }
         }
         return $amount;
     }

@@ -29,4 +29,14 @@ class PriceOfferDetails extends BaseModel
     {
         return $this->hasMany(PriceOfferDetailsExtras::class, 'price_offer_details_id');
     }
+
+    public function getExtrasTotalAttribute()
+    {
+        $total = 0;
+        foreach ($this->offerDetailsExtras as $offerDetailsExtra) {
+            $total += $offerDetailsExtra->unit_price * $this->qty;
+
+        }
+        return $total;
+    }
 }
