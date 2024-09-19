@@ -49,6 +49,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
         Route::post('cart/delete', [\App\Http\Controllers\API\V1\StoreController::class, 'deleteCartItem']);
         Route::get('cart/clear', [\App\Http\Controllers\API\V1\StoreController::class, 'clearCart']);
         Route::post('apply-coupon', [\App\Http\Controllers\API\V1\StoreController::class, 'applyCoupon']);
+        Route::post('clear-coupon', [\App\Http\Controllers\API\V1\StoreController::class, 'clearCoupon']);
         Route::post('checkout', [\App\Http\Controllers\API\V1\StoreController::class, 'checkout']);
         Route::get('track-orders', [\App\Http\Controllers\API\V1\StoreController::class, 'trackOrders']);
 

@@ -601,6 +601,15 @@ class StoreController extends BaseController
         return $this->responder(__('messages.api.retrieved'), 200, $this->getCart())->respond();
     }
 
+    public function clearCoupon(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $uuid = \request()->header('Store-UUID');
+
+        Cache::forget("coupon_code@$uuid");
+
+        return $this->responder(__('messages.api.retrieved'), 200, $this->getCart())->respond();
+    }
+
     public function trackOrders(Request $request): \Illuminate\Http\JsonResponse
     {
         $orders = Order::with(['tenant', 'details.item', 'details.orderDetailsExtras', 'customer', 'invoice'])
