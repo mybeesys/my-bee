@@ -29,6 +29,7 @@ class ProductsMovementResource extends BaseResource
             'entity_id' => $this->invoice->customer_id ?: $this->invoice->supplier_id,
             'invoice_no' => $this->invoice->no,
             'qty' => $this->qty,
+            'current_qty_movement_balance' => $this->current_qty_movement_balance,
             'created_at' => $this->created_at->format('F j, Y, g:i a'),
         ]);
     }
