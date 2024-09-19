@@ -791,6 +791,8 @@ class StoreController extends BaseController
             'subTotalFormattedAfterDiscount' => number_format($subTotal - $couponData['amount'], currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
             'tax' => number_format($taxes, currency_decimals(), '.', ''),
             'taxFormatted' => number_format($taxes, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
+            'total' => number_format($subTotal - $couponData['amount'], currency_decimals(), '.', ''),
+            'totalFormated' => number_format($subTotal - $couponData['amount'], currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
             'deliveryFees' => app()->getLocale() == "ar" ? "سيتم إحتساب رسوم التوصيل بناءً على موقعك" : "Delivery fees will be calculated based on your location",
             'coupon' => $couponData,
             "items" => array_values($items)
