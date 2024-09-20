@@ -1222,7 +1222,7 @@ class SalesInvoiceResource extends Resource
                                             'Invoice items taxes',
                                             $record->id,
                                             meta: ['type' => 'sales_invoice', 'id' => $record->id],
-                                        )->make('120100001', '122800001')
+                                        )->make('120100001', '122800003')
                                         ->finish();
                                 }
 
@@ -1244,7 +1244,7 @@ class SalesInvoiceResource extends Resource
                                                 'Service tax',
                                                 null,
                                                 meta: ['type' => 'service', 'id' => $service->id],
-                                            )->make('120100001', '122800001')
+                                            )->make('120100001', '122800004')
                                             ->finish();
                                     }
                                 }

@@ -49,7 +49,7 @@ class CreateExpense extends CreateRecord
                 __('fields.expenses'),
                 null,
                 meta: ['type' => 'expense', 'id' => $this->record->id],
-            )->make('120100001', '122300001')
+            )->make($this->record->credit_acc4_code, '122300001')
             ->finish();
 
         if ($this->record->tax > 0) {

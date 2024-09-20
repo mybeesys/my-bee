@@ -1060,7 +1060,7 @@ class PurchaseInvoiceResource extends Resource
                                             'Invoice items taxes',
                                             $record->id,
                                             meta: ['type' => 'purchase_invoice', 'id' => $record->id],
-                                        )->make('120100001', '122800001')
+                                        )->make('120100001', '122800002')
                                         ->finish();
                                 }
 
