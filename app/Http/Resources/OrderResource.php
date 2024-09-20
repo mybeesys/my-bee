@@ -31,7 +31,8 @@ class OrderResource extends BaseResource
             'deliveryDate' => $this->delivery_date?->format('F j, Y, g:i a'),
             'cancelledDate' => $this->cancelled_date?->format('F j, Y, g:i a'),
             'customer' => new CustomerResource($this->customer),
-            'details' => OrderDetailsResource::collection($this->details),
+//            'details' => OrderDetailsResource::collection($this->details),
+            'details' => OrderItemResource::collection($this->invoice->items),
 //            'payments' => OrderPaymentResource::collection($this->invoice->salesPayments),
             'coupon' => new CouponResource($this->coupon),
         ]);

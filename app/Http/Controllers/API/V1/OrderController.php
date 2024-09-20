@@ -24,7 +24,7 @@ class OrderController extends BaseController
      */
     public function index(ListOrderRequest $request)
     {
-        $data = Order::with(['tenant', 'details.orderDetailsExtras', 'customer', 'invoice.items.extras.productExtra'])
+        $data = Order::with(['tenant', 'details.orderDetailsExtras', 'customer', 'invoice.items.extras'])
             ->when($request->no, function (Builder $builder) use ($request) {
                 return $builder->where('no', $request->no);
             })
@@ -137,7 +137,7 @@ class OrderController extends BaseController
      */
     public function show(string $id)
     {
-        $item = Order::with(['tenant', 'details.orderDetailsExtras', 'customer', 'invoice.items.extras.productExtra'])
+        $item = Order::with(['tenant', 'details.orderDetailsExtras', 'customer', 'invoice.items.extras'])
             ->findOrFail($id);
         return $this->responder(__('messages.api.retrieved'), 200, new OrderResource($item))->respond();
     }
