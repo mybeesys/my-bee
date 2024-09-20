@@ -58,8 +58,8 @@ class OrderController extends BaseController
             ->orderByDesc('created_at')
             ->get();
 
-        if($request->has('payment_status')){
-            $data = $data->filter(function ($order) use ($request){
+        if ($request->has('payment_status')) {
+            $data = $data->filter(function ($order) use ($request) {
                 return $order->invoice->payment_status == $request->payment_status;
             });
         }
@@ -137,7 +137,8 @@ class OrderController extends BaseController
      */
     public function show(string $id)
     {
-        $item = Order::findOrFail($id);
+        $item = Order::with(['tenant', 'details.orderDetailsExtras', 'customer', 'invoice.items.extras.productExtra'])
+            ->findOrFail($id);
         return $this->responder(__('messages.api.retrieved'), 200, new OrderResource($item))->respond();
     }
 
@@ -152,6 +153,7 @@ class OrderController extends BaseController
             $item->delete();
             return $this->responder(__('messages.api.deleted'), 200, [])->respond();
         } catch (\Exception $exception) {
+            report($exception);
             return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
         }
     }

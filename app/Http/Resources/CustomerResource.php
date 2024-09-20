@@ -20,7 +20,7 @@ class CustomerResource extends BaseResource
             'name' => $this->name,
             'phone' => $this->phone,
             'trn' => $this->trn,
-            'deliveryAddress' => $this->delivery_address,
+            'deliveryAddress' => $this->location,
             'email' => $this->email,
             'state' => StateResource::make($this->state),
             'city' => CityResource::make($this->city),
