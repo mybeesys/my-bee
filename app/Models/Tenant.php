@@ -22,6 +22,8 @@ class Tenant extends BaseModel implements HasMedia
         'store_enable_stock_tracking' => 'boolean',
     ];
 
+    protected $with = ['media'];
+
     public const TYPE_INDIVIDUAL = "individual";
     public const TYPE_COMPANY = "company";
 
@@ -202,5 +204,10 @@ class Tenant extends BaseModel implements HasMedia
     public function workflows(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Workflow::class);
+    }
+
+    public function getCoverAttribute()
+    {
+        return $this->getFirstMedia('covers')?->url;
     }
 }

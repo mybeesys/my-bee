@@ -15,11 +15,15 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Pages\Concerns\InteractsWithFormActions;
 use Filament\Pages\Page;
 use Filament\Support\Enums\ActionSize;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class Store extends Page implements HasForms
 {
@@ -42,54 +46,23 @@ class Store extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->data['store_title_ar'] = 'test';
         $tenant = get_tenant();
-        $this->form->fill([
-            "store_title_ar" => $tenant->store_title_ar,
-            "store_bio_ar" => $tenant->store_bio_ar,
-            "store_address_ar" => $tenant->store_address_ar,
-            "store_working_hours_ar" => $tenant->store_working_hours_ar,
-            "store_title_en" => $tenant->store_title_en,
-            "store_bio_en" => $tenant->store_bio_en,
-            "store_address_en" => $tenant->store_address_en,
-            "store_working_hours_en" => $tenant->store_working_hours_en,
-            "store_social_media_links" => $tenant->store_social_media_links,
-            "store_enable_stock_tracking" => $tenant->store_enable_stock_tracking,
-            "store_hide_out_of_stock_products" => $tenant->store_hide_out_of_stock_products,
-            "store_enable_orders_tracking" => $tenant->store_enable_orders_tracking,
-            "store_orders_tracking_mode" => $tenant->store_orders_tracking_mode,
-            "store_orders_tracking_packaging_time_hours" => $tenant->store_orders_tracking_packaging_time_hours,
-            "store_orders_tracking_delivery_time_hours" => $tenant->store_orders_tracking_delivery_time_hours,
-            "store_terms_and_conditions" => $tenant->store_terms_and_conditions,
-        ]);
+        $this->form->fill($tenant->toArray());
+    }
 
-        $arr = array([
-            "store_title_ar" => $tenant->store_title_ar,
-            "store_bio_ar" => $tenant->store_bio_ar,
-            "store_address_ar" => $tenant->store_address_ar,
-            "store_working_hours_ar" => $tenant->store_working_hours_ar,
-            "store_title_en" => $tenant->store_title_en,
-            "store_bio_en" => $tenant->store_bio_en,
-            "store_address_en" => $tenant->store_address_en,
-            "store_working_hours_en" => $tenant->store_working_hours_en,
-            "store_social_media_links" => $tenant->store_social_media_links,
-            "store_enable_stock_tracking" => $tenant->store_enable_stock_tracking,
-            "store_hide_out_of_stock_products" => $tenant->store_hide_out_of_stock_products,
-            "store_enable_orders_tracking" => $tenant->store_enable_orders_tracking,
-            "store_orders_tracking_mode" => $tenant->store_orders_tracking_mode,
-            "store_orders_tracking_packaging_time_hours" => $tenant->store_orders_tracking_packaging_time_hours,
-            "store_orders_tracking_delivery_time_hours" => $tenant->store_orders_tracking_delivery_time_hours,
-            "store_terms_and_conditions" => $tenant->store_terms_and_conditions,
-        ]);
-
-        $this->data = $arr[0];
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema($this->getFormSchema())
+            ->operation('edit')
+            ->model(get_tenant())
+            ->statePath('data');
     }
 
     protected function getFormSchema(): array
     {
         return [
             Section::make()
-                ->statePath('data')
                 ->schema([
                     Tabs::make('Tabs')
                         ->tabs([
@@ -129,7 +102,8 @@ class Store extends Page implements HasForms
 
                         ])->columns(3),
 
-                    Fieldset::make(__('fields.social_media_links'))->schema([
+                    Fieldset::make(__('fields.social_media_links'))
+                        ->schema([
 
                         TextInput::make('store_social_media_links.facebook')
                             ->label(__('fields.social_label.facebook')),
@@ -158,6 +132,7 @@ class Store extends Page implements HasForms
                         ->downloadable()
                         ->maxSize(4080)
                         ->disk('public')
+                        ->model(get_tenant())
                         ->collection('covers')
                         ->directory('covers'),
 
@@ -216,7 +191,7 @@ class Store extends Page implements HasForms
             Action::make('save')
                 ->label(__('fields.save'))
                 ->action(function () {
-                    get_tenant()->update($this->form->getState()['data']);
+                    get_tenant()->update($this->form->getState());
                     $this->redirect(Store::getUrl());
                     fns()->saved();
                 })
