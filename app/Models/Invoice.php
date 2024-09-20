@@ -561,6 +561,8 @@ class Invoice extends BaseModel
             //add cost to expenses
             Expense::create([
                 'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
+                'credit_acc4_code' => '122600001',
+                'debit_acc4_code' => '122300001',
                 'expense_category_id' => $cat->id,
                 'amount' => $additionalCost->cost,
                 'description' => $additionalCost->type->name . " - " . $additionalCost->statement,
