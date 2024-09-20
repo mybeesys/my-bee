@@ -55,7 +55,7 @@ class OrderController extends BaseController
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
                 return $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, "d-m-Y");
             })
-            ->get();
+            ->latest();
 
         if($request->has('payment_status')){
             $data = $data->filter(function ($order) use ($request){
