@@ -766,7 +766,8 @@ class OrderResource extends Resource
             ])
             ->actions([
 
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->url(fn($record) => OrderResource::getUrl('view', ['record' => $record->id]), true),
 //                    Tables\Actions\Action::make('download_invoice')
 //                        ->label(__('fields.download_invoice'))
 //                        ->icon('heroicon-o-download')

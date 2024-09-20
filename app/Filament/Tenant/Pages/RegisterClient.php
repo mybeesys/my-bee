@@ -208,6 +208,7 @@ class RegisterClient extends SimplePage
             ->rule(Password::default())
             ->dehydrateStateUsing(fn($state) => Hash::make($state))
             ->same('passwordConfirmation')
+            ->revealable()
             ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute'));
     }
 
@@ -217,6 +218,7 @@ class RegisterClient extends SimplePage
             ->label(__('filament-panels::pages/auth/register.form.password_confirmation.label'))
             ->password()
             ->required()
+            ->revealable()
             ->dehydrated(false);
     }
 
