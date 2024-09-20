@@ -49,6 +49,9 @@
             --radius: 0.5rem;
         }
 
+        a:hover{
+            color: #ffbb55;
+        }
         img[src="/placeholder.svg"], img[src="/placeholder-user.jpg"] {
             filter: sepia(.3) hue-rotate(-60deg) saturate(.5) opacity(0.8)
         }</style>
