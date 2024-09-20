@@ -754,7 +754,7 @@ class OrderResource extends Resource
                     ->query(function ($query, array $data) {
                         return $query
                             ->when($data['status'],
-                                fn($query) => $query->whereDate('status', $data['status']))
+                                fn($query) => $query->whereIn('status', $data['status']))
                             ->when($data['customers'],
                                 fn($query) => $query->whereIn('customer_id', $data['customers']))
                             ->when($data['created_from'],
