@@ -582,7 +582,7 @@ class Invoice extends BaseModel
                 "Purchases from: {$supplier->name}",
                 "Purchases from: {$supplier->name}",
                 $this->id,
-            )->make("122600001", $supplier->acc4->code)
+            )->make("120100001", $supplier->acc4->code)
             ->finish();
 
     }
