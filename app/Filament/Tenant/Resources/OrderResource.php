@@ -6,6 +6,7 @@ use App\Filament\Tenant\Resources\OrderResource\Pages;
 use App\Filament\Tenant\Resources\OrderResource\RelationManagers;
 use App\Filament\Tenant\Resources\OrderResource\Widgets\OrderStats;
 use App\Models\AdditionalCost;
+use App\Models\AdditionalCostType;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Customer;
@@ -47,6 +48,7 @@ use Filament\Support\Enums\Alignment;
 use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -627,7 +629,13 @@ class OrderResource extends Resource
                     ->label(__('fields.total'))
                     ->getStateUsing(function (Order $record) {
                         return main_currency_iso_code() . " " . format_amount($record->total);
-                    }),
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('total'));
+                        })
+                    ),
 
                 Tables\Columns\TextColumn::make('delivery_type')
                     ->toggleable()
@@ -859,11 +867,31 @@ class OrderResource extends Resource
                                 $invoice = $record->invoice;
                                 $invAdditionalCost = AdditionalCost::where('meta->type', 'delivery_fees')->where('item_type', Invoice::class)->where('item_id', $invoice->id)->first();
 
-                                if ($invAdditionalCost) {
-                                    $invAdditionalCost->update([
-                                        'cost' => $data['delivery'],
+                                if (!$invAdditionalCost) {
+
+                                    $costTypeDelivery = AdditionalCostType::firstOrCreate([
+                                        'name' => "توصيل/شحن"
+                                    ], [
+                                        'name' => "توصيل/شحن",
+                                        'tenant_id' => get_tenant()->id,
+                                    ]);
+                                    $statement_en = "Delivery fees, order no #$record->no";
+                                    $statement_ar = "رسوم توصيل الطلب:#$record->no";
+
+                                    $invAdditionalCost = AdditionalCost::create([
+                                        'tenant_id' => get_tenant()->id,
+                                        'item_id' => $invoice->id,
+                                        'item_type' => Invoice::class,
+                                        'additional_cost_type_id' => $costTypeDelivery->id,
+                                        'statement' => $statement_ar . " - " . $statement_en,
+                                        'cost' => 0,
+                                        'meta' => ['type' => 'delivery_fees', 'client' => $record->customer->name, 'client_id' => $record->customer_id]
                                     ]);
                                 }
+
+                                $invAdditionalCost->update([
+                                    'cost' => $data['delivery'],
+                                ]);
 
                             }
 
@@ -1136,7 +1164,7 @@ class OrderResource extends Resource
             ])->columns(2),
 
             RepeatableEntry::make('invoice.items')
-                ->label(__('fields.items') . "(".$infolist->getRecord()->invoice->items->count().")")
+                ->label(__('fields.items') . "(" . $infolist->getRecord()->invoice->items->count() . ")")
                 ->schema([
 
                     TextEntry::make('name')
@@ -1177,7 +1205,7 @@ class OrderResource extends Resource
                         ->tooltip(function (InvoiceItem $record) {
                             return numbers_to_words(number_format($record->sub_total, currency_decimals(), '.', ','));
                         })
-                        ->getStateUsing(fn(InvoiceItem $record) => main_currency_iso_code() . " " .number_format($record->sub_total,  currency_decimals(), '.', ',')),
+                        ->getStateUsing(fn(InvoiceItem $record) => main_currency_iso_code() . " " . number_format($record->sub_total, currency_decimals(), '.', ',')),
 
                 ])->columns(8),
 

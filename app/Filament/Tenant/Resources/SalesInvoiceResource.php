@@ -698,6 +698,7 @@ class SalesInvoiceResource extends Resource
 
                                 hidden_tenant_id_field(),
 
+                                Forms\Components\Hidden::make('meta'),
                                 Forms\Components\Hidden::make('tax_profile_data'),
 
                                 Select::make('additional_cost_type_id')

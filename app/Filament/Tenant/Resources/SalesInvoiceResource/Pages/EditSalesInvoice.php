@@ -87,6 +87,16 @@ class EditSalesInvoice extends EditRecord
             $item->delete();
         }
         $this->saveItems($this->data);
+
+        //sync order delivery fees with additional cost
+        foreach($this->record->additionalCosts as $additionalCost){
+            if($additionalCost->meta['type'] ?? null == 'delivery_fees'){
+                if($this->record->order){
+                    $this->record->order->update(['delivery' => $additionalCost->cost]);
+                }
+            }
+        }
+
     }
 
     protected function saveItems($data)
@@ -125,4 +135,5 @@ class EditSalesInvoice extends EditRecord
             }
         }
     }
+
 }

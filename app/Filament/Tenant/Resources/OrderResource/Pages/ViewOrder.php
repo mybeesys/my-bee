@@ -6,6 +6,7 @@ use App\Filament\Tenant\Resources\OrderResource;
 use App\Filament\Tenant\Resources\ReceiptVoucherResource;
 use App\Filament\Tenant\Resources\SalesInvoiceResource;
 use App\Models\AdditionalCost;
+use App\Models\AdditionalCostType;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\ReceiptVoucher;
@@ -102,6 +103,28 @@ class ViewOrder extends ViewRecord
                             //sync additional cost
                             $invoice = $record->invoice;
                             $invAdditionalCost = AdditionalCost::where('meta->type', 'delivery_fees')->where('item_type', Invoice::class)->where('item_id', $invoice->id)->first();
+
+                            if (!$invAdditionalCost) {
+
+                                $costTypeDelivery = AdditionalCostType::firstOrCreate([
+                                    'name' => "توصيل/شحن"
+                                ], [
+                                    'name' => "توصيل/شحن",
+                                    'tenant_id' => get_tenant()->id,
+                                ]);
+                                $statement_en = "Delivery fees, order no #$record->no";
+                                $statement_ar = "رسوم توصيل الطلب:#$record->no";
+
+                                $invAdditionalCost = AdditionalCost::create([
+                                    'tenant_id' => get_tenant()->id,
+                                    'item_id' => $invoice->id,
+                                    'item_type' => Invoice::class,
+                                    'additional_cost_type_id' => $costTypeDelivery->id,
+                                    'statement' => $statement_ar . " - " . $statement_en,
+                                    'cost' => 0,
+                                    'meta' => ['type' => 'delivery_fees', 'client' => $record->customer->name, 'client_id' => $record->customer_id]
+                                ]);
+                            }
 
                             $invAdditionalCost->update([
                                 'cost' => $data['delivery'],

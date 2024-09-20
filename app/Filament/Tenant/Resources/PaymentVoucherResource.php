@@ -31,6 +31,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\HtmlString;
 
 class PaymentVoucherResource extends Resource
 {
@@ -175,26 +176,32 @@ class PaymentVoucherResource extends Resource
 
                 Forms\Components\Section::make([
 
-                    TextInput::make('total_invoice')
+                    Forms\Components\Placeholder::make('total_invoice')
                         ->label(__('fields.amount_money'))
-                        ->readOnly()
-                        ->currency()
-                        ->dehydrated(false),
+                        ->dehydrated(false)
+                        ->content(function ($livewire) {
+                            $value = $livewire->data['total_invoice'];
+                            return new HtmlString("<h3 style='color: #0464ff;font-weight: bold'>$value</h3>");
+                        }),
 
-                    TextInput::make('total_paid_amount')
+                    Forms\Components\Placeholder::make('total_paid_amount')
                         ->label(__('fields.paid_amount'))
-                        ->readOnly()
-                        ->currency()
-                        ->dehydrated(false),
+                        ->dehydrated(false)
+                        ->content(function ($livewire) {
+                            $value = $livewire->data['total_paid_amount'];
+                            return new HtmlString("<h3 style='color: #0464ff;font-weight: bold'>$value</h3>");
+                        }),
 
-                    TextInput::make('total_unpaid_amount')
+                    Forms\Components\Placeholder::make('total_unpaid_amount')
                         ->label(__('fields.unpaid_amount'))
-                        ->readOnly()
-                        ->currency()
-                        ->dehydrated(false),
+                        ->dehydrated(false)
+                        ->content(function ($livewire) {
+                            $value = $livewire->data['total_unpaid_amount'];
+                            return new HtmlString("<h3 style='color: #0464ff;font-weight: bold'>$value</h3>");
+                        }),
 
                 ])
-                    ->visible(fn(Get $get) => $get('invoice_id') !== null)
+                    ->visible(fn(Get $get) => $get('invoice_id') != null)
                     ->columns(3),
 
 
