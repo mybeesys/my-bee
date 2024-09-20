@@ -554,7 +554,7 @@ class Invoice extends BaseModel
                     $additionalCost->statement,
                     $additionalCost->statement,
                     $this->id,
-                )->make("122600002", null)
+                )->make("120100001", "122600002")
                 ->finish();
 
 
