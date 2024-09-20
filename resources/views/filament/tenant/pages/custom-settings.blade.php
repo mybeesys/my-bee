@@ -14,7 +14,7 @@
             grid-template-columns: repeat(6, minmax(0, 1fr));
         }
         .card {
-            background-color: #ffffff;
+            /*background-color: #ffffff;*/
             /*border: 1px solid #e2e8f0;*/
             /*border-radius: 0.5rem;*/
             /*margin-bottom: 2rem;*/
