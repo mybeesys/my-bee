@@ -866,6 +866,8 @@ return [
 
     'price_offer_url' => 'رابط عرض السعر',
 
+    'supply_order_url' => 'رابط طلب التوريد',
+
     'amount_includes_tax' => 'المبلغ شامل الضريبة',
 
     'amount_without_tax' => 'المبلغ من غير الضريبة',

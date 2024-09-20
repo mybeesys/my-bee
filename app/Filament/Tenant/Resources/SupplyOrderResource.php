@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\SupplyOrderResource\Pages;
 use App\Filament\Tenant\Resources\SupplyOrderResource\RelationManagers;
+use App\Models\PriceOffer;
 use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductVariant;
@@ -357,6 +358,11 @@ class SupplyOrderResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('supply_order_url')
+                    ->label(__('fields.supply_order_url'))
+                    ->color(Color::Sky)
+                    ->url(fn(SupplyOrder $record) => $record->url, true),
+
                 Tables\Actions\Action::make('make_purchases_invoice_from_supply_order')
                     ->label(__('fields.make_purchases_invoice_from_supply_order'))
                     ->requiresConfirmation()

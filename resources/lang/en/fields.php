@@ -858,6 +858,10 @@ return [
 
     'requested_qty_out_of_stock' => 'Requested qty out of stock',
 
+    'price_offer_url' => 'Price offer url',
+
+    'supply_order_url' => 'Supply order url',
+
     'amount_includes_tax' => 'Amount includes tax',
     'amount_without_tax' => 'Amount without tax',
 

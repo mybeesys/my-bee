@@ -657,7 +657,7 @@ class StoreController extends BaseController
                     'whatsapp' => $tenant->store_social_media_links['whatsapp'] ?? "",
                 ]
             ],
-            'termsAndConditions' => "الشروط والأحكام",
+            'termsAndConditions' => $tenant->store_terms_and_conditions,
             'invoice' => new InvoiceResource($inv),
         ])->respond();
     }
@@ -693,7 +693,7 @@ class StoreController extends BaseController
                     'whatsapp' => $tenant->store_social_media_links['whatsapp'] ?? "",
                 ]
             ],
-            'termsAndConditions' => "-",
+            'termsAndConditions' => $tenant->store_terms_and_conditions,
             'priceOffer' => new PriceOfferResource($priceOffer),
         ])->respond();
     }
@@ -729,7 +729,7 @@ class StoreController extends BaseController
                     'whatsapp' => $tenant->store_social_media_links['whatsapp'] ?? "",
                 ]
             ],
-            'termsAndConditions' => "الشروط والأحكام",
+            'termsAndConditions' => $tenant->store_terms_and_conditions,
             'supplyOrder' => new SupplyOrderResource($supplyOrder),
         ])->respond();
     }
