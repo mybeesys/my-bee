@@ -775,4 +775,13 @@ class Invoice extends BaseModel
         return $this->getItemsCost(true, true, true);
     }
 
+    public function getExtrasTotalAttribute()
+    {
+        $total = 0;
+        foreach ($this->items as $item) {
+            $total += $item->extras_total;
+        }
+        return $total;
+    }
+
 }
