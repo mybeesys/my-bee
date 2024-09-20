@@ -208,6 +208,6 @@ class Tenant extends BaseModel implements HasMedia
 
     public function getCoverAttribute()
     {
-        return $this->getFirstMedia('covers')?->url;
+        return $this->getFirstMedia('covers')?->url ?? public_path('mybee_transparent.png');
     }
 }
