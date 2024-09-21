@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Rules\ApiTenantAttributeRule;
 use App\Rules\InternationalPhoneRule;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\File;
 
 class UpdateTenantRequest extends BaseRequest
 {
@@ -36,7 +37,8 @@ class UpdateTenantRequest extends BaseRequest
             'address' => ['sometimes', 'string', 'max:255'],
             'trn' => ['required_if:type,==,company', 'string', 'max:255'],
             'company_person' => ['required_if:type,==,company', 'string', 'max:255'],
-
+            'cover' => ['sometimes', 'file', File::types(['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG'])->max(1024 * 3)],
+            'logo' => ['sometimes', 'file', File::types(['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG'])->max(1024)],
             'store_title_en' => ['sometimes', 'max:255'],
             'store_title_ar' => ['sometimes', 'max:255'],
             'store_bio_en' => ['sometimes', 'max:255'],

@@ -45,8 +45,8 @@ class CreateExpense extends CreateRecord
                 generate_double_entry_transaction_id(),
                 $this->record->amount,
                 null,
-                __('fields.expenses'),
-                __('fields.expenses'),
+                $this->record->description,
+                $this->record->description,
                 null,
                 meta: ['type' => 'expense', 'id' => $this->record->id],
             )->make($this->record->credit_acc4_code, '122300001')

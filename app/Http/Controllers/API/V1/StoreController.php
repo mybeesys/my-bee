@@ -638,8 +638,8 @@ class StoreController extends BaseController
             'store' => [
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
-                'logo' => MediaService::mediaUrls($tenant->getMedia('logos'), true),
                 'cover' => $tenant->cover,
+                'logo' => $tenant->logo,
                 'heroTitle' => $tenant->store_title ?? "My bee",
                 'bio' => $tenant->store_bio ?? "",
                 'trn' => $tenant->trn ?? "",
@@ -674,8 +674,8 @@ class StoreController extends BaseController
             'store' => [
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
-                'logo' => MediaService::mediaUrls($tenant->getMedia('logos'), true),
                 'cover' => $tenant->cover,
+                'logo' => $tenant->logo,
                 'heroTitle' => $tenant->store_title ?? "My bee",
                 'bio' => $tenant->store_bio ?? "",
                 'trn' => $tenant->trn ?? "",
@@ -710,8 +710,8 @@ class StoreController extends BaseController
             'store' => [
                 'name' => $tenant->name,
                 'slug' => $tenant->slug,
-                'logo' => MediaService::mediaUrls($tenant->getMedia('logos'), true),
                 'cover' => $tenant->cover,
+                'logo' => $tenant->logo,
                 'heroTitle' => $tenant->store_title ?? "My bee",
                 'bio' => $tenant->store_bio ?? "",
                 'trn' => $tenant->trn ?? "",

@@ -206,8 +206,12 @@ class Tenant extends BaseModel implements HasMedia
         return $this->hasMany(Workflow::class);
     }
 
-    public function getCoverAttribute()
+    public function getCoverAttribute(): string
     {
         return $this->getFirstMedia('covers')?->getUrl() ?? config('app.url') . "mybee_transparent.png";
+    }
+    public function getLogoAttribute(): string
+    {
+        return $this->getFirstMedia('logos')?->getUrl() ?? config('app.url') . "logo.jpg";
     }
 }

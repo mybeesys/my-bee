@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Services\MediaService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,6 +25,8 @@ class TenantResource extends BaseResource
             'email' => $this->email,
             'address' => $this->address,
             'trn' => $this->trn,
+            'cover' => $this->cover,
+            'logo' => $this->logo,
             'companyPerson' => $this->company_person,
             'active' => $this->active,
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),

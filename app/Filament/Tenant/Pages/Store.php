@@ -125,6 +125,17 @@ class Store extends Page implements HasForms
 
                     ]),
 
+                    SpatieMediaLibraryFileUpload::make('logo')
+                        ->label(__('fields.store_logo'))
+                        ->image()
+                        ->openable()
+                        ->downloadable()
+                        ->maxSize(4080)
+                        ->disk('public')
+                        ->model(get_tenant())
+                        ->collection('logos')
+                        ->directory('logos'),
+
                     SpatieMediaLibraryFileUpload::make('cover')
                         ->label(__('fields.store_cover'))
                         ->image()

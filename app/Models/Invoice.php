@@ -94,10 +94,6 @@ class Invoice extends BaseModel
         return $this->morphMany(ReceiptVoucherPayment::class, 'model');
     }
 
-    public function client()
-    {
-        return $this->belongsTo(Client::class);
-    }
 
     public function representative()
     {

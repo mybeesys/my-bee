@@ -1203,13 +1203,34 @@ class SalesInvoiceResource extends Resource
                             DB::beginTransaction();
 
                             if ($data['status'] == "confirmed") {
+                                $accService = new AccountingService();
+
                                 StockService::instance()->takeStockFromSalesInvoice($record);
                                 $record->update(['status' => $data['status'], 'locked_at' => now()]);
 
                                 $tax = $record->items->sum('tax');
+
+                                $sales = $record->getItemsCost(applyDiscount: true);
+
+                                $op = make_general_voucher_op();
+
+                                $accService
+                                    ->setUp(
+                                        $op->id,
+                                        now(),
+                                        main_currency_iso_code(),
+                                        generate_double_entry_transaction_id(),
+                                        $sales,
+                                        null,
+                                        'Sales items',
+                                        'Sales items',
+                                        $record->id,
+                                        meta: ['type' => 'sales_invoice', 'id' => $record->id],
+                                    )->make($record->customer->acc4->code, '121800001')
+                                    ->finish();
+
                                 if ($tax > 0) {
                                     $op = make_taxes_op();
-                                    $accService = new AccountingService();
                                     $accService
                                         ->setUp(
                                             $op->id,
@@ -1222,13 +1243,29 @@ class SalesInvoiceResource extends Resource
                                             'Invoice items taxes',
                                             $record->id,
                                             meta: ['type' => 'sales_invoice', 'id' => $record->id],
-                                        )->make('120100001', '122800003')
+                                        )->make($record->customer->acc4->code, '122800003')
                                         ->finish();
                                 }
 
                                 foreach ($record->services as $service) {
-                                    $service_tax = MathService::instance()->getTaxFromTaxProfile($service->price, $service->taxProfile, false);
+                                    $service_tax = MathService::instance()->getTaxFromTaxProfile($service->price, $service->taxProfile, $record->prices_includes_taxes);
 
+                                    $op = make_general_voucher_op();
+
+                                    $accService
+                                        ->setUp(
+                                            $op->id,
+                                            now(),
+                                            main_currency_iso_code(),
+                                            generate_double_entry_transaction_id(),
+                                            $service->price - $service_tax,
+                                            null,
+                                            $service->name,
+                                            $service->name,
+                                            $record->id,
+                                            meta: ['type' => 'service', 'id' => $service->id],
+                                        )->make($record->customer->acc4->code, '122100001')
+                                        ->finish();
                                     if ($service_tax > 0) {
                                         $op = make_taxes_op();
                                         $accService = new AccountingService();
@@ -1244,7 +1281,7 @@ class SalesInvoiceResource extends Resource
                                                 'Service tax',
                                                 null,
                                                 meta: ['type' => 'service', 'id' => $service->id],
-                                            )->make('120100001', '122800004')
+                                            )->make($record->customer->acc4->code, '122800004')
                                             ->finish();
                                     }
                                 }

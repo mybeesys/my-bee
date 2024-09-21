@@ -210,6 +210,7 @@ class ClientController extends BaseController
 
         $tenant->update(Arr::except($data,
             [
+                'cover',
                 'store_social_media_links_facebook',
                 'store_social_media_links_instagram',
                 'store_social_media_links_twitter',
@@ -218,6 +219,16 @@ class ClientController extends BaseController
                 'store_social_media_links_whatsapp'
             ]
         ));
+
+        if ($request->hasFile("cover")) {
+            $tenant->clearMediaCollection("covers");
+            $tenant->addMedia("cover")->toMediaCollection('covers');
+        }
+
+        if ($request->hasFile("logo")) {
+            $tenant->clearMediaCollection("logos");
+            $tenant->addMedia("logo")->toMediaCollection('logos');
+        }
 
         return $this->responder(__('messages.updated'), 200, new TenantResource($tenant))->respond();
     }
