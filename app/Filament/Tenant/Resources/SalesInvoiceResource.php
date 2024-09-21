@@ -1355,7 +1355,6 @@ class SalesInvoiceResource extends Resource
                     'customer',
                     'receiptVoucher',
                     'representative',
-                    'client',
                     'user',
                     'reviewedBy',
                     'additionalCosts',
