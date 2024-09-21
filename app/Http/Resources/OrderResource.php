@@ -17,10 +17,12 @@ class OrderResource extends BaseResource
         return $this->filterFields([
             'id' => $this->id,
             'no' => $this->no,
+            'invoiceId' => $this->invoice->id,
+            'invoiceNo' => $this->invoice->no,
             'invoiceUID' => $this->invoice->uid,
             'status' => $this->status,
             'statusName' => __("fields.order_status_$this->status"),
-            'paymentStatus' => $this->invoice?->payment_status,
+            'paymentStatus' => $this->invoice->payment_status,
             'paymentMethod' => $this->payment_method,
             'discount' => number_format($this->invoice->getDiscountInAmount(), currency_decimals(), '.', ',') . " ". main_currency_native_symbol(),
             'delivery' => number_format($this->delivery, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
