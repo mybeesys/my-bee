@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\ReceiptVoucher;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,6 +20,7 @@ class OrderResource extends BaseResource
             'no' => $this->no,
             'invoiceId' => $this->invoice->id,
             'invoiceNo' => $this->invoice->no,
+            'invoiceReceiptVoucherId' => ReceiptVoucher::whereInvoiceId($this->invoice->id)->first()?->id(),
             'invoiceUID' => $this->invoice->uid,
             'status' => $this->status,
             'statusName' => __("fields.order_status_$this->status"),
