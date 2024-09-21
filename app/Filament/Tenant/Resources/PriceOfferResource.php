@@ -429,9 +429,14 @@ class PriceOfferResource extends Resource
                                     ->afterStateUpdated(function (Get $get, $livewire) {
                                         self::updateInvoicePropertiesFromLivewire($livewire, true);
                                     })
-                                    ->suffix(function (Get $get) {
-                                        $exts = ProductExtra::findMany($get('product_extras_ids'));
-                                        return format_amount(PricingService::instance()->getRetailItemsPrices($exts));
+                                    ->suffix(function (Get $get, PriceOfferDetails $record) {
+                                        if($record){
+                                            $extras_total = $record->extras_total;
+                                        }else{
+                                            $exts = ProductExtra::findMany($get('product_extras_ids'));
+                                            $extras_total = format_amount(PricingService::instance()->getRetailItemsPrices($exts));
+                                        }
+                                        return $extras_total;
                                     })
                                     ->multiple(),
 
@@ -1059,7 +1064,7 @@ class PriceOfferResource extends Resource
             $extras_total = $extras_total * $qty ?? 0;
 
             if($item['id']){
-                $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
+                $extras_total = PriceOfferDetails::with('offerDetailsExtras')->findOrFail($item['id'])->extras_total;
             }
 
             $discount = $item['discount'] ?? 0;
@@ -1180,7 +1185,7 @@ class PriceOfferResource extends Resource
             $extras_total = $extras_total * $qty ?? 0;
 
             if($item['id']){
-                $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
+                $extras_total = PriceOfferDetails::with('offerDetailsExtras')->findOrFail($item['id'])->extras_total;
             }
 
             if ($discountOption == "overall") {

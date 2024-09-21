@@ -466,9 +466,14 @@ class SalesInvoiceResource extends Resource
                                     ->afterStateUpdated(function (Get $get, $livewire) {
                                         self::updateInvoicePropertiesFromLivewire($livewire, true);
                                     })
-                                    ->suffix(function (Get $get) {
-                                        $exts = ProductExtra::findMany($get('product_extras_ids'));
-                                        return format_amount(PricingService::instance()->getRetailItemsPrices($exts));
+                                    ->suffix(function (Get $get, InvoiceItem $record) {
+                                        if($record){
+                                            $extras_total = $record->extras_total;
+                                        }else{
+                                            $exts = ProductExtra::findMany($get('product_extras_ids'));
+                                            $extras_total = format_amount(PricingService::instance()->getRetailItemsPrices($exts));
+                                        }
+                                        return $extras_total;
                                     })
                                     ->multiple(),
 
