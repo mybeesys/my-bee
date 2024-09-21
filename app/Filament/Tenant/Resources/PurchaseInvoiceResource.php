@@ -1201,7 +1201,6 @@ class PurchaseInvoiceResource extends Resource
                     'items',
                     'purchasePayments',
                     'salesPayments',
-                    'client',
                     'representative',
                     'supplier',
                     'user',
