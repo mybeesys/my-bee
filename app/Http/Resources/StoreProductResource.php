@@ -40,7 +40,7 @@ class StoreProductResource extends BaseResource
 
             $tenant = get_tenant();
 
-            if(!$tenant->store_enable_stock_tracking){
+            if (!$tenant->store_enable_stock_tracking) {
                 $inStock = true;
                 $qty = 100;
             }
@@ -50,7 +50,7 @@ class StoreProductResource extends BaseResource
             $price = $pricingService->getProductVariantsPriceRange($this->resource);
         }
 
-        if($hasDiscount and is_number($originalPrice) and is_number($price)){
+        if ($hasDiscount and is_number($originalPrice) and is_number($price)) {
             $discountPercent = (int)number_format(percent($originalPrice - $price, $originalPrice), 0);
         }
 
@@ -58,6 +58,8 @@ class StoreProductResource extends BaseResource
             'id' => $this->id,
             'type' => $this->type,
             'images' => MediaService::mediaUrls($this->getMedia('images')),
+            'variantsImages' => $this->getVariantsImages($this->resource),
+            'updateVariantImageEverySeconds' => 3,
             'name' => $this->name,
             'sku' => $this->sku,
             'categoryId' => $this->category_id,
@@ -80,7 +82,7 @@ class StoreProductResource extends BaseResource
 
     protected function itemInCart(Product $product, $product_variant_id = null): bool
     {
-        if($product_variant_id == null){
+        if ($product_variant_id == null) {
             return collect($this->getCart()['items'] ?? [])->filter(fn($item) => $item['productId'] == $product->id)->first() != null;
         }
 
@@ -97,5 +99,14 @@ class StoreProductResource extends BaseResource
             'taxFormatted' => "0.0 SAR",
             "items" => []
         ]);
+    }
+
+    protected function getVariantsImages(Product $product): array
+    {
+        $urls = [];
+        foreach ($product->variants as $variant) {
+            $urls = array_merge($urls, MediaService::mediaUrls($variant->getMedia('images')));
+        }
+        return $urls;
     }
 }

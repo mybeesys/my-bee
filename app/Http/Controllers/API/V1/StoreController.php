@@ -126,7 +126,7 @@ class StoreController extends BaseController
         $store_slug = $request->header('Store-Slug');
 
         $categories_ids = $request->categories_ids;
-        $query = Product::query()->with(['tenant', 'category', 'extras.extra', 'variantOptions.library']);
+        $query = Product::query()->with(['tenant', 'category', 'extras.extra', 'variantOptions.library', 'variants']);
 
         $query->whereHas('tenant', function (Builder $q) use ($store_slug) {
             $q->where('slug', $store_slug);
