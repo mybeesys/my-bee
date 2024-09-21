@@ -223,12 +223,12 @@ class ClientController extends BaseController
 
         if ($request->hasFile("cover")) {
             $tenant->clearMediaCollection("covers");
-            $tenant->addMedia("cover")->toMediaCollection('covers');
+            $tenant->addMediaFromRequest("cover")->toMediaCollection('covers');
         }
 
         if ($request->hasFile("logo")) {
             $tenant->clearMediaCollection("logos");
-            $tenant->addMedia("logo")->toMediaCollection('logos');
+            $tenant->addMediaFromRequest("logo")->toMediaCollection('logos');
         }
 
         return $this->responder(__('messages.updated'), 200, new TenantResource($tenant))->respond();
