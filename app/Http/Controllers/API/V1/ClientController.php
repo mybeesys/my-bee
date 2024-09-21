@@ -210,6 +210,7 @@ class ClientController extends BaseController
 
         $tenant->update(Arr::except($data,
             [
+                'logo',
                 'cover',
                 'store_social_media_links_facebook',
                 'store_social_media_links_instagram',
