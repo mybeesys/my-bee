@@ -429,9 +429,9 @@ class PriceOfferResource extends Resource
                                     ->afterStateUpdated(function (Get $get, $livewire) {
                                         self::updateInvoicePropertiesFromLivewire($livewire, true);
                                     })
-                                    ->suffix(function (Get $get, PriceOfferDetails $record) {
-                                        if($record){
-                                            $extras_total = $record->extras_total;
+                                    ->suffix(function (Get $get) {
+                                        if($priceOfferDetails = PriceOfferDetails::with('extras')->find($get('id'))) {
+                                            $extras_total = $priceOfferDetails->extras_total;
                                         }else{
                                             $exts = ProductExtra::findMany($get('product_extras_ids'));
                                             $extras_total = format_amount(PricingService::instance()->getRetailItemsPrices($exts));
