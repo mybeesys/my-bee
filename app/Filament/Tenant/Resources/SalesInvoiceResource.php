@@ -1548,11 +1548,13 @@ class SalesInvoiceResource extends Resource
             $price = $item['price'] ?? 0;
             $qty = $item['qty'] ?? 0;
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = $extras_total * $qty;
+            if($item['id']){
+                $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
+            }
+
             $discount = $item['discount'] ?? 0;
             $tax = 0;
-
-            if (is_number($qty))
-                $extras_total = $extras_total * $qty;
 
             if (is_number($qty) and is_number($price))
                 $totals['total_purchases'] += $qty * $price;
@@ -1662,13 +1664,17 @@ class SalesInvoiceResource extends Resource
         $newItems = [];
         foreach ($livewire->data['items'] ?? [] as $item) {
 
-            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
             $tax = 0;
 
-            if (is_number($qty))
-                $extras_total = $extras_total * $qty;
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+            $extras_total = $extras_total * $qty ?? 0;
+
+            if($item['id']){
+                $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
+            }
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {

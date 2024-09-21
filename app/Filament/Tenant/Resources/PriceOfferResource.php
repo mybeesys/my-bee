@@ -7,6 +7,7 @@ use App\Filament\Tenant\Resources\PriceOfferResource\RelationManagers;
 use App\Models\AdditionalCostType;
 use App\Models\Customer;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Order;
 use App\Models\PriceOffer;
 use App\Models\PriceOfferDetails;
@@ -1056,6 +1057,11 @@ class PriceOfferResource extends Resource
             $qty = $item['qty'] ?? 0;
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $extras_total = $extras_total * $qty ?? 0;
+
+            if($item['id']){
+                $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
+            }
+
             $discount = $item['discount'] ?? 0;
             $tax = 0;
 
@@ -1165,12 +1171,17 @@ class PriceOfferResource extends Resource
         $newItems = [];
 
         foreach ($livewire->data['details'] ?? [] as $item) {
-            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
+
             $price = $item['price'] ?? null;
             $qty = $item['qty'] ?? null;
             $tax = 0;
 
+            $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $extras_total = $extras_total * $qty ?? 0;
+
+            if($item['id']){
+                $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
+            }
 
             if ($discountOption == "overall") {
                 if ($discountMethod == "percent") {
