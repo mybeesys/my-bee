@@ -429,52 +429,6 @@ class Invoice extends BaseModel
             throw new \Exception('Unable to lock empty invoice');
         }
 
-        //this will add the stock to the warehouse
-        $purchases_amount = 0;
-
-        foreach ($this->items as $item) //loop invoice items and make stocks
-        {
-            $purchases_amount += $item->qty * $item->price;
-        }
-
-        $purchases_amount = $purchases_amount - $this->getDiscountInAmount();
-
-        $op = make_general_voucher_op();
-
-        $accService = new AccountingService();
-
-        $supplier = Supplier::find($this->supplier_id);
-
-        foreach ($this->additionalCosts as $additionalCost) {
-            $accService
-                ->setUp(
-                    $op->id,
-                    now(),
-                    main_currency_iso_code(),
-                    generate_double_entry_transaction_id(),
-                    $additionalCost->cost,
-                    $this->exchange_rate,
-                    $additionalCost->statement,
-                    $additionalCost->statement,
-                    $this->id,
-                )->make("120100001", "122300001")
-                ->finish();
-        }
-        $accService
-            ->setUp(
-                $op->id,
-                now(),
-                main_currency_iso_code(),
-                generate_double_entry_transaction_id(),
-                $purchases_amount,
-                $this->exchange_rate,
-                "Purchases from: {$supplier->name}",
-                "Purchases from: {$supplier->name}",
-                $this->id,
-            )->make("122600001", $supplier->acc4->code)
-            ->finish();
-
-
         $this->update(
             [
                 'status' => $status,
@@ -498,13 +452,16 @@ class Invoice extends BaseModel
 
 
         $purchases_amount = 0;
+        $taxes = 0;
 
         foreach ($this->items as $invoiceItem) //loop invoice items and make stocks
         {
 
-            $purchases_amount += $invoiceItem->qty * $invoiceItem->price;
+            $purchases_amount += $invoiceItem->qty * $invoiceItem->price - $invoiceItem->discount + $invoiceItem->tax;
 
             $item = $invoiceItem->product_variant_id ? ProductVariant::find($invoiceItem->product_variant_id) : Product::find($invoiceItem->product_id);
+
+            $taxes += $invoiceItem->tax;
 
             ItemStock::create(
                 [
@@ -537,7 +494,27 @@ class Invoice extends BaseModel
 
         $supplier = Supplier::find($this->supplier_id);
 
+        $accService
+            ->setUp(
+                $op->id,
+                now(),
+                main_currency_iso_code(),
+                generate_double_entry_transaction_id(),
+                $purchases_amount,
+                $this->exchange_rate,
+                "Purchases from: {$supplier->name}",
+                "Purchases from: {$supplier->name}",
+                $this->id,
+            )->make("120100001", '122600001') //$supplier->acc4->code
+            ->finish();
+
         foreach ($this->additionalCosts as $additionalCost) {
+
+            $cost = $additionalCost->cost;
+
+            if($additionalCost->taxProfile){
+                $taxes = MathService::instance()->getTaxFromTaxProfile($additionalCost->cost, $additionalCost->taxProfile, $this->prices_includes_taxes);
+            }
 
             $accService
                 ->setUp(
@@ -545,7 +522,7 @@ class Invoice extends BaseModel
                     now(),
                     main_currency_iso_code(),
                     generate_double_entry_transaction_id(),
-                    $additionalCost->cost,
+                    $cost,
                     $this->exchange_rate,
                     $additionalCost->statement,
                     $additionalCost->statement,
@@ -573,12 +550,12 @@ class Invoice extends BaseModel
                 now(),
                 main_currency_iso_code(),
                 generate_double_entry_transaction_id(),
-                $purchases_amount,
+                $taxes,
                 $this->exchange_rate,
-                "Purchases from: {$supplier->name}",
-                "Purchases from: {$supplier->name}",
+                "purchases taxes",
+                "purchases taxes",
                 $this->id,
-            )->make("120100001", $supplier->acc4->code)
+            )->make("120100001", "122800002")
             ->finish();
 
     }

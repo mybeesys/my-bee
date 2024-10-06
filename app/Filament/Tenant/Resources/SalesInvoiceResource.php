@@ -1215,7 +1215,7 @@ class SalesInvoiceResource extends Resource
 
                                 $tax = $record->items->sum('tax');
 
-                                $sales = $record->getItemsCost(applyDiscount: true);
+                                $sales = $record->getItemsCost(applyDiscount: true, applyTaxes: true);
 
                                 $op = make_general_voucher_op();
 
@@ -1253,17 +1253,14 @@ class SalesInvoiceResource extends Resource
                                 }
 
                                 foreach ($record->services as $service) {
-                                    $service_tax = MathService::instance()->getTaxFromTaxProfile($service->price, $service->taxProfile, $record->prices_includes_taxes);
-
                                     $op = make_general_voucher_op();
-
                                     $accService
                                         ->setUp(
                                             $op->id,
                                             now(),
                                             main_currency_iso_code(),
                                             generate_double_entry_transaction_id(),
-                                            $service->price - $service_tax,
+                                            $service->price,
                                             null,
                                             $service->name,
                                             $service->name,
@@ -1271,24 +1268,23 @@ class SalesInvoiceResource extends Resource
                                             meta: ['type' => 'service', 'id' => $service->id],
                                         )->make($record->customer->acc4->code, '122100001')
                                         ->finish();
-                                    if ($service_tax > 0) {
-                                        $op = make_taxes_op();
-                                        $accService = new AccountingService();
-                                        $accService
-                                            ->setUp(
-                                                $op->id,
-                                                now(),
-                                                main_currency_iso_code(),
-                                                generate_double_entry_transaction_id(),
-                                                $service_tax,
-                                                null,
-                                                'Service tax',
-                                                'Service tax',
-                                                null,
-                                                meta: ['type' => 'service', 'id' => $service->id],
-                                            )->make($record->customer->acc4->code, '122800004')
-                                            ->finish();
-                                    }
+                                }
+                                foreach ($record->additionalCosts as $additionalCost) {
+                                    $op = make_general_voucher_op();
+                                    $accService
+                                        ->setUp(
+                                            $op->id,
+                                            now(),
+                                            main_currency_iso_code(),
+                                            generate_double_entry_transaction_id(),
+                                            $additionalCost->cost,
+                                            null,
+                                            $service->name,
+                                            $service->name,
+                                            $record->id,
+                                            meta: ['type' => 'additional_cost', 'id' => $additionalCost->id],
+                                        )->make($record->customer->acc4->code, '122500001')
+                                        ->finish();
                                 }
                                 fns()->sendSuccess(__('fields.invoice_updated'));
                             } else {
