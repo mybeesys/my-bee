@@ -720,7 +720,7 @@ class Invoice extends BaseModel
 
     public function getUrlAttribute(): string
     {
-        return "https://mybeesystem.com/einvoice/" . $this->uid;
+        return "https://shop.mybeesystem.com/einvoice/" . $this->uid;
     }
 
     //bug
