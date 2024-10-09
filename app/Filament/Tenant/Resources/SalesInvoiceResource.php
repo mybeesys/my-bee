@@ -1550,7 +1550,7 @@ class SalesInvoiceResource extends Resource
             $qty = $item['qty'] ?? 0;
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $extras_total = $extras_total * $qty;
-            if($item['id']){
+            if($item['id'] ?? null){
                 $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
             }
 
@@ -1673,7 +1673,7 @@ class SalesInvoiceResource extends Resource
             $extras_total = count($item['product_extras_ids'] ?? []) > 0 ? PricingService::instance()->getRetailItemsPrices(ProductExtra::findMany($item['product_extras_ids'])) : 0;
             $extras_total = $extras_total * $qty ?? 0;
 
-            if($item['id']){
+            if($item['id'] ?? null){
                 $extras_total = InvoiceItem::with('extras')->findOrFail($item['id'])->extras_total;
             }
 
