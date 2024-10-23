@@ -840,19 +840,15 @@ class StoreController extends BaseController
                     $model = $productVariant;
                 }
 
-                dd($item, $product, $model);
-
                 $unit_price = PricingService::instance()->getRetailPrice($model);
 
                 $subTotal = $unit_price * $item['qty'];
                 $subTotal -= $discount;
                 $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
-                $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, false);
+                $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
 
-                if($productVariant){
-                    $taxes = -9;
-                }
+                dd($taxes);
             }
         }
         return $taxes;
