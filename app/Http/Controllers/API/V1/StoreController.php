@@ -840,7 +840,7 @@ class StoreController extends BaseController
                     $item = $productVariant;
                 }
 
-                dd($item);
+                dd($item, $product, $productVariant);
 
                 $unit_price = PricingService::instance()->getRetailPrice($item);
 
