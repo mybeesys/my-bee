@@ -478,7 +478,7 @@ class StoreController extends BaseController
                     $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
                     if($product->taxProfile){
-                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, false);
                     }
 
                 } else if ($item['type'] == "variants") {
@@ -494,7 +494,7 @@ class StoreController extends BaseController
                     $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
                     if($productVariant->product->taxProfile){
-                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $productVariant->product->taxProfile, true);
+                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $productVariant->product->taxProfile, false);
                     }
                 } else {
                     throw new \Exception("Unknown product type");
@@ -838,10 +838,7 @@ class StoreController extends BaseController
                 $subTotal -= $discount;
                 $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
-                $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
-                $taxes += 8;
-            }else{
-                $taxes = 9.9;
+                $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, false);
             }
         }
         return $taxes;
