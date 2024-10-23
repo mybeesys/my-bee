@@ -834,15 +834,15 @@ class StoreController extends BaseController
             $product = Product::with(['taxProfile', 'lastPrice'])->find($item['productId']);
             if($product->taxProfile){
 
-                $item = $product;
+                $model = $product;
 
                 if($productVariant = ProductVariant::find($item['productVariantId'])){
-                    $item = $productVariant;
+                    $model = $productVariant;
                 }
 
-                dd($item, $product, $productVariant);
+                dd($item, $product, $model);
 
-                $unit_price = PricingService::instance()->getRetailPrice($item);
+                $unit_price = PricingService::instance()->getRetailPrice($model);
 
                 $subTotal = $unit_price * $item['qty'];
                 $subTotal -= $discount;
