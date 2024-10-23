@@ -839,6 +839,9 @@ class StoreController extends BaseController
                 $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
 
                 $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
+                $taxes += 8;
+            }else{
+                $taxes = 9.9;
             }
         }
         return $taxes;
