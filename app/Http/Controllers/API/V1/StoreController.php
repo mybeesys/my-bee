@@ -833,7 +833,15 @@ class StoreController extends BaseController
 
             $product = Product::with(['taxProfile', 'lastPrice'])->find($item['productId']);
             if($product->taxProfile){
-                $unit_price = PricingService::instance()->getRetailPrice($product);
+
+                $item = $product;
+
+                if($productVariant = ProductVariant::find($item['productVariantId'])){
+                    $item = $productVariant;
+                }
+
+                $unit_price = PricingService::instance()->getRetailPrice($item);
+
                 $subTotal = $unit_price * $item['qty'];
                 $subTotal -= $discount;
                 $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
