@@ -840,6 +840,8 @@ class StoreController extends BaseController
                     $item = $productVariant;
                 }
 
+                dd($item);
+                
                 $unit_price = PricingService::instance()->getRetailPrice($item);
 
                 $subTotal = $unit_price * $item['qty'];
