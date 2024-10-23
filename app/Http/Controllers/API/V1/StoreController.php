@@ -848,8 +848,8 @@ class StoreController extends BaseController
 
                 $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, false);
 
-                if($unit_price == 0){
-                    $taxes = -1;
+                if($productVariant){
+                    $taxes = -9;
                 }
             }
         }
