@@ -913,7 +913,6 @@ class StoreController extends BaseController
 
     protected function getExistingVariantByCombination($product, $combinations): ?ProductVariant
     {
-        dd($product->variants);
         return $product->variants->filter(function ($existItem) use ($combinations) {
             $array1 = $existItem->variant_library_options_ids;
             $array2 = $combinations;
