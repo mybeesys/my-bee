@@ -40,9 +40,9 @@ class InvoiceResource extends BaseResource
             'additionalCosts' => $additionalCosts,
             'total' => format_amount($this->resource->getItemsCost(true, false, false)),
             'TotalAfterDiscount' => format_amount($this->resource->getItemsCost(true, true, false)),
-            'TotalAfterTaxes' => format_amount($this->resource->getItemsCost(true, true, true)),
-            'TotalWrittenAr' => numbers_to_words($this->resource->getItemsCost(true, true, true), 'ar'),
-            'TotalWrittenEn' => numbers_to_words($this->resource->getItemsCost(true, true, true), 'en'),
+            'TotalAfterTaxes' => format_amount($this->resource->getItemsCost(true, true, false)),
+            'TotalWrittenAr' => numbers_to_words($this->resource->getItemsCost(true, true, false), 'ar'),
+            'TotalWrittenEn' => numbers_to_words($this->resource->getItemsCost(true, true, false), 'en'),
             'items' => InvoiceItemResource::collection($this->items),
         ]);
     }
