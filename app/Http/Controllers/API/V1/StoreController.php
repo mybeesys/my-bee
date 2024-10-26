@@ -783,6 +783,10 @@ class StoreController extends BaseController
 
     protected function generateCartData(array $items): array
     {
+//        $extrasTotal = collect($items)->sum(function ($item) {
+//            return collect($item['extras'])->sum('price');
+//        });
+
         $subTotal = $this->calculateSubTotal($items);
 
         $couponData = $this->getCouponInfo($subTotal);
