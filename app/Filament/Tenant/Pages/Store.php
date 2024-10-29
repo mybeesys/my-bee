@@ -11,6 +11,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Tabs;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -190,7 +191,8 @@ class Store extends Page implements HasForms
 
                     ])->columns(4),
 
-                    RichEditor::make('store_terms_and_conditions')
+                    Textarea::make('store_terms_and_conditions')
+                        ->rows(4)
                         ->label(__('fields.store_terms_and_conditions')),
                 ]),
         ];

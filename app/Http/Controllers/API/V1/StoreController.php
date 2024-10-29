@@ -657,7 +657,7 @@ class StoreController extends BaseController
                     'whatsapp' => $tenant->store_social_media_links['whatsapp'] ?? "",
                 ]
             ],
-            'termsAndConditions' => $tenant->store_terms_and_conditions,
+            'termsAndConditions' => strip_tags($tenant->store_terms_and_conditions),
             'invoice' => new InvoiceResource($inv),
         ])->respond();
     }
