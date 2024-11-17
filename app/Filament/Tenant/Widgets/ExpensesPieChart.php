@@ -29,7 +29,7 @@ class ExpensesPieChart extends ChartWidget
         $total_expenses = $categories->pluck('expenses')->flatten()->sum('total');
 
         foreach ($categories as $category) {
-            $expenses = $category->expenses->sum('total');
+            $expenses = $category->expenses->sum('sub_total');
             $labels[] = $category->name . " (" . number_format(percent($expenses, $total_expenses), currency_decimals(), '.', '') . "%)";
             $data[] = number_format($expenses, currency_decimals(), '.', '');
         }

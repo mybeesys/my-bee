@@ -47,6 +47,11 @@ class Expense extends BaseModel implements HasMedia
         return $value;
     }
 
+    public function getSubTotalAttribute():string
+    {
+        return $this->amount;
+    }
+
     public function getTotalAttribute():string
     {
         if($this->tax){
