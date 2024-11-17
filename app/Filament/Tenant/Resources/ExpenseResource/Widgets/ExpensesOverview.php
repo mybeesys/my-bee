@@ -27,7 +27,7 @@ class ExpensesOverview extends BaseWidget
             $cards[] = Stat::make($category->name, $amount_formatted)->description($amount_words)->color('warning');
         }
 
-        $total_amount = $categories->pluck('expenses')->flatten()->sum('total');
+        $total_amount = $categories->pluck('expenses')->flatten()->sum('sub_total');
         $total_formatted = main_currency_iso_code() . " " .format_amount($total_amount);
         $total_words = numbers_to_words($total_amount);
 

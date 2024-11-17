@@ -133,7 +133,7 @@ class StatsController extends BaseController
             ];
         }
 
-        $total_expenses = $expCats->pluck('expenses')->flatten()->sum('total');
+        $total_expenses = $expCats->pluck('expenses')->flatten()->sum('sub_total');
 
         $extraStats[] = [
             'id' => null,

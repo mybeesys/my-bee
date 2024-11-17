@@ -26,7 +26,7 @@ class ExpensesPieChart extends ChartWidget
         $data = [];
         $labels = [];
         $categories = ExpenseCategory::with('expenses')->get();
-        $total_expenses = $categories->pluck('expenses')->flatten()->sum('total');
+        $total_expenses = $categories->pluck('expenses')->flatten()->sum('sub_total');
 
         foreach ($categories as $category) {
             $expenses = $category->expenses->sum('sub_total');
