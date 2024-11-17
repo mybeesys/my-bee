@@ -323,6 +323,12 @@ class ExpenseResource extends Resource
                     ->getStateUsing(function (Expense $record) {
                         return main_currency_iso_code() . " " . format_amount($record->amount);
                     })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.amount_money'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('sub_total'));
+                        })
+                    )
                     ->moneyTooltip(),
 
                 Tables\Columns\TextColumn::make('tax')
@@ -337,6 +343,12 @@ class ExpenseResource extends Resource
                     ->getStateUsing(function (Expense $record) {
                         return main_currency_iso_code() . " " . format_amount($record->tax);
                     })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.tax'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('tax'));
+                        })
+                    )
                     ->moneyTooltip(),
 
                 Tables\Columns\TextColumn::make('total')
@@ -345,6 +357,12 @@ class ExpenseResource extends Resource
                     ->getStateUsing(function (Expense $record) {
                         return main_currency_iso_code() . " " . format_amount($record->total);
                     })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('total'));
+                        })
+                    )
                     ->moneyTooltip(),
 
                 Tables\Columns\TextColumn::make('amount_words')
