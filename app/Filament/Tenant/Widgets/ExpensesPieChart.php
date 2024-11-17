@@ -16,7 +16,7 @@ class ExpensesPieChart extends ChartWidget
 
     public function getHeading(): ?string
     {
-        $total_expenses = Expense::all()->sum('total');
+        $total_expenses = Expense::all()->sum('sub_total');
 
         return __("fields.expenses") . " (" . format_amount($total_expenses, includeCurrencyCode: true) . ")";
     }
