@@ -1279,8 +1279,8 @@ class SalesInvoiceResource extends Resource
                                             generate_double_entry_transaction_id(),
                                             $additionalCost->cost,
                                             null,
-                                            $service->name,
-                                            $service->name,
+                                            $additionalCost->statement,
+                                            $additionalCost->statement,
                                             $record->id,
                                             meta: ['type' => 'additional_cost', 'id' => $additionalCost->id],
                                         )->make($record->customer->acc4->code, '122500001')

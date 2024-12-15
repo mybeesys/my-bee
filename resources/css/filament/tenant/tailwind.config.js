@@ -1,4 +1,5 @@
 import preset from '../../../../vendor/filament/filament/tailwind.config.preset'
+// import '../../../..//awcodes/filament-table-repeater/resources/css/plugin.css';
 
 export default {
     presets: [preset],
