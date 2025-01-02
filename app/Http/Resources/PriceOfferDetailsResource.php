@@ -31,7 +31,8 @@ class PriceOfferDetailsResource extends BaseResource
             'tax' => number_format($this->tax, currency_decimals(), '.', ''),
             'extras' => $extras,
             'extrasTotal' => number_format($this->extras_total, currency_decimals(), '.', ''),
-            'subTotal' => number_format($this->unit_price * $this->qty + $this->tax + collect($extras)->sum('price') - $this->discount ?? 0, currency_decimals(), '.', ''),
+            'subTotal' => number_format($this->unit_price * $this->qty + collect($extras)->sum('price') - $this->discount ?? 0, currency_decimals(), '.', ''),
+//            'subTotal' => number_format($this->unit_price * $this->qty + $this->tax + collect($extras)->sum('price') - $this->discount ?? 0, currency_decimals(), '.', ''),
         ]);
     }
 }
