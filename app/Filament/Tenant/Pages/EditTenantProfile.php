@@ -71,14 +71,14 @@ class EditTenantProfile extends BaseTenantProfile
                                     TextInput::make('phone')
                                         ->label(__('fields.phone'))
                                         ->tel()
-                                        ->helperText('9665********')
+                                        ->hint('9665-(8 numbers)')
                                         ->required()
                                         ->rules([new TenantPhoneRule()]),
 
                                     TextInput::make('mobile')
                                         ->label(__('fields.mobile'))
                                         ->tel()
-                                        ->helperText('9665********')
+                                        ->hint('9665-(8 numbers)')
                                         ->required(),
 
                                     TextInput::make('email')
