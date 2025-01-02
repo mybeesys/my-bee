@@ -43,13 +43,13 @@ class CreateExpense extends CreateRecord
                 now(),
                 main_currency_iso_code(),
                 generate_double_entry_transaction_id(),
-                $this->record->amount,
+                $this->record->total,
                 null,
                 $this->record->description,
                 $this->record->description,
                 null,
                 meta: ['type' => 'expense', 'id' => $this->record->id],
-            )->make($this->record->credit_acc4_code, '122300001')
+            )->make("122300001", $this->record->credit_acc4_code)
             ->finish();
 
         if ($this->record->tax > 0) {
@@ -67,7 +67,7 @@ class CreateExpense extends CreateRecord
                     'Vat',
                     null,
                     meta: ['type' => 'expense', 'id' => $this->record->id],
-                )->make('120100001', '122800001')
+                )->make('122800001','120100001')
                 ->finish();
         }
 
