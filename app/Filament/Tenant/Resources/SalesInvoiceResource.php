@@ -1253,7 +1253,6 @@ class SalesInvoiceResource extends Resource
                                 if ($tax > 0) {
                                     $op = make_taxes_op();
                                     $accService
-                                        ->debug()
                                         ->setUp(
                                             $op->id,
                                             now(),
@@ -1312,7 +1311,6 @@ class SalesInvoiceResource extends Resource
 
                         } catch (\Exception $exception) {
                             DB::rollBack();
-                            dd($exception);
                             report($exception);
                             fns()->displayException($exception);
                         }
