@@ -67,7 +67,7 @@ class CreateExpense extends CreateRecord
                     'Vat',
                     null,
                     meta: ['type' => 'expense', 'id' => $this->record->id],
-                )->make('122800001','120100001')
+                )->make('122800001', $this->record->credit_acc4_code)
                 ->finish();
         }
 

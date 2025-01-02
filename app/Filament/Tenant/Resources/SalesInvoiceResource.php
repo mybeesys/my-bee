@@ -1215,6 +1215,22 @@ class SalesInvoiceResource extends Resource
 
                                 $tax = $record->items->sum('tax');
 
+                                foreach ($record->services as $service) {
+                                    $price = $service->price ?? 0;
+                                    $taxProfile = TaxProfile::find($service->tax_profile_id);
+                                    if ($taxProfile) {
+                                        $tax += MathService::instance()->getTaxFromTaxProfile($price, $taxProfile, $record->prices_includes_taxes);
+                                    }
+                                }
+
+                                foreach ($record->additionalCosts as $additionalCost) {
+                                    $cost = $additionalCost->cost ?? 0;
+                                    $taxProfile = TaxProfile::find($additionalCost->tax_profile_id);
+                                    if ($taxProfile) {
+                                        $tax += MathService::instance()->getTaxFromTaxProfile($cost, $taxProfile, $record->prices_includes_taxes);
+                                    }
+                                }
+
                                 $sales = $record->getItemsCost(applyDiscount: true, applyTaxes: true);
 
                                 $op = make_general_voucher_op();
@@ -1244,8 +1260,8 @@ class SalesInvoiceResource extends Resource
                                             generate_double_entry_transaction_id(),
                                             $tax,
                                             null,
-                                            'Invoice items taxes',
-                                            'Invoice items taxes',
+                                            'Invoice (products, services, additional costs) taxes',
+                                            'Invoice (products, services, additional costs) taxes',
                                             $record->id,
                                             meta: ['type' => 'sales_invoice', 'id' => $record->id],
                                         )->make($record->customer->acc4->code, '122800003')
