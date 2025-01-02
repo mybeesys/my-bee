@@ -65,9 +65,8 @@ class EditTenantProfile extends BaseTenantProfile
 
                                     TextInput::make('trn')
                                         ->label(__('fields.trn'))
-                                        ->visible(fn(Get $get) => $get('type') === 'company')
-                                        ->unique(table: Tenant::class, ignorable: fn(?Model $record): ?Model => $record)
-                                        ->required(),
+                                        ->required(fn(Get $get) => $get('type') === 'company')
+                                        ->unique(table: Tenant::class, ignorable: fn(?Model $record): ?Model => $record),
 
                                     TextInput::make('phone')
                                         ->label(__('fields.phone'))
