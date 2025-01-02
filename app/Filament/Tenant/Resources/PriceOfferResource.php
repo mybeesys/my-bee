@@ -430,7 +430,7 @@ class PriceOfferResource extends Resource
                                         self::updateInvoicePropertiesFromLivewire($livewire, true);
                                     })
                                     ->suffix(function (Get $get) {
-                                        if($priceOfferDetails = PriceOfferDetails::with('extras')->find($get('id'))) {
+                                        if($priceOfferDetails = PriceOfferDetails::with('offerDetailsExtras')->find($get('id'))) {
                                             $extras_total = $priceOfferDetails->extras_total;
                                         }else{
                                             $exts = ProductExtra::findMany($get('product_extras_ids'));
