@@ -78,6 +78,7 @@ class EditTenantProfile extends BaseTenantProfile
                                     TextInput::make('mobile')
                                         ->label(__('fields.mobile'))
                                         ->tel()
+                                        ->hint('9665********')
                                         ->required(),
 
                                     TextInput::make('email')
