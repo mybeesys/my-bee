@@ -1234,6 +1234,7 @@ class SalesInvoiceResource extends Resource
                                 $sales = $record->getItemsCost(applyDiscount: true, applyTaxes: true);
 
                                 $op = make_general_voucher_op();
+                                $accService = new AccountingService();
 
                                 $accService
                                     ->setUp(
@@ -1251,6 +1252,8 @@ class SalesInvoiceResource extends Resource
                                     ->finish();
 
                                 if ($tax > 0) {
+                                    $accService = new AccountingService();
+
                                     $op = make_taxes_op();
                                     $accService
                                         ->setUp(
