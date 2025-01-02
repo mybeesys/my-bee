@@ -23,6 +23,14 @@ class AccountingService
     public $cash_det_debit;
 
     public $meta;
+
+    public $debug;
+
+    public function debug($debug = true): self
+    {
+        $this->debug = $debug;
+        return $this;
+    }
     public function createAcc4AccountForItem(Model $model): mixed
     {
         //create if not exists
@@ -86,6 +94,12 @@ class AccountingService
 
         //invoice_id is nullable
 
+        if($this->debug){
+
+            dd($this->date , $this->op_id , $this->currency_iso_code
+                , $this->transaction_id , $this->amount , $this->amount > 0
+                , $this->credit_account_code , $this->credit_statement , $this->debit_statement);
+        }
 
         $valid = ($this->date and $this->op_id and $this->currency_iso_code
             and $this->transaction_id and $this->amount and $this->amount > 0
