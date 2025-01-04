@@ -14,6 +14,7 @@ use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\View;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -194,6 +195,9 @@ class Store extends Page implements HasForms
                     Textarea::make('store_terms_and_conditions')
                         ->rows(4)
                         ->label(__('fields.store_terms_and_conditions')),
+
+                    View::make('components.loading'),
+
                 ]),
         ];
     }

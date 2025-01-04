@@ -9,6 +9,7 @@ use App\Models\VariantLibrary;
 use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
@@ -102,6 +103,7 @@ class VariantLibraryResource extends Resource
 
                         ])
                 ]),
+                View::make('components.loading'),
             ]);
     }
 

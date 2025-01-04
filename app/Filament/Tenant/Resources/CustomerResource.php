@@ -12,6 +12,7 @@ use App\Models\State;
 use App\Rules\InternationalPhoneRule;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -148,6 +149,9 @@ class CustomerResource extends Resource
                 ])->columns(4),
 
             ])->columns(4),
+
+            View::make('components.loading'),
+
         ];
     }
 

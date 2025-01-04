@@ -13,6 +13,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Models\Contracts\FilamentUser;
@@ -161,6 +162,7 @@ class LoginTenant extends SimplePage
                         $this->getEmailFormComponent(),
                         $this->getPasswordFormComponent(),
                         $this->getRememberFormComponent(),
+                        View::make('components.loading'),
                     ])
                     ->statePath('data'),
             ),

@@ -11,6 +11,7 @@ use App\Models\Warehouse;
 use App\Rules\UniqueTenantItemRule;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Resources\RelationManagers\RelationGroup;
@@ -79,6 +80,7 @@ class WarehouseResource extends Resource
 //                        Forms\Components\RichEditor::make('description')
 //                            ->label(__('fields.description')),
 //                    ]),
+                View::make('components.loading'),
 
             ]);
     }

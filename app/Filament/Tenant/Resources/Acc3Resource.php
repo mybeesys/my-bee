@@ -5,6 +5,7 @@ namespace App\Filament\Tenant\Resources;
 use App\Filament\Tenant\Resources\Acc3Resource\Pages;
 use App\Filament\Tenant\Resources\Acc3Resource\RelationManagers;
 use App\Models\Acc3;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -52,7 +53,8 @@ class Acc3Resource extends Resource
     {
         return $form
             ->schema([
-                //
+                View::make('components.loading'),
+
             ]);
     }
 

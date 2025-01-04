@@ -21,6 +21,7 @@ use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
@@ -341,6 +342,7 @@ class SupplyOrderResource extends Resource
 
                             ])
                     ]),
+                View::make('components.loading'),
 
             ]);
     }

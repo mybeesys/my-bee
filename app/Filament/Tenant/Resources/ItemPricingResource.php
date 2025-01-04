@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Services\PricingService;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -238,7 +239,10 @@ class ItemPricingResource extends Resource
                         ->label(__('fields.profit_percent')),
 
                     Forms\Components\Hidden::make('date')->default(now())
-                ])->columns(3)
+                ])->columns(3),
+
+                View::make('components.loading'),
+
             ]);
     }
 

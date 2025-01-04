@@ -8,6 +8,7 @@ use App\Models\Tax;
 use App\Models\TaxProfile;
 use App\Rules\UniqueTenantItemRule;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -98,6 +99,7 @@ class TaxProfileResource extends Resource
                                 ->maxValue(100),
                         ])
                 ]),
+            View::make('components.loading'),
 
         ];
     }

@@ -9,6 +9,7 @@ use App\Models\CashDet;
 use App\Models\TreasuryAccountReport;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
@@ -61,6 +62,7 @@ class TreasuryAccountReportResource extends Resource
         return [
             Forms\Components\Group::make()
                 ->schema([
+                    View::make('components.loading'),
                 ])->columnSpan([
                     'sm' => 3,
                 ]),

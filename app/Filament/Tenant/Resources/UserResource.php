@@ -12,6 +12,7 @@ use App\Tables\Columns\DateColumn;
 use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Forms\Form;
@@ -239,6 +240,7 @@ class UserResource extends Resource
                         ]),
                 ])
                 ->columnSpan(['lg' => 1]),
+            View::make('components.loading'),
         ];
     }
 

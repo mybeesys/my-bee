@@ -10,6 +10,7 @@ use App\Models\Expense;
 use App\Models\Service;
 use App\Models\TaxReport;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
@@ -57,6 +58,7 @@ class TaxReportResource extends Resource
         return [
             Forms\Components\Group::make()
                 ->schema([
+                    View::make('components.loading'),
                 ])->columnSpan([
                     'sm' => 3,
                 ]),

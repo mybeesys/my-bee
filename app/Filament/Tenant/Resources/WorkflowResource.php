@@ -11,6 +11,7 @@ use App\Services\RoleService;
 use App\Services\SMSService;
 use App\Services\WorkflowService;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -410,6 +411,9 @@ class WorkflowResource extends Resource
                     ->schema([
                         Forms\Components\Checkbox::make('active'),
                     ]),
+
+                View::make('components.loading'),
+
             ]);
     }
 

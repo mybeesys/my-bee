@@ -5,6 +5,7 @@
     use App\Filament\Tenant\Resources\Acc2Resource\Pages;
     use App\Filament\Tenant\Resources\Acc2Resource\RelationManagers;
     use App\Models\Acc2;
+    use Filament\Forms\Components\View;
     use Filament\Forms\Form;
     use Filament\Resources\Resource;
     use Filament\Tables;
@@ -51,7 +52,8 @@
         {
             return $form
                 ->schema([
-                    //
+                    View::make('components.loading'),
+
                 ]);
         }
 

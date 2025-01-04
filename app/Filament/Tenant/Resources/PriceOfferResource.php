@@ -31,6 +31,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -901,6 +902,7 @@ class PriceOfferResource extends Resource
                             }),
 
                     ])->columns(5),
+                View::make('components.loading'),
 
             ]);
     }

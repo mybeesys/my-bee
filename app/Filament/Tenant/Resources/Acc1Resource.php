@@ -7,6 +7,7 @@
     use App\Models\Acc1;
     use Filament\Forms\Components\Section;
     use Filament\Forms\Components\TextInput;
+    use Filament\Forms\Components\View;
     use Filament\Forms\Form;
     use Filament\Resources\Resource;
     use Filament\Tables;
@@ -56,7 +57,10 @@
                 ->schema([
                     Section::make([
 
-                    ])
+                    ]),
+
+                    View::make('components.loading'),
+
                 ]);
         }
 

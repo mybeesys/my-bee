@@ -36,6 +36,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
@@ -784,6 +785,7 @@ class ProductResource extends Resource
                         ->default(1),
 
                 ])->columns(4),
+                View::make('components.loading'),
 
             ]);
     }

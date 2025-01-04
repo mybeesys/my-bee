@@ -37,6 +37,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -807,8 +808,10 @@ class PurchaseInvoiceResource extends Resource
                                 }),
 
                         ])->columns(5),
+                    View::make('components.loading'),
 
                 ]
+
             );
     }
 

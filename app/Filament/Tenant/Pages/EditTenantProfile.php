@@ -15,6 +15,7 @@ use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Pages\Tenancy\EditTenantProfile as BaseTenantProfile;
@@ -215,6 +216,7 @@ class EditTenantProfile extends BaseTenantProfile
 //                                ]),
 //                        ]),
                 ]),
+                View::make('components.loading'),
 
             ]);
     }

@@ -7,6 +7,7 @@ use App\Models\Supplier;
 use App\Rules\InternationalPhoneRule;
 use App\Rules\UniqueClientAttributeRule;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -75,7 +76,10 @@ class SupplierResource extends Resource
                     ->cols(10)
                     ->rows(5)
                     ->label(__('fields.notes')),
-            ])
+            ]),
+
+            View::make('components.loading'),
+
         ];
     }
 

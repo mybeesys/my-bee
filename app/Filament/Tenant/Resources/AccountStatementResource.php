@@ -9,6 +9,7 @@ use App\Models\Acc4;
 use App\Models\AccountStatement;
 use App\Models\CashDet;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
@@ -45,7 +46,7 @@ class AccountStatementResource extends Resource
     {
         return $form
             ->schema([
-                //
+                View::make('components.loading'),
             ]);
     }
 

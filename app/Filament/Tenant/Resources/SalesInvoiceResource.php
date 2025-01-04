@@ -931,6 +931,9 @@ class SalesInvoiceResource extends Resource
                             }),
 
                     ])->columns(5),
+
+                Forms\Components\View::make('components.loading'),
+
             ]);
     }
 
@@ -1189,6 +1192,8 @@ class SalesInvoiceResource extends Resource
                                     $msg = __("fields.invoice_will_be_locked_after_this_action");
                                     return new HtmlString("<strong style='color: #ff301d;'> $msg </strong>");
                                 }),
+
+                            Forms\Components\View::make('components.loading'),
                         ])
                     ])
                     ->action(function (Invoice $record, array $data) {
@@ -1281,8 +1286,8 @@ class SalesInvoiceResource extends Resource
                                             generate_double_entry_transaction_id(),
                                             $service->price,
                                             null,
-                                            $service->name,
-                                            $service->name,
+                                            $service->type->name,
+                                            $service->type->name,
                                             $record->id,
                                             meta: ['type' => 'service', 'id' => $service->id],
                                         )->make($record->customer->acc4->code, '122100001')

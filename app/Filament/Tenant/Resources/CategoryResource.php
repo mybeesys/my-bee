@@ -9,6 +9,7 @@ use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Concerns\Translatable;
@@ -92,6 +93,7 @@ class CategoryResource extends Resource
                         hidden_tenant_id_field()
 
                     ])->columns(3),
+                View::make('components.loading'),
             ]);
     }
 

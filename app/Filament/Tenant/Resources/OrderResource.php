@@ -34,6 +34,7 @@ use Filament\Actions\StaticAction;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Get;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\Section;
@@ -549,6 +550,8 @@ class OrderResource extends Resource
                         ->dehydrated(false),
 
                 ])->columns(4),
+
+                View::make('components.loading'),
 
             ]);
     }

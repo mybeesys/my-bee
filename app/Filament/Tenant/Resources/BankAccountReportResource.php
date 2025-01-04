@@ -8,6 +8,7 @@ use App\Filament\Tenant\Resources\BankAccountReportResource\RelationManagers;
 use App\Models\BankAccountReport;
 use App\Models\CashDet;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
@@ -56,6 +57,7 @@ class BankAccountReportResource extends Resource
             Forms\Components\Group::make()
                 ->schema([
                 ])->columnSpan([
+                    View::make('components.loading'),
                     'sm' => 3,
                 ]),
         ];

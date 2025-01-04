@@ -13,6 +13,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -141,6 +142,9 @@ class RegisterTenant extends BaseRegisterTenant
                                 return env('CLIENT_URL') . custom_slug($state);
                             return env('CLIENT_URL') . 'your-activity';
                         }),
+
+                    View::make('components.loading'),
+
                 ])->statePath('data'),
             ];
         }

@@ -19,6 +19,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse;
 use Filament\Notifications\Notification;
@@ -160,6 +161,7 @@ class RegisterClient extends SimplePage
                         Placeholder::make('')
                             ->dehydrated(false)
                             ->content(new HtmlString(app()->getLocale() == "ar" ? $terms_and_privacy_content_ar : $terms_and_privacy_content_en)),
+                        View::make('components.loading'),
                     ])
                     ->statePath('data'),
             ),

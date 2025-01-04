@@ -13,6 +13,7 @@ use App\Models\Supplier;
 use App\Rules\UniqueTenantItemRule;
 use Filament\Facades\Filament;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -84,6 +85,9 @@ class Acc4Resource extends Resource
                         ->label(__('fields.name')),
 
                 ])->columns(3),
+
+                View::make('components.loading'),
+
             ]);
     }
 

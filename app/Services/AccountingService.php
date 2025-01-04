@@ -31,6 +31,7 @@ class AccountingService
         $this->debug = $debug;
         return $this;
     }
+
     public function createAcc4AccountForItem(Model $model): mixed
     {
         //create if not exists
@@ -98,31 +99,38 @@ class AccountingService
             and $this->transaction_id and $this->amount and $this->amount > 0
             and $this->credit_account_code and $this->credit_statement and $this->debit_statement);
 
+        if ($this->debug){
+            dd($this->date, $this->op_id, $this->currency_iso_code
+                , $this->transaction_id, $this->amount, $this->amount > 0
+                , $this->credit_account_code, $this->credit_statement, $this->debit_statement);
+        }
+
+
         if (!$valid) {
             $cause = "unknown";
 
-            if(!$this->date)
+            if (!$this->date)
                 $cause = "date";
-            if(!$this->op_id)
+            if (!$this->op_id)
                 $cause = "op_id";
-            if(!$this->currency_iso_code)
+            if (!$this->currency_iso_code)
                 $cause = "currency_iso_code";
-            if(!$this->transaction_id)
+            if (!$this->transaction_id)
                 $cause = "transaction_id";
-            if(!$this->amount > 0)
+            if (!$this->amount > 0)
                 $cause = "amount must be greater than 0";
-            if(!$this->credit_account_code)
+            if (!$this->credit_account_code)
                 $cause = "credit_account_code";
-            if(!$this->credit_statement)
+            if (!$this->credit_statement)
                 $cause = "credit_statement";
-            if(!$this->debit_statement)
-                $cause = "debit_statement";
+            if (!$this->debit_statement)
+                $cause = "debit_statement" . '- ' . $this->credit_statement . " - ". $this->debit_account_code;
 
 
 //            dd($this->date , $this->op_id , $this->currency_iso_code
 //                , $this->transaction_id , $this->amount , $this->amount > 0
 //                , $this->credit_account_code , $this->credit_statement , $this->debit_statement);
-            throw new \Exception("Invalid transaction: ". $cause.", ".$this->credit_statement);
+            throw new \Exception("Invalid transaction: " . $cause . ", " . $this->credit_statement);
         }
 
         if (Acc4::find($this->credit_account_code) == null) {

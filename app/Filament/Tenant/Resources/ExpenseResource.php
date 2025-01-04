@@ -18,6 +18,7 @@ use Filament\Forms;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -280,6 +281,8 @@ class ExpenseResource extends Resource
                         ->openable()
                         ->collection('attachments'),
                 ]),
+                View::make('components.loading'),
+
             ]);
     }
 

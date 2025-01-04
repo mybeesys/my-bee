@@ -7,6 +7,7 @@ use App\Filament\Tenant\Resources\ExpenseCategoryResource\RelationManagers;
 use App\Models\ExpenseCategory;
 use App\Rules\UniqueTenantItemRule;
 use Filament\Forms;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -59,7 +60,10 @@ class ExpenseCategoryResource extends Resource
                         ->rules([new UniqueTenantItemRule(ExpenseCategory::class, 'name', $form->getRecord()?->id)])
                         ->required()
                         ->maxLength(255),
-                ])->columns(2)
+                ])->columns(2),
+
+                View::make('components.loading'),
+
             ]);
     }
 

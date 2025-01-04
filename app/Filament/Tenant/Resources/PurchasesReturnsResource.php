@@ -11,6 +11,7 @@ use Awcodes\TableRepeater\Components\TableRepeater;
 use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use Filament\Resources\Resource;
@@ -281,6 +282,9 @@ class PurchasesReturnsResource extends Resource
                         ->rows(5)
                         ->label(__('fields.notes')),
                 ]),
+
+                View::make('components.loading'),
+
             ]);
     }
 

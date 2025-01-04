@@ -16,6 +16,7 @@ use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -143,7 +144,9 @@ class CouponResource extends Resource
                 Forms\Components\Section::make([
                     Forms\Components\RichEditor::make('description')
                         ->label(__('fields.description')),
-                ])
+                ]),
+
+                View::make('components.loading'),
             ]);
     }
 
