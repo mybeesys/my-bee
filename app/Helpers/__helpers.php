@@ -937,4 +937,11 @@ if (!function_exists('get_user')) {
     }
 }
 
+if (!function_exists('public_asset_if_exists')) {
+    function public_asset_if_exists(string $path): ?string
+    {
+        return is_file(public_path($path)) ? asset($path) : null;
+    }
+}
+
 

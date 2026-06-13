@@ -213,7 +213,7 @@ class Tenant extends BaseModel implements HasMedia
 
     public function getLogoAttribute(): string
     {
-        return $this->getFirstMedia('logos')?->getUrl() ?? asset('logo.jpg');
+        return $this->getFirstMedia('logos')?->getUrl() ?? public_asset_if_exists('logo.jpg');
     }
 
     public function registerMediaCollections(): void

@@ -88,35 +88,35 @@ class PriceOfferResource extends Resource
                 Forms\Components\Section::make()
                     ->schema([
 
-                        hidden_tenant_id_field(),
-                        hidden_user_id_field(),
+                    hidden_tenant_id_field(),
+                    hidden_user_id_field(),
 
-                        TextInput::make('no')
-                            ->label(__('fields.reference_code'))
-                            ->readOnly()
-                            ->required()
+                    TextInput::make('no')
+                        ->label(__('fields.reference_code'))
+                        ->readOnly()
+                        ->required()
                             ->default(fn ($record) => $record == null ? generate_no(PriceOffer::class) : $record->no)
                             ->rules([new UniqueTenantItemRule(PriceOffer::class, 'no', $form->getRecord()?->id)])
                             ->columnSpan(['default' => 12, 'lg' => 4]),
 
-                        Select::make('customer_id')
-                            ->required()
-                            ->label(__('fields.client'))
-                            ->searchable()
-                            ->options(Customer::pluck('name', 'id'))
-                            ->live()
-                            ->createOptionForm(CustomerResource::getSchema())
-                            ->createOptionUsing(function ($data) {
-                                $data['tenant_id'] = filament()->getTenant()->id;
-                                $model = Customer::create($data);
+                    Select::make('customer_id')
+                        ->required()
+                        ->label(__('fields.client'))
+                        ->searchable()
+                        ->options(Customer::pluck('name', 'id'))
+                        ->live()
+                        ->createOptionForm(CustomerResource::getSchema())
+                        ->createOptionUsing(function ($data) {
+                            $data['tenant_id'] = filament()->getTenant()->id;
+                            $model = Customer::create($data);
 
-                                return $model->id;
+                            return $model->id;
                             })
                             ->columnSpan(['default' => 12, 'lg' => 4]),
 
                         TextInput::make('description')
-                            ->required()
-                            ->label(__('fields.description'))
+                        ->required()
+                        ->label(__('fields.description'))
                             ->columnSpan(['default' => 12, 'lg' => 4]),
 
                     ])
@@ -125,7 +125,7 @@ class PriceOfferResource extends Resource
                 Forms\Components\Section::make(__('fields.items'))
                     ->key('details-section')
                     ->extraAttributes(['class' => 'invoice-lines-panel'])
-                    ->schema([
+                                    ->schema([
                         static::invoiceLinesToolbar(),
 
                         TableRepeater::make('details')
@@ -388,29 +388,29 @@ class PriceOfferResource extends Resource
             ])
             ->actions([
                 static::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('price_offer_url')
-                        ->label(__('fields.price_offer_url'))
+                Tables\Actions\Action::make('price_offer_url')
+                    ->label(__('fields.price_offer_url'))
                         ->icon('heroicon-o-link')
-                        ->color(Color::Sky)
+                    ->color(Color::Sky)
                         ->url(fn (PriceOffer $record) => $record->url, true),
 
-                    Tables\Actions\Action::make('make_sales_invoice_from_price_offer')
+                Tables\Actions\Action::make('make_sales_invoice_from_price_offer')
                         ->label(__('fields.convert_price_offer_to_sales_invoice'))
                         ->icon('heroicon-o-document-text')
-                        ->requiresConfirmation()
-                        ->color(Color::Green)
+                    ->requiresConfirmation()
+                    ->color(Color::Green)
                         ->url(fn (PriceOffer $record) => SalesInvoiceResource::getUrl('create', ['price_offer_id' => $record->id])),
 
-                    Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make(),
 
-                    Tables\Actions\DeleteAction::make()
-                        ->action(function ($record) {
-                            foreach ($record->details as $detail) {
-                                $detail->offerDetailsExtras()->delete();
-                                $detail->delete();
-                            }
-                            $record->delete();
-                            fns()->deleted();
+                Tables\Actions\DeleteAction::make()
+                    ->action(function ($record) {
+                        foreach ($record->details as $detail) {
+                            $detail->offerDetailsExtras()->delete();
+                            $detail->delete();
+                        }
+                        $record->delete();
+                        fns()->deleted();
                         }),
                 ])),
             ])

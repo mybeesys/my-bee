@@ -225,10 +225,10 @@ class PurchaseInvoiceResource extends Resource
 
 
                     Forms\Components\Section::make(__('fields.items'))
-                        ->disabled($form->getRecord()?->locked_at !== null)
+                                ->disabled($form->getRecord()?->locked_at !== null)
                         ->key('items-section')
                         ->extraAttributes(['class' => 'invoice-lines-panel'])
-                        ->schema([
+                                        ->schema([
                             static::invoiceLinesToolbar(),
 
                             TableRepeater::make('items')
@@ -242,7 +242,7 @@ class PurchaseInvoiceResource extends Resource
                                 ->defaultItems(fn () => $form->getRecord() === null ? 1 : 0)
                                 ->minItems(1)
                                 ->extraAttributes(['class' => 'invoice-lines-table'])
-                                ->live()
+                                                ->live()
                                 ->deletable($form->getRecord() === null)
                                 ->deleteAction(
                                     fn(Forms\Components\Actions\Action $action) => $action->requiresConfirmation(),
@@ -511,7 +511,7 @@ class PurchaseInvoiceResource extends Resource
             ])
             ->actions([
                 static::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make(),
 
                     static::shareInvoiceUrlTableAction(),
 
@@ -551,10 +551,10 @@ class PurchaseInvoiceResource extends Resource
 //
 //                        }),
 
-                    Tables\Actions\Action::make('payment_details')
-                        ->label(__('fields.payment_details'))
-                        ->icon('heroicon-o-currency-dollar')
-                        ->color('success')
+                Tables\Actions\Action::make('payment_details')
+                    ->label(__('fields.payment_details'))
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
                         ->url(fn (Invoice $record) => $record->getPaymentVoucherResourceUrl(), true),
                 ])),
             ])
