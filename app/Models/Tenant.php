@@ -208,11 +208,12 @@ class Tenant extends BaseModel implements HasMedia
 
     public function getCoverAttribute(): string
     {
-        return $this->getFirstMedia('covers')?->getUrl() ?? config('app.url') . "mybee_transparent.png";
+        return $this->getFirstMedia('covers')?->getUrl() ?? asset('mybee_transparent.png');
     }
+
     public function getLogoAttribute(): string
     {
-        return $this->getFirstMedia('logos')?->getUrl() ?? config('app.url') . "logo.jpg";
+        return $this->getFirstMedia('logos')?->getUrl() ?? asset('logo.jpg');
     }
 
     public function registerMediaCollections(): void
