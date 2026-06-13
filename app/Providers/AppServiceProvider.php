@@ -84,11 +84,51 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
-    protected function configPublicPath()
+    protected function configPublicPath(): void
     {
-        if ($this->app->environment('production')) {
-            $app_url = str(config('app.url'))->remove(['https://', 'http://'])->value();
-            $this->app->usePublicPath(realpath(base_path() . "/../$app_url"));
+        $publicPath = env('PUBLIC_PATH');
+
+        if (blank($publicPath) && $this->app->environment('production')) {
+            $host = str(config('app.url'))->remove(['https://', 'http://', 'www.'])->value();
+
+            $candidates = array_filter([
+                base_path("../{$host}"),
+                base_path(),
+                base_path('public'),
+                base_path('../public_html'),
+            ]);
+
+            foreach ($candidates as $candidate) {
+                $resolved = realpath($candidate);
+
+                if (! $resolved || ! is_dir($resolved)) {
+                    continue;
+                }
+
+                if (is_file("{$resolved}/index.php")) {
+                    $publicPath = $resolved;
+
+                    break;
+                }
+            }
+
+            if (blank($publicPath)) {
+                $legacy = realpath(base_path("../{$host}"));
+
+                if ($legacy && is_dir($legacy)) {
+                    $publicPath = $legacy;
+                }
+            }
+        }
+
+        if (blank($publicPath)) {
+            return;
+        }
+
+        $resolved = realpath($publicPath) ?: $publicPath;
+
+        if (is_dir($resolved)) {
+            $this->app->usePublicPath($resolved);
         }
     }
 
