@@ -40,7 +40,6 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Alignment;
-use Filament\Support\Enums\IconPosition;
 use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -388,7 +387,7 @@ class PriceOfferResource extends Resource
 
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
+                static::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
                     Tables\Actions\Action::make('price_offer_url')
                         ->label(__('fields.price_offer_url'))
                         ->icon('heroicon-o-link')
@@ -413,13 +412,7 @@ class PriceOfferResource extends Resource
                             $record->delete();
                             fns()->deleted();
                         }),
-                ])
-                    ->label(__('fields.actions'))
-                    ->icon('heroicon-m-chevron-down')
-                    ->iconPosition(IconPosition::After)
-                    ->color('info')
-                    ->button()
-                    ->extraAttributes(['class' => 'document-list-row-actions']),
+                ])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
