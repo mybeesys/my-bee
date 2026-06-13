@@ -138,6 +138,28 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        $assetUrl = rtrim((string) (env('ASSET_URL') ?: env('MEDIA_URL') ?: ''), '/');
+
+        if ($assetUrl !== '') {
+            config([
+                'filesystems.disks.public.url' => "{$assetUrl}/storage",
+                'filesystems.disks.cdn.url' => "{$assetUrl}/cdn",
+            ]);
+
+            return;
+        }
+
+        if ($this->app->environment('production')) {
+            $rootUrl = rtrim((string) config('app.url'), '/');
+
+            config([
+                'filesystems.disks.public.url' => "{$rootUrl}/storage",
+                'filesystems.disks.cdn.url' => "{$rootUrl}/cdn",
+            ]);
+
+            return;
+        }
+
         $request = request();
 
         if (! $request || ! $request->getHttpHost()) {

@@ -126,7 +126,14 @@ class StoreController extends BaseController
         $store_slug = $request->header('Store-Slug');
 
         $categories_ids = $request->categories_ids;
-        $query = Product::query()->with(['tenant', 'category', 'extras.extra', 'variantOptions.library', 'variants']);
+        $query = Product::query()->with([
+            'tenant',
+            'category',
+            'media',
+            'extras.extra',
+            'variantOptions.library',
+            'variants.media',
+        ]);
 
         $query->whereHas('tenant', function (Builder $q) use ($store_slug) {
             $q->where('slug', $store_slug);
@@ -145,7 +152,14 @@ class StoreController extends BaseController
     {
         $store_slug = $request->header('Store-Slug');
 
-        $product = Product::with(['tenant', 'variantOptions.library', 'variants.product', 'extras.extra'])
+        $product = Product::with([
+            'tenant',
+            'media',
+            'variantOptions.library',
+            'variants.media',
+            'variants.product',
+            'extras.extra',
+        ])
             ->whereHas('tenant', function (Builder $builder) use ($store_slug) {
                 $builder->where('slug', $store_slug);
             })
