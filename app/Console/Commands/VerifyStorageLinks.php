@@ -60,10 +60,45 @@ class VerifyStorageLinks extends Command
 
         if ($this->option('fix')) {
             $this->newLine();
+            $this->prepareLinksForFix($links);
             $this->call('storage:link', ['--force' => true]);
+            $this->newLine();
+            $this->info('After fix:');
+
+            foreach ($links as $name => $target) {
+                $this->inspectLink($name, public_path($name), $target);
+            }
         }
 
         return self::SUCCESS;
+    }
+
+    /** @param  array<string, string>  $links */
+    protected function prepareLinksForFix(array $links): void
+    {
+        foreach ($links as $name => $target) {
+            $linkPath = public_path($name);
+
+            if (is_link($linkPath)) {
+                continue;
+            }
+
+            if (! file_exists($linkPath)) {
+                continue;
+            }
+
+            $backupPath = $linkPath.'.bak-'.now()->format('YmdHis');
+
+            if (is_dir($linkPath)) {
+                File::moveDirectory($linkPath, $backupPath);
+                $this->warn("Moved blocking directory public/{$name} to ".basename($backupPath));
+
+                continue;
+            }
+
+            File::move($linkPath, $backupPath);
+            $this->warn("Moved blocking file public/{$name} to ".basename($backupPath));
+        }
     }
 
     protected function inspectLink(string $name, string $linkPath, string $target): void
@@ -91,8 +126,9 @@ class VerifyStorageLinks extends Command
         }
 
         if (is_dir($linkPath)) {
-            $this->warn('  status: real directory (not a symlink) — uploads may not be web-accessible correctly');
+            $this->warn('  status: real directory (not a symlink) — web requests cannot see uploaded files');
             $this->line('  files inside: '.count(File::files($linkPath)));
+            $this->line('  fix: php artisan storage:verify --fix');
 
             return;
         }
