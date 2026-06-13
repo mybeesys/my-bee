@@ -1,0 +1,3354 @@
+﻿@import '/vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/awcodes/filament-table-repeater/resources/css/plugin.css';
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@config 'tailwind.config.js';
+
+/* ═══════════════════════════════════════════════════════════════
+   Tenant shell — sidebar & topbar (keeps yellow primary + logo)
+   ═══════════════════════════════════════════════════════════════ */
+.fi-panel-tenant.fi-body {
+    @apply bg-gray-50/90 dark:bg-gray-950;
+}
+
+.fi-panel-tenant .fi-main-ctn {
+    @apply bg-gray-50/90 dark:bg-gray-950;
+}
+
+.fi-panel-tenant .fi-main {
+    @apply py-5 md:py-6 lg:py-8;
+}
+
+/* —— Top bar —— seamless with sidebar header */
+.fi-panel-tenant .fi-topbar {
+    @apply z-20;
+}
+
+.fi-panel-tenant .fi-topbar > nav {
+    @apply relative h-14 border-0 bg-white shadow-none ring-0 dark:bg-gray-900;
+}
+
+.fi-panel-tenant .fi-topbar > nav::after {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-primary-400/70 to-transparent;
+}
+
+.fi-panel-tenant .fi-topbar .ms-auto {
+    @apply gap-2 sm:gap-3;
+}
+
+.fi-panel-tenant .fi-topbar .fi-icon-btn {
+    @apply rounded-xl ring-1 ring-gray-200/70 transition duration-200 hover:ring-primary-300/60 dark:ring-gray-700/80 dark:hover:ring-primary-500/40;
+}
+
+.fi-panel-tenant .fi-topbar-item-button {
+    @apply rounded-xl px-3 py-2;
+}
+
+.fi-panel-tenant .fi-topbar-item.fi-active .fi-topbar-item-button {
+    @apply bg-primary-50 shadow-sm ring-1 ring-primary-200/80 dark:bg-primary-500/10 dark:ring-primary-500/30;
+}
+
+.fi-panel-tenant .fi-topbar-with-navigation > nav {
+    @apply px-4 md:px-6 lg:px-8;
+}
+
+.fi-panel-tenant .fi-topbar-with-navigation .fi-logo img {
+    @apply rounded-lg object-contain;
+}
+
+.fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo img {
+    @apply rounded-lg object-contain drop-shadow-sm;
+}
+
+/* —— Sidebar —— compact density, seamless header with topbar */
+.fi-panel-tenant .fi-main-sidebar.fi-sidebar {
+    @apply border-e-0 bg-white shadow-none dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-900;
+}
+
+.fi-panel-tenant .fi-sidebar-header {
+    @apply relative h-14 shrink-0 border-0 border-b border-gray-200/50 bg-white px-3.5 ring-0 dark:border-gray-800/50 dark:bg-gray-900 lg:shadow-none;
+}
+
+.fi-panel-tenant .fi-sidebar-header::after {
+    content: none;
+}
+
+.fi-panel-tenant .fi-sidebar-header .fi-logo img {
+    @apply rounded-md object-contain drop-shadow-sm;
+}
+
+.fi-panel-tenant .fi-sidebar-header .fi-icon-btn {
+    @apply h-8 w-8;
+}
+
+.fi-panel-tenant .fi-sidebar-nav {
+    @apply gap-y-3 border-e border-gray-200/50 px-2.5 py-3 dark:border-gray-800/50;
+}
+
+.fi-panel-tenant .fi-sidebar-nav-groups {
+    @apply -mx-1 gap-y-2.5;
+}
+
+.fi-panel-tenant .fi-sidebar-group {
+    @apply gap-y-0.5;
+}
+
+.fi-panel-tenant .fi-sidebar-group-items,
+.fi-panel-tenant .fi-sidebar-sub-group-items {
+    @apply gap-y-0.5;
+}
+
+.fi-panel-tenant .fi-sidebar-group-button {
+    @apply gap-x-2 rounded-md px-2 py-1 transition duration-200 hover:bg-gray-50 dark:hover:bg-white/5;
+}
+
+.fi-panel-tenant .fi-sidebar-group-icon {
+    @apply h-[1.125rem] w-[1.125rem];
+}
+
+.fi-panel-tenant .fi-sidebar-group-label {
+    @apply text-[0.6875rem] font-semibold uppercase leading-4 tracking-[0.05em] text-gray-400 dark:text-gray-500;
+}
+
+.fi-panel-tenant .fi-sidebar-group-collapse-button {
+    @apply h-6 w-6;
+}
+
+.fi-panel-tenant .fi-sidebar-item-button {
+    @apply min-h-[2rem] gap-x-2 rounded-lg px-2 py-1.5;
+}
+
+.fi-panel-tenant .fi-sidebar-item-icon {
+    @apply h-[1.125rem] w-[1.125rem] shrink-0;
+}
+
+.fi-panel-tenant .fi-sidebar-item-label {
+    @apply text-[0.8125rem] font-medium leading-5;
+}
+
+.fi-panel-tenant .fi-sidebar-item-button:hover {
+    @apply bg-gray-50 dark:bg-white/5;
+}
+
+.fi-panel-tenant .fi-sidebar-item.fi-active > .fi-sidebar-item-button {
+    @apply bg-primary-50 font-medium shadow-none ring-1 ring-primary-200/60 dark:bg-primary-500/10 dark:ring-primary-500/20;
+}
+
+.fi-panel-tenant .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+.fi-panel-tenant .fi-sidebar-item.fi-active .fi-sidebar-item-label {
+    @apply text-primary-700 dark:text-primary-300;
+}
+
+.fi-panel-tenant .fi-sidebar-nav-tenant-menu-ctn {
+    @apply mb-0.5;
+}
+
+.fi-panel-tenant .fi-tenant-menu-trigger {
+    @apply gap-x-2 rounded-lg border border-gray-200/60 bg-gray-50/70 px-2 py-1.5 text-[0.8125rem] shadow-none transition duration-200 hover:border-primary-200/70 hover:bg-primary-50/40 dark:border-gray-700/60 dark:bg-gray-800/40 dark:hover:border-primary-500/25 dark:hover:bg-primary-500/5;
+}
+
+.fi-panel-tenant .fi-tenant-menu-trigger .fi-tenant-avatar {
+    @apply h-7 w-7;
+}
+
+.fi-panel-tenant .fi-tenant-menu-trigger .grid span:first-child {
+    @apply text-[0.625rem] leading-3;
+}
+
+.fi-panel-tenant .fi-tenant-menu-trigger .grid span:last-child {
+    @apply text-[0.8125rem] font-medium leading-4;
+}
+
+.fi-panel-tenant .fi-tenant-menu-trigger .fi-icon {
+    @apply h-4 w-4;
+}
+
+.fi-panel-tenant .fi-sidebar-item .fi-badge {
+    @apply px-1.5 py-0 text-[0.625rem];
+}
+
+.fi-panel-tenant .fi-sidebar-close-overlay {
+    @apply backdrop-blur-[2px];
+}
+
+/* Collapsed desktop sidebar */
+@media (min-width: 1024px) {
+    .fi-panel-tenant .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-button {
+        @apply min-h-[2.125rem] justify-center px-1.5 py-2;
+    }
+
+    .fi-panel-tenant .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-icon {
+        @apply h-5 w-5;
+    }
+
+    .fi-panel-tenant .fi-sidebar:not(.fi-sidebar-open) .fi-tenant-menu-trigger {
+        @apply justify-center px-1.5 py-2;
+    }
+
+    .fi-panel-tenant .fi-sidebar:not(.fi-sidebar-open) .fi-tenant-menu-trigger .fi-tenant-avatar {
+        @apply h-6 w-6;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Tenant login — split card over bg11.jpg (~90% mock)
+   ═══════════════════════════════════════════════════════════════ */
+.tenant-login-layout {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+/* Blurred background layer (bokeh / frosted look like reference mockup) */
+.tenant-login-layout::after {
+    content: '';
+    position: fixed;
+    inset: -32px;
+    z-index: 0;
+    background-image: var(--tenant-login-bg-image);
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    filter: blur(22px) saturate(1.12) brightness(1.05);
+    transform: scale(1.08);
+    pointer-events: none;
+}
+
+.tenant-login-layout::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+        145deg,
+        rgb(255 255 255 / 0.52) 0%,
+        rgb(255 255 255 / 0.28) 45%,
+        rgb(255 255 255 / 0.38) 100%
+    );
+    pointer-events: none;
+}
+
+.tenant-login-layout > .fi-simple-main-ctn {
+    position: relative;
+    z-index: 2;
+}
+
+body:has(.tenant-login-page) .fls-display-on {
+    display: none !important;
+}
+
+.tenant-login-page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+}
+
+.tenant-login-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    background: rgb(255 255 255);
+    box-shadow:
+        0 25px 50px -12px rgb(15 23 42 / 0.18),
+        0 0 0 1px rgb(255 255 255 / 0.6);
+}
+
+.tenant-login-card__accent {
+    position: absolute;
+    top: 0;
+    inset-inline: 0;
+    z-index: 2;
+    height: 4px;
+    background: linear-gradient(
+        90deg,
+        rgb(var(--primary-400)) 0%,
+        rgb(var(--primary-500)) 50%,
+        rgb(var(--primary-400)) 100%
+    );
+}
+
+.tenant-login-card__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 28rem;
+}
+
+@media (min-width: 1024px) {
+    .tenant-login-card__grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.tenant-login-card__form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 2rem 1.75rem 2.25rem;
+}
+
+@media (min-width: 1024px) {
+    .tenant-login-card__form {
+        padding: 2.5rem 2.25rem 2.75rem;
+    }
+}
+
+.tenant-login-card__eyebrow {
+    margin: 0 0 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(107 114 128);
+}
+
+.tenant-login-card__register-hint {
+    margin: -0.75rem 0 1rem;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: rgb(107 114 128);
+}
+
+.tenant-login-card__brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid rgb(243 244 246);
+    background: linear-gradient(160deg, rgb(255 255 255) 0%, rgb(249 250 251) 100%);
+    padding: 2rem 1.75rem;
+}
+
+@media (min-width: 1024px) {
+    .tenant-login-card__brand {
+        border-top: 0;
+        border-inline-start: 1px solid rgb(243 244 246);
+        padding: 2.5rem 2rem;
+    }
+}
+
+.tenant-login-brand__inner {
+    display: flex;
+    max-width: 18rem;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.tenant-login-brand__logo {
+    height: 3.5rem;
+    width: auto;
+    object-fit: contain;
+}
+
+.tenant-login-brand__name {
+    margin-top: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: rgb(var(--primary-600));
+}
+
+.tenant-login-brand__badge {
+    margin-top: 0.75rem;
+    display: inline-flex;
+    border-radius: 9999px;
+    background: rgb(139 92 246);
+    padding: 0.2rem 0.65rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: white;
+}
+
+.tenant-login-brand__title {
+    margin: 1.25rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: rgb(17 24 39);
+}
+
+.tenant-login-brand__text {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: rgb(107 114 128);
+}
+
+.tenant-login-brand__locale {
+    position: relative;
+    margin-top: 1.5rem;
+    display: inline-flex;
+    cursor: pointer;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(55 65 81);
+    transition: background-color 0.2s;
+}
+
+.tenant-login-brand__locale:hover {
+    background: rgb(243 244 246);
+}
+
+.tenant-login-brand__locale:hover .tenant-login-brand__locale-menu {
+    display: flex;
+}
+
+.tenant-login-brand__locale-icon {
+    height: 1.1rem;
+    width: 1.1rem;
+    color: rgb(34 197 94);
+}
+
+.tenant-login-brand__locale-menu {
+    position: absolute;
+    top: 100%;
+    inset-inline-start: 50%;
+    z-index: 10;
+    margin-top: 0.35rem;
+    display: none;
+    min-width: 7rem;
+    translate: -50% 0;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(229 231 235);
+    background: white;
+    box-shadow: 0 10px 25px rgb(15 23 42 / 0.1);
+}
+
+[dir='rtl'] .tenant-login-brand__locale-menu {
+    translate: 50% 0;
+}
+
+.tenant-login-brand__locale-option {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+    color: rgb(55 65 81);
+    text-decoration: none;
+    transition: background-color 0.15s;
+}
+
+.tenant-login-brand__locale-option:hover {
+    background: rgb(243 244 246);
+}
+
+.tenant-login-brand__footer {
+    margin-top: 1.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.tenant-login-brand__footer-link {
+    color: rgb(37 99 235);
+    text-decoration: none;
+}
+
+.tenant-login-brand__footer-link:hover {
+    text-decoration: underline;
+}
+
+.tenant-login-brand__footer-sep {
+    color: rgb(209 213 219);
+}
+
+/* Form fields */
+.tenant-login-page .fi-fo-field-wrp {
+    margin-bottom: 0.25rem;
+}
+
+.tenant-login-page .fi-fo-field-wrp-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: rgb(55 65 81);
+}
+
+.tenant-login-page .fi-input-wrp {
+    border-radius: 0.75rem;
+    border-color: transparent;
+    background: rgb(241 245 249);
+    box-shadow: none;
+}
+
+.tenant-login-page .fi-input-wrp:focus-within {
+    background: rgb(255 255 255);
+    --tw-ring-color: rgb(59 130 246 / 0.35);
+}
+
+.tenant-login-page .fi-fo-text-input input {
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.tenant-login-options-row {
+    align-items: center !important;
+}
+
+.tenant-login-forgot-wrap {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.tenant-login-forgot {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgb(37 99 235);
+    text-decoration: none;
+}
+
+.tenant-login-forgot:hover {
+    text-decoration: underline;
+}
+
+.tenant-login-forgot--muted {
+    color: rgb(156 163 175);
+    cursor: default;
+}
+
+.tenant-login-forgot--muted:hover {
+    text-decoration: none;
+}
+
+.tenant-login-page .tenant-login-remember .fi-fo-checkbox-label {
+    font-size: 0.8125rem;
+    color: rgb(75 85 99);
+}
+
+.tenant-login-form-actions {
+    margin-top: 1.25rem !important;
+}
+
+.tenant-login-page .tenant-login-submit-btn,
+.tenant-login-page .tenant-login-form-actions .fi-btn-color-primary {
+    width: 100%;
+    justify-content: center;
+    border-radius: 0.75rem;
+    border: none;
+    background: linear-gradient(180deg, rgb(var(--primary-400)) 0%, rgb(var(--primary-500)) 100%) !important;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: rgb(24 24 27) !important;
+    box-shadow: 0 8px 20px rgb(var(--primary-500) / 0.35);
+}
+
+.tenant-login-page .tenant-login-submit-btn:hover,
+.tenant-login-page .tenant-login-form-actions .fi-btn-color-primary:hover {
+    background: linear-gradient(180deg, rgb(var(--primary-500)) 0%, rgb(var(--primary-600)) 100%) !important;
+}
+
+.tenant-login-page .fi-simple-header {
+    display: none;
+}
+
+.tenant-login-page .fi-fo-component-ctn:has(.fi-fo-field-wrp-label:empty) {
+    margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Register activity (/new-activity) — simple layout polish
+   ═══════════════════════════════════════════════════════════════ */
+.fi-panel-tenant .fi-simple-layout:has(.register-activity-page) {
+    @apply bg-gradient-to-b from-primary-50/40 via-gray-50 to-gray-50 dark:from-primary-950/20 dark:via-gray-950 dark:to-gray-950;
+}
+
+.fi-panel-tenant .fi-simple-layout:has(.register-activity-page) .fi-simple-main {
+    @apply my-10 border-0 bg-transparent px-4 py-0 shadow-none ring-0 sm:max-w-4xl sm:px-6;
+}
+
+.fi-panel-tenant .register-activity-page.fi-simple-page {
+    @apply gap-y-5;
+}
+
+.fi-panel-tenant .register-activity-page .fi-simple-header {
+    @apply mb-2;
+}
+
+.fi-panel-tenant .register-activity-page .fi-simple-header-heading {
+    @apply text-xl font-bold leading-snug sm:text-2xl;
+}
+
+.fi-panel-tenant .register-activity-page .fi-simple-header-subheading {
+    @apply mx-auto max-w-lg text-sm leading-relaxed text-gray-500 dark:text-gray-400;
+}
+
+.fi-panel-tenant .register-activity-intro {
+    @apply rounded-xl border border-primary-200/60 bg-primary-50/50 px-4 py-3 dark:border-primary-500/20 dark:bg-primary-500/5;
+}
+
+.fi-panel-tenant .register-activity-intro__text {
+    @apply text-center text-sm leading-relaxed text-primary-900/80 dark:text-primary-200/90;
+}
+
+.fi-panel-tenant .register-activity-card {
+    @apply rounded-2xl border border-gray-200/80 bg-white/90 p-5 shadow-sm ring-1 ring-gray-950/5 backdrop-blur-sm dark:border-gray-700/80 dark:bg-gray-900/90 dark:ring-white/10 sm:p-6 md:p-8;
+}
+
+.fi-panel-tenant .register-activity-card--limit {
+    @apply border-amber-200/80 bg-amber-50/30 dark:border-amber-500/20 dark:bg-amber-950/20;
+}
+
+.fi-panel-tenant .register-activity-section {
+    @apply rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-gray-800 dark:bg-gray-800/30 sm:p-5;
+}
+
+.fi-panel-tenant .register-activity-section .fi-section-header-heading {
+    @apply text-sm font-semibold text-gray-900 dark:text-gray-100;
+}
+
+.fi-panel-tenant .register-activity-section .fi-section-header-description {
+    @apply text-xs leading-relaxed text-gray-500 dark:text-gray-400;
+}
+
+.fi-panel-tenant .register-activity-section + .register-activity-section {
+    @apply mt-5;
+}
+
+.fi-panel-tenant .register-activity-url-hint {
+    @apply inline-block max-w-full truncate rounded-md bg-gray-100 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300;
+}
+
+.fi-panel-tenant .register-activity-form-actions {
+    @apply mt-6 border-t border-gray-100 pt-6 dark:border-gray-800;
+}
+
+.fi-panel-tenant .register-activity-form-actions .fi-btn {
+    @apply w-full justify-center sm:w-auto;
+}
+
+.fi-panel-tenant .register-activity-page .fi-fo-field-wrp-label {
+    @apply text-sm font-medium;
+}
+
+.fi-panel-tenant .fi-simple-layout:has(.register-activity-page) > div[class*='end-0'][class*='top-0'] {
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 0.8);
+    padding-inline-end: 1rem;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(1px + var(--tw-ring-offset-width, 0px)) rgb(229 231 235 / 0.6);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 1px 2px rgb(15 23 42 / 0.05));
+    backdrop-filter: blur(12px);
+}
+
+.dark .fi-panel-tenant .fi-simple-layout:has(.register-activity-page) > div[class*='end-0'][class*='top-0'] {
+    background: rgb(17 24 39 / 0.8);
+    --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(1px + var(--tw-ring-offset-width, 0px)) rgb(55 65 81 / 0.6);
+}
+
+/* Tenant dashboard — read-only presentation layer */
+.fi-dashboard-page .dashboard-hero {
+    @apply relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.fi-dashboard-page .dashboard-hero__glow {
+    @apply pointer-events-none absolute -end-16 -top-16 h-48 w-48 rounded-full bg-primary-400/20 blur-3xl dark:bg-primary-500/10;
+}
+
+.fi-dashboard-page .dashboard-hero__content {
+    @apply relative flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between;
+}
+
+.fi-dashboard-page .dashboard-hero__eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400;
+}
+
+.fi-dashboard-page .dashboard-hero__title {
+    @apply mt-1 text-2xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-3xl;
+}
+
+.fi-dashboard-page .dashboard-hero__subtitle {
+    @apply mt-2 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.fi-dashboard-page .dashboard-hero__dot {
+    @apply mx-1 opacity-40;
+}
+
+.fi-dashboard-page .dashboard-hero__actions {
+    @apply flex flex-wrap gap-2;
+}
+
+.fi-dashboard-page .dashboard-hero__chip {
+    @apply inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-gray-50 px-3.5 py-2 text-sm font-medium text-gray-700 transition duration-200 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-primary-500/50 dark:hover:bg-primary-500/10 dark:hover:text-primary-300;
+}
+
+.fi-dashboard-page .dashboard-widgets .fi-wi-widget {
+    @apply transition-shadow duration-200;
+}
+
+.fi-dashboard-page .fi-wi-stats-overview-stat {
+    @apply rounded-xl ring-1 ring-gray-950/5 dark:ring-white/10;
+}
+
+.fi-dashboard-page .fi-wi-chart {
+    @apply rounded-xl;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Orders — muted palette, premium feel. CSS only.
+   ═══════════════════════════════════════════════════════════════ */
+.fi-resource-orders.fi-resource-list-records-page {
+    --orders-muted-slate: #e8ebf0;
+    --orders-muted-blue: #e3eaf3;
+    --orders-muted-amber: #f3efe6;
+    --orders-muted-orange: #f5ece6;
+    --orders-muted-indigo: #ebeaf3;
+    --orders-muted-green: #e8f0eb;
+    --orders-muted-rose: #f3ebeb;
+    --orders-muted-gold: #f2f0e8;
+    --orders-accent-line: #d4d8e0;
+    --orders-surface: #fafbfc;
+    @apply space-y-2;
+}
+
+/* Header */
+.fi-resource-orders.fi-resource-list-records-page .fi-header {
+    @apply relative mb-3 border-0 pb-6;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-header::after {
+    content: '';
+    @apply absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-header-heading {
+    @apply text-[1.5rem] font-semibold leading-snug tracking-tight text-gray-800 dark:text-gray-100;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-header-actions .fi-btn {
+    @apply shadow-none ring-1 ring-gray-200/80 dark:ring-gray-600;
+}
+
+/* KPI grid */
+.fi-resource-orders.fi-resource-list-records-page .fi-page-header-widgets {
+    @apply mb-4;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    @apply gap-2.5;
+}
+
+@media (min-width: 768px) {
+    .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1280px) {
+    .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1536px) {
+    .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    }
+}
+
+/* Stat card — compact + muted */
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat {
+    @apply relative min-h-0 overflow-hidden rounded-xl border border-gray-200/60 bg-[var(--orders-surface)] px-3.5 py-3 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ring-0 transition-[box-shadow,border-color] duration-300 ease-out dark:border-gray-700/50 dark:bg-gray-900/80;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat::before {
+    content: '';
+    @apply absolute inset-y-2 start-0 w-[2px] rounded-e-full opacity-60;
+    background: var(--orders-accent-line);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat::after {
+    content: '';
+    @apply pointer-events-none absolute -end-4 -top-4 h-14 w-14 rounded-full opacity-25 blur-xl;
+    background: var(--orders-muted-slate);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:hover {
+    @apply border-gray-300/70 shadow-[0_4px_20px_rgba(15,23,42,0.06)] dark:border-gray-600/60;
+    transform: translateY(-1px);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(1) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-slate) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(1)::before {
+    background: #b8c5d6;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(1)::after {
+    background: var(--orders-muted-slate);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(2) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-amber) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(2)::before {
+    background: #d4c9b5;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(2)::after {
+    background: var(--orders-muted-amber);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(3) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-orange) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(3)::before {
+    background: #d9c8bc;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(3)::after {
+    background: var(--orders-muted-orange);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(4) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-blue) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(4)::before {
+    background: #b8c8dc;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(4)::after {
+    background: var(--orders-muted-blue);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(5) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-green) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(5)::before {
+    background: #b5ccc0;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(5)::after {
+    background: var(--orders-muted-green);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(6) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-rose) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(6)::before {
+    background: #d4bcbc;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(6)::after {
+    background: var(--orders-muted-rose);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(7) {
+    background: linear-gradient(135deg, var(--orders-surface) 0%, var(--orders-muted-gold) 100%);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(7)::before {
+    background: #ccc9b8;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(7)::after {
+    background: var(--orders-muted-gold);
+}
+
+.dark .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat {
+    background: rgb(17 24 39 / 0.85) !important;
+}
+
+.dark .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat::before {
+    opacity: 0.45;
+}
+
+.dark .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat::after {
+    opacity: 0.2;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat > .grid {
+    row-gap: 0.25rem;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat > .grid > div:first-child {
+    margin-bottom: 0.125rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.375rem;
+}
+
+/* Icon = SVG element (Filament h-5 w-5) — keep small, no overflow */
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-icon {
+    box-sizing: content-box;
+    height: 0.875rem !important;
+    width: 0.875rem !important;
+    min-height: 0;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0.25rem;
+    flex-shrink: 0;
+    border-radius: 0.375rem;
+    background-color: rgb(255 255 255 / 0.75);
+    box-shadow: inset 0 0 0 1px rgb(229 231 235 / 0.65);
+}
+
+.dark .fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-icon {
+    background-color: rgb(31 41 55 / 0.75);
+    box-shadow: inset 0 0 0 1px rgb(75 85 99 / 0.65);
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(1) .fi-wi-stats-overview-stat-icon {
+    @apply text-slate-500 dark:text-slate-400;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(2) .fi-wi-stats-overview-stat-icon {
+    @apply text-amber-600/70 dark:text-amber-400/60;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(3) .fi-wi-stats-overview-stat-icon {
+    @apply text-orange-600/60 dark:text-orange-400/50;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(4) .fi-wi-stats-overview-stat-icon {
+    @apply text-blue-600/60 dark:text-blue-400/50;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(5) .fi-wi-stats-overview-stat-icon {
+    @apply text-emerald-600/60 dark:text-emerald-400/50;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(6) .fi-wi-stats-overview-stat-icon {
+    @apply text-rose-600/55 dark:text-rose-400/50;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:nth-child(7) .fi-wi-stats-overview-stat-icon {
+    @apply text-gray-500 dark:text-gray-400;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-label {
+    @apply text-[0.6875rem] font-medium leading-snug normal-case tracking-normal text-gray-500 dark:text-gray-400;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-value {
+    @apply text-lg font-semibold leading-none tabular-nums text-gray-800 dark:text-gray-100;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-description {
+    @apply hidden;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:last-child .fi-wi-stats-overview-stat-description {
+    @apply line-clamp-2 block text-[0.625rem] font-normal leading-tight text-gray-400 dark:text-gray-500;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-description-icon {
+    @apply hidden;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-chart {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1.75rem;
+    opacity: 0.4;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:not(:first-child) .fi-wi-stats-overview-stat-chart {
+    @apply hidden;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat:first-child {
+    @apply min-h-[4.75rem] pb-7;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat-chart canvas {
+    @apply max-h-7 opacity-50 grayscale-[0.4];
+}
+
+/* Table */
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-ctn {
+    @apply overflow-hidden rounded-[1.125rem] border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)] dark:border-gray-700/60 dark:bg-gray-900/90;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-header-toolbar {
+    @apply gap-3 border-b border-gray-100 bg-[var(--orders-surface)] px-5 py-4 dark:border-gray-800 dark:bg-gray-900;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-header-cell {
+    @apply py-3 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-gray-400 dark:text-gray-500;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell {
+    @apply py-3.5 text-[0.875rem] leading-relaxed text-gray-600 dark:text-gray-300;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-row {
+    @apply border-b border-gray-100/70 transition-colors duration-200 dark:border-gray-800/50;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-row:nth-child(even) {
+    @apply bg-gray-50/30 dark:bg-gray-800/15;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-row:hover {
+    @apply bg-gray-100/50 dark:bg-gray-800/40;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-row:last-child {
+    @apply border-b-0;
+}
+
+/* Muted status badges (gray / success / warning / danger) */
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge {
+    @apply rounded-md border-0 px-2.5 py-0.5 text-[0.6875rem] font-medium shadow-none ring-1 ring-inset;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-gray {
+    @apply bg-gray-100 text-gray-600 ring-gray-200/80 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-success {
+    @apply bg-[#e8f0eb] text-[#5a7263] ring-[#d0ddd5] dark:bg-emerald-950/30 dark:text-emerald-200/70 dark:ring-emerald-900/40;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-warning {
+    @apply bg-[#f5f0e6] text-[#7a6f56] ring-[#e8e0d0] dark:bg-amber-950/25 dark:text-amber-200/65 dark:ring-amber-900/35;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-danger {
+    @apply bg-[#f3ebeb] text-[#7a6363] ring-[#e8d8d8] dark:bg-rose-950/25 dark:text-rose-200/65 dark:ring-rose-900/35;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-info,
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-primary {
+    @apply bg-[#e8edf5] text-[#5c6a7a] ring-[#d4dce8] dark:bg-sky-950/25 dark:text-sky-200/65 dark:ring-sky-900/35;
+}
+
+/* Filament custom palette (e.g. completed = green) — soften saturation */
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-custom {
+    filter: saturate(0.22) brightness(1.05);
+    opacity: 0.94;
+}
+
+/* KPI descriptions (revenue green, etc.) */
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat .fi-color-success,
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat .fi-color-danger,
+.fi-resource-orders.fi-resource-list-records-page .fi-wi-stats-overview-stat .fi-color-custom {
+    filter: saturate(0.2) brightness(1.04);
+    @apply opacity-90;
+}
+
+/* Links in table — no underline */
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-cell a,
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-text-item-label a {
+    @apply font-medium text-gray-700 no-underline decoration-transparent transition-colors hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-dropdown-panel .fi-dropdown-list-item .fi-dropdown-list-item-label,
+.fi-resource-orders.fi-resource-list-records-page .fi-dropdown-panel .fi-dropdown-list-item-button,
+.fi-resource-orders.fi-resource-list-records-page .fi-dropdown-panel a {
+    @apply no-underline;
+}
+
+/* Search, filters, pagination */
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-search-field .fi-input-wrp {
+    @apply rounded-lg bg-white ring-1 ring-gray-200/70 dark:bg-gray-900 dark:ring-gray-700/80;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-filters-above-content-ctn {
+    @apply rounded-lg border border-gray-200/60 bg-gray-50/40 p-4 dark:border-gray-700/50 dark:bg-gray-800/20;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-filter-indicators {
+    @apply rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-600 ring-1 ring-gray-200/60 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-pagination {
+    @apply border-t border-gray-100 bg-[var(--orders-surface)] px-5 py-3.5 dark:border-gray-800 dark:bg-gray-900;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-empty-state {
+    @apply py-20;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-empty-state-heading {
+    @apply font-medium text-gray-500 dark:text-gray-400;
+}
+
+/* Action buttons in rows — softer */
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-actions .fi-btn {
+    @apply shadow-none;
+}
+
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-actions .fi-btn.fi-color-gray {
+    @apply text-gray-600 ring-gray-200/80 dark:text-gray-400;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Expenses (expenses/manage) — same polish, CSS only
+   ═══════════════════════════════════════════════════════════════ */
+.fi-resource-expenses-manage.fi-resource-list-records-page {
+    --exp-surface: #fafbfc;
+    --exp-muted: #f0f1f4;
+    --exp-line: #d4d8e0;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-header {
+    @apply relative mb-3 border-0 pb-6;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-header::after {
+    content: '';
+    @apply absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-header-heading {
+    @apply text-[1.5rem] font-semibold leading-snug tracking-tight text-gray-800 dark:text-gray-100;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-header-actions .fi-btn {
+    @apply shadow-none ring-1 ring-gray-200/80 dark:ring-gray-600;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-page-header-widgets {
+    @apply mb-4;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.625rem;
+}
+
+@media (min-width: 768px) {
+    .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1280px) {
+    .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stats-ctn {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235 / 0.6);
+    background: linear-gradient(145deg, var(--exp-surface) 0%, var(--exp-muted) 100%);
+    padding: 0.75rem 0.875rem;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.dark .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat {
+    border-color: rgb(55 65 81 / 0.5);
+    background: rgb(17 24 39 / 0.85);
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.5rem;
+    inset-inline-start: 0;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    opacity: 0.55;
+    background: var(--exp-line);
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat:hover {
+    border-color: rgb(209 213 219 / 0.8);
+    box-shadow: 0 4px 16px rgb(15 23 42 / 0.06);
+    transform: translateY(-1px);
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat > .grid {
+    row-gap: 0.25rem;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat > .grid > div:first-child {
+    margin-bottom: 0.125rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.375rem;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: rgb(107 114 128);
+}
+
+.dark .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-label {
+    color: rgb(156 163 175);
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-value {
+    font-size: 1.125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    color: rgb(31 41 55);
+}
+
+.dark .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-value {
+    color: rgb(243 244 246);
+}
+
+/* إخفاء التفقيط الطويل — يمنع الطفش */
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-description,
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-description-icon {
+    display: none;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat-chart {
+    display: none;
+}
+
+/* تهدئة ألوان warning / success على البطاقات */
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat.fi-color-warning .fi-wi-stats-overview-stat-value,
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat.fi-color-success .fi-wi-stats-overview-stat-value {
+    color: rgb(55 65 81);
+}
+
+.dark .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat.fi-color-warning .fi-wi-stats-overview-stat-value,
+.dark .fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat.fi-color-success .fi-wi-stats-overview-stat-value {
+    color: rgb(229 231 235);
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat.fi-color-warning::before {
+    background: #d4c9b5;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-wi-stats-overview-stat.fi-color-success::before {
+    background: #b5ccc0;
+}
+
+/* Tabs */
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-tabs {
+    @apply mb-4 gap-1 rounded-xl border border-gray-200/70 bg-[var(--exp-surface)] p-1.5 dark:border-gray-700/60 dark:bg-gray-900/80;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-tabs-item {
+    @apply rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors dark:text-gray-400;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-tabs-item.fi-active {
+    @apply bg-white text-gray-800 shadow-sm ring-1 ring-gray-200/80 dark:bg-gray-800 dark:text-gray-100 dark:ring-gray-600;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-tabs-item .fi-badge {
+    @apply rounded-md px-1.5 py-0 text-[0.625rem] font-medium shadow-none ring-1 ring-inset;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-tabs-item .fi-badge.fi-color-success {
+    background: #eef2ef;
+    color: #5a7263;
+    --tw-ring-color: #d0ddd5;
+}
+
+.dark .fi-resource-expenses-manage.fi-resource-list-records-page .fi-tabs-item .fi-badge.fi-color-success {
+    background: rgb(6 78 59 / 0.2);
+    color: rgb(167 243 208 / 0.75);
+}
+
+/* Table */
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-ctn {
+    @apply overflow-hidden rounded-[1.125rem] border border-gray-200/70 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)] dark:border-gray-700/60 dark:bg-gray-900/90;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-header-toolbar {
+    @apply gap-3 border-b border-gray-100 bg-[var(--exp-surface)] px-5 py-4 dark:border-gray-800 dark:bg-gray-900;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-header-cell {
+    @apply py-3 text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-gray-400 dark:text-gray-500;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell {
+    @apply py-3.5 text-[0.875rem] leading-relaxed text-gray-600 dark:text-gray-300;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-row {
+    @apply border-b border-gray-100/70 transition-colors duration-200 dark:border-gray-800/50;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-row:nth-child(even) {
+    @apply bg-gray-50/30 dark:bg-gray-800/15;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-row:hover {
+    @apply bg-gray-100/50 dark:bg-gray-800/40;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell .fi-badge {
+    @apply rounded-md border-0 px-2.5 py-0.5 text-[0.6875rem] font-medium shadow-none ring-1 ring-inset;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-success {
+    @apply bg-[#e8f0eb] text-[#5a7263] ring-[#d0ddd5] dark:bg-emerald-950/30 dark:text-emerald-200/70 dark:ring-emerald-900/40;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-warning {
+    @apply bg-[#f5f0e6] text-[#7a6f56] ring-[#e8e0d0] dark:bg-amber-950/25 dark:text-amber-200/65 dark:ring-amber-900/35;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-danger {
+    @apply bg-[#f3ebeb] text-[#7a6363] ring-[#e8d8d8] dark:bg-rose-950/25 dark:text-rose-200/65 dark:ring-rose-900/35;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell .fi-badge.fi-color-gray {
+    @apply bg-gray-100 text-gray-600 ring-gray-200/80 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-cell a {
+    @apply font-medium text-gray-700 no-underline decoration-transparent hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-text-item-description {
+    display: none;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-search-field .fi-input-wrp {
+    @apply rounded-lg bg-white ring-1 ring-gray-200/70 dark:bg-gray-900 dark:ring-gray-700/80;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-filters-above-content-ctn {
+    @apply rounded-lg border border-gray-200/60 bg-gray-50/40 p-4 dark:border-gray-700/50 dark:bg-gray-800/20;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-filter-indicators {
+    @apply rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-600 ring-1 ring-gray-200/60 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-pagination {
+    @apply border-t border-gray-100 bg-[var(--exp-surface)] px-5 py-3.5 dark:border-gray-800 dark:bg-gray-900;
+}
+
+.fi-resource-expenses-manage.fi-resource-list-records-page .fi-ta-actions .fi-btn {
+    @apply shadow-none;
+}
+
+/* Expense create — slide-over modal */
+.fi-resource-expenses-manage .fi-modal-slide-over-window {
+    max-width: min(56rem, calc(100vw - 1.5rem));
+}
+
+.fi-resource-expenses-manage .fi-modal-window.fi-width-5xl,
+.fi-resource-expenses-manage .fi-modal-window.fi-width-screen-2xl {
+    max-width: min(56rem, calc(100vw - 2rem));
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-modal-content,
+.fi-resource-expenses-manage .fi-modal-window .fi-modal-content {
+    max-height: min(85vh, 52rem);
+    overflow-y: auto;
+    padding-inline: 0.25rem;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-modal-header,
+.fi-resource-expenses-manage .fi-modal-window .fi-modal-header {
+    border-bottom: 1px solid rgb(229 231 235 / 0.8);
+    padding-bottom: 1rem;
+}
+
+.dark .fi-resource-expenses-manage .fi-modal-slide-over-window .fi-modal-header,
+.dark .fi-resource-expenses-manage .fi-modal-window .fi-modal-header {
+    border-bottom-color: rgb(55 65 81 / 0.6);
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-modal-footer,
+.fi-resource-expenses-manage .fi-modal-window .fi-modal-footer {
+    border-top: 1px solid rgb(229 231 235 / 0.8);
+    background: rgb(250 251 252);
+}
+
+.dark .fi-resource-expenses-manage .fi-modal-slide-over-window .fi-modal-footer,
+.dark .fi-resource-expenses-manage .fi-modal-window .fi-modal-footer {
+    border-top-color: rgb(55 65 81 / 0.6);
+    background: rgb(17 24 39 / 0.5);
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-section,
+.fi-resource-expenses-manage .fi-modal-window .fi-fo-section {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235 / 0.7);
+    background: rgb(255 255 255 / 0.6);
+    padding: 1rem 1.25rem;
+}
+
+.dark .fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-section,
+.dark .fi-resource-expenses-manage .fi-modal-window .fi-fo-section {
+    border-color: rgb(55 65 81 / 0.5);
+    background: rgb(31 41 55 / 0.35);
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-field-wrp-label,
+.fi-resource-expenses-manage .fi-modal-window .fi-fo-field-wrp-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* صف المبلغ + شامل الضريبة + الضريبة */
+.fi-resource-expenses-manage .expense-amount-tax-row.fi-fo-grid {
+    gap: 0.875rem 1rem;
+    align-items: end;
+}
+
+.fi-resource-expenses-manage .expense-amount-tax-row > .fi-fo-component-ctn {
+    min-width: 0;
+}
+
+.fi-resource-expenses-manage .expense-amount-tax-row .fi-fo-field-wrp {
+    margin-bottom: 0;
+}
+
+.fi-resource-expenses-manage .expense-tax-toggle-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 100%;
+    padding-bottom: 0.35rem;
+}
+
+.fi-resource-expenses-manage .expense-tax-toggle-field .fi-fo-field-wrp {
+    gap: 0.5rem;
+}
+
+.fi-resource-expenses-manage .expense-tax-toggle-field .fi-fo-field-wrp-label {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.fi-resource-expenses-manage .expense-tax-toggle-field .fi-fo-toggle {
+    margin-inline: auto;
+}
+
+.fi-resource-expenses-manage .expense-tax-select-field .fi-fo-field-wrp-label {
+    margin-bottom: 0.35rem;
+}
+
+@media (max-width: 640px) {
+    .fi-resource-expenses-manage .expense-amount-tax-row.fi-fo-grid {
+        grid-template-columns: 1fr !important;
+        align-items: stretch;
+    }
+
+    .fi-resource-expenses-manage .expense-tax-toggle-field {
+        padding-bottom: 0;
+    }
+
+    .fi-resource-expenses-manage .expense-tax-toggle-field .fi-fo-field-wrp-label {
+        text-align: start;
+    }
+
+    .fi-resource-expenses-manage .expense-tax-toggle-field .fi-fo-toggle {
+        margin-inline: 0;
+    }
+}
+
+/* حقول مخفية + تخطيط الضريبة في نافذة الإنشاء */
+.fi-resource-expenses-manage .expense-form-hidden-fields {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-field-wrp:has(input[type='hidden']),
+.fi-resource-expenses-manage .fi-modal-window .fi-fo-field-wrp:has(input[type='hidden']) {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-select,
+.fi-resource-expenses-manage .fi-modal-window .fi-fo-select {
+    min-width: 0;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-select-input,
+.fi-resource-expenses-manage .fi-modal-window .fi-select-input {
+    min-width: 0;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-select-input-value-ctn,
+.fi-resource-expenses-manage .fi-modal-window .fi-select-input-value-ctn {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-select-input-value-label,
+.fi-resource-expenses-manage .fi-modal-window .fi-select-input-value-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-select .fi-input-wrp,
+.fi-resource-expenses-manage .fi-modal-window .fi-fo-select .fi-input-wrp {
+    width: 100%;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .choices__list--dropdown,
+.fi-resource-expenses-manage .fi-modal-window .choices__list--dropdown {
+    z-index: 50;
+}
+
+.fi-resource-expenses-manage .expense-tax-summary__value {
+    display: block;
+    font-size: 1.125rem;
+    font-weight: 700;
+    line-height: 1.3;
+    font-variant-numeric: tabular-nums;
+    color: #0464ff;
+}
+
+.dark .fi-resource-expenses-manage .expense-tax-summary__value {
+    color: #60a5fa;
+}
+
+.fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-placeholder + .fi-fo-placeholder,
+.fi-resource-expenses-manage .fi-modal-window .fi-fo-grid .fi-fo-placeholder {
+    padding: 0.75rem 1rem;
+    border-radius: 0.625rem;
+    background: rgb(239 246 255 / 0.65);
+    border: 1px solid rgb(191 219 254 / 0.5);
+}
+
+.dark .fi-resource-expenses-manage .fi-modal-slide-over-window .fi-fo-grid .fi-fo-placeholder,
+.dark .fi-resource-expenses-manage .fi-modal-window .fi-fo-grid .fi-fo-placeholder {
+    background: rgb(30 58 138 / 0.2);
+    border-color: rgb(59 130 246 / 0.25);
+}
+
+/* عروض الأسعار + فواتير المبيعات + المشتريات + طلبات التوريد — بنود الفاتورة */
+.fi-resource-price-offers .invoice-lines-panel > .fi-section-header,
+.fi-resource-invoices-sales .invoice-lines-panel > .fi-section-header,
+.fi-resource-purchases .invoice-lines-panel > .fi-section-header,
+.fi-resource-supply-orders .invoice-lines-panel > .fi-section-header {
+    padding-bottom: 0.25rem;
+}
+
+.fi-resource-price-offers .invoice-lines-toolbar,
+.fi-resource-invoices-sales .invoice-lines-toolbar,
+.fi-resource-purchases .invoice-lines-toolbar,
+.fi-resource-supply-orders .invoice-lines-toolbar {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.fi-resource-price-offers .invoice-lines-toolbar__hint,
+.fi-resource-invoices-sales .invoice-lines-toolbar__hint,
+.fi-resource-purchases .invoice-lines-toolbar__hint,
+.fi-resource-supply-orders .invoice-lines-toolbar__hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: rgb(107 114 128);
+    line-height: 1.5;
+}
+
+.dark .fi-resource-price-offers .invoice-lines-toolbar__hint,
+.dark .fi-resource-invoices-sales .invoice-lines-toolbar__hint,
+.dark .fi-resource-purchases .invoice-lines-toolbar__hint,
+.dark .fi-resource-supply-orders .invoice-lines-toolbar__hint {
+    color: rgb(156 163 175);
+}
+
+.fi-resource-price-offers .invoice-lines-toolbar__toggle,
+.fi-resource-invoices-sales .invoice-lines-toolbar__toggle,
+.fi-resource-purchases .invoice-lines-toolbar__toggle,
+.fi-resource-supply-orders .invoice-lines-toolbar__toggle {
+    flex-shrink: 0;
+    justify-self: end;
+}
+
+[dir='rtl'] .fi-resource-price-offers .invoice-lines-toolbar__hint,
+[dir='rtl'] .fi-resource-invoices-sales .invoice-lines-toolbar__hint,
+[dir='rtl'] .fi-resource-purchases .invoice-lines-toolbar__hint,
+[dir='rtl'] .fi-resource-supply-orders .invoice-lines-toolbar__hint {
+    justify-self: end;
+    text-align: end;
+}
+
+[dir='rtl'] .fi-resource-price-offers .invoice-lines-toolbar__toggle,
+[dir='rtl'] .fi-resource-invoices-sales .invoice-lines-toolbar__toggle,
+[dir='rtl'] .fi-resource-purchases .invoice-lines-toolbar__toggle,
+[dir='rtl'] .fi-resource-supply-orders .invoice-lines-toolbar__toggle {
+    justify-self: start;
+}
+
+.fi-resource-price-offers .invoice-lines-panel,
+.fi-resource-invoices-sales .invoice-lines-panel,
+.fi-resource-purchases .invoice-lines-panel,
+.fi-resource-supply-orders .invoice-lines-panel,
+.fi-resource-price-offers .invoice-lines-panel .fi-section-content-ctn,
+.fi-resource-invoices-sales .invoice-lines-panel .fi-section-content-ctn,
+.fi-resource-purchases .invoice-lines-panel .fi-section-content-ctn,
+.fi-resource-supply-orders .invoice-lines-panel .fi-section-content-ctn,
+.fi-resource-price-offers .invoice-lines-panel .fi-section-content,
+.fi-resource-invoices-sales .invoice-lines-panel .fi-section-content,
+.fi-resource-purchases .invoice-lines-panel .fi-section-content,
+.fi-resource-supply-orders .invoice-lines-panel .fi-section-content,
+.fi-resource-price-offers .invoice-lines-table .fi-fo-field-wrp,
+.fi-resource-invoices-sales .invoice-lines-table .fi-fo-field-wrp,
+.fi-resource-purchases .invoice-lines-table .fi-fo-field-wrp,
+.fi-resource-supply-orders .invoice-lines-table .fi-fo-field-wrp,
+.fi-resource-price-offers .invoice-lines-table .fi-fo-table-repeater,
+.fi-resource-invoices-sales .invoice-lines-table .fi-fo-table-repeater,
+.fi-resource-purchases .invoice-lines-table .fi-fo-table-repeater,
+.fi-resource-supply-orders .invoice-lines-table .fi-fo-table-repeater,
+.fi-resource-price-offers .invoice-lines-table > *,
+.fi-resource-invoices-sales .invoice-lines-table > *,
+.fi-resource-purchases .invoice-lines-table > *,
+.fi-resource-supply-orders .invoice-lines-table > * {
+    overflow: visible !important;
+}
+
+.fi-resource-price-offers .invoice-lines-table,
+.fi-resource-invoices-sales .invoice-lines-table,
+.fi-resource-purchases .invoice-lines-table,
+.fi-resource-supply-orders .invoice-lines-table {
+    position: relative;
+    z-index: 2;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235 / 0.9);
+    background: rgb(255 255 255);
+    overflow: visible;
+    isolation: auto;
+}
+
+.fi-resource-price-offers .invoice-lines-table:has([aria-expanded='true']),
+.fi-resource-invoices-sales .invoice-lines-table:has([aria-expanded='true']),
+.fi-resource-purchases .invoice-lines-table:has([aria-expanded='true']),
+.fi-resource-supply-orders .invoice-lines-table:has([aria-expanded='true']) {
+    z-index: 50;
+}
+
+.dark .fi-resource-price-offers .invoice-lines-table,
+.dark .fi-resource-invoices-sales .invoice-lines-table,
+.dark .fi-resource-purchases .invoice-lines-table,
+.dark .fi-resource-supply-orders .invoice-lines-table {
+    border-color: rgb(55 65 81 / 0.65);
+    background: rgb(17 24 39 / 0.55);
+}
+
+.fi-resource-price-offers .invoice-lines-table .filament-table-repeater-header,
+.fi-resource-invoices-sales .invoice-lines-table .filament-table-repeater-header,
+.fi-resource-purchases .invoice-lines-table .filament-table-repeater-header,
+.fi-resource-supply-orders .invoice-lines-table .filament-table-repeater-header {
+    background: rgb(243 244 246);
+    border-bottom: 1px solid rgb(229 231 235);
+}
+
+.fi-resource-price-offers .invoice-lines-table .filament-table-repeater-header th,
+.fi-resource-invoices-sales .invoice-lines-table .filament-table-repeater-header th,
+.fi-resource-purchases .invoice-lines-table .filament-table-repeater-header th,
+.fi-resource-supply-orders .invoice-lines-table .filament-table-repeater-header th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: rgb(75 85 99);
+    padding: 0.625rem 0.5rem;
+}
+
+.dark .fi-resource-price-offers .invoice-lines-table .filament-table-repeater-header,
+.dark .fi-resource-invoices-sales .invoice-lines-table .filament-table-repeater-header,
+.dark .fi-resource-purchases .invoice-lines-table .filament-table-repeater-header,
+.dark .fi-resource-supply-orders .invoice-lines-table .filament-table-repeater-header {
+    background: rgb(31 41 55 / 0.75);
+    border-bottom-color: rgb(55 65 81 / 0.7);
+}
+
+.dark .fi-resource-price-offers .invoice-lines-table .filament-table-repeater-header th,
+.dark .fi-resource-invoices-sales .invoice-lines-table .filament-table-repeater-header th,
+.dark .fi-resource-purchases .invoice-lines-table .filament-table-repeater-header th,
+.dark .fi-resource-supply-orders .invoice-lines-table .filament-table-repeater-header th {
+    color: rgb(209 213 219);
+}
+
+.fi-resource-price-offers .invoice-lines-table .fi-input-wrp,
+.fi-resource-invoices-sales .invoice-lines-table .fi-input-wrp,
+.fi-resource-purchases .invoice-lines-table .fi-input-wrp,
+.fi-resource-supply-orders .invoice-lines-table .fi-input-wrp {
+    min-width: 0;
+}
+
+.fi-resource-price-offers .invoice-lines-table .fi-input-wrp-input,
+.fi-resource-invoices-sales .invoice-lines-table .fi-input-wrp-input,
+.fi-resource-purchases .invoice-lines-table .fi-input-wrp-input,
+.fi-resource-supply-orders .invoice-lines-table .fi-input-wrp-input {
+    border-radius: 0.375rem;
+}
+
+.fi-resource-price-offers .invoice-lines-table .fi-select-input-value-label,
+.fi-resource-invoices-sales .invoice-lines-table .fi-select-input-value-label,
+.fi-resource-purchases .invoice-lines-table .fi-select-input-value-label,
+.fi-resource-supply-orders .invoice-lines-table .fi-select-input-value-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fi-resource-price-offers .invoice-lines-table .fi-ta-actions .fi-btn,
+.fi-resource-invoices-sales .invoice-lines-table .fi-ta-actions .fi-btn,
+.fi-resource-purchases .invoice-lines-table .fi-ta-actions .fi-btn,
+.fi-resource-supply-orders .invoice-lines-table .fi-ta-actions .fi-btn {
+    border-radius: 0.375rem;
+}
+
+/* إضافة سطر جديد — تحت عمود المنتج (يمين في RTL) */
+.fi-resource-price-offers .invoice-lines-table.table-repeater-component > ul,
+.fi-resource-invoices-sales .invoice-lines-table.table-repeater-component > ul,
+.fi-resource-purchases .invoice-lines-table.table-repeater-component > ul,
+.fi-resource-supply-orders .invoice-lines-table.table-repeater-component > ul {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center;
+    width: 100%;
+    gap: 0.5rem !important;
+    margin: 0 !important;
+    padding: 0.75rem 0.875rem 0.25rem !important;
+    list-style: none;
+}
+
+[dir='rtl'] .fi-resource-price-offers .invoice-lines-table.table-repeater-component > ul,
+[dir='rtl'] .fi-resource-invoices-sales .invoice-lines-table.table-repeater-component > ul,
+[dir='rtl'] .fi-resource-purchases .invoice-lines-table.table-repeater-component > ul,
+[dir='rtl'] .fi-resource-supply-orders .invoice-lines-table.table-repeater-component > ul {
+    flex-direction: row;
+    justify-content: flex-start !important;
+    padding-inline-start: 0.875rem !important;
+    padding-inline-end: 0 !important;
+}
+
+[dir='ltr'] .fi-resource-price-offers .invoice-lines-table.table-repeater-component > ul,
+[dir='ltr'] .fi-resource-invoices-sales .invoice-lines-table.table-repeater-component > ul,
+[dir='ltr'] .fi-resource-purchases .invoice-lines-table.table-repeater-component > ul,
+[dir='ltr'] .fi-resource-supply-orders .invoice-lines-table.table-repeater-component > ul {
+    justify-content: flex-start !important;
+    padding-inline-start: 0.875rem !important;
+}
+
+.fi-resource-price-offers .invoice-lines-table .invoice-lines-table__add-link,
+.fi-resource-invoices-sales .invoice-lines-table .invoice-lines-table__add-link,
+.fi-resource-purchases .invoice-lines-table .invoice-lines-table__add-link,
+.fi-resource-supply-orders .invoice-lines-table .invoice-lines-table__add-link,
+.fi-resource-price-offers .invoice-lines-table .fi-btn-link,
+.fi-resource-invoices-sales .invoice-lines-table .fi-btn-link,
+.fi-resource-purchases .invoice-lines-table .fi-btn-link,
+.fi-resource-supply-orders .invoice-lines-table .fi-btn-link,
+.fi-resource-price-offers .invoice-lines-table .fi-ac-btn-action,
+.fi-resource-invoices-sales .invoice-lines-table .fi-ac-btn-action,
+.fi-resource-purchases .invoice-lines-table .fi-ac-btn-action,
+.fi-resource-supply-orders .invoice-lines-table .fi-ac-btn-action,
+.fi-resource-price-offers .invoice-lines-table [data-action='add'],
+.fi-resource-invoices-sales .invoice-lines-table [data-action='add'],
+.fi-resource-purchases .invoice-lines-table [data-action='add'],
+.fi-resource-supply-orders .invoice-lines-table [data-action='add'] {
+    margin: 0;
+    padding: 0 !important;
+    min-height: unset !important;
+    height: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    color: rgb(37 99 235) !important;
+    font-weight: 500;
+    font-size: 0.875rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.fi-resource-price-offers .invoice-lines-table .invoice-lines-table__add-link:hover,
+.fi-resource-invoices-sales .invoice-lines-table .invoice-lines-table__add-link:hover,
+.fi-resource-purchases .invoice-lines-table .invoice-lines-table__add-link:hover,
+.fi-resource-supply-orders .invoice-lines-table .invoice-lines-table__add-link:hover,
+.fi-resource-price-offers .invoice-lines-table .fi-btn-link:hover,
+.fi-resource-invoices-sales .invoice-lines-table .fi-btn-link:hover,
+.fi-resource-purchases .invoice-lines-table .fi-btn-link:hover,
+.fi-resource-supply-orders .invoice-lines-table .fi-btn-link:hover,
+.fi-resource-price-offers .invoice-lines-table .fi-ac-btn-action:hover,
+.fi-resource-invoices-sales .invoice-lines-table .fi-ac-btn-action:hover,
+.fi-resource-purchases .invoice-lines-table .fi-ac-btn-action:hover,
+.fi-resource-supply-orders .invoice-lines-table .fi-ac-btn-action:hover,
+.fi-resource-price-offers .invoice-lines-table [data-action='add']:hover,
+.fi-resource-invoices-sales .invoice-lines-table [data-action='add']:hover,
+.fi-resource-purchases .invoice-lines-table [data-action='add']:hover,
+.fi-resource-supply-orders .invoice-lines-table [data-action='add']:hover {
+    color: rgb(29 78 216) !important;
+    text-decoration: underline;
+    background: transparent !important;
+}
+
+.fi-resource-price-offers .invoice-lines-table .invoice-lines-table__add-link .fi-btn-icon,
+.fi-resource-invoices-sales .invoice-lines-table .invoice-lines-table__add-link .fi-btn-icon,
+.fi-resource-purchases .invoice-lines-table .invoice-lines-table__add-link .fi-btn-icon,
+.fi-resource-supply-orders .invoice-lines-table .invoice-lines-table__add-link .fi-btn-icon,
+.fi-resource-price-offers .invoice-lines-table .fi-btn-link .fi-btn-icon,
+.fi-resource-invoices-sales .invoice-lines-table .fi-btn-link .fi-btn-icon,
+.fi-resource-purchases .invoice-lines-table .fi-btn-link .fi-btn-icon,
+.fi-resource-supply-orders .invoice-lines-table .fi-btn-link .fi-btn-icon,
+.fi-resource-price-offers .invoice-lines-table [data-action='add'] .fi-btn-icon,
+.fi-resource-invoices-sales .invoice-lines-table [data-action='add'] .fi-btn-icon,
+.fi-resource-purchases .invoice-lines-table [data-action='add'] .fi-btn-icon,
+.fi-resource-supply-orders .invoice-lines-table [data-action='add'] .fi-btn-icon {
+    color: rgb(37 99 235);
+}
+
+.fi-resource-price-offers .invoice-lines-table .fi-fo-repeater-add .fi-btn-label,
+.fi-resource-invoices-sales .invoice-lines-table .fi-fo-repeater-add .fi-btn-label,
+.fi-resource-purchases .invoice-lines-table .fi-fo-repeater-add .fi-btn-label,
+.fi-resource-supply-orders .invoice-lines-table .fi-fo-repeater-add .fi-btn-label {
+    color: rgb(37 99 235);
+}
+
+.fi-resource-price-offers .invoice-lines-table tbody tr:has(.fi-select-input[aria-expanded='true']),
+.fi-resource-invoices-sales .invoice-lines-table tbody tr:has(.fi-select-input[aria-expanded='true']),
+.fi-resource-purchases .invoice-lines-table tbody tr:has(.fi-select-input[aria-expanded='true']),
+.fi-resource-supply-orders .invoice-lines-table tbody tr:has(.fi-select-input[aria-expanded='true']),
+.fi-resource-price-offers .invoice-lines-table tbody tr:has([aria-expanded='true']),
+.fi-resource-invoices-sales .invoice-lines-table tbody tr:has([aria-expanded='true']),
+.fi-resource-purchases .invoice-lines-table tbody tr:has([aria-expanded='true']),
+.fi-resource-supply-orders .invoice-lines-table tbody tr:has([aria-expanded='true']) {
+    position: relative;
+    z-index: 30;
+}
+
+.fi-resource-price-offers .invoice-extras-tabs,
+.fi-resource-invoices-sales .invoice-extras-tabs,
+.fi-resource-purchases .invoice-extras-tabs,
+.fi-resource-supply-orders .invoice-extras-tabs,
+.fi-resource-price-offers .invoice-totals-panel,
+.fi-resource-invoices-sales .invoice-totals-panel,
+.fi-resource-purchases .invoice-totals-panel,
+.fi-resource-supply-orders .invoice-totals-panel {
+    position: relative;
+    z-index: 1;
+}
+
+/* تبويبات الخصومات / الخدمات / التكاليف */
+.fi-resource-price-offers .invoice-extras-tabs,
+.fi-resource-invoices-sales .invoice-extras-tabs,
+.fi-resource-purchases .invoice-extras-tabs,
+.fi-resource-supply-orders .invoice-extras-tabs {
+    margin-top: 0.5rem;
+}
+
+.fi-resource-price-offers .invoice-extras-tabs .fi-tabs,
+.fi-resource-invoices-sales .invoice-extras-tabs .fi-tabs,
+.fi-resource-purchases .invoice-extras-tabs .fi-tabs,
+.fi-resource-supply-orders .invoice-extras-tabs .fi-tabs {
+    border-bottom: 1px solid rgb(229 231 235);
+    gap: 0.25rem;
+}
+
+.fi-resource-price-offers .invoice-extras-tabs .fi-tabs-item,
+.fi-resource-invoices-sales .invoice-extras-tabs .fi-tabs-item,
+.fi-resource-purchases .invoice-extras-tabs .fi-tabs-item,
+.fi-resource-supply-orders .invoice-extras-tabs .fi-tabs-item {
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-weight: 500;
+}
+
+.fi-resource-price-offers .invoice-extras-tabs .fi-tabs-item.fi-active,
+.fi-resource-invoices-sales .invoice-extras-tabs .fi-tabs-item.fi-active,
+.fi-resource-purchases .invoice-extras-tabs .fi-tabs-item.fi-active,
+.fi-resource-supply-orders .invoice-extras-tabs .fi-tabs-item.fi-active {
+    color: rgb(37 99 235);
+    border-color: rgb(37 99 235);
+}
+
+/* ملخص الإجماليات — بطاقات أفقية */
+.fi-resource-price-offers .invoice-totals-panel.fi-fo-section,
+.fi-resource-invoices-sales .invoice-totals-panel.fi-fo-section,
+.fi-resource-purchases .invoice-totals-panel.fi-fo-section,
+.fi-resource-supply-orders .invoice-totals-panel.fi-fo-section {
+    margin-top: 1rem;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-width: 0 !important;
+}
+
+.fi-resource-price-offers .invoice-totals-panel > .fi-section-header,
+.fi-resource-invoices-sales .invoice-totals-panel > .fi-section-header,
+.fi-resource-purchases .invoice-totals-panel > .fi-section-header,
+.fi-resource-supply-orders .invoice-totals-panel > .fi-section-header {
+    display: none;
+}
+
+.fi-resource-price-offers .invoice-totals-panel > .fi-section-content-ctn,
+.fi-resource-invoices-sales .invoice-totals-panel > .fi-section-content-ctn,
+.fi-resource-purchases .invoice-totals-panel > .fi-section-content-ctn,
+.fi-resource-supply-orders .invoice-totals-panel > .fi-section-content-ctn,
+.fi-resource-price-offers .invoice-totals-panel .fi-section-content,
+.fi-resource-invoices-sales .invoice-totals-panel .fi-section-content,
+.fi-resource-purchases .invoice-totals-panel .fi-section-content,
+.fi-resource-supply-orders .invoice-totals-panel .fi-section-content,
+.fi-resource-price-offers .invoice-totals-panel .fi-fo-field-wrp,
+.fi-resource-invoices-sales .invoice-totals-panel .fi-fo-field-wrp,
+.fi-resource-purchases .invoice-totals-panel .fi-fo-field-wrp,
+.fi-resource-supply-orders .invoice-totals-panel .fi-fo-field-wrp,
+.fi-resource-price-offers .invoice-totals-panel .fi-fo-placeholder,
+.fi-resource-invoices-sales .invoice-totals-panel .fi-fo-placeholder,
+.fi-resource-purchases .invoice-totals-panel .fi-fo-placeholder,
+.fi-resource-supply-orders .invoice-totals-panel .fi-fo-placeholder,
+.fi-resource-price-offers .invoice-totals-panel .fi-fo-placeholder > div,
+.fi-resource-invoices-sales .invoice-totals-panel .fi-fo-placeholder > div,
+.fi-resource-purchases .invoice-totals-panel .fi-fo-placeholder > div,
+.fi-resource-supply-orders .invoice-totals-panel .fi-fo-placeholder > div {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+}
+
+.fi-resource-price-offers .invoice-totals-panel__wrap,
+.fi-resource-invoices-sales .invoice-totals-panel__wrap,
+.fi-resource-purchases .invoice-totals-panel__wrap,
+.fi-resource-supply-orders .invoice-totals-panel__wrap {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235);
+    background: rgb(249 250 251);
+    direction: rtl;
+}
+
+.dark .fi-resource-price-offers .invoice-totals-panel__wrap,
+.dark .fi-resource-invoices-sales .invoice-totals-panel__wrap,
+.dark .fi-resource-purchases .invoice-totals-panel__wrap,
+.dark .fi-resource-supply-orders .invoice-totals-panel__wrap {
+    border-color: rgb(55 65 81);
+    background: rgb(17 24 39 / 0.45);
+}
+
+.fi-resource-price-offers .invoice-totals-panel__grid,
+.fi-resource-invoices-sales .invoice-totals-panel__grid,
+.fi-resource-purchases .invoice-totals-panel__grid,
+.fi-resource-supply-orders .invoice-totals-panel__grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    column-gap: 1rem !important;
+    row-gap: 1rem !important;
+    gap: 1rem !important;
+    width: 100%;
+    direction: rtl;
+    box-sizing: border-box;
+}
+
+.fi-resource-price-offers .invoice-totals-panel__card,
+.fi-resource-invoices-sales .invoice-totals-panel__card,
+.fi-resource-purchases .invoice-totals-panel__card,
+.fi-resource-supply-orders .invoice-totals-panel__card {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: 5rem;
+    padding: 1.125rem 1.375rem;
+    border: 1px dashed rgb(209 213 219);
+    border-radius: 0.625rem;
+    background: rgb(255 255 255);
+    text-align: end;
+}
+
+.dark .fi-resource-price-offers .invoice-totals-panel__card,
+.dark .fi-resource-invoices-sales .invoice-totals-panel__card,
+.dark .fi-resource-purchases .invoice-totals-panel__card,
+.dark .fi-resource-supply-orders .invoice-totals-panel__card {
+    border-color: rgb(75 85 99);
+    background: rgb(17 24 39);
+}
+
+.fi-resource-price-offers .invoice-totals-panel__value,
+.fi-resource-invoices-sales .invoice-totals-panel__value,
+.fi-resource-purchases .invoice-totals-panel__value,
+.fi-resource-supply-orders .invoice-totals-panel__value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: rgb(17 24 39);
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.dark .fi-resource-price-offers .invoice-totals-panel__value,
+.dark .fi-resource-invoices-sales .invoice-totals-panel__value,
+.dark .fi-resource-purchases .invoice-totals-panel__value,
+.dark .fi-resource-supply-orders .invoice-totals-panel__value {
+    color: rgb(243 244 246);
+}
+
+.fi-resource-price-offers .invoice-totals-panel__currency,
+.fi-resource-invoices-sales .invoice-totals-panel__currency,
+.fi-resource-purchases .invoice-totals-panel__currency,
+.fi-resource-supply-orders .invoice-totals-panel__currency {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgb(107 114 128);
+}
+
+.fi-resource-price-offers .invoice-totals-panel__label,
+.fi-resource-invoices-sales .invoice-totals-panel__label,
+.fi-resource-purchases .invoice-totals-panel__label,
+.fi-resource-supply-orders .invoice-totals-panel__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgb(107 114 128);
+    line-height: 1.3;
+}
+
+.fi-resource-price-offers .invoice-totals-panel__card--discount .invoice-totals-panel__value,
+.fi-resource-invoices-sales .invoice-totals-panel__card--discount .invoice-totals-panel__value,
+.fi-resource-purchases .invoice-totals-panel__card--discount .invoice-totals-panel__value,
+.fi-resource-supply-orders .invoice-totals-panel__card--discount .invoice-totals-panel__value {
+    color: rgb(220 38 38);
+}
+
+.fi-resource-price-offers .invoice-totals-panel__card--amount .invoice-totals-panel__value,
+.fi-resource-invoices-sales .invoice-totals-panel__card--amount .invoice-totals-panel__value,
+.fi-resource-purchases .invoice-totals-panel__card--amount .invoice-totals-panel__value,
+.fi-resource-supply-orders .invoice-totals-panel__card--amount .invoice-totals-panel__value {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.fi-resource-price-offers .invoice-totals-panel__words,
+.fi-resource-invoices-sales .invoice-totals-panel__words,
+.fi-resource-purchases .invoice-totals-panel__words,
+.fi-resource-supply-orders .invoice-totals-panel__words {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    padding-inline: 0.25rem;
+    border-top: 1px solid rgb(229 231 235 / 0.9);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgb(107 114 128);
+    text-align: end;
+    direction: rtl;
+    line-height: 1.6;
+}
+
+.dark .fi-resource-price-offers .invoice-totals-panel__words,
+.dark .fi-resource-invoices-sales .invoice-totals-panel__words,
+.dark .fi-resource-purchases .invoice-totals-panel__words,
+.dark .fi-resource-supply-orders .invoice-totals-panel__words {
+    border-top-color: rgb(55 65 81);
+}
+
+@media (max-width: 1024px) {
+    .fi-resource-price-offers .invoice-totals-panel__grid,
+    .fi-resource-invoices-sales .invoice-totals-panel__grid,
+    .fi-resource-purchases .invoice-totals-panel__grid,
+    .fi-resource-supply-orders .invoice-totals-panel__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .fi-resource-price-offers .invoice-totals-panel__grid,
+    .fi-resource-invoices-sales .invoice-totals-panel__grid,
+    .fi-resource-purchases .invoice-totals-panel__grid,
+    .fi-resource-supply-orders .invoice-totals-panel__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fi-resource-price-offers .fi-resource-create-record-page .fi-fo-section,
+.fi-resource-invoices-sales .fi-resource-create-record-page .fi-fo-section,
+.fi-resource-purchases .fi-resource-create-record-page .fi-fo-section,
+.fi-resource-supply-orders .fi-resource-create-record-page .fi-fo-section,
+.fi-resource-price-offers .fi-resource-edit-record-page .fi-fo-section,
+.fi-resource-invoices-sales .fi-resource-edit-record-page .fi-fo-section,
+.fi-resource-purchases .fi-resource-edit-record-page .fi-fo-section,
+.fi-resource-supply-orders .fi-resource-edit-record-page .fi-fo-section {
+    border-radius: 0.875rem;
+}
+
+/* Document lists — row actions menu (⋮ primary) */
+.fi-resource-price-offers.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-btn,
+.fi-resource-invoices-sales.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-btn,
+.fi-resource-purchases.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-btn,
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-btn,
+.fi-resource-price-offers.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-icon-btn,
+.fi-resource-invoices-sales.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-icon-btn,
+.fi-resource-purchases.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-icon-btn,
+.fi-resource-orders.fi-resource-list-records-page .fi-ta-actions .document-list-row-actions > .fi-icon-btn {
+    @apply bg-primary-50/90 text-primary-600 shadow-none ring-1 ring-primary-200/70 hover:bg-primary-100/90 hover:text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/30 dark:hover:bg-primary-500/20 dark:hover:text-primary-300;
+}
+
+.fi-resource-price-offers.fi-resource-list-records-page .fi-dropdown-panel .fi-dropdown-list-item .fi-dropdown-list-item-label,
+.fi-resource-invoices-sales.fi-resource-list-records-page .fi-dropdown-panel .fi-dropdown-list-item .fi-dropdown-list-item-label,
+.fi-resource-purchases.fi-resource-list-records-page .fi-dropdown-panel .fi-dropdown-list-item .fi-dropdown-list-item-label,
+.fi-resource-orders.fi-resource-list-records-page .fi-dropdown-panel .fi-dropdown-list-item .fi-dropdown-list-item-label {
+    @apply font-medium text-gray-950 dark:text-white;
+}
+
+/* Expense categories — create / edit slide-over modal */
+.fi-resource-expenses-categories .fi-modal-slide-over-window {
+    max-width: min(32rem, calc(100vw - 1.5rem));
+}
+
+.fi-resource-expenses-categories .fi-modal-window.fi-width-2xl {
+    max-width: min(32rem, calc(100vw - 2rem));
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .fi-modal-content,
+.fi-resource-expenses-categories .fi-modal-window .fi-modal-content {
+    max-height: min(85vh, 40rem);
+    overflow-y: auto;
+    padding-inline: 1.25rem;
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .fi-modal-header,
+.fi-resource-expenses-categories .fi-modal-window .fi-modal-header {
+    border-bottom: 1px solid rgb(229 231 235 / 0.8);
+    padding-bottom: 1rem;
+}
+
+.dark .fi-resource-expenses-categories .fi-modal-slide-over-window .fi-modal-header,
+.dark .fi-resource-expenses-categories .fi-modal-window .fi-modal-header {
+    border-bottom-color: rgb(55 65 81 / 0.6);
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .fi-modal-footer,
+.fi-resource-expenses-categories .fi-modal-window .fi-modal-footer {
+    border-top: 1px solid rgb(229 231 235 / 0.8);
+    background: rgb(250 251 252);
+}
+
+.dark .fi-resource-expenses-categories .fi-modal-slide-over-window .fi-modal-footer,
+.dark .fi-resource-expenses-categories .fi-modal-window .fi-modal-footer {
+    border-top-color: rgb(55 65 81 / 0.6);
+    background: rgb(17 24 39 / 0.5);
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .expense-category-form-section,
+.fi-resource-expenses-categories .fi-modal-window .expense-category-form-section {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235 / 0.7);
+    background: rgb(255 255 255 / 0.6);
+    padding: 1rem 1.25rem;
+}
+
+.dark .fi-resource-expenses-categories .fi-modal-slide-over-window .expense-category-form-section,
+.dark .fi-resource-expenses-categories .fi-modal-window .expense-category-form-section {
+    border-color: rgb(55 65 81 / 0.5);
+    background: rgb(31 41 55 / 0.35);
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .expense-category-form-section .fi-section-header,
+.fi-resource-expenses-categories .fi-modal-window .expense-category-form-section .fi-section-header {
+    margin-bottom: 0.25rem;
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .expense-category-form-section .fi-section-header-heading,
+.fi-resource-expenses-categories .fi-modal-window .expense-category-form-section .fi-section-header-heading {
+    font-size: 0.9375rem;
+    font-weight: 600;
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .expense-category-form-section .fi-section-header-description,
+.fi-resource-expenses-categories .fi-modal-window .expense-category-form-section .fi-section-header-description {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .fi-fo-component-ctn,
+.fi-resource-expenses-categories .fi-modal-window .fi-fo-component-ctn {
+    grid-column: 1 / -1;
+    max-width: 100%;
+}
+
+.fi-resource-expenses-categories .fi-modal-slide-over-window .fi-fo-field-wrp-label,
+.fi-resource-expenses-categories .fi-modal-window .fi-fo-field-wrp-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* Warehouses — create slide-over modal */
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window {
+    max-width: min(32rem, calc(100vw - 1.5rem));
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-window.fi-width-2xl {
+    max-width: min(32rem, calc(100vw - 2rem));
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-modal-content,
+.fi-resource-warehouses-warehouses .fi-modal-window .fi-modal-content {
+    max-height: min(85vh, 40rem);
+    overflow-y: auto;
+    padding-inline: 1.25rem;
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-modal-header,
+.fi-resource-warehouses-warehouses .fi-modal-window .fi-modal-header {
+    border-bottom: 1px solid rgb(229 231 235 / 0.8);
+    padding-bottom: 1rem;
+}
+
+.dark .fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-modal-header,
+.dark .fi-resource-warehouses-warehouses .fi-modal-window .fi-modal-header {
+    border-bottom-color: rgb(55 65 81 / 0.6);
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-modal-footer,
+.fi-resource-warehouses-warehouses .fi-modal-window .fi-modal-footer {
+    border-top: 1px solid rgb(229 231 235 / 0.8);
+    background: rgb(250 251 252);
+}
+
+.dark .fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-modal-footer,
+.dark .fi-resource-warehouses-warehouses .fi-modal-window .fi-modal-footer {
+    border-top-color: rgb(55 65 81 / 0.6);
+    background: rgb(17 24 39 / 0.5);
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window .warehouse-form-section,
+.fi-resource-warehouses-warehouses .fi-modal-window .warehouse-form-section {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235 / 0.7);
+    background: rgb(255 255 255 / 0.6);
+    padding: 1rem 1.25rem;
+}
+
+.dark .fi-resource-warehouses-warehouses .fi-modal-slide-over-window .warehouse-form-section,
+.dark .fi-resource-warehouses-warehouses .fi-modal-window .warehouse-form-section {
+    border-color: rgb(55 65 81 / 0.5);
+    background: rgb(31 41 55 / 0.35);
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-fo-component-ctn,
+.fi-resource-warehouses-warehouses .fi-modal-window .fi-fo-component-ctn {
+    grid-column: 1 / -1;
+    max-width: 100%;
+}
+
+.fi-resource-warehouses-warehouses .fi-modal-slide-over-window .fi-fo-field-wrp-label,
+.fi-resource-warehouses-warehouses .fi-modal-window .fi-fo-field-wrp-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+/* Tax profiles — create slide-over modal */
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window {
+    max-width: min(48rem, calc(100vw - 1.5rem));
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-window.fi-width-4xl {
+    max-width: min(48rem, calc(100vw - 2rem));
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-modal-content,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-modal-content {
+    max-height: min(85vh, 48rem);
+    overflow-y: auto;
+    padding-inline: 1.25rem;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-modal-header,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-modal-header {
+    border-bottom: 1px solid rgb(229 231 235 / 0.8);
+    padding-bottom: 1rem;
+}
+
+.dark .fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-modal-header,
+.dark .fi-resource-settings-tax-profiles .fi-modal-window .fi-modal-header {
+    border-bottom-color: rgb(55 65 81 / 0.6);
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-modal-footer,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-modal-footer {
+    border-top: 1px solid rgb(229 231 235 / 0.8);
+    background: rgb(250 251 252);
+}
+
+.dark .fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-modal-footer,
+.dark .fi-resource-settings-tax-profiles .fi-modal-window .fi-modal-footer {
+    border-top-color: rgb(55 65 81 / 0.6);
+    background: rgb(17 24 39 / 0.5);
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-fo-section,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-fo-section {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(229 231 235 / 0.7);
+    background: rgb(255 255 255 / 0.6);
+    padding: 1rem 1.25rem;
+}
+
+.dark .fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-fo-section,
+.dark .fi-resource-settings-tax-profiles .fi-modal-window .fi-fo-section {
+    border-color: rgb(55 65 81 / 0.5);
+    background: rgb(31 41 55 / 0.35);
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-fo-field-wrp-label,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-fo-field-wrp-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-modal-content > *,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-modal-content > * {
+    width: 100%;
+    max-width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .fi-fo-component-ctn,
+.fi-resource-settings-tax-profiles .fi-modal-window .fi-fo-component-ctn {
+    grid-column: 1 / -1;
+    max-width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-form-section,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-form-section {
+    width: 100%;
+    max-width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-form-section > .fi-section-content-ctn,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-form-section > .fi-section-content-ctn {
+    width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater {
+    width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater > ul,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater > ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater > ul > li,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater > ul > li {
+    width: 100%;
+    border-radius: 0.625rem;
+    border: 1px solid rgb(229 231 235 / 0.9);
+    background: rgb(249 250 251);
+    padding: 0.875rem 1rem;
+}
+
+.dark .fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater > ul > li,
+.dark .fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater > ul > li {
+    border-color: rgb(55 65 81 / 0.6);
+    background: rgb(31 41 55 / 0.4);
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater .fi-fo-repeater-item,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater .fi-fo-repeater-item {
+    width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater .fi-fo-repeater-item-content,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater .fi-fo-repeater-item-content {
+    width: 100%;
+}
+
+.fi-resource-settings-tax-profiles .fi-modal-slide-over-window .tax-profile-taxes-repeater .fi-fo-repeater-add,
+.fi-resource-settings-tax-profiles .fi-modal-window .tax-profile-taxes-repeater .fi-fo-repeater-add {
+    margin-top: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Settings hub (settings/v2)
+   ═══════════════════════════════════════════════════════════════ */
+.fi-page:has(.settings-hub) .fi-header {
+    @apply relative mb-1 border-0 pb-5;
+}
+
+.fi-page:has(.settings-hub) .fi-header::after {
+    content: '';
+    @apply absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700;
+}
+
+.fi-page:has(.settings-hub) .fi-header-heading {
+    @apply text-[1.5rem] font-semibold tracking-tight text-gray-800 dark:text-gray-100;
+}
+
+.settings-hub__sections {
+    @apply flex flex-col gap-8;
+}
+
+.settings-hub__section-title {
+    @apply mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400;
+}
+
+.settings-hub__grid {
+    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+.settings-hub__card {
+    @apply flex items-center gap-3 rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm ring-1 ring-gray-950/5 transition duration-200 hover:border-primary-200 hover:bg-primary-50/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 dark:border-gray-700/80 dark:bg-gray-900 dark:ring-white/10 dark:hover:border-primary-500/30 dark:hover:bg-primary-500/5;
+}
+
+.settings-hub__icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl;
+}
+
+.settings-hub__icon-svg {
+    @apply h-6 w-6;
+}
+
+.settings-hub__icon--sky {
+    @apply bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400;
+}
+
+.settings-hub__icon--violet {
+    @apply bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400;
+}
+
+.settings-hub__icon--emerald {
+    @apply bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400;
+}
+
+.settings-hub__icon--amber {
+    @apply bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400;
+}
+
+.settings-hub__icon--rose {
+    @apply bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400;
+}
+
+.settings-hub__icon--indigo {
+    @apply bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400;
+}
+
+.settings-hub__icon--teal {
+    @apply bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400;
+}
+
+.settings-hub__icon--slate {
+    @apply bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300;
+}
+
+.settings-hub__card-body {
+    @apply min-w-0 flex-1;
+}
+
+.settings-hub__card-title {
+    @apply block text-sm font-semibold leading-snug text-gray-900 transition group-hover:text-primary-700 dark:text-gray-100 dark:group-hover:text-primary-300;
+}
+
+.settings-hub__card-arrow {
+    @apply h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-primary-500 dark:text-gray-600 dark:group-hover:text-primary-400;
+}
+
+[dir='ltr'] .settings-hub__card-arrow {
+    @apply rotate-180;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Subscription page
+   ═══════════════════════════════════════════════════════════════ */
+.fi-page:has(.subscription-page) .fi-header {
+    @apply relative mb-1 border-0 pb-5;
+}
+
+.fi-page:has(.subscription-page) .fi-header::after {
+    content: '';
+    @apply absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent dark:via-gray-700;
+}
+
+.fi-page:has(.subscription-page) .fi-header-heading {
+    @apply text-[1.5rem] font-semibold tracking-tight text-gray-800 dark:text-gray-100;
+}
+
+.subscription-page {
+    @apply mx-auto flex w-full max-w-5xl flex-col gap-6;
+}
+
+.subscription-page__card {
+    @apply overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-sm ring-1 ring-gray-950/5 dark:border-gray-700/80 dark:bg-gray-900 dark:ring-white/10;
+}
+
+.subscription-page__card--current {
+    @apply border-primary-200/80 bg-gradient-to-br from-primary-50/80 via-white to-white dark:border-primary-500/20 dark:from-primary-950/30 dark:via-gray-900 dark:to-gray-900;
+}
+
+.subscription-page__card-header {
+    @apply flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 px-5 py-4 dark:border-gray-800;
+}
+
+.subscription-page__card-body {
+    @apply px-5 py-4;
+}
+
+.subscription-page__card-footer {
+    @apply border-t border-gray-100 px-5 py-4 dark:border-gray-800;
+}
+
+.subscription-page__eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400;
+}
+
+.subscription-page__title {
+    @apply mt-1 text-lg font-semibold text-gray-900 dark:text-white;
+}
+
+.subscription-page__subtitle {
+    @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__badge {
+    @apply inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60;
+}
+
+.subscription-page__meta {
+    @apply grid gap-4 sm:grid-cols-3;
+}
+
+.subscription-page__meta-item dt {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__meta-item dd {
+    @apply mt-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100;
+}
+
+.subscription-page__price {
+    @apply mt-5 flex flex-wrap items-baseline gap-2 border-t border-gray-100 pt-4 dark:border-gray-800;
+}
+
+.subscription-page__price-value {
+    @apply text-2xl font-bold tracking-tight text-gray-900 dark:text-white;
+}
+
+.subscription-page__price-suffix {
+    @apply text-sm font-medium text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__plans {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-3;
+}
+
+.subscription-page__plan {
+    @apply block cursor-pointer;
+}
+
+.subscription-page__plan-inner {
+    @apply relative flex h-full flex-col rounded-xl border border-gray-200/80 bg-white p-4 transition duration-200 hover:border-primary-200 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/50 dark:hover:border-primary-500/40;
+}
+
+.subscription-page__plan--selected .subscription-page__plan-inner {
+    @apply border-primary-400 bg-primary-50/50 ring-2 ring-primary-500/30 dark:border-primary-500/50 dark:bg-primary-950/20;
+}
+
+.subscription-page__plan--current .subscription-page__plan-inner {
+    @apply border-emerald-200/80 dark:border-emerald-800/50;
+}
+
+.subscription-page__plan-head {
+    @apply mb-3 flex items-start justify-between gap-3;
+}
+
+.subscription-page__plan-name {
+    @apply text-base font-semibold text-gray-900 dark:text-white;
+}
+
+.subscription-page__plan-span {
+    @apply mt-0.5 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__plan-price {
+    @apply text-end text-sm font-bold text-gray-900 dark:text-white;
+}
+
+.subscription-page__plan-price small {
+    @apply block text-xs font-normal text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__features {
+    @apply mt-auto space-y-2 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.subscription-page__features li {
+    @apply flex items-start gap-2;
+}
+
+.subscription-page__check {
+    @apply mt-0.5 h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400;
+}
+
+.subscription-page__plan-tag {
+    @apply mt-3 inline-flex rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300;
+}
+
+.subscription-page__empty {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+/* Income statement */
+.fi-page-income-statement .income-statement__summary {
+    @apply gap-4;
+}
+
+.fi-page-income-statement .income-statement__card {
+    @apply rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.fi-page-income-statement .income-statement__card-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.fi-page-income-statement .income-statement__card-value {
+    @apply mt-2 text-2xl font-bold text-gray-950 dark:text-white;
+}
+
+.fi-page-income-statement .income-statement__card-currency {
+    @apply mt-1 text-xs font-medium text-gray-400 dark:text-gray-500;
+}
+
+.fi-page-income-statement .income-statement__card--sales {
+    @apply border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/20;
+}
+
+.fi-page-income-statement .income-statement__card--sales .income-statement__card-value {
+    @apply text-emerald-700 dark:text-emerald-400;
+}
+
+.fi-page-income-statement .income-statement__card--purchases {
+    @apply border-amber-200/70 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20;
+}
+
+.fi-page-income-statement .income-statement__card--purchases .income-statement__card-value {
+    @apply text-amber-700 dark:text-amber-400;
+}
+
+.fi-page-income-statement .income-statement__card--expenses {
+    @apply border-rose-200/70 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20;
+}
+
+.fi-page-income-statement .income-statement__card--expenses .income-statement__card-value {
+    @apply text-rose-700 dark:text-rose-400;
+}
+
+.fi-page-income-statement .income-statement__card--net-positive {
+    @apply border-primary-200/70 bg-primary-50/50 dark:border-primary-800/50 dark:bg-primary-950/25;
+}
+
+.fi-page-income-statement .income-statement__card--net-negative {
+    @apply border-rose-300/80 bg-rose-50/60 dark:border-rose-800/60 dark:bg-rose-950/30;
+}
+
+.fi-page-income-statement .income-statement__section--sales td {
+    @apply bg-emerald-50/50 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300;
+}
+
+.fi-page-income-statement .income-statement__section--purchases td {
+    @apply bg-amber-50/50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-300;
+}
+
+.fi-page-income-statement .income-statement__section--expenses td {
+    @apply bg-rose-50/50 text-rose-800 dark:bg-rose-950/20 dark:text-rose-300;
+}
+
+.fi-page-income-statement .income-statement__subtotal--sales {
+    @apply bg-emerald-50 dark:bg-emerald-950/30;
+}
+
+.fi-page-income-statement .income-statement__subtotal--purchases {
+    @apply bg-amber-50 dark:bg-amber-950/30;
+}
+
+.fi-page-income-statement .income-statement__subtotal--expenses {
+    @apply bg-rose-50 dark:bg-rose-950/30;
+}
+
+.fi-page-income-statement .income-statement__footer {
+    @apply bg-gray-100 dark:bg-gray-800;
+}
+
+/* Customer view */
+.fi-page-customer-view .customer-view__profile,
+.fi-page-customer-view .customer-view__statement {
+    @apply rounded-xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.fi-page-customer-view .customer-view__detail-label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.fi-page-customer-view .customer-view__detail-value {
+    @apply mt-1 block text-sm font-medium text-gray-900 dark:text-gray-100;
+}
+
+.fi-page-customer-view .customer-view__balance-badge {
+    @apply rounded-xl border px-4 py-3 text-end;
+}
+
+.fi-page-customer-view .customer-view__balance-badge-label {
+    @apply block text-xs font-semibold uppercase tracking-wide;
+}
+
+.fi-page-customer-view .customer-view__balance-badge-value {
+    @apply mt-1 block text-xl font-bold;
+}
+
+.fi-page-customer-view .customer-view__balance-badge--due {
+    @apply border-amber-200/80 bg-amber-50/70 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-300;
+}
+
+.fi-page-customer-view .customer-view__balance-badge--clear {
+    @apply border-emerald-200/80 bg-emerald-50/70 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-300;
+}
+
+.fi-page-customer-view .customer-view__card {
+    @apply rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.fi-page-customer-view .customer-view__card-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.fi-page-customer-view .customer-view__card-value {
+    @apply mt-2 text-2xl font-bold text-gray-950 dark:text-white;
+}
+
+.fi-page-customer-view .customer-view__card-currency {
+    @apply mt-1 text-xs font-medium text-gray-400 dark:text-gray-500;
+}
+
+.fi-page-customer-view .customer-view__card--orders {
+    @apply border-sky-200/70 bg-sky-50/40 dark:border-sky-900/50 dark:bg-sky-950/20;
+}
+
+.fi-page-customer-view .customer-view__card--orders .customer-view__card-value {
+    @apply text-sky-700 dark:text-sky-400;
+}
+
+.fi-page-customer-view .customer-view__card--invoices {
+    @apply border-violet-200/70 bg-violet-50/40 dark:border-violet-900/50 dark:bg-violet-950/20;
+}
+
+.fi-page-customer-view .customer-view__card--invoices .customer-view__card-value {
+    @apply text-violet-700 dark:text-violet-400;
+}
+
+.fi-page-customer-view .customer-view__card--unpaid {
+    @apply border-rose-200/70 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20;
+}
+
+.fi-page-customer-view .customer-view__card--unpaid .customer-view__card-value {
+    @apply text-rose-700 dark:text-rose-400;
+}
+
+.fi-page-customer-view .customer-view__card--balance-due {
+    @apply border-amber-200/70 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20;
+}
+
+.fi-page-customer-view .customer-view__card--balance-due .customer-view__card-value {
+    @apply text-amber-700 dark:text-amber-400;
+}
+
+.fi-page-customer-view .customer-view__card--balance-clear {
+    @apply border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/20;
+}
+
+.fi-page-customer-view .customer-view__card--balance-clear .customer-view__card-value {
+    @apply text-emerald-700 dark:text-emerald-400;
+}
+
+.fi-page-customer-view .customer-view__opening-row {
+    @apply bg-gray-50/80 dark:bg-gray-800/50;
+}
+
+.fi-page-customer-view .customer-view__footer {
+    @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.fi-page-customer-view .customer-view__table thead {
+    @apply sticky top-0 z-10;
+}
+
+.fi-page-customer-view .fi-resource-relation-managers {
+    @apply gap-y-6;
+}
+
+/* Supplier view (shared party-view layout) */
+.fi-page-supplier-view .party-view__profile,
+.fi-page-supplier-view .party-view__statement {
+    @apply rounded-xl border border-gray-200/80 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.fi-page-supplier-view .party-view__detail-label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.fi-page-supplier-view .party-view__detail-value {
+    @apply mt-1 block text-sm font-medium text-gray-900 dark:text-gray-100;
+}
+
+.fi-page-supplier-view .party-view__balance-badge {
+    @apply rounded-xl border px-4 py-3 text-end;
+}
+
+.fi-page-supplier-view .party-view__balance-badge-label {
+    @apply block text-xs font-semibold uppercase tracking-wide;
+}
+
+.fi-page-supplier-view .party-view__balance-badge-value {
+    @apply mt-1 block text-xl font-bold;
+}
+
+.fi-page-supplier-view .party-view__balance-badge--due {
+    @apply border-amber-200/80 bg-amber-50/70 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/25 dark:text-amber-300;
+}
+
+.fi-page-supplier-view .party-view__balance-badge--clear {
+    @apply border-emerald-200/80 bg-emerald-50/70 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/25 dark:text-emerald-300;
+}
+
+.fi-page-supplier-view .party-view__card {
+    @apply rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.fi-page-supplier-view .party-view__card-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.fi-page-supplier-view .party-view__card-value {
+    @apply mt-2 text-2xl font-bold text-gray-950 dark:text-white;
+}
+
+.fi-page-supplier-view .party-view__card-currency {
+    @apply mt-1 text-xs font-medium text-gray-400 dark:text-gray-500;
+}
+
+.fi-page-supplier-view .party-view__card--orders {
+    @apply border-orange-200/70 bg-orange-50/40 dark:border-orange-900/50 dark:bg-orange-950/20;
+}
+
+.fi-page-supplier-view .party-view__card--orders .party-view__card-value {
+    @apply text-orange-700 dark:text-orange-400;
+}
+
+.fi-page-supplier-view .party-view__card--invoices {
+    @apply border-violet-200/70 bg-violet-50/40 dark:border-violet-900/50 dark:bg-violet-950/20;
+}
+
+.fi-page-supplier-view .party-view__card--invoices .party-view__card-value {
+    @apply text-violet-700 dark:text-violet-400;
+}
+
+.fi-page-supplier-view .party-view__card--unpaid {
+    @apply border-rose-200/70 bg-rose-50/40 dark:border-rose-900/50 dark:bg-rose-950/20;
+}
+
+.fi-page-supplier-view .party-view__card--unpaid .party-view__card-value {
+    @apply text-rose-700 dark:text-rose-400;
+}
+
+.fi-page-supplier-view .party-view__card--balance-due {
+    @apply border-amber-200/70 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20;
+}
+
+.fi-page-supplier-view .party-view__card--balance-due .party-view__card-value {
+    @apply text-amber-700 dark:text-amber-400;
+}
+
+.fi-page-supplier-view .party-view__card--balance-clear {
+    @apply border-emerald-200/70 bg-emerald-50/40 dark:border-emerald-900/50 dark:bg-emerald-950/20;
+}
+
+.fi-page-supplier-view .party-view__card--balance-clear .party-view__card-value {
+    @apply text-emerald-700 dark:text-emerald-400;
+}
+
+.fi-page-supplier-view .party-view__opening-row {
+    @apply bg-gray-50/80 dark:bg-gray-800/50;
+}
+
+.fi-page-supplier-view .party-view__footer {
+    @apply bg-gray-100 dark:bg-gray-800;
+}
+
+.fi-page-supplier-view .party-view__table thead {
+    @apply sticky top-0 z-10;
+}
+
+.fi-page-supplier-view .fi-resource-relation-managers {
+    @apply gap-y-6;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Shield — role permissions matrix (create / edit role)
+   ═══════════════════════════════════════════════════════════════ */
+.fi-role-permissions-section .fi-section-content {
+    @apply p-0;
+}
+
+.role-permissions-matrix {
+    @apply space-y-4;
+}
+
+.role-permissions-matrix__tabs {
+    @apply flex flex-wrap gap-2 border-b border-gray-200 px-1 pb-3 dark:border-gray-700;
+}
+
+.role-permissions-matrix__tab {
+    @apply inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white;
+}
+
+.role-permissions-matrix__tab--active {
+    @apply bg-primary-50 text-primary-700 ring-1 ring-primary-200/80 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-500/30;
+}
+
+.role-permissions-matrix__tab-badge {
+    @apply inline-flex min-w-[1.5rem] items-center justify-center rounded-full bg-gray-200/80 px-2 py-0.5 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200;
+}
+
+.role-permissions-matrix__tab--active .role-permissions-matrix__tab-badge {
+    @apply bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300;
+}
+
+.role-permissions-matrix__panel {
+    @apply overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900;
+}
+
+.role-permissions-matrix__scroll {
+    @apply overflow-x-auto;
+}
+
+.role-permissions-matrix__table {
+    @apply w-full min-w-[760px] border-collapse text-sm;
+}
+
+.role-permissions-matrix__table--simple {
+    @apply min-w-[420px];
+}
+
+.role-permissions-matrix__head-row {
+    @apply bg-gray-100/90 dark:bg-gray-800/80;
+}
+
+.role-permissions-matrix__head-row th:first-child {
+    @apply rounded-ss-xl;
+}
+
+.role-permissions-matrix__head-row th:last-child {
+    @apply rounded-se-xl;
+}
+
+.role-permissions-matrix__head-permission {
+    @apply min-w-[220px] px-5 py-3.5 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300;
+}
+
+.role-permissions-matrix__head-action {
+    @apply w-24 px-2 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300;
+}
+
+.role-permissions-matrix__group-row td {
+    @apply border-t border-dashed border-gray-200/90 bg-gray-50/50 px-5 py-2.5 dark:border-gray-700/80 dark:bg-gray-800/30;
+}
+
+.role-permissions-matrix__group:first-child .role-permissions-matrix__group-row td {
+    @apply border-t-0;
+}
+
+.role-permissions-matrix__group-toggle {
+    @apply inline-flex items-center gap-2.5 text-sm font-semibold text-gray-800 transition hover:text-primary-600 dark:text-gray-100 dark:hover:text-primary-400;
+}
+
+.role-permissions-matrix__group-icon {
+    @apply inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-base leading-none text-gray-600 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300;
+}
+
+.role-permissions-matrix__resource-row td {
+    @apply border-t border-gray-100 px-2 py-3 dark:border-gray-800;
+}
+
+.role-permissions-matrix__resource-label {
+    @apply px-5 ps-10 text-sm font-medium text-gray-700 dark:text-gray-200;
+}
+
+[dir='rtl'] .role-permissions-matrix__resource-label {
+    @apply pe-10 ps-5;
+}
+
+.role-permissions-matrix__action-cell {
+    @apply text-center;
+}
+
+.role-permissions-matrix__divider-row td {
+    @apply border-t border-dashed border-gray-200/80 py-0 dark:border-gray-700/70;
+}
+
+.role-permissions-matrix__section-title {
+    @apply border-b border-gray-100 px-5 py-3.5 text-sm font-semibold text-gray-800 dark:border-gray-800 dark:text-gray-100;
+}
+
+.role-permissions-matrix__checkbox {
+    @apply relative inline-flex cursor-pointer items-center justify-center;
+}
+
+.role-permissions-matrix__checkbox--disabled {
+    @apply cursor-not-allowed opacity-40;
+}
+
+.role-permissions-matrix__checkbox input {
+    @apply sr-only;
+}
+
+.role-permissions-matrix__checkbox-ui {
+    @apply inline-flex h-5 w-5 items-center justify-center rounded-md border border-gray-300 bg-white transition dark:border-gray-600 dark:bg-gray-900;
+}
+
+.role-permissions-matrix__checkbox input:checked + .role-permissions-matrix__checkbox-ui {
+    @apply border-primary-600 bg-primary-600 dark:border-primary-500 dark:bg-primary-500;
+}
+
+.role-permissions-matrix__checkbox input:checked + .role-permissions-matrix__checkbox-ui::after {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.role-permissions-matrix__checkbox input:focus-visible + .role-permissions-matrix__checkbox-ui {
+    @apply ring-2 ring-primary-500/40 ring-offset-1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Inventory reports — summary + detail drill-down
+   ═══════════════════════════════════════════════════════════════ */
+.inventory-report__panel {
+    @apply overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.inventory-report__header {
+    @apply border-b border-gray-100 px-6 py-5 dark:border-gray-800;
+}
+
+.inventory-report__title {
+    @apply text-lg font-semibold text-gray-950 dark:text-white;
+}
+
+.inventory-report__subtitle {
+    @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.inventory-report__scroll {
+    @apply overflow-x-auto;
+}
+
+.inventory-report__table {
+    @apply w-full min-w-[960px] text-sm;
+}
+
+.inventory-report__table thead {
+    @apply bg-gray-50 dark:bg-gray-800/80;
+}
+
+.inventory-report__table th {
+    @apply px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300;
+}
+
+.inventory-report__table td {
+    @apply border-t border-gray-100 px-4 py-3 text-gray-700 dark:border-gray-800 dark:text-gray-200;
+}
+
+.inventory-report__empty {
+    @apply py-10 text-center text-gray-500 dark:text-gray-400;
+}
+
+.inventory-report__drill-link {
+    @apply inline-flex rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 ring-1 ring-primary-200/80 transition hover:bg-primary-100 dark:bg-primary-500/10 dark:text-primary-300 dark:ring-primary-500/30;
+}
+
+.inventory-report__toolbar {
+    @apply flex items-center justify-between;
+}
+
+.inventory-report__back-link {
+    @apply text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400;
+}
+
+.inventory-report__summary-cards {
+    @apply grid gap-3 border-b border-gray-100 px-6 py-4 sm:grid-cols-2 xl:grid-cols-4 dark:border-gray-800;
+}
+
+.inventory-report__card {
+    @apply flex flex-col gap-1 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-800/60;
+}
+
+.inventory-report__card span {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.inventory-report__card strong {
+    @apply text-lg font-semibold tabular-nums text-gray-900 dark:text-white;
+}
+
+.inventory-report__badge {
+    @apply inline-flex rounded-md px-2 py-0.5 text-xs font-medium;
+}
+
+.inventory-report__badge--purchase,
+.inventory-report__badge--transfer_in,
+.inventory-report__badge--sales_return,
+.inventory-report__badge--opening {
+    @apply bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300;
+}
+
+.inventory-report__badge--sales,
+.inventory-report__badge--transfer_out,
+.inventory-report__badge--purchase_return {
+    @apply bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300;
+}
+
+.inventory-report__table--detail {
+    @apply min-w-[1100px];
+}
+
+.inventory-report__cell-with-icon {
+    @apply inline-flex items-center gap-2;
+}
+
+.inventory-report__icon-box {
+    @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border;
+}
+
+.inventory-report__icon {
+    @apply block h-4 w-4;
+}
+
+.inventory-report__direction-label {
+    @apply text-gray-700 dark:text-gray-300;
+}
+
+.inventory-report__cell-with-icon--out .inventory-report__icon-box {
+    @apply border-sky-200/80 bg-sky-50 text-sky-600 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-400;
+}
+
+.inventory-report__cell-with-icon--in .inventory-report__icon-box {
+    @apply border-emerald-200/80 bg-emerald-50 text-emerald-600 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-400;
+}
+
+.inventory-report__product-filter {
+    @apply max-w-md;
+}
+
+.inventory-report__stats-grid {
+    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6;
+}
+
+.inventory-report__stats-grid--compact {
+    @apply sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5;
+}
+
+.inventory-report__stat-card {
+    @apply flex flex-col gap-1 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.inventory-report__stat-card--on-hand {
+    @apply border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/50 dark:bg-emerald-950/20;
+}
+
+.inventory-report__stat-card--purchase .inventory-report__stat-value {
+    @apply text-sky-600 dark:text-sky-400;
+}
+
+.inventory-report__stat-card--sales .inventory-report__stat-value {
+    @apply text-rose-600 dark:text-rose-400;
+}
+
+.inventory-report__stat-card--waste .inventory-report__stat-value {
+    @apply text-amber-600 dark:text-amber-400;
+}
+
+.inventory-report__stat-card--return .inventory-report__stat-value {
+    @apply text-violet-600 dark:text-violet-400;
+}
+
+.inventory-report__stat-card--transfer .inventory-report__stat-value {
+    @apply text-emerald-600 dark:text-emerald-400;
+}
+
+.inventory-report__stat-card--on-hand .inventory-report__stat-value {
+    @apply text-emerald-700 dark:text-emerald-300;
+}
+
+.inventory-report__stat-label {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+}
+
+.inventory-report__stat-value {
+    @apply text-2xl font-bold tabular-nums text-gray-900 dark:text-white;
+}
+
+.inventory-report__stat-unit {
+    @apply text-xs text-gray-400 dark:text-gray-500;
+}
+
+.sales-statement__stats-grid {
+    @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+
+.sales-statement__intro {
+    @apply rounded-xl border border-primary-200/60 bg-primary-50/40 px-4 py-3 dark:border-primary-500/20 dark:bg-primary-950/20;
+}
+
+.sales-statement__intro-text {
+    @apply text-sm leading-relaxed text-gray-700 dark:text-gray-300;
+}
+
+.sales-statement__stat-card {
+    @apply flex flex-col gap-1 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-900;
+}
+
+.sales-statement__stat-card--net {
+    @apply border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/50 dark:bg-emerald-950/20;
+}
+
+.sales-statement__stat-card--gross .sales-statement__stat-value {
+    @apply text-sky-700 dark:text-sky-300;
+}
+
+.sales-statement__stat-card--return .sales-statement__stat-value {
+    @apply text-amber-700 dark:text-amber-300;
+}
+
+.sales-statement__stat-card--net .sales-statement__stat-value {
+    @apply text-emerald-700 dark:text-emerald-300;
+}
+
+.sales-statement__stat-label {
+    @apply text-xs font-semibold text-gray-700 dark:text-gray-200;
+}
+
+.sales-statement__stat-hint {
+    @apply text-[0.6875rem] leading-snug text-gray-500 dark:text-gray-400;
+}
+
+.sales-statement__stat-value {
+    @apply text-2xl font-bold tabular-nums text-gray-900 dark:text-white;
+}
+
+.sales-statement__stat-unit {
+    @apply text-xs text-gray-400 dark:text-gray-500;
+}
+
+.plan-limit-banner {
+    @apply flex flex-col gap-4 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm sm:flex-row sm:items-center sm:gap-5 sm:p-5 dark:border-amber-900/40 dark:from-amber-950/30 dark:via-gray-900 dark:to-orange-950/20;
+}
+
+.plan-limit-banner__icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300;
+}
+
+.plan-limit-banner__icon svg {
+    @apply h-6 w-6;
+}
+
+.plan-limit-banner__content {
+    @apply min-w-0 flex-1 space-y-2;
+}
+
+.plan-limit-banner__header {
+    @apply flex flex-wrap items-center gap-2;
+}
+
+.plan-limit-banner__title {
+    @apply text-base font-semibold text-gray-900 dark:text-white;
+}
+
+.plan-limit-banner__badge {
+    @apply inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-amber-800 dark:bg-amber-900/50 dark:text-amber-200;
+}
+
+.plan-limit-banner__body {
+    @apply text-sm leading-6 text-gray-700 dark:text-gray-300;
+}
+
+.plan-limit-banner__hint {
+    @apply text-xs leading-5 text-gray-500 dark:text-gray-400;
+}
+
+.plan-limit-banner__progress {
+    @apply h-1.5 overflow-hidden rounded-full bg-amber-100 dark:bg-amber-900/30;
+}
+
+.plan-limit-banner__progress-bar {
+    @apply h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500;
+}
+
+.plan-limit-banner__actions {
+    @apply shrink-0;
+}
+
+.plan-limit-banner__cta {
+    @apply inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900;
+}
+
+.plan-limit-banner__cta svg {
+    @apply h-4 w-4;
+}
+
+html[dir='rtl'] .plan-limit-banner__cta svg {
+    @apply rotate-180;
+}
+

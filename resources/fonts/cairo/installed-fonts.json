@@ -1,0 +1,8 @@
+{
+    "cairo": {
+        "normal": "Cairo-Regular",
+        "bold": "Cairo-Bold",
+        "italic": "Cairo-Regular",
+        "bold_italic": "Cairo-Bold"
+    }
+}
