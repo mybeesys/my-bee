@@ -7,7 +7,6 @@ use App\Models\Invoice;
 use App\Models\Order;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
-use Illuminate\Support\Arr;
 
 class CustomersChart extends ChartWidget
 {
@@ -18,6 +17,14 @@ class CustomersChart extends ChartWidget
     protected int|string|array $columnSpan = 1;
 
     protected static ?string $pollingInterval = null;
+
+    /** @var array<string, string> */
+    private const SERIES_COLORS = [
+        'clients' => 'rgb(147, 197, 253)',
+        'orders' => 'rgb(252, 211, 77)',
+        'purchases' => 'rgb(203, 213, 225)',
+        'sales' => 'rgb(134, 239, 172)',
+    ];
 
     protected function getType(): string
     {
@@ -33,15 +40,19 @@ class CustomersChart extends ChartWidget
                     'position' => 'bottom',
                     'labels' => [
                         'usePointStyle' => true,
+                        'pointStyle' => 'circle',
                         'padding' => 16,
+                        'boxWidth' => 8,
+                        'boxHeight' => 8,
                         'font' => ['size' => 11],
+                        'color' => 'rgb(100, 116, 139)',
                     ],
                 ],
             ],
             'elements' => [
                 'line' => [
                     'tension' => 0.35,
-                    'borderWidth' => 2,
+                    'borderWidth' => 1.5,
                 ],
                 'point' => [
                     'radius' => 0,
@@ -52,10 +63,12 @@ class CustomersChart extends ChartWidget
             'scales' => [
                 'x' => [
                     'grid' => ['display' => false],
+                    'ticks' => ['color' => 'rgb(148, 163, 184)'],
                 ],
                 'y' => [
                     'beginAtZero' => true,
-                    'grid' => ['color' => 'rgba(148, 163, 184, 0.15)'],
+                    'grid' => ['color' => 'rgba(148, 163, 184, 0.12)'],
+                    'ticks' => ['color' => 'rgb(148, 163, 184)'],
                 ],
             ],
             'maintainAspectRatio' => true,
@@ -106,36 +119,30 @@ class CustomersChart extends ChartWidget
     {
         return [
             'datasets' => [
-                [
-                    'label' => __('fields.clients'),
-                    'data' => $this->getClients(),
-                    'borderColor' => 'rgb(14, 165, 233)',
-                    'backgroundColor' => 'rgba(14, 165, 233, 0.08)',
-                    'fill' => true,
-                ],
-                [
-                    'label' => __('fields.orders'),
-                    'data' => $this->getOrders(),
-                    'borderColor' => 'rgb(245, 158, 11)',
-                    'backgroundColor' => 'rgba(245, 158, 11, 0.08)',
-                    'fill' => true,
-                ],
-                [
-                    'label' => __('fields.purchases_invoices'),
-                    'data' => $this->getPurchasesInvoices(),
-                    'borderColor' => 'rgb(100, 116, 139)',
-                    'backgroundColor' => 'rgba(100, 116, 139, 0.06)',
-                    'fill' => true,
-                ],
-                [
-                    'label' => __('fields.sales_invoices'),
-                    'data' => $this->getSalesInvoices(),
-                    'borderColor' => 'rgb(16, 185, 129)',
-                    'backgroundColor' => 'rgba(16, 185, 129, 0.08)',
-                    'fill' => true,
-                ],
+                $this->lineDataset(__('fields.clients'), $this->getClients(), self::SERIES_COLORS['clients']),
+                $this->lineDataset(__('fields.orders'), $this->getOrders(), self::SERIES_COLORS['orders']),
+                $this->lineDataset(__('fields.purchases_invoices'), $this->getPurchasesInvoices(), self::SERIES_COLORS['purchases']),
+                $this->lineDataset(__('fields.sales_invoices'), $this->getSalesInvoices(), self::SERIES_COLORS['sales']),
             ],
             'labels' => $this->getMonthLabels(),
+        ];
+    }
+
+    /**
+     * @param  array<int, int|float>  $data
+     * @return array<string, mixed>
+     */
+    private function lineDataset(string $label, array $data, string $color): array
+    {
+        return [
+            'label' => $label,
+            'data' => $data,
+            'borderColor' => $color,
+            'backgroundColor' => $color,
+            'pointBackgroundColor' => $color,
+            'pointBorderColor' => $color,
+            'pointBorderWidth' => 0,
+            'fill' => false,
         ];
     }
 

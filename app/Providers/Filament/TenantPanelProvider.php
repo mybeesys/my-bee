@@ -72,6 +72,10 @@ class TenantPanelProvider extends PanelProvider
                 PanelsRenderHook::TOPBAR_START,
                 fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.collapsed-topbar-logo'),
             )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.sidebar-accordion'),
+            )
 //            ->tenantMenuItems([
 //                'test' => MenuItem::make()->label('Register new team')->url(null)
 //                // ...
