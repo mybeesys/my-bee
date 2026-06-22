@@ -763,7 +763,13 @@ class OrderResource extends Resource
                         Select::make('customers')
                             ->label(__('fields.client'))
                             ->multiple()
-                            ->options(Order::with('customer')->get()->pluck('customer.name', 'customer.id')),
+                            ->options(
+                                Customer::query()
+                                    ->whereHas('orders')
+                                    ->whereNotNull('name')
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                            ),
 
                         Forms\Components\DatePicker::make('created_from')
                             ->label(__('fields.created_from')),
