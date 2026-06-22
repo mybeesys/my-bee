@@ -416,18 +416,23 @@ class StoreController extends BaseController
         try {
             DB::beginTransaction();
 
-            $customer = Customer::firstOrCreate([
-                'phone' => $data['phone'],
-            ], [
-                'tenant_id' => $tenant->id,
-                'name' => $data['name'],
-                'phone' => $data['phone'],
-                'state_id' => $data['state_id'],
-                'city_id' => $data['city_id'],
-                'area_id' => $data['area_id'] ?? null,
-                'delivery_address' => $data['delivery_address'],
-                'email' => $data['email'] ?? null
-            ]);
+            $phone = str($data['phone'])->remove('+')->value();
+
+            $customer = Customer::updateOrCreate(
+                [
+                    'tenant_id' => $tenant->id,
+                    'phone' => $phone,
+                ],
+                [
+                    'name' => $data['name'],
+                    'state_id' => $data['state_id'],
+                    'city_id' => $data['city_id'],
+                    'area_id' => $data['area_id'] ?? null,
+                    'delivery_address' => $data['delivery_address'],
+                    'email' => $data['email'] ?? null,
+                    'auto_registered' => true,
+                ]
+            );
 
             $order = Order::create([
                 'tenant_id' => $tenant->id,

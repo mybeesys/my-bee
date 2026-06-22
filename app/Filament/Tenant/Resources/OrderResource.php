@@ -719,7 +719,7 @@ class OrderResource extends Resource
                     ->boolean()
                     ->toggleable()
                     ->toggledHiddenByDefault()
-                    ->getStateUsing(fn(Order $record) => $record->invoice->paid),
+                    ->getStateUsing(fn (Order $record) => (bool) $record->invoice?->paid),
 
                 Tables\Columns\TextColumn::make('delivery_date')
                     ->toggleable()
