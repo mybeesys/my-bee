@@ -11,12 +11,18 @@ use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Support\Colors\Color;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListSalesInvoices extends ListRecords
 {
     protected static string $resource = SalesInvoiceResource::class;
 
     protected static string $view = 'filament.tenant.resources.sales-invoices.pages.list-sales-invoices';
+
+    protected function getTableQuery(): ?Builder
+    {
+        return parent::getTableQuery()?->listedInSalesModule();
+    }
 
     protected function getActions(): array
     {

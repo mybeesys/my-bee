@@ -67,6 +67,14 @@ class Invoice extends BaseModel
         return $builder->where('type', self::$TYPE_SALES);
     }
 
+    /**
+     * Sales invoices shown in the sales module (excludes pending order drafts).
+     */
+    public function scopeListedInSalesModule(Builder $builder): Builder
+    {
+        return $builder->where('status', '!=', 'sale_order');
+    }
+
     public function items(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(InvoiceItem::class)->oldest();

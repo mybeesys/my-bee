@@ -88,7 +88,7 @@ class SalesInvoiceResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return Invoice::sales()->where('temp', false)->count();
+        return Invoice::sales()->where('temp', false)->listedInSalesModule()->count();
     }
 
     public static function form(Form $form): Form

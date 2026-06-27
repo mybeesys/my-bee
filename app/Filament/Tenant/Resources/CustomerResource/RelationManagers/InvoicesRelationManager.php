@@ -44,7 +44,7 @@ class InvoicesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('no')
-            ->modifyQueryUsing(fn ($query) => $query->withCount('salesReturns'))
+            ->modifyQueryUsing(fn ($query) => $query->withCount('salesReturns')->listedInSalesModule())
             ->columns([
                 SalesInvoiceResource::invoiceSalesReturnIndicatorTableColumn(),
 
