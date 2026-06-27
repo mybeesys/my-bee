@@ -44,7 +44,10 @@ class InvoicesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('no')
+            ->modifyQueryUsing(fn ($query) => $query->withCount('salesReturns'))
             ->columns([
+                SalesInvoiceResource::invoiceSalesReturnIndicatorTableColumn(),
+
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.invoice_no'))
                     ->description(function (Invoice $record) {
@@ -144,6 +147,8 @@ class InvoicesRelationManager extends RelationManager
             ->actions([
                 SalesInvoiceResource::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
+
+                    SalesInvoiceResource::salesReturnInvoiceTableAction(),
 
                     Tables\Actions\Action::make('complete_payment')
                         ->label(__('fields.payment_details'))

@@ -607,7 +607,7 @@ class ExpenseResource extends Resource
                 $record->description,
                 null,
                 meta: ['type' => 'expense', 'id' => $record->id],
-            )->make('122300001', $record->credit_acc4_code)
+            )->make($record->credit_acc4_code, '122300001')
             ->finish();
 
         if ($record->tax > 0) {

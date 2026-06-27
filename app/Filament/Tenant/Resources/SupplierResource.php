@@ -6,7 +6,6 @@ use App\Filament\Tenant\Resources\SupplierResource\Pages;
 use App\Filament\Tenant\Resources\SupplierResource\RelationManagers;
 use App\Models\Supplier;
 use App\Rules\InternationalPhoneRule;
-use App\Rules\UniqueClientAttributeRule;
 use Filament\Forms;
 use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
@@ -44,13 +43,30 @@ class SupplierResource extends Resource
         return static::getModel()::count();
     }
 
+    public static function getQuickCreateSchema(): array
+    {
+        return [
+            Forms\Components\Section::make([
+                hidden_tenant_id_field(),
+
+                Forms\Components\TextInput::make('name')
+                    ->label(__('fields.supplier_name'))
+                    ->autofocus()
+                    ->required()
+                    ->maxLength(255),
+            ]),
+        ];
+    }
+
     public static function getSchema(): array
     {
         return [
             Forms\Components\Section::make([
 
+                hidden_tenant_id_field(),
+
                 Forms\Components\TextInput::make('name')
-                    ->label(__('fields.name'))
+                    ->label(__('fields.supplier_name'))
                     ->autofocus()
                     ->required(),
 
@@ -61,17 +77,20 @@ class SupplierResource extends Resource
                     ->nullable(),
 
                 Forms\Components\TextInput::make('company')
-                    ->label(__('fields.company')),
+                    ->label(__('fields.company'))
+                    ->nullable(),
 
                 Forms\Components\TextInput::make('address')
                     ->type('address')
-                    ->label(__('fields.address')),
+                    ->label(__('fields.address'))
+                    ->nullable(),
 
                 Forms\Components\TextInput::make('email')
                     ->email()
-                    ->label(__('fields.email')),
+                    ->label(__('fields.email'))
+                    ->nullable(),
 
-            ])->columns(5),
+            ])->columns(2),
 
             Forms\Components\Section::make([
                 Forms\Components\Textarea::make('notes')
@@ -97,7 +116,7 @@ class SupplierResource extends Resource
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label(__('fields.name'))
+                    ->label(__('fields.supplier_name'))
                     ->searchable()
                     ->url(fn (Supplier $record) => static::getUrl('view', ['record' => $record->id])),
                 Tables\Columns\TextColumn::make('phone')->label(__('fields.phone'))->searchable(),

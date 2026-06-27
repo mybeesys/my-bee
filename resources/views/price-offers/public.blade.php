@@ -2,20 +2,21 @@
     $locale = app()->getLocale();
     $isRtl = $locale === 'ar';
     $currency = $settings['main_currency'] ?? 'SAR';
+    $companyName = $settings['company.name'] ?? $tenant->name;
     $companyAddress = $settings['company.address'] ?? ($tenant->store_address ?? '');
     $companyPhone = $settings['company.contact.phone'] ?? ($tenant->phone ?? '');
-    $partyName = $invoice->getInvoicePerson();
-    $documentTitle = $invoice->type === 'sales' ? __('fields.sales_invoice') : __('fields.purchase_invoice');
-    $subtotal = $vatSummary['subtotal'];
-    $vatAmount = $vatSummary['vat'];
-    $total = $vatSummary['total'];
+    $customerName = $priceOffer->customer?->name ?? '—';
+    $total = $priceOffer->getItemsCost(true, true, true);
+    $discountAmount = $priceOffer->details->sum('discount');
+    $documentTitle = __('fields.price_offer');
+    $terms = $tenant->store_terms_and_conditions ?? '';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $documentTitle }} #{{ $invoice->no }}</title>
+    <title>{{ $documentTitle }} #{{ $priceOffer->no }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -70,9 +71,7 @@
             border-radius: 8px;
         }
 
-        .invoice-navbar__text {
-            min-width: 0;
-        }
+        .invoice-navbar__text { min-width: 0; }
 
         .invoice-navbar__title {
             margin: 0;
@@ -132,9 +131,7 @@
             height: 28px;
         }
 
-        .page-wrap {
-            padding: 1.5rem 1rem 2.5rem;
-        }
+        .page-wrap { padding: 1.5rem 1rem 2.5rem; }
 
         .page {
             max-width: 900px;
@@ -185,6 +182,39 @@
 
         .card p { margin: .15rem 0; }
 
+        .alert {
+            margin-bottom: 1.5rem;
+            padding: 1rem 1.1rem;
+            border-radius: 10px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: .15rem .55rem;
+            border-radius: 999px;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+
+        .status-badge--active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge--expired {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .section-title {
+            margin: 2rem 0 .75rem;
+            font-size: 1rem;
+            color: #374151;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -199,6 +229,12 @@
 
         th { background: #f9fafb; font-size: .85rem; color: #374151; }
         td.num, th.num { text-align: {{ $isRtl ? 'left' : 'right' }}; white-space: nowrap; }
+
+        .item-extras {
+            margin-top: .25rem;
+            font-size: .82rem;
+            color: #6b7280;
+        }
 
         .totals {
             margin-top: 1.5rem;
@@ -221,34 +257,9 @@
             padding-top: .75rem;
         }
 
-        .notes { margin-top: 1.5rem; color: #4b5563; }
-
-        .meta-qr {
-            margin-top: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: {{ $isRtl ? 'flex-start' : 'flex-end' }};
-            gap: .35rem;
-        }
-
-        .meta-qr img {
-            width: 120px;
-            height: 120px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 4px;
-            background: #fff;
-        }
-
-        .meta-qr span {
-            font-size: .75rem;
-            color: #6b7280;
-        }
-
-        .trn-line {
-            margin: .15rem 0;
+        .notes, .terms {
+            margin-top: 1.5rem;
             color: #4b5563;
-            font-size: .9rem;
         }
 
         @media print {
@@ -267,7 +278,7 @@
                 <img src="{{ $tenant->logo }}" alt="{{ $companyName }}" class="invoice-navbar__logo">
             @endif
             <div class="invoice-navbar__text">
-                <p class="invoice-navbar__title">{{ $documentTitle }} #{{ $invoice->no }}</p>
+                <p class="invoice-navbar__title">{{ $documentTitle }} #{{ $priceOffer->no }}</p>
                 <p class="invoice-navbar__subtitle">{{ $companyName }}</p>
             </div>
         </div>
@@ -296,107 +307,190 @@
 <div class="page-wrap">
     <div class="page">
         <div class="content">
+            @if($priceOffer->isExpired())
+                <div class="alert">{{ __('fields.price_offer_expired_client_message') }}</div>
+            @endif
+
             <div class="header">
                 <div class="brand">
                     @if($tenant->logo)
                         <img src="{{ $tenant->logo }}" alt="{{ $companyName }}">
                     @endif
                     <h1>{{ $companyName }}</h1>
-                    @if($trn !== '')
-                        <p class="trn-line">{{ __('fields.trn') }}: {{ $trn }}</p>
-                    @endif
                     @if($companyAddress)<p>{{ $companyAddress }}</p>@endif
                     @if($companyPhone)<p>{{ $companyPhone }}</p>@endif
                 </div>
                 <div class="meta">
                     <h2>{{ $documentTitle }}</h2>
-                    <p><strong>#{{ $invoice->no }}</strong></p>
-                    <p>{{ __('fields.date') }}: {{ $invoice->date?->format('d-m-Y') }}</p>
-                    <p>{{ __('fields.payment_status') }}: {{ $invoice->getPaymentStatus($locale) }}</p>
-                    @if($qrDataUri)
-                        <div class="meta-qr">
-                            <img src="{{ $qrDataUri }}" alt="{{ __('fields.vat') }} QR">
-                            <span>{{ __('fields.vat') }}</span>
-                        </div>
-                    @elseif($qrPayload ?? null)
-                        <div class="meta-qr">
-                            <canvas id="zatca-qr" width="120" height="120"></canvas>
-                            <span>{{ __('fields.vat') }}</span>
-                        </div>
+                    <p><strong>#{{ $priceOffer->no }}</strong></p>
+                    <p>{{ __('fields.date') }}: {{ $priceOffer->created_at?->format('d-m-Y') }}</p>
+                    @if($priceOffer->expires_at)
+                        <p>{{ __('fields.price_offer_expires_at') }}: {{ $priceOffer->expires_at->format('d-m-Y') }}</p>
                     @endif
+                    <p>
+                        {{ __('fields.price_offer_status') }}:
+                        <span class="status-badge {{ $priceOffer->isExpired() ? 'status-badge--expired' : 'status-badge--active' }}">
+                            {{ $priceOffer->isExpired() ? __('fields.price_offer_expired') : __('fields.price_offer_active') }}
+                        </span>
+                    </p>
                 </div>
             </div>
 
             <div class="party">
                 <div class="card">
-                    <h3>{{ $invoice->type === 'sales' ? __('fields.the_client') : __('fields.supplier') }}</h3>
-                    <p><strong>{{ $partyName }}</strong></p>
+                    <h3>{{ __('fields.the_client') }}</h3>
+                    <p><strong>{{ $customerName }}</strong></p>
                 </div>
                 <div class="card">
-                    <h3>{{ __('fields.invoice_total') }}</h3>
+                    <h3>{{ __('fields.invoice_total_with_tax') }}</h3>
                     <p><strong>{{ $currency }} {{ format_amount($total) }}</strong></p>
                 </div>
             </div>
 
-            <table>
-                <thead>
-                <tr>
-                    <th>{{ __('fields.product') }}</th>
-                    <th class="num">{{ __('fields.qty') }}</th>
-                    <th class="num">{{ __('fields.price') }}</th>
-                    <th class="num">{{ __('fields.discount') }}</th>
-                    <th class="num">{{ __('fields.total') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($invoice->items as $item)
-                    @php
-                        $name = $item->productVariant?->name ?? $item->product?->name ?? '—';
-                        $lineTotal = ($item->price * $item->qty) + $item->extras_total - $item->discount;
-                    @endphp
+            @if(filled($priceOffer->description))
+                <div class="notes">
+                    <strong>{{ __('fields.description') }}:</strong>
+                    <div>{{ $priceOffer->description }}</div>
+                </div>
+            @endif
+
+            @if($priceOffer->details->isNotEmpty())
+                <h3 class="section-title">{{ __('fields.products') }}</h3>
+                <table>
+                    <thead>
                     <tr>
-                        <td>{{ $name }}</td>
-                        <td class="num">{{ format_amount($item->qty, 0) }}</td>
-                        <td class="num">{{ format_amount($item->price) }}</td>
-                        <td class="num">{{ format_amount($item->discount) }}</td>
-                        <td class="num">{{ format_amount($lineTotal) }}</td>
+                        <th>{{ __('fields.product') }}</th>
+                        <th class="num">{{ __('fields.qty') }}</th>
+                        <th class="num">{{ __('fields.price') }}</th>
+                        <th class="num">{{ __('fields.discount') }}</th>
+                        <th class="num">{{ __('fields.total') }}</th>
                     </tr>
-                @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    @foreach($priceOffer->details as $detail)
+                        @php
+                            $lineTotal = ($detail->unit_price * $detail->qty) + $detail->extras_total - $detail->discount;
+                        @endphp
+                        <tr>
+                            <td>
+                                {{ $detail->item?->name ?? '—' }}
+                                @if($detail->offerDetailsExtras->isNotEmpty())
+                                    <div class="item-extras">
+                                        @foreach($detail->offerDetailsExtras as $extra)
+                                            <div>+ {{ $extra->name ?? $extra->productExtra?->name ?? '—' }}</div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="num">{{ format_amount($detail->qty, 0) }}</td>
+                            <td class="num">{{ format_amount($detail->unit_price) }}</td>
+                            <td class="num">{{ format_amount($detail->discount) }}</td>
+                            <td class="num">{{ format_amount($lineTotal) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if($priceOffer->services->isNotEmpty())
+                <h3 class="section-title">{{ __('fields.services') }}</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>{{ __('fields.service') }}</th>
+                        <th class="num">{{ __('fields.price') }}</th>
+                        <th class="num">{{ __('fields.tax') }}</th>
+                        <th class="num">{{ __('fields.total') }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($priceOffer->services as $service)
+                        @php
+                            $serviceTaxPercent = collect($service->tax_profile_data['taxes'] ?? [])->sum('percent');
+                            $serviceTax = $service->price * ($serviceTaxPercent / 100);
+                            $serviceTotal = $service->price + ($priceOffer->prices_includes_taxes ? 0 : $serviceTax);
+                        @endphp
+                        <tr>
+                            <td>
+                                {{ $service->type?->name ?? '—' }}
+                                @if(filled($service->description))
+                                    <div class="item-extras">{{ $service->description }}</div>
+                                @endif
+                            </td>
+                            <td class="num">{{ format_amount($service->price) }}</td>
+                            <td class="num">{{ format_amount($serviceTax) }}</td>
+                            <td class="num">{{ format_amount($serviceTotal) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if($priceOffer->additionalCosts->isNotEmpty())
+                <h3 class="section-title">{{ __('fields.additional_costs') }}</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>{{ __('fields.additional_costs') }}</th>
+                        <th class="num">{{ __('fields.cost') }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($priceOffer->additionalCosts as $additionalCost)
+                        <tr>
+                            <td>
+                                {{ $additionalCost->type?->name ?? '—' }}
+                                @if(filled($additionalCost->statement))
+                                    <div class="item-extras">{{ $additionalCost->statement }}</div>
+                                @endif
+                            </td>
+                            <td class="num">{{ format_amount($additionalCost->cost) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            @endif
 
             <div class="totals">
-                <div>
-                    <span>{{ __('fields.total_before_vat') }}</span>
-                    <span>{{ $currency }} {{ format_amount($subtotal) }}</span>
-                </div>
-                <div>
-                    <span>{{ __('fields.vat') }}</span>
-                    <span>{{ $currency }} {{ format_amount($vatAmount) }}</span>
-                </div>
+                @if($priceOffer->getAdditionalCosts(true) > 0)
+                    <div>
+                        <span>{{ __('fields.additional_costs') }}</span>
+                        <span>{{ $currency }} {{ format_amount($priceOffer->getAdditionalCosts(true)) }}</span>
+                    </div>
+                @endif
+                @if($discountAmount > 0)
+                    <div>
+                        <span>{{ __('fields.discount') }}</span>
+                        <span>{{ $currency }} {{ format_amount($discountAmount) }}</span>
+                    </div>
+                @endif
+                @if(! $priceOffer->prices_includes_taxes && $priceOffer->getTaxesAsAmount() > 0)
+                    <div>
+                        <span>{{ __('fields.tax') }}</span>
+                        <span>{{ $currency }} {{ format_amount($priceOffer->getTaxesAsAmount()) }}</span>
+                    </div>
+                @endif
                 <div class="grand">
-                    <span>{{ __('fields.invoice_total') }}</span>
+                    <span>{{ __('fields.invoice_total_with_tax') }}</span>
                     <span>{{ $currency }} {{ format_amount($total) }}</span>
                 </div>
             </div>
 
-            @if($invoice->notes)
+            @if($priceOffer->notes)
                 <div class="notes">
                     <strong>{{ __('fields.notes') }}:</strong>
-                    <div>{{ $invoice->notes }}</div>
+                    <div>{{ $priceOffer->notes }}</div>
+                </div>
+            @endif
+
+            @if(filled($terms))
+                <div class="terms">
+                    <strong>{{ __('fields.store_terms_and_conditions') }}:</strong>
+                    <div>{!! nl2br(e(strip_tags($terms))) !!}</div>
                 </div>
             @endif
         </div>
     </div>
 </div>
-@if(($qrPayload ?? null) && !($qrDataUri ?? null))
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-    <script>
-        QRCode.toCanvas(document.getElementById('zatca-qr'), @json($qrPayload), {
-            width: 120,
-            margin: 1,
-        });
-    </script>
-@endif
 </body>
 </html>

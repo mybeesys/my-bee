@@ -187,6 +187,7 @@ return [
     'statement' => 'Statement',
 
     'supplier' => 'Supplier',
+    'supplier_name' => 'Supplier name',
     'suppliers' => 'Suppliers',
     'exchange_rate' => 'Exchange rate',
 
@@ -950,8 +951,17 @@ return [
     'requested_qty_out_of_stock' => 'Requested qty out of stock',
 
     'price_offer_url' => 'Price offer url',
+    'price_offer_expires_at' => 'Offer expiry date',
+    'price_offer_expires_at_hint' => 'Optional. The offer expires on or after this date if the client has not responded.',
+    'price_offer_status' => 'Offer status',
+    'price_offer_active' => 'Active',
+    'price_offer_expired' => 'Expired',
+    'price_offer_expired_cannot_convert' => 'This price offer has expired and cannot be converted to an invoice.',
+    'price_offer_expired_client_message' => 'This price offer has expired. Please contact the merchant for an updated quote.',
+    'price_offer_link_copied' => 'Price offer link copied',
 
     'supply_order_url' => 'Supply order url',
+    'supply_order_link_copied' => 'Supply order link copied',
 
     'amount_includes_tax' => 'Amount includes tax',
     'amount_without_tax' => 'Amount without tax',
@@ -1053,6 +1063,10 @@ return [
     'sales_statement_net_qty_hint' => 'Sold minus returned',
     'sales_statement_gross_total' => 'Sales before returns',
     'sales_statement_gross_total_hint' => 'Total sales value',
+    'sales_statement_discount_total' => 'Total discount',
+    'sales_statement_discount_total_hint' => 'Sum of discounts on sales lines',
+    'sales_statement_tax_total' => 'Total tax',
+    'sales_statement_tax_total_hint' => 'Sum of tax on sales lines minus returns',
     'sales_statement_returns_total' => 'Returns value',
     'sales_statement_returns_total_hint' => 'Amount refunded to customers',
     'sales_statement_net_total' => 'Sales after returns',

@@ -1,21 +1,20 @@
 @php
     $locale = app()->getLocale();
     $isRtl = $locale === 'ar';
-    $currency = $settings['main_currency'] ?? 'SAR';
+    $companyName = $settings['company.name'] ?? $tenant->name;
     $companyAddress = $settings['company.address'] ?? ($tenant->store_address ?? '');
     $companyPhone = $settings['company.contact.phone'] ?? ($tenant->phone ?? '');
-    $partyName = $invoice->getInvoicePerson();
-    $documentTitle = $invoice->type === 'sales' ? __('fields.sales_invoice') : __('fields.purchase_invoice');
-    $subtotal = $vatSummary['subtotal'];
-    $vatAmount = $vatSummary['vat'];
-    $total = $vatSummary['total'];
+    $supplierName = $supplyOrder->supplier?->name ?? '—';
+    $totalQty = $supplyOrder->details->sum('qty');
+    $documentTitle = __('fields.supply_order');
+    $terms = $tenant->store_terms_and_conditions ?? '';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $locale }}" dir="{{ $isRtl ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $documentTitle }} #{{ $invoice->no }}</title>
+    <title>{{ $documentTitle }} #{{ $supplyOrder->no }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -70,9 +69,7 @@
             border-radius: 8px;
         }
 
-        .invoice-navbar__text {
-            min-width: 0;
-        }
+        .invoice-navbar__text { min-width: 0; }
 
         .invoice-navbar__title {
             margin: 0;
@@ -132,9 +129,7 @@
             height: 28px;
         }
 
-        .page-wrap {
-            padding: 1.5rem 1rem 2.5rem;
-        }
+        .page-wrap { padding: 1.5rem 1rem 2.5rem; }
 
         .page {
             max-width: 900px;
@@ -185,6 +180,12 @@
 
         .card p { margin: .15rem 0; }
 
+        .section-title {
+            margin: 2rem 0 .75rem;
+            font-size: 1rem;
+            color: #374151;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -215,40 +216,15 @@
         }
 
         .totals .grand {
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 700;
             border-bottom: none;
             padding-top: .75rem;
         }
 
-        .notes { margin-top: 1.5rem; color: #4b5563; }
-
-        .meta-qr {
-            margin-top: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: {{ $isRtl ? 'flex-start' : 'flex-end' }};
-            gap: .35rem;
-        }
-
-        .meta-qr img {
-            width: 120px;
-            height: 120px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 4px;
-            background: #fff;
-        }
-
-        .meta-qr span {
-            font-size: .75rem;
-            color: #6b7280;
-        }
-
-        .trn-line {
-            margin: .15rem 0;
+        .notes, .terms {
+            margin-top: 1.5rem;
             color: #4b5563;
-            font-size: .9rem;
         }
 
         @media print {
@@ -267,7 +243,7 @@
                 <img src="{{ $tenant->logo }}" alt="{{ $companyName }}" class="invoice-navbar__logo">
             @endif
             <div class="invoice-navbar__text">
-                <p class="invoice-navbar__title">{{ $documentTitle }} #{{ $invoice->no }}</p>
+                <p class="invoice-navbar__title">{{ $documentTitle }} #{{ $supplyOrder->no }}</p>
                 <p class="invoice-navbar__subtitle">{{ $companyName }}</p>
             </div>
         </div>
@@ -302,101 +278,72 @@
                         <img src="{{ $tenant->logo }}" alt="{{ $companyName }}">
                     @endif
                     <h1>{{ $companyName }}</h1>
-                    @if($trn !== '')
-                        <p class="trn-line">{{ __('fields.trn') }}: {{ $trn }}</p>
-                    @endif
                     @if($companyAddress)<p>{{ $companyAddress }}</p>@endif
                     @if($companyPhone)<p>{{ $companyPhone }}</p>@endif
                 </div>
                 <div class="meta">
                     <h2>{{ $documentTitle }}</h2>
-                    <p><strong>#{{ $invoice->no }}</strong></p>
-                    <p>{{ __('fields.date') }}: {{ $invoice->date?->format('d-m-Y') }}</p>
-                    <p>{{ __('fields.payment_status') }}: {{ $invoice->getPaymentStatus($locale) }}</p>
-                    @if($qrDataUri)
-                        <div class="meta-qr">
-                            <img src="{{ $qrDataUri }}" alt="{{ __('fields.vat') }} QR">
-                            <span>{{ __('fields.vat') }}</span>
-                        </div>
-                    @elseif($qrPayload ?? null)
-                        <div class="meta-qr">
-                            <canvas id="zatca-qr" width="120" height="120"></canvas>
-                            <span>{{ __('fields.vat') }}</span>
-                        </div>
-                    @endif
+                    <p><strong>#{{ $supplyOrder->no }}</strong></p>
+                    <p>{{ __('fields.date') }}: {{ $supplyOrder->created_at?->format('d-m-Y') }}</p>
+                    <p>{{ __('fields.reference_code') }}: {{ $supplyOrder->no }}</p>
                 </div>
             </div>
 
             <div class="party">
                 <div class="card">
-                    <h3>{{ $invoice->type === 'sales' ? __('fields.the_client') : __('fields.supplier') }}</h3>
-                    <p><strong>{{ $partyName }}</strong></p>
+                    <h3>{{ __('fields.supplier') }}</h3>
+                    <p><strong>{{ $supplierName }}</strong></p>
                 </div>
                 <div class="card">
-                    <h3>{{ __('fields.invoice_total') }}</h3>
-                    <p><strong>{{ $currency }} {{ format_amount($total) }}</strong></p>
+                    <h3>{{ __('fields.qty') }}</h3>
+                    <p><strong>{{ format_amount($totalQty, 0) }}</strong></p>
                 </div>
             </div>
 
-            <table>
-                <thead>
-                <tr>
-                    <th>{{ __('fields.product') }}</th>
-                    <th class="num">{{ __('fields.qty') }}</th>
-                    <th class="num">{{ __('fields.price') }}</th>
-                    <th class="num">{{ __('fields.discount') }}</th>
-                    <th class="num">{{ __('fields.total') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach($invoice->items as $item)
-                    @php
-                        $name = $item->productVariant?->name ?? $item->product?->name ?? '—';
-                        $lineTotal = ($item->price * $item->qty) + $item->extras_total - $item->discount;
-                    @endphp
-                    <tr>
-                        <td>{{ $name }}</td>
-                        <td class="num">{{ format_amount($item->qty, 0) }}</td>
-                        <td class="num">{{ format_amount($item->price) }}</td>
-                        <td class="num">{{ format_amount($item->discount) }}</td>
-                        <td class="num">{{ format_amount($lineTotal) }}</td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table>
-
-            <div class="totals">
-                <div>
-                    <span>{{ __('fields.total_before_vat') }}</span>
-                    <span>{{ $currency }} {{ format_amount($subtotal) }}</span>
-                </div>
-                <div>
-                    <span>{{ __('fields.vat') }}</span>
-                    <span>{{ $currency }} {{ format_amount($vatAmount) }}</span>
-                </div>
-                <div class="grand">
-                    <span>{{ __('fields.invoice_total') }}</span>
-                    <span>{{ $currency }} {{ format_amount($total) }}</span>
-                </div>
-            </div>
-
-            @if($invoice->notes)
+            @if(filled($supplyOrder->description))
                 <div class="notes">
-                    <strong>{{ __('fields.notes') }}:</strong>
-                    <div>{{ $invoice->notes }}</div>
+                    <strong>{{ __('fields.description') }}:</strong>
+                    <div>{{ $supplyOrder->description }}</div>
+                </div>
+            @endif
+
+            @if($supplyOrder->details->isNotEmpty())
+                <h3 class="section-title">{{ __('fields.products') }}</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>{{ __('fields.product') }}</th>
+                        <th class="num">{{ __('fields.qty') }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($supplyOrder->details as $index => $detail)
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $detail->item?->name ?? '—' }}</td>
+                            <td class="num">{{ format_amount($detail->qty, 0) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+
+                <div class="totals">
+                    <div class="grand">
+                        <span>{{ __('fields.qty') }}</span>
+                        <span>{{ format_amount($totalQty, 0) }}</span>
+                    </div>
+                </div>
+            @endif
+
+            @if(filled($terms))
+                <div class="terms">
+                    <strong>{{ __('fields.store_terms_and_conditions') }}:</strong>
+                    <div>{!! nl2br(e(strip_tags($terms))) !!}</div>
                 </div>
             @endif
         </div>
     </div>
 </div>
-@if(($qrPayload ?? null) && !($qrDataUri ?? null))
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-    <script>
-        QRCode.toCanvas(document.getElementById('zatca-qr'), @json($qrPayload), {
-            width: 120,
-            margin: 1,
-        });
-    </script>
-@endif
 </body>
 </html>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Currency;
 use App\Models\Invoice;
 use App\Models\Setting;
+use App\Services\InvoiceZatcaQrService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use NumberFormatter;
@@ -38,9 +39,13 @@ class InvoicePdfService
         $companyAddress = $settings['company.address'] ?? ($invoice->tenant->store_address ?? '');
         $companyPhone = $settings['company.contact.phone'] ?? ($invoice->tenant->phone ?? '');
         $partyName = $invoice->getInvoicePerson();
-        $total = $invoice->getItemsCost(true, true, true);
+        $qrService = InvoiceZatcaQrService::instance();
+        $vatSummary = $qrService->vatSummary($invoice);
+        $total = $vatSummary['total'];
         $logoPath = $invoice->tenant->getFirstMedia('logos')?->getPath();
         $decimals = (int) ($settings['main_currency_decimals'] ?? 2);
+        $trn = trim((string) ($invoice->tenant->trn ?? ''));
+        $qrDataUri = $qrService->qrDataUri($invoice, $invoice->tenant, $companyName);
 
         $labels = $this->labels($invoice->type);
         $documentTitle = $invoice->type === 'sales' ? $labels['title'] : $labels['purchaseTitle'];
@@ -78,6 +83,11 @@ class InvoicePdfService
             'partyName' => $isRtl ? arabic_for_pdf($partyName) : $partyName,
             'partyLabel' => $isRtl ? arabic_for_pdf($partyLabel) : $partyLabel,
             'total' => $this->formatAmount($total, $decimals, $decimals),
+            'subtotalBeforeVat' => $this->formatAmount($vatSummary['subtotal'], $decimals, $decimals),
+            'vatAmount' => $this->formatAmount($vatSummary['vat'], $decimals, $decimals),
+            'trn' => $trn !== '' ? ($isRtl ? arabic_for_pdf($trn) : $trn) : null,
+            'trnLabel' => $isRtl ? arabic_for_pdf(__('fields.trn')) : __('fields.trn'),
+            'qrDataUri' => $qrDataUri,
             'additionalCosts' => $this->formatAmount($invoice->getAdditionalCosts(true), $decimals, $decimals),
             'discount' => $this->formatAmount($invoice->getDiscountInAmount(), $decimals, $decimals),
             'paymentStatus' => $isRtl ? arabic_for_pdf($paymentStatus) : $paymentStatus,
@@ -150,6 +160,9 @@ class InvoicePdfService
             'price' => __('fields.price'),
             'discount' => __('fields.discount'),
             'total' => __('fields.total'),
+            'totalBeforeVat' => __('fields.total_before_vat'),
+            'vat' => __('fields.vat'),
+            'trn' => __('fields.trn'),
             'additionalCosts' => __('fields.additional_costs'),
             'invoiceTotal' => __('fields.invoice_total'),
             'amountInWords' => __('fields.amount_in_words'),

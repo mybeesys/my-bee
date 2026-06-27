@@ -157,6 +157,11 @@ class SalesReturnsResource extends Resource
                                 $data['price'] = number_format($data['qty'] * $price, currency_decimals(), '.', ',');
                                 return $data;
                             })
+                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                                $data['user_id'] = $data['user_id'] ?? filament()->auth()->id() ?? auth()->id();
+
+                                return $data;
+                            })
                             ->schema([
 
                                 hidden_tenant_id_field(),

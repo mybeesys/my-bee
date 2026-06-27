@@ -95,10 +95,6 @@ class OrderStatusService
 
             return;
         }
-
-        if ($invoice->status !== 'cancelled' && $invoice->status !== 'confirmed') {
-            $invoice->update(['status' => 'confirmed']);
-        }
     }
 
     public function syncDeliveryFee(Order $order, float $delivery): void

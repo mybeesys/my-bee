@@ -170,12 +170,10 @@ class SalesStatementReport extends Page implements HasForms, HasTable
                 ->visible(fn (): bool => ! $this->isInvoiceView()),
             Tables\Columns\TextColumn::make('discount')
                 ->label(__('fields.discount'))
-                ->formatStateUsing(fn ($state): ?string => format_amount($state))
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->formatStateUsing(fn ($state): ?string => format_amount($state)),
             Tables\Columns\TextColumn::make('tax')
                 ->label(__('fields.tax'))
-                ->formatStateUsing(fn ($state): ?string => format_amount($state))
-                ->toggleable(isToggledHiddenByDefault: true),
+                ->formatStateUsing(fn ($state): ?string => format_amount($state)),
             Tables\Columns\TextColumn::make('total')
                 ->label(fn (): string => $this->isInvoiceView()
                     ? __('fields.sales_statement_invoice_amount')

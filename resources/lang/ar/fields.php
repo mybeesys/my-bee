@@ -115,8 +115,8 @@ return [
     'accounts_statement_label' => 'كشف الحساب',
     'accounts_statement_label_plural' => 'كشوفات الحسابات',
 
-    'credit' => 'مدين',
-    'debit' => 'دائن',
+    'credit' => 'دائن',
+    'debit' => 'مدين',
 
     'representative' => 'المندوب',
     'representatives' => 'المناديب',
@@ -188,6 +188,7 @@ return [
     'statement' => 'البيان',
 
     'supplier' => 'المورد',
+    'supplier_name' => 'اسم المورد',
     'suppliers' => 'الموردين',
     'exchange_rate' => 'سعر الصرف',
 
@@ -234,8 +235,8 @@ return [
     'payment_voucher' => 'سند صرف',
     'payment_vouchers' => 'سندات الصرف',
     'currency' => 'العملة',
-    'the_credited_account' => 'الحساب المدين',
-    'the_debited_account' => 'الحساب الدائن',
+    'the_credited_account' => 'الحساب الدائن',
+    'the_debited_account' => 'الحساب المدين',
     'voucher_no' => 'رقم السند',
 
     //begin modules
@@ -938,8 +939,8 @@ return [
     'sales_returns' => 'مرتجع المبيعات',
     'purchases_returns' => 'مرتجع المشتريات',
 
-    'add_purchases_returns' => 'Add purchases return',
-    'add_sales_returns' => 'Add sales return',
+    'add_purchases_returns' => 'إضافة مرتجع مشتريات',
+    'add_sales_returns' => 'إضافة مرتجع مبيعات',
 
     'unit_price' => 'سعر الوحدة',
 
@@ -956,8 +957,17 @@ return [
     'requested_qty_out_of_stock' => 'لا توجد كمية كافية في المخزن',
 
     'price_offer_url' => 'رابط عرض السعر',
+    'price_offer_expires_at' => 'تاريخ انتهاء العرض',
+    'price_offer_expires_at_hint' => 'اختياري. ينتهي العرض في هذا التاريخ أو بعده إذا لم يرد العميل.',
+    'price_offer_status' => 'حالة العرض',
+    'price_offer_active' => 'ساري',
+    'price_offer_expired' => 'منتهي',
+    'price_offer_expired_cannot_convert' => 'انتهت صلاحية عرض السعر ولا يمكن تحويله إلى فاتورة.',
+    'price_offer_expired_client_message' => 'انتهت صلاحية عرض السعر. يرجى التواصل مع التاجر للحصول على عرض محدّث.',
+    'price_offer_link_copied' => 'تم نسخ رابط عرض السعر',
 
     'supply_order_url' => 'رابط طلب التوريد',
+    'supply_order_link_copied' => 'تم نسخ رابط طلب التوريد',
 
     'amount_includes_tax' => 'المبلغ شامل الضريبة',
 
@@ -1058,6 +1068,10 @@ return [
     'sales_statement_net_qty_hint' => 'المباع ناقص المُرجَع',
     'sales_statement_gross_total' => 'مبيعات قبل المرتجعات',
     'sales_statement_gross_total_hint' => 'مجموع قيمة البيع',
+    'sales_statement_discount_total' => 'إجمالي الخصم',
+    'sales_statement_discount_total_hint' => 'مجموع الخصومات على بنود البيع',
+    'sales_statement_tax_total' => 'إجمالي الضريبة',
+    'sales_statement_tax_total_hint' => 'مجموع ضريبة بنود البيع ناقص المرتجعات',
     'sales_statement_returns_total' => 'قيمة المرتجعات',
     'sales_statement_returns_total_hint' => 'ما أُرجِع للعملاء',
     'sales_statement_net_total' => 'مبيعات بعد المرتجعات',

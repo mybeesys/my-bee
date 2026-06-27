@@ -193,8 +193,20 @@ class IncomeStatementService
     protected function sumInvoiceTotals(Collection $invoices): float
     {
         return round((float) $invoices->sum(
-            fn (Invoice $invoice) => (float) $invoice->getItemsCost(true, true, true)
+            fn (Invoice $invoice) => $this->invoiceNetTotal($invoice)
         ), 2);
+    }
+
+    protected function invoiceNetTotal(Invoice $invoice): float
+    {
+        $total = (float) $invoice->getItemsCost(true, true, true);
+        $tax = (float) $invoice->getTaxesAsAmount();
+
+        if ($tax <= 0) {
+            return round($total, 2);
+        }
+
+        return round(max(0, $total - $tax), 2);
     }
 
     protected function salesReturnsTotal(?string $from, ?string $to): float
@@ -215,7 +227,9 @@ class IncomeStatementService
             $query->whereDate('created_at', '<=', $to);
         }
 
-        return round((float) $query->sum('total'), 2);
+        return round((float) $query->get()->sum(
+            fn (SalesReturnsDetails $detail) => max(0, (float) $detail->total - (float) $detail->tax)
+        ), 2);
     }
 
     protected function purchaseReturnsTotal(?string $from, ?string $to): float
@@ -236,12 +250,27 @@ class IncomeStatementService
             $query->whereDate('created_at', '<=', $to);
         }
 
-        return round((float) $query->sum('total'), 2);
+        return round((float) $query->get()->sum(
+            fn (PurchasesReturnsDetails $detail) => max(0, (float) $detail->total - (float) $detail->tax)
+        ), 2);
     }
 
     protected function expenseTotal(Expense $expense): float
     {
-        return (float) $expense->getRawOriginal('amount') + (float) $expense->getRawOriginal('tax');
+        $amount = (float) $expense->getRawOriginal('amount');
+        $tax = (float) $expense->getRawOriginal('tax');
+
+        if ($tax <= 0) {
+            return round($amount, 2);
+        }
+
+        $total = round((float) $expense->total, 2);
+
+        if ($amount > ($total - $tax) + 0.01) {
+            return round(max(0, $amount - $tax), 2);
+        }
+
+        return round($amount, 2);
     }
 
     protected function lineLabel(string $label, int $count): string

@@ -127,7 +127,7 @@ class SalesInvoiceResource extends Resource
                     ->schema([
 
                         Forms\Components\Hidden::make('status')
-                            ->default(fn () => $form->getRecord()?->status ?? 'confirmed'),
+                            ->default(fn () => $form->getRecord()?->status ?? 'sale_order'),
 
                         Forms\Components\Hidden::make('type')->default('sales'),
 
@@ -387,6 +387,8 @@ class SalesInvoiceResource extends Resource
         return $table
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
+                static::invoiceSalesReturnIndicatorTableColumn(),
+
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.invoice_no'))
                     ->description(function (Invoice $record) {
@@ -550,6 +552,8 @@ class SalesInvoiceResource extends Resource
                 static::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
                     static::shareInvoiceUrlTableAction(),
 
+                    static::salesReturnInvoiceTableAction(),
+
                     Tables\Actions\Action::make('complete_payment')
                         ->label(__('fields.payment_details'))
                         ->icon('heroicon-o-currency-dollar')
@@ -609,7 +613,10 @@ class SalesInvoiceResource extends Resource
                     'user',
                     'reviewedBy',
                     'additionalCosts',
-                ])->latest();
+                    'salesReturns',
+                ])
+            ->withCount('salesReturns')
+            ->latest();
     }
 
     public static function infolist(Infolist $infolist): Infolist

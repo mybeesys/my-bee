@@ -107,12 +107,22 @@ class TaxReportResource extends Resource
                     ->label(__('fields.source'))
                     ->color(Color::Sky)
                     ->getStateUsing(function (CashDet $record) {
-                        return match ($record->meta['type'] ?? null) {
-                            "sales_invoice" => __('fields.sales_invoice'),
-                            "purchase_invoice" => __('fields.purchases_invoice'),
-                            "expense" => __('fields.expense'),
+                        $type = $record->meta['type'] ?? null;
+
+                        if (! $type && $record->invoice) {
+                            $type = match ($record->invoice->type) {
+                                'sales' => 'sales_invoice',
+                                'purchases' => 'purchase_invoice',
+                                default => null,
+                            };
+                        }
+
+                        return match ($type) {
+                            'sales_invoice' => __('fields.sales_invoice'),
+                            'purchase_invoice' => __('fields.purchases_invoice'),
+                            'expense' => __('fields.expense'),
                             'service' => __('fields.service'),
-                            default => "Unknown",
+                            default => 'Unknown',
                         };
                     })
                     ->description(function (CashDet $record) {
@@ -123,10 +133,21 @@ class TaxReportResource extends Resource
                         };
                     })
                     ->url(function (CashDet $record) {
-                        return match ($record->meta['type'] ?? null) {
-                            "sales_invoice" => SalesInvoiceResource::getUrl('edit', ['record' => $record->meta['id']]),
-                            "purchase_invoice" => PurchaseInvoiceResource::getUrl('edit', ['record' => $record->meta['id']]),
-                            "expense" => ExpenseResource::getExpenseEditUrl($record->meta['id']),
+                        $type = $record->meta['type'] ?? null;
+                        $invoiceId = $record->meta['id'] ?? $record->invoice_id;
+
+                        if (! $type && $record->invoice) {
+                            $type = match ($record->invoice->type) {
+                                'sales' => 'sales_invoice',
+                                'purchases' => 'purchase_invoice',
+                                default => null,
+                            };
+                        }
+
+                        return match ($type) {
+                            'sales_invoice' => SalesInvoiceResource::getUrl('edit', ['record' => $invoiceId]),
+                            'purchase_invoice' => PurchaseInvoiceResource::getUrl('edit', ['record' => $invoiceId]),
+                            'expense' => ExpenseResource::getExpenseEditUrl($record->meta['id']),
                             default => null,
                         };
                     }, true)

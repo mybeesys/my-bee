@@ -19,6 +19,11 @@ class PriceOfferResource extends BaseResource
             'id' => $this->id,
             'no' => $this->no,
             'date' => $this->created_at->format("d-m-Y"),
+            'expiresAt' => $this->expires_at?->format('d-m-Y'),
+            'expired' => $this->resource->isExpired(),
+            'expiredMessage' => $this->resource->isExpired()
+                ? __('fields.price_offer_expired_client_message')
+                : null,
             'total' => number_format($this->resource->getItemsCost(false, false, false), currency_decimals(), '.', ','),
             'discount' => number_format($this->resource->details->sum('discount'), currency_decimals(), '.', ','),
             'totalAfterDiscount' => number_format($this->resource->getItemsCost(true, true, true), currency_decimals(), '.', ','),

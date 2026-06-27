@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources\SalesInvoiceResource\Pages;
 
 use App\Filament\Tenant\Concerns\HandlesInvoiceCreditPayments;
 use App\Filament\Tenant\Pages\Subscription;
+use App\Filament\Tenant\Resources\PriceOfferResource;
 use App\Filament\Tenant\Resources\SalesInvoiceResource;
 use App\Models\AdditionalCost;
 use App\Models\Invoice;
@@ -67,6 +68,18 @@ class CreateSalesInvoice extends CreateRecord
         $this->price_offer_id = request('price_offer_id', null);
 
         $priceOffer = PriceOffer::with('details.item.prices', 'details.offerDetailsExtras', 'AdditionalCosts', 'services')->find($this->price_offer_id);
+
+        if ($priceOffer?->isExpired()) {
+            Notification::make()
+                ->warning()
+                ->title(__('fields.price_offer_expired'))
+                ->body(__('fields.price_offer_expired_cannot_convert'))
+                ->send();
+
+            $this->redirect(PriceOfferResource::getUrl('index'));
+
+            return;
+        }
 
         if ($priceOffer) {
 

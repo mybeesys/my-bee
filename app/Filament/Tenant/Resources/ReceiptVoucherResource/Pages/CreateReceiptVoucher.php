@@ -6,7 +6,9 @@ use App\Filament\Tenant\Resources\ReceiptVoucherResource;
 use App\Models\Invoice;
 use App\Models\Op;
 use App\Models\OpType;
+use App\Models\ReceiptVoucher;
 use App\Services\AccountingService;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Exceptions\Halt;
 use Filament\Support\Facades\FilamentView;
@@ -31,7 +33,22 @@ class CreateReceiptVoucher extends CreateRecord
         $invoice_id = request('invoice_id', null);
 
         if ($invoice_id) {
-            $inv = Invoice::with('supplier.acc4')->findOrFail($invoice_id);
+            $inv = Invoice::with('customer.acc4')->findOrFail($invoice_id);
+
+            $existingVoucher = ReceiptVoucher::query()
+                ->where('invoice_id', $inv->id)
+                ->first();
+
+            if ($existingVoucher) {
+                Notification::make()
+                    ->title(__('fields.voucher_already_exists_for_this_invoice'))
+                    ->info()
+                    ->send();
+
+                $this->redirect(static::getResource()::getUrl('edit', ['record' => $existingVoucher]));
+
+                return;
+            }
 
             $this->form->fill([
                 'no' => generate_receipt_voucher(),
@@ -73,7 +90,22 @@ class CreateReceiptVoucher extends CreateRecord
     protected function beforeCreate()
     {
         if ($this->data['invoice_id']) {
-            $invoice = Invoice::with(['salesPayments'])->findOrFail($this->data['invoice_id']);
+            $existingVoucher = ReceiptVoucher::query()
+                ->where('invoice_id', $this->data['invoice_id'])
+                ->first();
+
+            if ($existingVoucher) {
+                Notification::make()
+                    ->title(__('fields.voucher_already_exists_for_this_invoice'))
+                    ->info()
+                    ->send();
+
+                $this->redirect(static::getResource()::getUrl('edit', ['record' => $existingVoucher]));
+                $this->halt();
+            }
+
+            $invoice = Invoice::with(['salesPayments', 'items', 'additionalCosts', 'services'])
+                ->findOrFail($this->data['invoice_id']);
 
             $totalToPay = $invoice->getItemsCost(true, true, true);
 

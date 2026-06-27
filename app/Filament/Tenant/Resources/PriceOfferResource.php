@@ -97,7 +97,7 @@ class PriceOfferResource extends Resource
                         ->required()
                             ->default(fn ($record) => $record == null ? generate_no(PriceOffer::class) : $record->no)
                             ->rules([new UniqueTenantItemRule(PriceOffer::class, 'no', $form->getRecord()?->id)])
-                            ->columnSpan(['default' => 12, 'lg' => 4]),
+                            ->columnSpan(['default' => 12, 'md' => 6, 'lg' => 3]),
 
                     Select::make('customer_id')
                         ->required()
@@ -112,14 +112,22 @@ class PriceOfferResource extends Resource
 
                             return $model->id;
                             })
-                            ->columnSpan(['default' => 12, 'lg' => 4]),
+                            ->columnSpan(['default' => 12, 'md' => 6, 'lg' => 3]),
 
                         TextInput::make('description')
                         ->required()
                         ->label(__('fields.description'))
-                            ->columnSpan(['default' => 12, 'lg' => 4]),
+                            ->columnSpan(['default' => 12, 'md' => 6, 'lg' => 3]),
+
+                        Forms\Components\DatePicker::make('expires_at')
+                            ->label(__('fields.price_offer_expires_at'))
+                            ->helperText(__('fields.price_offer_expires_at_hint'))
+                            ->native(true)
+                            ->displayFormat('d/m/Y')
+                            ->columnSpan(['default' => 12, 'md' => 6, 'lg' => 3]),
 
                     ])
+                    ->extraAttributes(['class' => 'price-offer-header-fields'])
                     ->columns(12),
 
                 Forms\Components\Section::make(__('fields.items'))
@@ -338,6 +346,20 @@ class PriceOfferResource extends Resource
                     ->color(Color::Sky)
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('expires_at')
+                    ->label(__('fields.price_offer_expires_at'))
+                    ->date(user_setting('date_picker_format', 'd/m/Y'))
+                    ->placeholder('—')
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('expiration_status')
+                    ->label(__('fields.price_offer_status'))
+                    ->badge()
+                    ->getStateUsing(fn (PriceOffer $record): string => $record->isExpired()
+                        ? __('fields.price_offer_expired')
+                        : __('fields.price_offer_active'))
+                    ->color(fn (PriceOffer $record): string => $record->isExpired() ? 'danger' : 'success'),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('fields.created_at'))
                     ->dateTime('j M , Y H:i')
@@ -358,6 +380,13 @@ class PriceOfferResource extends Resource
                         Forms\Components\DatePicker::make('date_from')->label(__('fields.created_from')),
                         Forms\Components\DatePicker::make('date_until')->label(__('fields.created_until')),
 
+                        Select::make('expiration')
+                            ->label(__('fields.price_offer_status'))
+                            ->options([
+                                'active' => __('fields.price_offer_active'),
+                                'expired' => __('fields.price_offer_expired'),
+                            ]),
+
                     ])
                     ->indicateUsing(function (array $data): ?string {
                         $indicator = null;
@@ -366,6 +395,9 @@ class PriceOfferResource extends Resource
                         }
                         if ($data['customers']) {
                             $indicator = $indicator . __('fields.client');
+                        }
+                        if ($data['expiration'] ?? null) {
+                            $indicator = $indicator . __('fields.price_offer_status');
                         }
                         return $indicator;
                     })
@@ -382,23 +414,31 @@ class PriceOfferResource extends Resource
                             ->when(
                                 $data['date_until'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            )
+                            ->when(
+                                ($data['expiration'] ?? null) === 'active',
+                                fn (Builder $query): Builder => $query->notExpired(),
+                            )
+                            ->when(
+                                ($data['expiration'] ?? null) === 'expired',
+                                fn (Builder $query): Builder => $query->expired(),
                             );
                     })
 
             ])
             ->actions([
                 static::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
-                Tables\Actions\Action::make('price_offer_url')
-                    ->label(__('fields.price_offer_url'))
-                        ->icon('heroicon-o-link')
-                    ->color(Color::Sky)
-                        ->url(fn (PriceOffer $record) => $record->url, true),
+                static::sharePriceOfferUrlTableAction(),
 
                 Tables\Actions\Action::make('make_sales_invoice_from_price_offer')
                         ->label(__('fields.convert_price_offer_to_sales_invoice'))
                         ->icon('heroicon-o-document-text')
                     ->requiresConfirmation()
                     ->color(Color::Green)
+                        ->disabled(fn (PriceOffer $record) => $record->isExpired())
+                        ->tooltip(fn (PriceOffer $record) => $record->isExpired()
+                            ? __('fields.price_offer_expired_cannot_convert')
+                            : null)
                         ->url(fn (PriceOffer $record) => SalesInvoiceResource::getUrl('create', ['price_offer_id' => $record->id])),
 
                 Tables\Actions\EditAction::make(),

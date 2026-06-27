@@ -1627,6 +1627,13 @@ body:has(.tenant-login-page) .fls-display-on {
     justify-self: start;
 }
 
+.fi-resource-price-offers .price-offer-header-fields,
+.fi-resource-invoices-sales .price-offer-header-fields {
+    position: relative;
+    z-index: 5;
+    margin-bottom: 0.5rem;
+}
+
 .fi-resource-price-offers .invoice-lines-panel,
 .fi-resource-invoices-sales .invoice-lines-panel,
 .fi-resource-purchases .invoice-lines-panel,

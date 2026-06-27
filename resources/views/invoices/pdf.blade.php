@@ -166,6 +166,21 @@
             font-weight: bold;
             color: #111827;
         }
+
+        .qr-box {
+            margin-top: 10px;
+            text-align: {{ $isRtl ? 'left' : 'right' }};
+        }
+
+        .qr-box img {
+            width: 96px;
+            height: 96px;
+        }
+
+        .trn-line {
+            color: #4b5563;
+            margin: 2px 0;
+        }
     </style>
 </head>
 <body>
@@ -177,6 +192,7 @@
                     <img src="{{ $logoPath }}" alt="logo" class="logo">
                 @endif
                 <div class="company-name">{{ $companyName }}</div>
+                @if($trn)<div class="trn-line">{{ $trnLabel }}: <span class="ltr">{{ $trn }}</span></div>@endif
                 @if($companyAddress)<div class="muted">{{ $companyAddress }}</div>@endif
                 @if($companyPhone)<div class="muted ltr">{{ $companyPhone }}</div>@endif
             </td>
@@ -194,6 +210,11 @@
                     <span class="meta-label">{{ $labels['paymentStatus'] }}:</span>
                     <strong>{{ $paymentStatus }}</strong>
                 </div>
+                @if($qrDataUri)
+                    <div class="qr-box">
+                        <img src="{{ $qrDataUri }}" alt="QR">
+                    </div>
+                @endif
             </td>
         @else
             <td width="55%">
@@ -201,6 +222,7 @@
                     <img src="{{ $logoPath }}" alt="logo" class="logo">
                 @endif
                 <div class="company-name">{{ $companyName }}</div>
+                @if($trn)<div class="trn-line">{{ $trnLabel }}: <span class="ltr">{{ $trn }}</span></div>@endif
                 @if($companyAddress)<div class="muted">{{ $companyAddress }}</div>@endif
                 @if($companyPhone)<div class="muted">{{ $companyPhone }}</div>@endif
             </td>
@@ -218,6 +240,11 @@
                     <span class="meta-label">{{ $labels['paymentStatus'] }}:</span>
                     <strong>{{ $paymentStatus }}</strong>
                 </div>
+                @if($qrDataUri)
+                    <div class="qr-box">
+                        <img src="{{ $qrDataUri }}" alt="QR">
+                    </div>
+                @endif
             </td>
         @endif
     </tr>
@@ -253,12 +280,12 @@
 
 <div class="summary">
     <div class="summary-row">
-        <span class="summary-label">{{ $labels['additionalCosts'] }}</span>
-        <span class="summary-value ltr">{{ $additionalCosts }} {{ $currencySymbol }}</span>
+        <span class="summary-label">{{ $labels['totalBeforeVat'] }}</span>
+        <span class="summary-value ltr">{{ $subtotalBeforeVat }} {{ $currencySymbol }}</span>
     </div>
     <div class="summary-row">
-        <span class="summary-label">{{ $labels['discount'] }}</span>
-        <span class="summary-value ltr">{{ $discount }} {{ $currencySymbol }}</span>
+        <span class="summary-label">{{ $labels['vat'] }}</span>
+        <span class="summary-value ltr">{{ $vatAmount }} {{ $currencySymbol }}</span>
     </div>
     <div class="summary-row grand">
         <span class="summary-label">{{ $labels['invoiceTotal'] }}</span>

@@ -140,10 +140,16 @@ class ReceiptVoucherResource extends Resource
                         ->live()
                         ->label(__('fields.invoice_no'))
                         ->options(function (Get $get) {
-                            $customer_id = Acc4::with('item')->firstWhere('code', $get('acc4_code'))?->item_id;
+                            if (! $get('acc4_code')) {
+                                return [];
+                            }
+
+                            $customer_id = Customer::query()
+                                ->whereRelation('acc4', 'code', $get('acc4_code'))
+                                ->value('id');
 
                             if ($customer_id) {
-                                return Invoice::dropdownUnpaidForCustomer($customer_id, false);
+                                return Invoice::dropdownUnpaidForCustomer($customer_id, true);
                             }
 
                             return [];
@@ -154,8 +160,13 @@ class ReceiptVoucherResource extends Resource
                             $invoice = self::getInvoice($livewire, $record);
 
                             if ($invoice) {
-                                $options = Invoice::dropdownUnpaidForCustomer($invoice->customer_id, false);
+                                $options = Invoice::dropdownUnpaidForCustomer(
+                                    $invoice->customer_id,
+                                    true,
+                                    [$invoice->id],
+                                );
 
+                                $component->options($options);
                                 $component->helperText($invoice->no);
 
                                 self::updateInvoiceProperties($invoice, $livewire);
@@ -166,7 +177,7 @@ class ReceiptVoucherResource extends Resource
                         })
                         ->afterStateUpdated(function (Set $set, $state, $livewire) {
                             if ($state) {
-                                $invoice = Invoice::with('items', 'salesPayments')->find($state);
+                                $invoice = Invoice::with(['items', 'salesPayments', 'additionalCosts', 'services'])->find($state);
 
                                 self::updateInvoiceProperties($invoice, $livewire);
                             }

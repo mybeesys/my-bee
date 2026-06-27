@@ -45,7 +45,6 @@ class EditSupplyOrder extends EditRecord
                 'id' => $detail->id,
                 'tenant_id' => $detail->tenant_id,
                 'user_id' => $detail->user_id,
-                'max_qty' => 100000,
                 'item_id' => $detail->item_id,
                 'item_type' => $detail->item_type,
                 'type' => $detail->item instanceof ProductVariant ? Product::$TYPE_VARIANTS : Product::$TYPE_BASIC,

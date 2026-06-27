@@ -55,7 +55,7 @@ class CreateOrder extends CreateRecord
             'no' => generate_invoice_no(),
             'tenant_id' => $tenant_id,
             'type' => 'sales',
-            'status' => 'confirmed',
+            'status' => 'sale_order',
             'for' => 'customer',
             'customer_id' => $order->customer_id,
             'user_id' => auth()->id(),

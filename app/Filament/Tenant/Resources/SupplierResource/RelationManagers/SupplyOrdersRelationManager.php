@@ -46,18 +46,18 @@ class SupplyOrdersRelationManager extends RelationManager
             ->filters([])
             ->headerActions([])
             ->actions([
-                Tables\Actions\Action::make('supply_order_url')
-                    ->label(__('fields.supply_order_url'))
-                    ->icon('heroicon-o-link')
-                    ->color(Color::Sky)
-                    ->url(fn (SupplyOrder $record) => $record->url, true),
-                Tables\Actions\Action::make('make_purchases_invoice_from_supply_order')
-                    ->label(__('fields.make_purchases_invoice_from_supply_order'))
-                    ->icon('heroicon-o-document-plus')
-                    ->color(Color::Green)
-                    ->url(fn (SupplyOrder $record) => PurchaseInvoiceResource::getUrl('create', ['supply_order_id' => $record->id]), true),
-                Tables\Actions\EditAction::make()
-                    ->url(fn (SupplyOrder $record) => SupplyOrderResource::getUrl('edit', ['record' => $record->id]), true),
+                SupplyOrderResource::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
+                    SupplyOrderResource::shareSupplyOrderUrlTableAction(),
+
+                    Tables\Actions\Action::make('make_purchases_invoice_from_supply_order')
+                        ->label(__('fields.make_purchases_invoice_from_supply_order'))
+                        ->icon('heroicon-o-document-plus')
+                        ->color(Color::Green)
+                        ->url(fn (SupplyOrder $record) => PurchaseInvoiceResource::getUrl('create', ['supply_order_id' => $record->id]), true),
+
+                    Tables\Actions\EditAction::make()
+                        ->url(fn (SupplyOrder $record) => SupplyOrderResource::getUrl('edit', ['record' => $record->id]), true),
+                ])),
             ])
             ->bulkActions([]);
     }

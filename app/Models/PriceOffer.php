@@ -13,6 +13,33 @@ class PriceOffer extends BaseModel
 
     protected $guarded = [];
 
+    protected $casts = [
+        'expires_at' => 'date',
+    ];
+
+    public function isExpired(): bool
+    {
+        if ($this->expires_at === null) {
+            return false;
+        }
+
+        return $this->expires_at->startOfDay()->lte(now()->startOfDay());
+    }
+
+    public function scopeNotExpired($query)
+    {
+        return $query->where(function ($query) {
+            $query->whereNull('expires_at')
+                ->orWhereDate('expires_at', '>', now());
+        });
+    }
+
+    public function scopeExpired($query)
+    {
+        return $query->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<=', now());
+    }
+
     public function details(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PriceOfferDetails::class);
@@ -175,8 +202,13 @@ class PriceOffer extends BaseModel
         return $amount;
     }
 
-    public function getUrlAttribute()
+    public function getUrlAttribute(): string
     {
-        return config('app.shop_url') . \Filament\Facades\Filament::getTenant()->slug . "/price-offers/" . $this->no;
+        $this->loadMissing('tenant');
+
+        return route('public.price-offer.show', [
+            'slug' => $this->tenant->slug,
+            'no' => $this->no,
+        ]);
     }
 }

@@ -166,14 +166,14 @@ class PurchaseInvoiceResource extends Resource
                                 ->label(__('fields.supplier'))
                                 ->searchable()
                                 ->options(Supplier::pluck('name', 'id'))
-                                ->createOptionForm(SupplierResource::getSchema())
+                                ->createOptionForm(SupplierResource::getQuickCreateSchema())
                                 ->createOptionUsing(function ($data) {
                                     $data['tenant_id'] = filament()->getTenant()->id;
                                     $model = Supplier::create($data);
                                     return $model->id;
                                 })
                                 ->createOptionAction(
-                                    fn(Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
+                                    fn(Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
                                 )
                                 ->required(),
 
@@ -387,6 +387,8 @@ class PurchaseInvoiceResource extends Resource
         return $table
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
+                static::invoicePurchaseReturnIndicatorTableColumn(),
+
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.invoice'))
                     ->searchable(),
@@ -515,6 +517,8 @@ class PurchaseInvoiceResource extends Resource
 
                     static::shareInvoiceUrlTableAction(),
 
+                    static::purchaseReturnInvoiceTableAction(),
+
 //                    Tables\Actions\Action::make('download_invoice')
 //                        ->label(__('fields.download_invoice'))
 //                        ->icon('heroicon-o-arrow-down-tray')
@@ -633,7 +637,10 @@ class PurchaseInvoiceResource extends Resource
                     'user',
                     'reviewedBy',
                     'additionalCosts',
-                ])->latest();
+                    'purchasesReturns',
+                ])
+            ->withCount('purchasesReturns')
+            ->latest();
     }
 
     public static function updateInvoicePropertiesFromLivewire($livewire, $updateUIFields = true): array

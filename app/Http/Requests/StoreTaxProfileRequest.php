@@ -27,7 +27,7 @@ class StoreTaxProfileRequest extends BaseRequest
             'name' => ['required', 'max:255', new ApiUniqueTenantItemRule(TaxProfile::class, 'name')],
             'taxes' => ['required', 'array', 'min:1'],
             'taxes.*.description' => ['required', new ApiUniqueTenantItemRule(Tax::class, 'description')],
-            'taxes.*.percent' => ['required', 'min:1', 'max:100'],
+            'taxes.*.percent' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

@@ -455,17 +455,17 @@ class Invoice extends BaseModel
 
     public function postSalesRevenueJournal(): void
     {
-        if ($this->type !== self::$TYPE_SALES || $this->hasSalesRevenueJournal()) {
+        if ($this->type !== self::$TYPE_SALES) {
             return;
         }
 
-        $amount = (float) $this->getItemsCost(true, true, true);
+        $this->loadMissing(['customer.acc4', 'items', 'additionalCosts', 'services']);
 
-        if ($amount <= 0) {
+        $total = (float) $this->getItemsCost(true, true, true);
+
+        if ($total <= 0) {
             return;
         }
-
-        $this->loadMissing('customer.acc4');
 
         $customerAcc4 = $this->customer?->acc4?->code;
 
@@ -473,10 +473,50 @@ class Invoice extends BaseModel
             throw new \Exception(__('fields.invoice_payment_missing_customer_account'));
         }
 
+        $tax = round((float) $this->getTaxesAsAmount(), 4);
+        $net = round(max(0, $total - $tax), 4);
         $customerName = $this->customer->name;
         $statement = "Sales Invoice: {$customerName}";
+        $meta = ['type' => 'sales_invoice', 'id' => $this->id];
 
-        $op = make_general_voucher_op();
+        if (! $this->hasSalesRevenueJournal()) {
+            $revenueAmount = $tax > 0 ? $net : $total;
+
+            if ($revenueAmount > 0) {
+                $op = make_general_voucher_op();
+
+                (new AccountingService())
+                    ->setUp(
+                        $op->id,
+                        $this->date ?? now(),
+                        main_currency_iso_code(),
+                        generate_double_entry_transaction_id(),
+                        $revenueAmount,
+                        $this->exchange_rate,
+                        $statement,
+                        $statement,
+                        $this->id,
+                        meta: $meta,
+                    )
+                    ->make($customerAcc4, '121800001')
+                    ->finish();
+            }
+        }
+
+        if ($tax > 0 && ! $this->hasSalesTaxJournal()) {
+            if ($this->hasSalesRevenueJournal()) {
+                $this->postSalesTaxReclassificationJournal($tax, $meta);
+            } else {
+                $this->postSalesTaxJournal($customerAcc4, $tax, $statement, $meta);
+            }
+        }
+    }
+
+    protected function postSalesTaxJournal(string $customerAcc4, float $tax, string $statement, array $meta): void
+    {
+        $taxStatement = "Sales Invoice VAT: {$this->no}";
+
+        $op = make_taxes_op();
 
         (new AccountingService())
             ->setUp(
@@ -484,14 +524,71 @@ class Invoice extends BaseModel
                 $this->date ?? now(),
                 main_currency_iso_code(),
                 generate_double_entry_transaction_id(),
-                $amount,
+                $tax,
                 $this->exchange_rate,
-                $statement,
+                $taxStatement,
                 $statement,
                 $this->id,
+                meta: $meta,
             )
-            ->make($customerAcc4, '121800001')
+            ->make($customerAcc4, '122800003')
             ->finish();
+    }
+
+    /**
+     * Moves VAT out of revenue for invoices that were posted before VAT splitting existed.
+     */
+    protected function postSalesTaxReclassificationJournal(float $tax, array $meta): void
+    {
+        $taxStatement = "Sales Invoice VAT: {$this->no}";
+
+        $op = make_taxes_op();
+
+        (new AccountingService())
+            ->setUp(
+                $op->id,
+                $this->date ?? now(),
+                main_currency_iso_code(),
+                generate_double_entry_transaction_id(),
+                $tax,
+                $this->exchange_rate,
+                $taxStatement,
+                $taxStatement,
+                $this->id,
+                meta: $meta,
+            )
+            ->make('121800001', '122800003')
+            ->finish();
+    }
+
+    public function hasSalesTaxJournal(): bool
+    {
+        $tenantId = $this->tenant_id ?? filament()->getTenant()?->id ?? request()->header('Tenant-Id');
+
+        return DB::table('cash_det')
+            ->when($tenantId, fn ($query) => $query->where('tenant_id', $tenantId))
+            ->where('invoice_id', $this->id)
+            ->where('account_code', '122800003')
+            ->where(function ($query) {
+                $query->where('amount_in', '>', 0)
+                    ->orWhere('amount_out', '>', 0);
+            })
+            ->exists();
+    }
+
+    public function hasPurchaseTaxJournal(): bool
+    {
+        $tenantId = $this->tenant_id ?? filament()->getTenant()?->id ?? request()->header('Tenant-Id');
+
+        return DB::table('cash_det')
+            ->when($tenantId, fn ($query) => $query->where('tenant_id', $tenantId))
+            ->where('invoice_id', $this->id)
+            ->where('account_code', '122800002')
+            ->where(function ($query) {
+                $query->where('amount_in', '>', 0)
+                    ->orWhere('amount_out', '>', 0);
+            })
+            ->exists();
     }
 
     public function hasSalesRevenueJournal(): bool
@@ -511,8 +608,45 @@ class Invoice extends BaseModel
             ->when($tenantId, fn ($query) => $query->where('tenant_id', $tenantId))
             ->where('invoice_id', $this->id)
             ->whereIn('account_code', $revenueAccountCodes)
-            ->where('amount_out', '>', 0)
+            ->where(function ($query) {
+                $query->where('amount_in', '>', 0)
+                    ->orWhere('amount_out', '>', 0);
+            })
             ->exists();
+    }
+
+    public function postPurchaseTaxJournalIfMissing(): void
+    {
+        if ($this->type !== self::$TYPE_PURCHASES) {
+            return;
+        }
+
+        $this->loadMissing(['items', 'additionalCosts', 'services']);
+
+        $taxes = round((float) $this->getTaxesAsAmount(), 4);
+
+        if ($taxes <= 0 || $this->hasPurchaseTaxJournal()) {
+            return;
+        }
+
+        $purchaseMeta = ['type' => 'purchase_invoice', 'id' => $this->id];
+        $taxOp = make_taxes_op();
+
+        (new AccountingService())
+            ->setUp(
+                $taxOp->id,
+                $this->date ?? now(),
+                main_currency_iso_code(),
+                generate_double_entry_transaction_id(),
+                $taxes,
+                $this->exchange_rate,
+                "Purchase Invoice VAT: {$this->no}",
+                "Purchase Invoice VAT: {$this->no}",
+                $this->id,
+                meta: $purchaseMeta,
+            )
+            ->make('120100001', '122800002')
+            ->finish();
     }
 
     public function confirmPurchaseInvoice(): void
@@ -536,6 +670,8 @@ class Invoice extends BaseModel
         }
 
         if ($this->status === 'confirmed' && $this->locked_at !== null && $this->stocks()->exists()) {
+            $this->postPurchaseTaxJournalIfMissing();
+
             return;
         }
 
@@ -563,19 +699,11 @@ class Invoice extends BaseModel
 
 
         $purchases_amount = 0;
-        $taxes = 0;
 
         foreach ($this->items as $invoiceItem) //loop invoice items and make stocks
         {
-
             $lineSubtotal = $invoiceItem->qty * $invoiceItem->price - $invoiceItem->discount;
-
-            if ($this->prices_includes_taxes) {
-                $purchases_amount += $lineSubtotal;
-            } else {
-                $purchases_amount += $lineSubtotal;
-                $taxes += $invoiceItem->tax;
-            }
+            $purchases_amount += $lineSubtotal;
 
             $item = $invoiceItem->product_variant_id ? ProductVariant::find($invoiceItem->product_variant_id) : Product::find($invoiceItem->product_id);
 
@@ -632,10 +760,6 @@ class Invoice extends BaseModel
                 continue;
             }
 
-            if ($additionalCost->taxProfile) {
-                $taxes += MathService::instance()->getTaxFromTaxProfile($additionalCost->cost, $additionalCost->taxProfile, $this->prices_includes_taxes);
-            }
-
             $accService
                 ->setUp(
                     $op->id,
@@ -664,21 +788,7 @@ class Invoice extends BaseModel
             ]);
         }
 
-        if ($taxes > 0) {
-            $accService
-                ->setUp(
-                    $op->id,
-                    now(),
-                    main_currency_iso_code(),
-                    generate_double_entry_transaction_id(),
-                    $taxes,
-                    $this->exchange_rate,
-                    "purchases taxes",
-                    "purchases taxes",
-                    $this->id,
-                )->make("120100001", "122800002")
-                ->finish();
-        }
+        $this->postPurchaseTaxJournalIfMissing();
 
     }
 
@@ -745,40 +855,93 @@ class Invoice extends BaseModel
 
     public static function dropdownUnpaidForSupplier($supplier_id = null, $existsInPaymentVouchers = true, $except = []): array
     {
-        $invoices = self::with(['items', 'purchasePayments'])->get();
-
-        $unpaid = $invoices->filter(function (Invoice $invoice) use ($supplier_id, $except) {
-            if ($supplier_id)
-                return ($invoice->paid == false and $invoice->supplier_id == $supplier_id) or ($invoice->supplier_id == $supplier_id and in_array($invoice->id, $except));
-            return $invoice->paid === false;
-        });
-
-        if (!$existsInPaymentVouchers) {
-            $invoice_ids_in_receipts_vouchers = PaymentVoucher::pluck('invoice_id')->toArray();
-
-            return $unpaid->whereNotIn('id', $invoice_ids_in_receipts_vouchers)->pluck('no', 'id')->toArray();
-
+        if (! $supplier_id) {
+            return [];
         }
-        return $unpaid->pluck('no', 'id')->toArray();
+
+        $except = array_values(array_filter((array) $except));
+
+        $invoices = self::query()
+            ->purchases()
+            ->where('for', 'supplier')
+            ->where('supplier_id', $supplier_id)
+            ->where('status', '!=', 'cancelled')
+            ->with(['items', 'purchasePayments', 'additionalCosts', 'services'])
+            ->orderByDesc('date')
+            ->get();
+
+        $invoiceIdsWithVoucher = $existsInPaymentVouchers
+            ? collect()
+            : PaymentVoucher::query()->whereNotNull('invoice_id')->pluck('invoice_id');
+
+        return $invoices
+            ->filter(function (Invoice $invoice) use ($except, $existsInPaymentVouchers, $invoiceIdsWithVoucher) {
+                if (in_array($invoice->id, $except, true)) {
+                    return true;
+                }
+
+                if ((float) $invoice->total_unpaid <= 0) {
+                    return false;
+                }
+
+                if (! $existsInPaymentVouchers && $invoiceIdsWithVoucher->contains($invoice->id)) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->mapWithKeys(fn (Invoice $invoice) => [
+                $invoice->id => static::formatUnpaidInvoiceDropdownLabel($invoice),
+            ])
+            ->toArray();
     }
 
     public static function dropdownUnpaidForCustomer($customer_id = null, $existsInReceiptVouchers = true, $except = []): array
     {
-        $invoices = self::with(['items', 'salesPayments'])->get();
-
-        $unpaid = $invoices->filter(function (Invoice $invoice) use ($customer_id, $except) {
-            if ($customer_id)
-                return ($invoice->paid == false and $invoice->customer_id == $customer_id) or ($invoice->customer_id == $customer_id and in_array($invoice->id, $except));
-            return $invoice->paid === false;
-        });
-
-        if (!$existsInReceiptVouchers) {
-            $invoice_ids_in_receipts_vouchers = ReceiptVoucher::pluck('invoice_id')->toArray();
-
-            return $unpaid->whereNotIn('id', $invoice_ids_in_receipts_vouchers)->pluck('no', 'id')->toArray();
-
+        if (! $customer_id) {
+            return [];
         }
-        return $unpaid->pluck('no', 'id')->toArray();
+
+        $except = array_values(array_filter((array) $except));
+
+        $invoices = self::query()
+            ->sales()
+            ->where('for', 'customer')
+            ->where('customer_id', $customer_id)
+            ->where('status', '!=', 'cancelled')
+            ->with(['items', 'salesPayments', 'additionalCosts', 'services'])
+            ->orderByDesc('date')
+            ->get();
+
+        $invoiceIdsWithVoucher = $existsInReceiptVouchers
+            ? collect()
+            : ReceiptVoucher::query()->whereNotNull('invoice_id')->pluck('invoice_id');
+
+        return $invoices
+            ->filter(function (Invoice $invoice) use ($except, $existsInReceiptVouchers, $invoiceIdsWithVoucher) {
+                if (in_array($invoice->id, $except, true)) {
+                    return true;
+                }
+
+                if ((float) $invoice->total_unpaid <= 0) {
+                    return false;
+                }
+
+                if (! $existsInReceiptVouchers && $invoiceIdsWithVoucher->contains($invoice->id)) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->mapWithKeys(fn (Invoice $invoice) => [
+                $invoice->id => static::formatUnpaidInvoiceDropdownLabel($invoice),
+            ])
+            ->toArray();
+    }
+
+    protected static function formatUnpaidInvoiceDropdownLabel(Invoice $invoice): string
+    {
+        return $invoice->no . ' — ' . format_amount(max(0, (float) $invoice->total_unpaid));
     }
 
     //start client payments

@@ -78,13 +78,16 @@ class SupplyOrderResource extends Resource
                             ->searchable()
                             ->options(Supplier::pluck('name', 'id'))
                             ->live()
-                            ->createOptionForm(SupplierResource::getSchema())
+                            ->createOptionForm(SupplierResource::getQuickCreateSchema())
                             ->createOptionUsing(function ($data) {
                                 $data['tenant_id'] = filament()->getTenant()->id;
                                 $model = Supplier::create($data);
 
                                 return $model->id;
                             })
+                            ->createOptionAction(
+                                fn (Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
+                            )
                             ->columnSpan(['default' => 12, 'lg' => 4]),
 
                         Forms\Components\TextInput::make('description')
@@ -155,27 +158,23 @@ class SupplyOrderResource extends Resource
                                 Forms\Components\Hidden::make('type'),
                                 Forms\Components\Hidden::make('display_name'),
                                 Forms\Components\Hidden::make('product_variant_id'),
-                                Forms\Components\Hidden::make('max_qty')->dehydrated(false),
 
                                 self::inlineProductSelect(
                                     'display_name',
                                     fn ($livewire) => null,
                                     prefillUnitPrice: false,
+                                    limitQtyByStock: false,
                                 ),
 
                                 TextInput::make('qty')
                                     ->label(__('fields.qty'))
                                     ->required()
                                     ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(fn (Get $get) => $get('max_qty') ?: 250000)
                                     ->live(true)
-                                    ->extraInputAttributes(function (Get $get) {
-                                        return [
-                                            'min' => 1,
-                                            'max' => $get('max_qty') ?: 250000,
-                                        ];
-                                    }),
+                                    ->minValue(1)
+                                    ->maxValue(250000)
+                                    ->extraInputAttributes(['min' => 1, 'max' => 250000], true)
+                                    ->translateFrontValidationGt(),
 
                             ])
                     ]),
@@ -197,24 +196,24 @@ class SupplyOrderResource extends Resource
                 //
             ])
             ->actions([
-                Tables\Actions\Action::make('supply_order_url')
-                    ->label(__('fields.supply_order_url'))
-                    ->color(Color::Sky)
-                    ->url(fn(SupplyOrder $record) => $record->url, true),
+                static::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
+                    static::shareSupplyOrderUrlTableAction(),
 
-                Tables\Actions\Action::make('make_purchases_invoice_from_supply_order')
-                    ->label(__('fields.make_purchases_invoice_from_supply_order'))
-                    ->requiresConfirmation()
-                    ->color(Color::Green)
-                    ->url(fn(SupplyOrder $record) => PurchaseInvoiceResource::getUrl('create', ['supply_order_id' => $record->id])),
+                    Tables\Actions\Action::make('make_purchases_invoice_from_supply_order')
+                        ->label(__('fields.make_purchases_invoice_from_supply_order'))
+                        ->icon('heroicon-o-document-plus')
+                        ->requiresConfirmation()
+                        ->color(Color::Green)
+                        ->url(fn (SupplyOrder $record) => PurchaseInvoiceResource::getUrl('create', ['supply_order_id' => $record->id])),
 
-                Tables\Actions\EditAction::make(),
+                    Tables\Actions\EditAction::make(),
 
-                Tables\Actions\DeleteAction::make()->action(function ($record){
-                    $record->details()->delete();
-                    $record->delete();
-                    fns()->deleted();
-                }),
+                    Tables\Actions\DeleteAction::make()->action(function ($record) {
+                        $record->details()->delete();
+                        $record->delete();
+                        fns()->deleted();
+                    }),
+                ])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

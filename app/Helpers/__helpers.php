@@ -812,7 +812,8 @@ if (!function_exists('hidden_main_currency_field')) {
 if (!function_exists('hidden_user_id_field')) {
     function hidden_user_id_field($name = "user_id", $default = null): \Filament\Forms\Components\Field
     {
-        return \Filament\Forms\Components\Hidden::make($name)->default($default ?? auth("web")->id());
+        return \Filament\Forms\Components\Hidden::make($name)
+            ->default(fn () => $default ?? filament()->auth()->id() ?? auth()->id());
     }
 }
 

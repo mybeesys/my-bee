@@ -11,9 +11,29 @@ class CreatePurchasesReturns extends CreateRecord
 {
     protected static string $resource = PurchasesReturnsResource::class;
 
+    public function mount(): void
+    {
+        parent::mount();
+
+        $invoiceId = request()->integer('invoice_id');
+
+        if ($invoiceId) {
+            $this->form->fill([
+                'invoice_id' => $invoiceId,
+            ]);
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['user_id'] = filament()->auth()->id() ?? auth()->id();
+
+        return $data;
     }
 
     protected function beforeCreate(): void

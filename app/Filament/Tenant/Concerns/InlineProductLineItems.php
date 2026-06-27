@@ -139,6 +139,7 @@ trait InlineProductLineItems
         string $nameField,
         callable $recalculate,
         bool $prefillUnitPrice = true,
+        bool $limitQtyByStock = true,
     ): Select {
         return Select::make('product_id')
             ->label(__('fields.product'))
@@ -177,8 +178,8 @@ trait InlineProductLineItems
                 return filled($state) ? static::inlineProductLineKey((int) $state) : null;
             })
             ->live()
-            ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) use ($nameField, $recalculate, $prefillUnitPrice) {
-                static::handleInlineProductLineSelection($state, $set, $get, $livewire, $nameField, $recalculate, $prefillUnitPrice);
+            ->afterStateUpdated(function ($state, Set $set, Get $get, $livewire) use ($nameField, $recalculate, $prefillUnitPrice, $limitQtyByStock) {
+                static::handleInlineProductLineSelection($state, $set, $get, $livewire, $nameField, $recalculate, $prefillUnitPrice, $limitQtyByStock);
             });
     }
 
@@ -258,9 +259,10 @@ trait InlineProductLineItems
         string $nameField,
         callable $recalculate,
         bool $prefillUnitPrice = true,
+        bool $limitQtyByStock = true,
     ): void {
         if (is_string($state) && str_starts_with($state, 'v:')) {
-            static::handleInlineVariantChange((int) substr($state, 2), $set, $get, $livewire, $nameField, $recalculate, $prefillUnitPrice);
+            static::handleInlineVariantChange((int) substr($state, 2), $set, $get, $livewire, $nameField, $recalculate, $prefillUnitPrice, $limitQtyByStock);
 
             return;
         }
@@ -269,7 +271,7 @@ trait InlineProductLineItems
             ? (int) substr($state, 2)
             : (is_numeric($state) ? (int) $state : null);
 
-        static::handleInlineProductChange($productId, $set, $get, $livewire, $nameField, $recalculate, $prefillUnitPrice);
+        static::handleInlineProductChange($productId, $set, $get, $livewire, $nameField, $recalculate, $prefillUnitPrice, $limitQtyByStock);
     }
 
     protected static function handleInlineProductChange(
@@ -280,6 +282,7 @@ trait InlineProductLineItems
         string $nameField,
         callable $recalculate,
         bool $prefillUnitPrice = true,
+        bool $limitQtyByStock = true,
     ): void
     {
         if (! $state) {
@@ -318,7 +321,7 @@ trait InlineProductLineItems
             return;
         }
 
-        static::fillInlineBasicProduct($set, $get, $product, $nameField, $tenantId, $prefillUnitPrice);
+        static::fillInlineBasicProduct($set, $get, $product, $nameField, $tenantId, $prefillUnitPrice, $limitQtyByStock);
         $set('product_variant_id', null);
 
         $recalculate($livewire);
@@ -332,6 +335,7 @@ trait InlineProductLineItems
         string $nameField,
         callable $recalculate,
         bool $prefillUnitPrice = true,
+        bool $limitQtyByStock = true,
     ): void
     {
         if (! $state) {
@@ -364,6 +368,7 @@ trait InlineProductLineItems
             $nameField,
             $get('tenant_id') ?? filament()->getTenant()->id,
             $prefillUnitPrice,
+            $limitQtyByStock,
         );
 
         $recalculate($livewire);
@@ -393,6 +398,7 @@ trait InlineProductLineItems
         string $nameField,
         int | string $tenantId,
         bool $prefillUnitPrice = true,
+        bool $limitQtyByStock = true,
     ): void {
         $qty = is_numeric($get('qty')) && $get('qty') > 0 ? $get('qty') : 1;
 
@@ -401,7 +407,11 @@ trait InlineProductLineItems
         $set('product_id', $product->id);
         $set('item_id', $product->id);
         $set('item_type', Product::class);
-        $set('max_qty', StockService::instance()->getAvailableStock($product));
+
+        if ($limitQtyByStock) {
+            $set('max_qty', StockService::instance()->getAvailableStock($product));
+        }
+
         $set('qty', $qty);
         $set('tenant_id', $tenantId);
 
@@ -432,6 +442,7 @@ trait InlineProductLineItems
         string $nameField,
         int | string $tenantId,
         bool $prefillUnitPrice = true,
+        bool $limitQtyByStock = true,
     ): void {
         $product = $variant->product;
         $qty = is_numeric($get('qty')) && $get('qty') > 0 ? $get('qty') : 1;
@@ -442,7 +453,11 @@ trait InlineProductLineItems
         $set('item_type', ProductVariant::class);
         $set('product_id', $product->id);
         $set('product_variant_id', $variant->id);
-        $set('max_qty', 100000);
+
+        if ($limitQtyByStock) {
+            $set('max_qty', StockService::instance()->getAvailableStock($variant));
+        }
+
         $set('qty', $qty);
         $set('available_product_extras_ids', $product->extras->pluck('id')->toArray());
         $set('tenant_id', $tenantId);

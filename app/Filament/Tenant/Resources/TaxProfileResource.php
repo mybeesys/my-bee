@@ -72,7 +72,7 @@ class TaxProfileResource extends Resource
                         ->label("")
                         ->minItems(1)
                         ->required()
-                        ->defaultItems(2)
+                        ->defaultItems(1)
                         ->reorderable()
                         ->columns(2)
                         ->addActionLabel(__('fields.add'))
@@ -96,8 +96,9 @@ class TaxProfileResource extends Resource
                                 ->placeholder("%")
                                 ->required()
                                 ->numeric()
-                                ->minValue(1)
-                                ->maxValue(100),
+                                ->minValue(0)
+                                ->maxValue(100)
+                                ->extraInputAttributes(['min' => 0, 'max' => 100]),
                         ])
                 ]),
             View::make('components.loading'),
@@ -130,7 +131,7 @@ class TaxProfileResource extends Resource
                             ->columnSpanFull()
                             ->minItems(1)
                             ->required()
-                            ->defaultItems(2)
+                            ->defaultItems(1)
                             ->reorderable()
                             ->columns(2)
                             ->addActionLabel(__('fields.add'))
@@ -155,8 +156,9 @@ class TaxProfileResource extends Resource
                                     ->placeholder("%")
                                     ->required()
                                     ->numeric()
-                                    ->minValue(1)
-                                    ->maxValue(100),
+                                    ->minValue(0)
+                                    ->maxValue(100)
+                                    ->extraInputAttributes(['min' => 0, 'max' => 100]),
                             ])
                     ]),
             ]);

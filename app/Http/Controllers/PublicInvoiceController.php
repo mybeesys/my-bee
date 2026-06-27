@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\InvoicePdfService;
+use App\Services\InvoiceZatcaQrService;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -13,11 +14,20 @@ class PublicInvoiceController extends Controller
     public function show(string $uid): View
     {
         $invoice = $this->resolveInvoice($uid);
+        $settings = $this->tenantSettings($invoice->tenant_id);
+        $companyName = $settings['company.name'] ?? $invoice->tenant->name;
+        $qrService = InvoiceZatcaQrService::instance();
+        $vatSummary = $qrService->vatSummary($invoice);
 
         return view('invoices.public', [
             'invoice' => $invoice,
             'tenant' => $invoice->tenant,
-            'settings' => $this->tenantSettings($invoice->tenant_id),
+            'settings' => $settings,
+            'companyName' => $companyName,
+            'trn' => trim((string) ($invoice->tenant->trn ?? '')),
+            'vatSummary' => $vatSummary,
+            'qrPayload' => $qrService->tlvBase64($invoice, $invoice->tenant, $companyName),
+            'qrDataUri' => $qrService->qrDataUri($invoice, $invoice->tenant, $companyName),
             'pdfUrl' => route('public.invoice.pdf', ['uid' => $invoice->uid]),
         ]);
     }

@@ -87,3 +87,9 @@ Route::get('/einvoice/{uid}', [\App\Http\Controllers\PublicInvoiceController::cl
 Route::get('/einvoice/{uid}/pdf', [\App\Http\Controllers\PublicInvoiceController::class, 'pdf'])
     ->name('public.invoice.pdf');
 
+Route::get('/price-offers/{slug}/{no}', [\App\Http\Controllers\PublicPriceOfferController::class, 'show'])
+    ->name('public.price-offer.show');
+
+Route::get('/supply-orders/{slug}/{no}', [\App\Http\Controllers\PublicSupplyOrderController::class, 'show'])
+    ->name('public.supply-order.show');
+

@@ -9,6 +9,8 @@
         ['key' => 'returns_qty', 'value' => number_format($stats['returns_qty'] ?? 0, 2), 'hint' => 'sales_statement_returns_qty_hint', 'class' => 'sales-statement__stat-card--return'],
         ['key' => 'net_qty', 'value' => number_format($stats['net_qty'] ?? 0, 2), 'hint' => 'sales_statement_net_qty_hint', 'class' => ''],
         ['key' => 'gross_total', 'value' => format_amount($stats['gross_total'] ?? 0), 'hint' => 'sales_statement_gross_total_hint', 'class' => 'sales-statement__stat-card--gross', 'unit' => $currency],
+        ['key' => 'discount_total', 'value' => format_amount($stats['discount_total'] ?? 0), 'hint' => 'sales_statement_discount_total_hint', 'class' => '', 'unit' => $currency],
+        ['key' => 'tax_total', 'value' => format_amount($stats['tax_total'] ?? 0), 'hint' => 'sales_statement_tax_total_hint', 'class' => '', 'unit' => $currency],
         ['key' => 'returns_total', 'value' => format_amount($stats['returns_total'] ?? 0), 'hint' => 'sales_statement_returns_total_hint', 'class' => 'sales-statement__stat-card--return', 'unit' => $currency],
         ['key' => 'net_total', 'value' => format_amount($stats['net_total'] ?? 0), 'hint' => 'sales_statement_net_total_hint', 'class' => 'sales-statement__stat-card--net', 'unit' => $currency],
     ];

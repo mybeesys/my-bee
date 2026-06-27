@@ -5,11 +5,17 @@ namespace App\Filament\Tenant\Concerns;
 use App\Models\Acc4;
 use App\Models\AdditionalCostType;
 use App\Models\Invoice;
+use App\Models\PriceOffer;
 use App\Models\ServiceType;
+use App\Models\SupplyOrder;
+use App\Filament\Tenant\Resources\PurchasesReturnsResource;
+use App\Filament\Tenant\Resources\SalesReturnsResource;
+use Filament\Actions\Action as HeaderAction;
 use Filament\Notifications\Notification;
 use Filament\Support\Colors\Color;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Js;
 use App\Services\InvoicePaymentTermsService;
@@ -728,6 +734,86 @@ trait InvoiceDocumentFormLayout
             });
     }
 
+    protected static function invoiceHasSalesReturn(Invoice $record): bool
+    {
+        if (isset($record->sales_returns_count)) {
+            return $record->sales_returns_count > 0;
+        }
+
+        if ($record->relationLoaded('salesReturns')) {
+            return $record->salesReturns->isNotEmpty();
+        }
+
+        return $record->salesReturns()->exists();
+    }
+
+    protected static function invoiceHasPurchaseReturn(Invoice $record): bool
+    {
+        if (isset($record->purchases_returns_count)) {
+            return $record->purchases_returns_count > 0;
+        }
+
+        if ($record->relationLoaded('purchasesReturns')) {
+            return $record->purchasesReturns->isNotEmpty();
+        }
+
+        return $record->purchasesReturns()->exists();
+    }
+
+    public static function invoiceSalesReturnIndicatorTableColumn(): IconColumn
+    {
+        return IconColumn::make('sales_returns_count')
+            ->label('')
+            ->alignCenter()
+            ->width('2.5rem')
+            ->toggleable(false)
+            ->icon(fn ($state): ?string => ((int) $state) > 0 ? 'heroicon-o-arrow-uturn-left' : null)
+            ->color('warning')
+            ->tooltip(fn (Invoice $record): ?string => static::invoiceHasSalesReturn($record)
+                ? __('fields.sales_returns')
+                : null)
+            ->url(function (Invoice $record): ?string {
+                if (! static::invoiceHasSalesReturn($record)) {
+                    return null;
+                }
+
+                $return = $record->relationLoaded('salesReturns')
+                    ? $record->salesReturns->first()
+                    : $record->salesReturns()->first();
+
+                return $return
+                    ? SalesReturnsResource::getUrl('edit', ['record' => $return->id])
+                    : null;
+            });
+    }
+
+    public static function invoicePurchaseReturnIndicatorTableColumn(): IconColumn
+    {
+        return IconColumn::make('purchases_returns_count')
+            ->label('')
+            ->alignCenter()
+            ->width('2.5rem')
+            ->toggleable(false)
+            ->icon(fn ($state): ?string => ((int) $state) > 0 ? 'heroicon-o-arrow-uturn-left' : null)
+            ->color('warning')
+            ->tooltip(fn (Invoice $record): ?string => static::invoiceHasPurchaseReturn($record)
+                ? __('fields.purchases_returns')
+                : null)
+            ->url(function (Invoice $record): ?string {
+                if (! static::invoiceHasPurchaseReturn($record)) {
+                    return null;
+                }
+
+                $return = $record->relationLoaded('purchasesReturns')
+                    ? $record->purchasesReturns->first()
+                    : $record->purchasesReturns()->first();
+
+                return $return
+                    ? PurchasesReturnsResource::getUrl('edit', ['record' => $return->id])
+                    : null;
+            });
+    }
+
     public static function configureInvoiceTableActionGroup(ActionGroup $group): ActionGroup
     {
         return $group
@@ -764,5 +850,115 @@ trait InvoiceDocumentFormLayout
                     ])
                     ->send();
             });
+    }
+
+    public static function sharePriceOfferUrlTableAction(): Action
+    {
+        return Action::make('price_offer_url')
+            ->label(__('fields.price_offer_url'))
+            ->icon('heroicon-o-link')
+            ->color(Color::Sky)
+            ->action(function (PriceOffer $record, $livewire) {
+                $url = $record->url;
+
+                $livewire->js('window.navigator.clipboard.writeText(' . Js::from($url) . ')');
+
+                Notification::make()
+                    ->title(__('fields.price_offer_link_copied'))
+                    ->body($url)
+                    ->success()
+                    ->persistent()
+                    ->actions([
+                        \Filament\Notifications\Actions\Action::make('open')
+                            ->label(__('fields.invoice_download_view_file'))
+                            ->url($url, shouldOpenInNewTab: true),
+                    ])
+                    ->send();
+            });
+    }
+
+    public static function shareSupplyOrderUrlTableAction(): Action
+    {
+        return Action::make('supply_order_url')
+            ->label(__('fields.supply_order_url'))
+            ->icon('heroicon-o-link')
+            ->color(Color::Sky)
+            ->action(function (SupplyOrder $record, $livewire) {
+                $url = $record->url;
+
+                $livewire->js('window.navigator.clipboard.writeText(' . Js::from($url) . ')');
+
+                Notification::make()
+                    ->title(__('fields.supply_order_link_copied'))
+                    ->body($url)
+                    ->success()
+                    ->persistent()
+                    ->actions([
+                        \Filament\Notifications\Actions\Action::make('open')
+                            ->label(__('fields.invoice_download_view_file'))
+                            ->url($url, shouldOpenInNewTab: true),
+                    ])
+                    ->send();
+            });
+    }
+
+    public static function salesReturnInvoiceTableAction(): Action
+    {
+        return Action::make('sales_return')
+            ->label(fn (Invoice $record) => $record->salesReturns()->exists()
+                ? __('fields.sales_returns')
+                : __('fields.add_sales_returns'))
+            ->icon('heroicon-o-arrow-uturn-left')
+            ->color('warning')
+            ->visible(fn (Invoice $record) => $record->type === Invoice::$TYPE_SALES
+                && $record->status === 'confirmed'
+                && ! $record->temp)
+            ->url(fn (Invoice $record) => $record->salesReturns()->exists()
+                ? SalesReturnsResource::getUrl('edit', ['record' => $record->salesReturns()->first()->id])
+                : SalesReturnsResource::getUrl('create', ['invoice_id' => $record->id]));
+    }
+
+    public static function purchaseReturnInvoiceTableAction(): Action
+    {
+        return Action::make('purchase_return')
+            ->label(fn (Invoice $record) => $record->purchasesReturns()->exists()
+                ? __('fields.purchases_returns')
+                : __('fields.add_purchases_returns'))
+            ->icon('heroicon-o-arrow-uturn-left')
+            ->color('warning')
+            ->visible(fn (Invoice $record) => $record->type === Invoice::$TYPE_PURCHASES
+                && $record->status === 'confirmed'
+                && ! $record->temp)
+            ->url(fn (Invoice $record) => $record->purchasesReturns()->exists()
+                ? PurchasesReturnsResource::getUrl('edit', ['record' => $record->purchasesReturns()->first()->id])
+                : PurchasesReturnsResource::getUrl('create', ['invoice_id' => $record->id]));
+    }
+
+    public static function salesReturnInvoiceHeaderAction(Invoice $record): HeaderAction
+    {
+        $hasReturn = $record->salesReturns()->exists();
+
+        return HeaderAction::make('sales_return')
+            ->label($hasReturn ? __('fields.sales_returns') : __('fields.add_sales_returns'))
+            ->icon('heroicon-o-arrow-uturn-left')
+            ->color('warning')
+            ->visible($record->status === 'confirmed' && ! $record->temp)
+            ->url($hasReturn
+                ? SalesReturnsResource::getUrl('edit', ['record' => $record->salesReturns()->first()->id])
+                : SalesReturnsResource::getUrl('create', ['invoice_id' => $record->id]));
+    }
+
+    public static function purchaseReturnInvoiceHeaderAction(Invoice $record): HeaderAction
+    {
+        $hasReturn = $record->purchasesReturns()->exists();
+
+        return HeaderAction::make('purchase_return')
+            ->label($hasReturn ? __('fields.purchases_returns') : __('fields.add_purchases_returns'))
+            ->icon('heroicon-o-arrow-uturn-left')
+            ->color('warning')
+            ->visible($record->status === 'confirmed' && ! $record->temp)
+            ->url($hasReturn
+                ? PurchasesReturnsResource::getUrl('edit', ['record' => $record->purchasesReturns()->first()->id])
+                : PurchasesReturnsResource::getUrl('create', ['invoice_id' => $record->id]));
     }
 }

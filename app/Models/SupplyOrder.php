@@ -22,8 +22,13 @@ class SupplyOrder extends BaseModel
         return $this->belongsTo(Supplier::class);
     }
 
-    public function getUrlAttribute()
+    public function getUrlAttribute(): string
     {
-        return config('app.shop_url') . \Filament\Facades\Filament::getTenant()->slug . "/supply-orders/" . $this->no;
+        $this->loadMissing('tenant');
+
+        return route('public.supply-order.show', [
+            'slug' => $this->tenant->slug,
+            'no' => $this->no,
+        ]);
     }
 }

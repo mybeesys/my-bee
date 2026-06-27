@@ -30,6 +30,11 @@ class PriceOfferDetails extends BaseModel
         return $this->hasMany(PriceOfferDetailsExtras::class, 'price_offer_details_id');
     }
 
+    public function taxProfile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(TaxProfile::class);
+    }
+
     public function getExtrasTotalAttribute()
     {
         $total = 0;

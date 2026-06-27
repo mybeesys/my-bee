@@ -456,7 +456,7 @@ class StoreController extends BaseController
                 'no' => generate_invoice_no(),
                 'tenant_id' => $tenant->id,
                 'type' => 'sales',
-                'status' => 'confirmed',
+                'status' => 'sale_order',
                 'for' => 'customer',
                 'customer_id' => $customer->id,
                 'user_id' => null,

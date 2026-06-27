@@ -25,7 +25,7 @@ class StoreSupplierRequest extends BaseRequest
     {
         return [
             'name' => ['required', 'string', 'max:255', new ApiUniqueTenantItemRule(Supplier::class, 'name')],
-            'phone' => ['required', new InternationalPhoneRule(false)],
+            'phone' => ['nullable', new InternationalPhoneRule(false)],
             'address' => ['sometimes', 'string', 'max:255'],
             'company' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'string', 'max:255'],

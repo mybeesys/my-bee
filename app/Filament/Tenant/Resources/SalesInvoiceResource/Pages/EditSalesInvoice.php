@@ -5,6 +5,7 @@ namespace App\Filament\Tenant\Resources\SalesInvoiceResource\Pages;
 use App\Filament\Tenant\Concerns\HandlesInvoiceCreditPayments;
 use App\Filament\Tenant\Resources\SalesInvoiceResource;
 use App\Models\InvoiceItem;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductVariant;
@@ -36,6 +37,14 @@ class EditSalesInvoice extends EditRecord
             ->label(__('fields.save_sales_invoice'));
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            SalesInvoiceResource::salesReturnInvoiceHeaderAction($this->record),
+            ...parent::getHeaderActions(),
+        ];
+    }
+
     protected function beforeSave(): void
     {
         SalesInvoiceResource::updateInvoicePropertiesFromLivewire($this);
@@ -43,13 +52,7 @@ class EditSalesInvoice extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $data = $this->prepareInvoiceFormDataForPersistence($data);
-
-        if ($this->record->status !== 'cancelled') {
-            $data['status'] = 'confirmed';
-        }
-
-        return $data;
+        return $this->prepareInvoiceFormDataForPersistence($data);
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -115,7 +118,7 @@ class EditSalesInvoice extends EditRecord
 
         $this->record->refresh()->load('items');
 
-        if ($this->record->isEditable()) {
+        if ($this->record->isEditable() && Order::where('invoice_id', $this->record->id)->exists()) {
             $this->record->confirmSalesInvoice();
             $this->record->refresh();
         }

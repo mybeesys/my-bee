@@ -29,7 +29,10 @@ class PurchaseInvoicesRelationManager extends RelationManager
     {
         return $table
             ->recordTitleAttribute('no')
+            ->modifyQueryUsing(fn ($query) => $query->withCount('purchasesReturns'))
             ->columns([
+                PurchaseInvoiceResource::invoicePurchaseReturnIndicatorTableColumn(),
+
                 Tables\Columns\TextColumn::make('no')
                     ->label(__('fields.invoice_no'))
                     ->searchable(),
@@ -64,6 +67,8 @@ class PurchaseInvoicesRelationManager extends RelationManager
                 PurchaseInvoiceResource::configureInvoiceTableActionGroup(Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
                         ->url(fn (Invoice $record) => PurchaseInvoiceResource::getUrl('edit', ['record' => $record->id]), true),
+
+                    PurchaseInvoiceResource::purchaseReturnInvoiceTableAction(),
 
                     Tables\Actions\Action::make('payment_details')
                         ->label(__('fields.payment_details'))

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Models\SalesReturnsDetails;
+use App\Services\MathService;
 use Carbon\Carbon;
 
 class SalesStatementService
@@ -265,7 +266,7 @@ class SalesStatementService
             'sales_qty' => $salesCollection->sum('qty'),
             'returns_qty' => $returnsCollection->sum('qty'),
             'net_qty' => $salesCollection->sum('qty') - $returnsCollection->sum('qty'),
-            'discount_total' => $salesCollection->sum('discount'),
+            'discount_total' => $salesCollection->sum('discount') - $returnsCollection->sum('discount'),
             'tax_total' => $salesCollection->sum('tax') - $returnsCollection->sum('tax'),
             'gross_total' => $grossTotal,
             'returns_total' => $returnsTotal,
@@ -292,28 +293,34 @@ class SalesStatementService
         $originalQty = (float) ($item->getRawOriginal('qty') ?: $qty ?: 1);
         $ratio = $originalQty > 0 ? ($qty / $originalQty) : 1;
 
-        $item->loadMissing(['invoice', 'extras']);
+        $item->loadMissing(['invoice', 'extras', 'taxProfile']);
 
         $extras = 0.0;
         foreach ($item->extras as $extra) {
             $extras += (float) $extra->unit_price * $qty;
         }
 
-        $discount = (float) $item->discount * $ratio;
-        $tax = (float) $item->tax * $ratio;
+        $discount = (float) $item->getRawOriginal('discount') * $ratio;
         $subtotal = ((float) $item->price * $qty) + $extras - $discount;
 
-        if ($item->invoice->prices_includes_taxes) {
-            $total = $subtotal;
-            $tax = 0.0;
-        } else {
-            $total = $subtotal + $tax;
+        $tax = (float) $item->getRawOriginal('tax') * $ratio;
+
+        if ($tax <= 0 && $item->taxProfile) {
+            $tax = MathService::instance()->getTaxFromTaxProfile(
+                $subtotal,
+                $item->taxProfile,
+                $item->invoice->prices_includes_taxes
+            );
         }
 
+        $total = $item->invoice->prices_includes_taxes
+            ? $subtotal
+            : $subtotal + $tax;
+
         return [
-            'discount' => $discount,
-            'tax' => $tax,
-            'total' => $total,
+            'discount' => round($discount, 2),
+            'tax' => round($tax, 2),
+            'total' => round($total, 2),
         ];
     }
 

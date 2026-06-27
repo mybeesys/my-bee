@@ -41,7 +41,7 @@ class ListSalesInvoices extends ListRecords
                             ->searchable()
                             ->options(function () {
                                 $data = [];
-                                foreach (PriceOffer::all() as $priceOffer) {
+                                foreach (PriceOffer::query()->notExpired()->get() as $priceOffer) {
                                     $data[$priceOffer->id] = $priceOffer->no . ' - ' . $priceOffer->description;
                                 }
 

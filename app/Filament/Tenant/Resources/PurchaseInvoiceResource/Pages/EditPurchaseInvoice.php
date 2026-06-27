@@ -23,6 +23,14 @@ class EditPurchaseInvoice extends EditRecord
         ];
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            PurchaseInvoiceResource::purchaseReturnInvoiceHeaderAction($this->record),
+            ...parent::getHeaderActions(),
+        ];
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         return $this->prepareInvoiceFormDataForPersistence($data);
