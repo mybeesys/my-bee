@@ -72,7 +72,7 @@ class ViewOrder extends ViewRecord
                         ]);
                     }
 
-                    $rv = \App\Models\ReceiptVoucher::whereInvoiceId($this->record->invoice->id)->first();
+                    $rv = \App\Models\ReceiptVoucher::findForInvoice($this->record->invoice->id);
 
                     if ($rv) {
                         return \App\Filament\Tenant\Resources\ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]);

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Tenant\Concerns\InteractsWithPaymentVoucherSupplierForm;
 use App\Filament\Tenant\Resources\PaymentVoucherResource\Pages;
 use App\Filament\Tenant\Resources\PaymentVoucherResource\RelationManagers;
 use App\Models\Acc4;
@@ -36,6 +37,8 @@ use Illuminate\Support\HtmlString;
 
 class PaymentVoucherResource extends Resource
 {
+    use InteractsWithPaymentVoucherSupplierForm;
+
     protected static ?string $model = PaymentVoucher::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -74,9 +77,6 @@ class PaymentVoucherResource extends Resource
 
                     hidden_user_id_field(),
 
-                    Forms\Components\Hidden::make('for')
-                        ->default("supplier"),
-
                     TextInput::make('no')
                         ->label(__('fields.voucher_no'))
                         ->readOnly()
@@ -90,20 +90,6 @@ class PaymentVoucherResource extends Resource
                         ->maxDate(now())
                         ->default(now())
                         ->displayFormat('d/m/Y'),
-
-                    Forms\Components\Radio::make('for')
-                        ->live()
-                        ->label(__('fields.make_payment_voucher_for'))
-                        ->disabledOn(Pages\EditPaymentVoucher::class)
-                        ->afterStateUpdated(function ($state, Set $set, $livewire) {
-                            $set('acc4_code', null);
-                            $set('invoice_id', null);
-                            $livewire->data['payments'] = [];
-                        })
-                        ->options([
-                            'supplier' => __('fields.payment_voucher_for_supplier'),
-                            'other_entity' => __('fields.payment_voucher_for_other_entity'),
-                        ]),
 
                     Select::make('acc4_code')
                         ->live()
@@ -173,7 +159,32 @@ class PaymentVoucherResource extends Resource
                         })
                         ->required(),
 
-                ])->columns(3),
+                ])
+                    ->visible(fn ($livewire, Get $get) => $livewire instanceof Pages\EditPaymentVoucher
+                        || $get('for') === 'other_entity')
+                    ->columns(3),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Radio::make('for')
+                        ->live()
+                        ->label(__('fields.make_payment_voucher_for'))
+                        ->afterStateUpdated(function ($state, Set $set, $livewire) {
+                            $set('acc4_code', null);
+                            $set('invoice_id', null);
+                            $set('credit_acc4_code', null);
+                            $set('paid_amount', null);
+                            $livewire->data['payments'] = [];
+                            $livewire->data['supplier_invoices'] = [];
+                        })
+                        ->options([
+                            'supplier' => __('fields.payment_voucher_for_supplier'),
+                            'other_entity' => __('fields.payment_voucher_for_other_entity'),
+                        ]),
+                ])
+                    ->visible(fn ($livewire) => $livewire instanceof Pages\CreatePaymentVoucher)
+                    ->columns(1),
+
+                static::supplierPaymentCreateSection(),
 
                 Forms\Components\Section::make([
 
@@ -202,7 +213,8 @@ class PaymentVoucherResource extends Resource
                         }),
 
                 ])
-                    ->visible(fn(Get $get) => $get('invoice_id') != null)
+                    ->visible(fn ($livewire, Get $get) => ($livewire instanceof Pages\EditPaymentVoucher
+                        || $get('for') === 'other_entity') && filled($get('invoice_id')))
                     ->columns(3),
 
 
@@ -358,7 +370,9 @@ class PaymentVoucherResource extends Resource
                                 ->directory('receipt_voucher_payments'),
 
                         ]),
-                ]),
+                ])
+                    ->visible(fn ($livewire, Get $get) => $livewire instanceof Pages\EditPaymentVoucher
+                        || $get('for') === 'other_entity'),
 
 
                 Forms\Components\Section::make([
@@ -369,6 +383,8 @@ class PaymentVoucherResource extends Resource
                         ->currency()
                         ->dehydrated(false),
                 ])
+                    ->visible(fn ($livewire, Get $get) => $livewire instanceof Pages\EditPaymentVoucher
+                        || $get('for') === 'other_entity')
                     ->columns(3),
 
                 View::make('components.loading'),

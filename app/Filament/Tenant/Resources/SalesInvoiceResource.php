@@ -566,7 +566,7 @@ class SalesInvoiceResource extends Resource
                                 return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->id]));
                             }
 
-                            $rv = ReceiptVoucher::whereInvoiceId($record->id)->first();
+                            $rv = ReceiptVoucher::findForInvoice($record->id);
 
                             if ($rv) {
                                 return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id, 'rv' => $rv->id]));

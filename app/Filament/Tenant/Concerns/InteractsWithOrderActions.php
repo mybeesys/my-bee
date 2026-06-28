@@ -165,7 +165,7 @@ trait InteractsWithOrderActions
                     ]);
                 }
 
-                $rv = ReceiptVoucher::whereInvoiceId($record->invoice->id)->first();
+                $rv = ReceiptVoucher::findForInvoice($record->invoice->id);
 
                 if ($rv) {
                     return ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]);

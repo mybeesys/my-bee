@@ -270,4 +270,87 @@ class InvoicePaymentTermsService
 
         $payment->update(['transaction_completed' => 1]);
     }
+
+    /**
+     * @param  array<int, array{invoice_id: int, amount: float, invoice: Invoice}>  $allocations
+     */
+    public function recordAllocatedCustomerReceipt(
+        string $customerAcc4Code,
+        string $debitAcc4Code,
+        $date,
+        string $baseStatement,
+        array $allocations,
+    ): ReceiptVoucher {
+        if ($allocations === []) {
+            throw ValidationException::withMessages([
+                'data.paid_amount' => __('fields.receipt_voucher_no_unpaid_invoices'),
+            ]);
+        }
+
+        $createdVoucher = null;
+
+        foreach ($allocations as $allocation) {
+            /** @var Invoice $invoice */
+            $invoice = $allocation['invoice'];
+            $amount = (float) $allocation['amount'];
+            $statement = trim($baseStatement) !== ''
+                ? $baseStatement
+                : __('fields.receipt_voucher_invoice_settlement', ['no' => $invoice->no]);
+
+            $this->recordCreditPayment($invoice, [
+                'amount' => $amount,
+                'account_code' => $debitAcc4Code,
+                'date' => $date,
+                'statement' => $statement,
+            ]);
+
+            $createdVoucher ??= ReceiptVoucher::findForInvoice($invoice->id);
+        }
+
+        return $createdVoucher?->fresh(['payments', 'acc4'])
+            ?? throw ValidationException::withMessages([
+                'data.paid_amount' => __('fields.receipt_voucher_no_unpaid_invoices'),
+            ]);
+    }
+
+    /**
+     * @param  array<int, array{invoice_id: int, amount: float, invoice: Invoice}>  $allocations
+     */
+    public function recordAllocatedSupplierPayment(
+        string $creditAcc4Code,
+        $date,
+        string $baseStatement,
+        array $allocations,
+    ): PaymentVoucher {
+        if ($allocations === []) {
+            throw ValidationException::withMessages([
+                'data.paid_amount' => __('fields.receipt_voucher_no_unpaid_invoices'),
+            ]);
+        }
+
+        $createdVoucher = null;
+
+        foreach ($allocations as $allocation) {
+            /** @var Invoice $invoice */
+            $invoice = $allocation['invoice'];
+            $amount = (float) $allocation['amount'];
+            $statement = trim($baseStatement) !== ''
+                ? $baseStatement
+                : __('fields.payment_voucher_invoice_settlement', ['no' => $invoice->no]);
+
+            $this->recordCreditPayment($invoice, [
+                'amount' => $amount,
+                'account_code' => $creditAcc4Code,
+                'date' => $date,
+                'statement' => $statement,
+            ]);
+
+            $createdVoucher ??= PaymentVoucher::findForInvoice($invoice->id);
+        }
+
+        return $createdVoucher?->fresh(['payments', 'acc4'])
+            ?? throw ValidationException::withMessages([
+                'data.paid_amount' => __('fields.receipt_voucher_no_unpaid_invoices'),
+            ]);
+    }
 }

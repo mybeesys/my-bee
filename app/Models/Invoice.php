@@ -956,7 +956,7 @@ class Invoice extends BaseModel
     //create or edit (if exist) receipt voucher
     public function getReceiptVoucherResourceUrl()
     {
-        $rv = ReceiptVoucher::where('invoice_id', $this->id)->first();
+        $rv = ReceiptVoucher::findForInvoice($this->id);
 
         if ($rv) {
             return ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id]);
@@ -969,7 +969,7 @@ class Invoice extends BaseModel
     //create or edit (if exist) payment voucher
     public function getPaymentVoucherResourceUrl()
     {
-        $pv = PaymentVoucher::where('invoice_id', $this->id)->first();
+        $pv = PaymentVoucher::findForInvoice($this->id);
 
         if ($pv) {
             return PaymentVoucherResource::getUrl('edit', ['record' => $pv->id]);

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Tenant\Concerns\InteractsWithReceiptVoucherCustomerForm;
 use App\Filament\Tenant\Resources\ReceiptVoucherResource\Pages;
 use App\Filament\Tenant\Resources\ReceiptVoucherResource\RelationManagers;
 use App\Models\Acc4;
@@ -35,6 +36,8 @@ use Illuminate\Support\HtmlString;
 
 class ReceiptVoucherResource extends Resource
 {
+    use InteractsWithReceiptVoucherCustomerForm;
+
     protected static ?string $model = ReceiptVoucher::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -71,9 +74,7 @@ class ReceiptVoucherResource extends Resource
         return $form
             ->schema([
                 Forms\Components\Section::make([
-
                     hidden_user_id_field(),
-
 
                     TextInput::make('no')
                         ->label(__('fields.voucher_no'))
@@ -88,22 +89,6 @@ class ReceiptVoucherResource extends Resource
                         ->maxDate(now())
                         ->default(now())
                         ->displayFormat('d/m/Y'),
-
-                    Forms\Components\Radio::make('for')
-                        ->live()
-                        ->label(__('fields.make_receipt_voucher_for'))
-                        ->disabledOn(Pages\EditReceiptVoucher::class)
-                        ->afterStateUpdated(function ($state, Set $set, $livewire) {
-                            $set('acc4_code', null);
-                            $set('invoice_id', null);
-                            $livewire->data['payments'] = [];
-//                            self::updateInvoiceProperties($record?->invoice, $livewire);
-                        })
-                        ->options([
-                            'customer' => __('fields.receipt_voucher_for_customer'),
-                            'other_entity' => __('fields.receipt_voucher_for_other_entity'),
-                        ]),
-
 
                     Select::make('acc4_code')
                         ->live()
@@ -184,7 +169,32 @@ class ReceiptVoucherResource extends Resource
                         })
                         ->required(),
 
-                ])->columns(3),
+                ])
+                    ->visible(fn ($livewire, Get $get) => $livewire instanceof Pages\EditReceiptVoucher
+                        || $get('for') === 'other_entity')
+                    ->columns(3),
+
+                Forms\Components\Section::make([
+                    Forms\Components\Radio::make('for')
+                        ->live()
+                        ->label(__('fields.make_receipt_voucher_for'))
+                        ->afterStateUpdated(function ($state, Set $set, $livewire) {
+                            $set('acc4_code', null);
+                            $set('invoice_id', null);
+                            $set('debit_acc4_code', null);
+                            $set('paid_amount', null);
+                            $livewire->data['payments'] = [];
+                            $livewire->data['customer_invoices'] = [];
+                        })
+                        ->options([
+                            'customer' => __('fields.receipt_voucher_for_customer'),
+                            'other_entity' => __('fields.receipt_voucher_for_other_entity'),
+                        ]),
+                ])
+                    ->visible(fn ($livewire) => $livewire instanceof Pages\CreateReceiptVoucher)
+                    ->columns(1),
+
+                static::customerReceiptCreateSection(),
 
                 Forms\Components\Section::make([
 
@@ -213,9 +223,9 @@ class ReceiptVoucherResource extends Resource
                         }),
 
                 ])
-                    ->visible(fn(Get $get) => $get('invoice_id') != null)
+                    ->visible(fn ($livewire, Get $get) => ($livewire instanceof Pages\EditReceiptVoucher
+                        || $get('for') === 'other_entity') && filled($get('invoice_id')))
                     ->columns(3),
-
 
                 Forms\Components\Section::make([
 
@@ -369,7 +379,9 @@ class ReceiptVoucherResource extends Resource
                                 ->directory('receipt_voucher_payments'),
 
                         ]),
-                ]),
+                ])
+                    ->visible(fn ($livewire, Get $get) => $livewire instanceof Pages\EditReceiptVoucher
+                        || $get('for') === 'other_entity'),
 
 
                 Forms\Components\Section::make([
@@ -380,6 +392,8 @@ class ReceiptVoucherResource extends Resource
                         ->currency()
                         ->dehydrated(false),
                 ])
+                    ->visible(fn ($livewire, Get $get) => $livewire instanceof Pages\EditReceiptVoucher
+                        || $get('for') === 'other_entity')
                     ->columns(3),
 
                 View::make('components.loading'),

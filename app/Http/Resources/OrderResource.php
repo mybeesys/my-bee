@@ -20,7 +20,7 @@ class OrderResource extends BaseResource
             'no' => $this->no,
             'invoiceId' => $this->invoice->id,
             'invoiceNo' => $this->invoice->no,
-            'invoiceReceiptVoucherId' => ReceiptVoucher::whereInvoiceId($this->invoice->id)->first()?->id(),
+            'invoiceReceiptVoucherId' => ReceiptVoucher::findForInvoice($this->invoice->id)?->id(),
             'invoiceUID' => $this->invoice->uid,
             'status' => $this->status,
             'statusName' => __("fields.order_status_$this->status"),

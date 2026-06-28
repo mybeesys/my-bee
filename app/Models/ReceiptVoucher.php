@@ -38,4 +38,19 @@ class ReceiptVoucher extends BaseModel
     {
         return $this->belongsTo(Acc4::class);
     }
+
+    public static function findForInvoice(int $invoiceId): ?self
+    {
+        $direct = static::query()->where('invoice_id', $invoiceId)->first();
+
+        if ($direct) {
+            return $direct;
+        }
+
+        return static::query()
+            ->whereHas('payments', fn ($query) => $query
+                ->where('model_type', Invoice::class)
+                ->where('model_id', $invoiceId))
+            ->first();
+    }
 }
