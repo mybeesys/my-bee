@@ -18,8 +18,11 @@ class CreatePurchasesReturns extends CreateRecord
         $invoiceId = request()->integer('invoice_id');
 
         if ($invoiceId) {
+            $invoice = Invoice::find($invoiceId);
+
             $this->form->fill([
                 'invoice_id' => $invoiceId,
+                'prices_includes_taxes' => (bool) ($invoice?->prices_includes_taxes ?? true),
             ]);
         }
     }
@@ -47,7 +50,7 @@ class CreatePurchasesReturns extends CreateRecord
             $this->halt();
         }
 
-        if (collect($this->data['details'])->sum('total') > $total_paid_by_treasury_without_delivery_fees_or_other_fees) {
+        if (PurchasesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []) > $total_paid_by_treasury_without_delivery_fees_or_other_fees) {
             fns()->sendWarning(__('fields.to_be_returned_amount_is_greater_than_paid_amount'));
             $this->halt();
         }
@@ -67,7 +70,7 @@ class CreatePurchasesReturns extends CreateRecord
                 now(),
                 main_currency_iso_code(),
                 generate_double_entry_transaction_id(),
-                collect($this->data['details'])->sum('total'),
+                PurchasesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []),
                 null,
                 'Return paid amount to treasury - إرجاع المبلغ المدفوع للصندوق',
                 'Return paid amount to treasury - إرجاع المبلغ المدفوع للصندوق',

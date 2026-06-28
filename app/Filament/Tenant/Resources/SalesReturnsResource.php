@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Tenant\Concerns\InteractsWithInvoiceReturnLineItems;
 use App\Filament\Tenant\Resources\SalesReturnsResource\Pages;
 use App\Filament\Tenant\Resources\SalesReturnsResource\RelationManagers;
 use App\Models\Customer;
@@ -25,6 +26,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SalesReturnsResource extends Resource
 {
+    use InteractsWithInvoiceReturnLineItems;
+
     protected static ?string $model = SalesReturns::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-long-up';
@@ -67,6 +70,11 @@ class SalesReturnsResource extends Resource
                             ->label(__('fields.sales_invoice'))
                             ->searchable()
                             ->live()
+                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                                if ($invoice = Invoice::find($state)) {
+                                    $set('prices_includes_taxes', (bool) $invoice->prices_includes_taxes);
+                                }
+                            })
                             ->options(function ($livewire) {
                                 $data = [];
                                 if ($livewire instanceof Pages\CreateSalesReturns)
@@ -84,6 +92,8 @@ class SalesReturnsResource extends Resource
                 Forms\Components\Section::make()
                     ->visible(fn(Forms\Get $get) => $get('invoice_id') !== null)
                     ->schema([
+                        static::returnLinesToolbar(),
+
                         TableRepeater::make('details')
                             ->required()
                             ->minItems(1)
@@ -147,20 +157,23 @@ class SalesReturnsResource extends Resource
                             )
                             ->live()
                             ->mutateRelationshipDataBeforeFillUsing(function ($data) {
-                                $price = InvoiceItem::find($data['invoice_item_id'])->price;
+                                $item = InvoiceItem::with('invoice')->find($data['invoice_item_id']);
 
-                                $data['discount'] = number_format($data['discount'], currency_decimals(), '.', ',');
-                                $data['tax'] = number_format($data['tax'], currency_decimals(), '.', ',');
-                                $data['price'] = number_format($data['price'], currency_decimals(), '.', ',');
-                                $data['total'] = number_format($data['total'], currency_decimals(), '.', ',');
-                                $data['unit_price'] = number_format($price, currency_decimals(), '.', ',');
-                                $data['price'] = number_format($data['qty'] * $price, currency_decimals(), '.', ',');
-                                return $data;
+                                if (!$item) {
+                                    return $data;
+                                }
+
+                                $pricesIncludesTaxes = (bool) ($item->invoice->prices_includes_taxes ?? true);
+                                $amounts = static::formatReturnLineAmounts(
+                                    static::calculateReturnLineAmounts($item, (float) $data['qty'], $pricesIncludesTaxes)
+                                );
+
+                                return array_merge($data, $amounts);
                             })
                             ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
                                 $data['user_id'] = $data['user_id'] ?? filament()->auth()->id() ?? auth()->id();
 
-                                return $data;
+                                return static::normalizeReturnDetailForSave($data);
                             })
                             ->schema([
 
@@ -189,25 +202,17 @@ class SalesReturnsResource extends Resource
                                             }
                                         }
                                         return $data;
-                                    })->afterStateUpdated(function ($state, Forms\Set $set, $record) {
+                                    })->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
                                         $item = InvoiceItem::find($state);
+                                        $pricesIncludesTaxes = (bool) ($get('data.prices_includes_taxes', true) ?? true);
 
                                         if ($item) {
                                             $qty = 1;
-                                            $tax = ($item->tax / $item->qty);
-                                            $discount = $item->discount;
-
-                                            $total = number_format(($qty * $item->price) + $tax - $discount, currency_decimals(), '.', ',');
 
                                             $set('min_qty', 1);
                                             $set('max_qty', $item->qty);
                                             $set('qty', $qty);
-                                            $set('discount', number_format($discount, currency_decimals(), '.', ','));
-                                            $set('tax', number_format($tax, currency_decimals(), '.', ','));
-                                            $set('unit_price', number_format($item->price, currency_decimals(), '.', ','));
-                                            $set('price', number_format($qty * $item->price, currency_decimals(), '.', ','));
-                                            $set('total', $total);
-
+                                            static::applyReturnLineAmounts($set, $item, $qty, $pricesIncludesTaxes);
                                         } else {
                                             $set('min_qty', null);
                                             $set('max_qty', null);
@@ -230,20 +235,10 @@ class SalesReturnsResource extends Resource
                                     ->live(true)
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
                                         $item = InvoiceItem::find($get('invoice_item_id'));
+                                        $pricesIncludesTaxes = (bool) ($get('data.prices_includes_taxes', true) ?? true);
 
                                         if ($item and $state) {
-                                            $tax_per_item = $item->tax / $item->qty;
-
-                                            $tax = $tax_per_item * $state;
-                                            $discount = $item->discount;
-
-                                            $total = number_format(($state * $item->price) + $tax - $discount, currency_decimals(), '.', ',');
-
-                                            $set('unit_price', number_format($item->price, currency_decimals(), '.', ','));
-                                            $set('price', number_format($state * $item->price, currency_decimals(), '.', ','));
-                                            $set('discount', number_format($discount, currency_decimals(), '.', ','));
-                                            $set('tax', number_format($tax, currency_decimals(), '.', ','));
-                                            $set('total', $total);
+                                            static::applyReturnLineAmounts($set, $item, $state, $pricesIncludesTaxes);
                                         } else {
                                             $set('unit_price', null);
                                             $set('price', null);
