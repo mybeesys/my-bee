@@ -79,14 +79,22 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.entity'))
                     ->color(Color::Sky)
                     ->getStateUsing(function (InvoiceItem $record) {
-                        if ($record->invoice->customer_id)
-                            return $record->invoice->customer->name;
-                        return $record->invoice->supplier->name;
+                        if ($record->invoice->customer_id) {
+                            return $record->invoice->customer?->name ?? '-';
+                        }
+
+                        return $record->invoice->supplier?->name ?? '-';
                     })
                     ->url(function (InvoiceItem $record) {
-                        if ($record->invoice->customer_id)
+                        if ($record->invoice->customer_id && $record->invoice->customer) {
                             return CustomerResource::getUrl('edit', ['record' => $record->invoice->customer_id]);
-                        return SupplierResource::getUrl('edit', ['record' => $record->invoice->supplier_id]);
+                        }
+
+                        if ($record->invoice->supplier_id && $record->invoice->supplier) {
+                            return SupplierResource::getUrl('edit', ['record' => $record->invoice->supplier_id]);
+                        }
+
+                        return null;
                     }, true),
 
                 Tables\Columns\TextColumn::make('invoice.no')

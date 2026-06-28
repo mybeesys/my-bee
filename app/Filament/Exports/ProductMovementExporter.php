@@ -28,9 +28,11 @@ class ProductMovementExporter extends Exporter
             ExportColumn::make('entity')
                 ->label(__('fields.entity'))
                 ->getStateUsing(function (InvoiceItem $record) {
-                    if ($record->invoice->customer_id)
-                        return $record->invoice->customer->name;
-                    return $record->invoice->supplier->name;
+                    if ($record->invoice->customer_id) {
+                        return $record->invoice->customer?->name ?? '-';
+                    }
+
+                    return $record->invoice->supplier?->name ?? '-';
                 }),
 
             ExportColumn::make('invoice.no')
