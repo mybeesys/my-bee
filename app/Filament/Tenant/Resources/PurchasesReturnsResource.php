@@ -80,7 +80,8 @@ class PurchasesReturnsResource extends Resource
                                 $invoices = Invoice::with(['supplier'])->purchases()->where('temp', 0)->get();
 
                             foreach ($invoices as $invoice) {
-                                $data[$invoice->id] = $invoice->supplier->name . " - " . $invoice->no;
+                                $partyName = $invoice->supplier?->name ?? '-';
+                                $data[$invoice->id] = $partyName . ' - ' . $invoice->no;
                             }
                             return $data;
                         }),

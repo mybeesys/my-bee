@@ -83,7 +83,8 @@ class SalesReturnsResource extends Resource
                                     $invoices = Invoice::with(['customer'])->sales()->where('temp', 0)->get();
 
                                 foreach ($invoices as $invoice) {
-                                    $data[$invoice->id] = $invoice->customer->name . " - " . $invoice->no;
+                                    $partyName = $invoice->customer?->name ?? '-';
+                                    $data[$invoice->id] = $partyName . ' - ' . $invoice->no;
                                 }
                                 return $data;
                             }),
