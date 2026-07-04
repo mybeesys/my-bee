@@ -3,10 +3,35 @@
 namespace App\Filament\Tenant\Resources\Shield\Concerns;
 
 use App\Filament\Tenant\Resources\Shield\RoleResource;
+use Illuminate\Support\Collection;
 
 trait InteractsWithRolePermissionsMatrix
 {
     public int $rolePermissionsMatrixKey = 0;
+
+    /**
+     * Matrix toggles update Livewire $data directly; hidden checkbox lists are not synced.
+     * Always read selected permissions from $this->data when saving.
+     */
+    protected function selectedRolePermissions(): Collection
+    {
+        return collect($this->data ?? [])
+            ->filter(fn ($value, $key) => ! in_array($key, ['name', 'guard_name', 'select_all'], true))
+            ->values()
+            ->flatten()
+            ->filter(fn ($permission) => is_string($permission) && filled($permission))
+            ->unique()
+            ->values();
+    }
+
+    protected function syncRolePermissionsFormState(): void
+    {
+        if (! isset($this->form)) {
+            return;
+        }
+
+        $this->form->fill($this->data);
+    }
 
     public function setAllRolePermissions(bool $checked): void
     {
@@ -43,6 +68,7 @@ trait InteractsWithRolePermissionsMatrix
         $this->data[$resourceField] = $state;
 
         $this->syncRoleSelectAll();
+        $this->syncRolePermissionsFormState();
         $this->bumpRolePermissionsMatrixKey();
     }
 
@@ -63,6 +89,7 @@ trait InteractsWithRolePermissionsMatrix
         $this->data[$resourceField] = array_values(array_unique($state));
 
         $this->syncRoleSelectAll();
+        $this->syncRolePermissionsFormState();
         $this->bumpRolePermissionsMatrixKey();
     }
 
