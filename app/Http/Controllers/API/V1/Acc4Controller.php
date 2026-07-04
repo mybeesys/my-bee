@@ -15,7 +15,11 @@ class Acc4Controller extends BaseController
      */
     public function index()
     {
-        $data = Acc4::with(['acc3.acc2.acc1'])->get();
+        $data = Acc4::query()
+            ->excludeInventoryItems()
+            ->with(['acc3.acc2.acc1'])
+            ->get();
+
         return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
     }
     /**

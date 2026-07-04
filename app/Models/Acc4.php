@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Product;
+use App\Models\ProductExtra;
+use App\Models\ProductUnit;
+use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +38,34 @@ class Acc4 extends BaseModel
     public function scopeProduct(Builder $query)
     {
         return $query->where('item_type', Product::class);
+    }
+
+    public static function inventoryItemClasses(): array
+    {
+        return [
+            Product::class,
+            ProductVariant::class,
+            ProductExtra::class,
+            ProductUnit::class,
+        ];
+    }
+
+    public function scopeExcludeInventoryItems(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query->whereNull('item_type')
+                ->orWhereNotIn('item_type', static::inventoryItemClasses());
+        });
+    }
+
+    public function scopeOnlyInventoryItems(Builder $query): Builder
+    {
+        return $query->whereIn('item_type', static::inventoryItemClasses());
+    }
+
+    public function isInventoryItemAccount(): bool
+    {
+        return in_array($this->item_type, static::inventoryItemClasses(), true);
     }
 
     public function prices(): \Illuminate\Database\Eloquent\Relations\HasMany
