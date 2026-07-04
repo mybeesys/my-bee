@@ -180,7 +180,7 @@ class SalesInvoiceResource extends Resource
                     ->disabled(fn () => $form->getRecord()?->isLocked() ?? false)
                     ->key('items-section')
                     ->extraAttributes(['class' => 'invoice-lines-panel'])
-                    ->schema([
+                                    ->schema([
                         static::invoiceLinesToolbar(),
 
                         TableRepeater::make('items')
@@ -554,24 +554,24 @@ class SalesInvoiceResource extends Resource
 
                     static::salesReturnInvoiceTableAction(),
 
-                    Tables\Actions\Action::make('complete_payment')
-                        ->label(__('fields.payment_details'))
-                        ->icon('heroicon-o-currency-dollar')
-                        ->color('success')
-                        ->visible(function ($record) {
+                Tables\Actions\Action::make('complete_payment')
+                    ->label(__('fields.payment_details'))
+                    ->icon('heroicon-o-currency-dollar')
+                    ->color('success')
+                    ->visible(function ($record) {
                             return ! $record->paid;
-                        })
-                        ->action(function (Invoice $record) {
-                            if ($record->salesPayments->isEmpty()) {
-                                return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->id]));
-                            }
+                    })
+                    ->action(function (Invoice $record) {
+                        if ($record->salesPayments->isEmpty()) {
+                            return redirect(ReceiptVoucherResource::getUrl('create', ['invoice_id' => $record->id]));
+                        }
 
                             $rv = ReceiptVoucher::findForInvoice($record->id);
 
                             if ($rv) {
-                                return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id, 'rv' => $rv->id]));
+                            return redirect(ReceiptVoucherResource::getUrl('edit', ['record' => $rv->id, 'rv' => $rv->id]));
                             }
-                        }),
+                    }),
                 ])),
             ])
             ->bulkActions([

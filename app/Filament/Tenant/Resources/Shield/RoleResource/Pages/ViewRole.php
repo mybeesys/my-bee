@@ -2,12 +2,15 @@
 
 namespace App\Filament\Tenant\Resources\Shield\RoleResource\Pages;
 
+use App\Filament\Tenant\Resources\Shield\Concerns\InteractsWithRolePermissionsMatrix;
 use App\Filament\Tenant\Resources\Shield\RoleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewRole extends ViewRecord
 {
+    use InteractsWithRolePermissionsMatrix;
+
     protected static string $resource = RoleResource::class;
 
     protected function getActions(): array

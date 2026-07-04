@@ -291,6 +291,11 @@ class RoleResource extends Resource implements HasShieldPermissions
         ];
     }
 
+    public static function getRecordUrl(Model $record): string
+    {
+        return static::getUrl('edit', ['record' => $record]);
+    }
+
     public static function getModel(): string
     {
         return Utils::getRoleModel();

@@ -4,7 +4,6 @@ namespace App\Filament\Tenant\Resources\Shield\RoleResource\Pages;
 
 use App\Filament\Tenant\Resources\Shield\Concerns\InteractsWithRolePermissionsMatrix;
 use App\Filament\Tenant\Resources\Shield\RoleResource;
-use App\Models\CustomRole;
 use BezhanSalleh\FilamentShield\Support\Utils;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Arr;
@@ -35,7 +34,10 @@ class CreateRole extends CreateRecord
             ->values()
             ->flatten();
 
-        return Arr::only($data, ['name', 'guard_name']);
+        return [
+            ...Arr::only($data, ['name', 'guard_name']),
+            'tenant_id' => filament()->getTenant()?->id,
+        ];
     }
 
     protected function afterCreate(): void

@@ -6,6 +6,8 @@
     $tabs = $matrix['tabs'] ?? [];
     $defaultTab = $matrix['defaultTab'] ?? ($tabs[0]['id'] ?? 'resources');
     $isAr = app()->getLocale() === 'ar';
+    $readOnly = $this instanceof \Filament\Resources\Pages\ViewRecord;
+    $matrixKey = $this->rolePermissionsMatrixKey ?? 0;
 
     $isCellChecked = function (string $field, array $permissions) {
         if ($permissions === []) {
@@ -30,7 +32,7 @@
 
 <div
     class="role-permissions-matrix"
-    wire:key="role-permissions-matrix-{{ $this->rolePermissionsMatrixKey }}"
+    wire:key="role-permissions-matrix-{{ $matrixKey }}"
     x-data="{ tab: @js($defaultTab) }"
 >
     @if (count($tabs) > 1)
@@ -112,12 +114,14 @@
                                             $disabled = $cellPermissions === [];
                                         @endphp
                                         <td class="role-permissions-matrix__action-cell">
-                                            <label class="role-permissions-matrix__checkbox {{ $disabled ? 'role-permissions-matrix__checkbox--disabled' : '' }}">
+                                            <label class="role-permissions-matrix__checkbox {{ ($disabled || $readOnly) ? 'role-permissions-matrix__checkbox--disabled' : '' }}">
                                                 <input
                                                     type="checkbox"
-                                                    @disabled($disabled)
+                                                    @disabled($disabled || $readOnly)
                                                     @checked($checked)
-                                                    wire:click="toggleRolePermissionColumn(@js($item['field']), @js($cellPermissions), {{ $checked ? 'false' : 'true' }})"
+                                                    @unless($readOnly)
+                                                        wire:click="toggleRolePermissionColumn(@js($item['field']), @js($cellPermissions), {{ $checked ? 'false' : 'true' }})"
+                                                    @endunless
                                                 />
                                                 <span class="role-permissions-matrix__checkbox-ui"></span>
                                             </label>
@@ -171,11 +175,14 @@
                                         {{ $item['label'] }}
                                     </td>
                                     <td class="role-permissions-matrix__action-cell">
-                                        <label class="role-permissions-matrix__checkbox">
+                                        <label class="role-permissions-matrix__checkbox {{ $readOnly ? 'role-permissions-matrix__checkbox--disabled' : '' }}">
                                             <input
                                                 type="checkbox"
+                                                @disabled($readOnly)
                                                 @checked($checked)
-                                                wire:click="toggleRoleSimplePermission(@js($item['field']), @js($item['permission']), {{ $checked ? 'false' : 'true' }})"
+                                                @unless($readOnly)
+                                                    wire:click="toggleRoleSimplePermission(@js($item['field']), @js($item['permission']), {{ $checked ? 'false' : 'true' }})"
+                                                @endunless
                                             />
                                             <span class="role-permissions-matrix__checkbox-ui"></span>
                                         </label>
