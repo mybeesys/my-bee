@@ -847,6 +847,12 @@ return [
 
     'new_clients' => 'العملاء الجدد',
     'latest_orders' => 'أحدث الطلبات',
+    'notification_new_order_title' => 'طلب جديد #:no',
+    'notification_new_order_body' => 'عميل: :customer — المصدر: :source',
+    'notification_order_source_shop' => 'المتجر الإلكتروني',
+    'notification_order_source_dashboard' => 'لوحة التحكم',
+    'notification_unread_badge' => 'جديد',
+    'view_order' => 'عرض الطلب',
 
     'order_will_be_locked_after_this_action' => "هذا الإجراء سيقوم بإغلاق الطلب والفاتورة",
 

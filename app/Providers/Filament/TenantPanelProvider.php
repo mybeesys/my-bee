@@ -55,6 +55,7 @@ class TenantPanelProvider extends PanelProvider
             ->collapsedSidebarWidth('4rem')
             ->databaseTransactions()
             ->databaseNotifications()
+            ->databaseNotificationsPolling('15s')
             ->unsavedChangesAlerts()
             ->spa()
             ->brandName(fn() => filament()->getTenant()?->name)

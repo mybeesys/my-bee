@@ -840,6 +840,12 @@ return [
 
     'new_clients' => 'New clients ',
     'latest_orders' => 'Latest orders',
+    'notification_new_order_title' => 'New order #:no',
+    'notification_new_order_body' => 'Customer: :customer — Source: :source',
+    'notification_order_source_shop' => 'Online store',
+    'notification_order_source_dashboard' => 'Dashboard',
+    'notification_unread_badge' => 'New',
+    'view_order' => 'View order',
 
     'order_will_be_locked_after_this_action' => "Order and invoice will be locked after this action",
 

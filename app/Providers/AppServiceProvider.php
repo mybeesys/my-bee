@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use App\Models\User;
 use App\Services\CouponService;
 use App\Tables\Columns\DateColumn;
@@ -27,6 +29,7 @@ use Illuminate\Support\ServiceProvider;
 use Filament\Pages\Page;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -79,6 +82,13 @@ class AppServiceProvider extends ServiceProvider
         FilamentView::registerRenderHook(
              'panels::global-search.after',
             fn (): View => view('shop'),
+        );
+
+        Order::observe(OrderObserver::class);
+
+        Livewire::component(
+            \Filament\Livewire\DatabaseNotifications::class,
+            \App\Livewire\TenantDatabaseNotifications::class,
         );
     }
 

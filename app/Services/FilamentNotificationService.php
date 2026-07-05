@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Filament\Facades\Filament;
+use Filament\Notifications\Events\DatabaseNotificationsSent;
 use Filament\Notifications\Notification;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -95,8 +96,12 @@ class FilamentNotificationService
         if ($this->persist)
             $filamentNotification->persistent();
 
-        if ($this->db_recipients and $this->db_recipients->isNotEmpty())
-            $filamentNotification->sendToDatabase($this->db_recipients);
+        if ($this->db_recipients and $this->db_recipients->isNotEmpty()) {
+            foreach ($this->db_recipients as $user) {
+                $user->notifyNow($filamentNotification->toDatabase());
+                DatabaseNotificationsSent::dispatch($user);
+            }
+        }
 
         if ($this->broadcast_recipients and $this->broadcast_recipients->isNotEmpty())
             $filamentNotification->broadcast($this->broadcast_recipients);

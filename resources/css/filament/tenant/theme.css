@@ -64,6 +64,36 @@
     @apply rounded-lg object-contain drop-shadow-sm;
 }
 
+/* —— Database notifications —— */
+.fi-panel-tenant .tenant-database-notifications-trigger .fi-badge {
+    @apply bg-primary-500 text-gray-900 ring-2 ring-white dark:ring-gray-900;
+}
+
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item {
+    @apply transition-colors;
+}
+
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item--unread {
+    @apply bg-primary-50/70 dark:bg-primary-500/10;
+}
+
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item--read {
+    @apply bg-white opacity-80 dark:bg-gray-900/40;
+}
+
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item--read .fi-no-notification-title,
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item--read .fi-no-notification-body {
+    @apply text-gray-500 dark:text-gray-400;
+}
+
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item__badge {
+    @apply absolute end-3 top-3 z-10 rounded-full bg-primary-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-900;
+}
+
+.fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item--unread .fi-no-notification-title {
+    @apply font-semibold text-gray-900 dark:text-white;
+}
+
 /* —— Sidebar —— compact density, seamless header with topbar */
 .fi-panel-tenant .fi-main-sidebar.fi-sidebar {
     @apply border-e-0 bg-white shadow-none dark:bg-gray-900 lg:bg-white lg:dark:bg-gray-900;
