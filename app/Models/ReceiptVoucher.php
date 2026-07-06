@@ -53,4 +53,11 @@ class ReceiptVoucher extends BaseModel
                 ->where('model_id', $invoiceId))
             ->first();
     }
+
+    public static function idForInvoice(int $invoiceId): ?int
+    {
+        $voucher = static::findForInvoice($invoiceId);
+
+        return $voucher ? (int) $voucher->getKey() : null;
+    }
 }

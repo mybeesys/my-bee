@@ -20,7 +20,9 @@ class OrderResource extends BaseResource
             'no' => $this->no,
             'invoiceId' => $this->invoice->id,
             'invoiceNo' => $this->invoice->no,
-            'invoiceReceiptVoucherId' => ReceiptVoucher::findForInvoice($this->invoice->id)?->id,
+            'invoiceReceiptVoucherId' => $this->invoice
+                ? ReceiptVoucher::idForInvoice((int) $this->invoice->getKey())
+                : null,
             'invoiceUID' => $this->invoice->uid,
             'status' => $this->status,
             'statusName' => __("fields.order_status_$this->status"),
@@ -38,7 +40,7 @@ class OrderResource extends BaseResource
 //            'details' => OrderDetailsResource::collection($this->details),
             'details' => OrderItemResource::collection($this->invoice->items),
 //            'payments' => OrderPaymentResource::collection($this->invoice->salesPayments),
-            'coupon' => new CouponResource($this->coupon),
+            'coupon' => $this->coupon ? new CouponResource($this->coupon) : null,
         ]);
     }
 }
