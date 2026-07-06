@@ -17,7 +17,7 @@ class ProductExtraResource extends BaseResource
     {
         return $this->filterFields([
             'id' => $this->id,
-            'name' => $this->extra->name,
+            'name' => $this->extra?->name ?? '-',
             'hasDiscount' => PricingService::instance()->hasDiscount($this->resource),
             'originalPrice' => number_format(PricingService::instance()->getOriginalPrice($this->resource), currency_decimals(), '.', ''),
             'price' => number_format(PricingService::instance()->getRetailPrice($this->resource), currency_decimals(), '.', ''),

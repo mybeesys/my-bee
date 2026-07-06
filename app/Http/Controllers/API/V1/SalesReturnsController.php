@@ -51,8 +51,8 @@ class SalesReturnsController extends BaseController
             $query->whereRelation('invoice', 'customer_id', $request->client_id);
         });
 
-        $request->whenFilled($request->from_date or $request->to_date, function (Builder $builder) use ($query, $request) {
-            $query->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
+        $query->when(filled($request->from_date) || filled($request->to_date), function (Builder $builder) use ($request) {
+            $builder->whereDateBetween('date', $request->from_date, $request->to_date, 'd-m-Y');
         });
 
         return $this->responder(__('messages.api.retrieved'), 200, SalesReturnsResource::collection($query->get()->sortByDesc('created_at')))->respond();

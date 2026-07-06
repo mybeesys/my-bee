@@ -16,7 +16,7 @@ class AdditionalCostResource extends BaseResource
     {
         return $this->filterFields([
             'id' => $this->id,
-            'name' => $this->type->name,
+            'name' => $this->type?->name ?? '-',
             'description' => $this->statement,
             'cost' => number_format($this->cost, currency_decimals(), '.', ''),
         ]);

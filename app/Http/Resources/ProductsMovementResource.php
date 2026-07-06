@@ -24,7 +24,9 @@ class ProductsMovementResource extends BaseResource
                 __('fields.products_movements_type_purchases')
                 : __('fields.products_movements_type_sales'),
 
-            'entity' => $this->invoice->customer_id ? $this->invoice->customer->name : $this->invoice->supplier->name,
+            'entity' => $this->invoice->customer_id
+                ? ($this->invoice->customer?->name ?? '-')
+                : ($this->invoice->supplier?->name ?? '-'),
             'entity_type' => $this->invoice->customer_id ? "customer" : "supplier",
             'entity_id' => $this->invoice->customer_id ?: $this->invoice->supplier_id,
             'invoice_no' => $this->invoice->no,

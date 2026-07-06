@@ -84,30 +84,32 @@ class ReportController extends BaseController
     public function productsMovements(Request $request): \Illuminate\Http\JsonResponse
     {
         $items = InvoiceItem::with(['invoice.customer', 'invoice.supplier'])
-            ->whereHas('invoice', function (Builder $q) use($request) {
-                $request->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
-                    return $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, "d-m-Y");
-                });
-                $request->whenHas('type', function() use($request, $q) {
-                    $q->where('type', $request->type);
-                });
-                $request->whenHas('invoice_no', function() use($request, $q) {
-                    $q->where('no', $request->invoice_no);
-                });
-                $request->whenHas('customers', function() use($request, $q) {
-                    $q->whereIn('customer_id', Arr::wrap($request->customers));
-                });
-                $request->whenHas('customers', function() use($request, $q) {
-                    $q->whereIn('supplier_id', Arr::wrap($request->suppliers));
-                });
+            ->whereHas('invoice', function (Builder $q) use ($request) {
+                $q->when(filled($request->from_date) || filled($request->to_date), function (Builder $builder) use ($request) {
+                    $builder->whereDateBetween('date', $request->from_date, $request->to_date, 'd-m-Y');
+                })
+                    ->when($request->filled('type'), function (Builder $builder) use ($request) {
+                        $builder->where('type', $request->type);
+                    })
+                    ->when($request->filled('invoice_no'), function (Builder $builder) use ($request) {
+                        $builder->where('no', $request->invoice_no);
+                    })
+                    ->when($request->filled('customers'), function (Builder $builder) use ($request) {
+                        $builder->whereIn('customer_id', Arr::wrap($request->customers));
+                    })
+                    ->when($request->filled('suppliers'), function (Builder $builder) use ($request) {
+                        $builder->whereIn('supplier_id', Arr::wrap($request->suppliers));
+                    });
             })
-            ->when($request->products, function (Builder $builder) use ($request) {
-                return $builder->whereIn('product_id', Arr::wrap($request->products));
+            ->when($request->filled('products'), function (Builder $builder) use ($request) {
+                $builder->whereIn('product_id', Arr::wrap($request->products));
             })
-            ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
-                return $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, "d-m-Y");
+            ->when(filled($request->from_date) || filled($request->to_date), function (Builder $builder) use ($request) {
+                $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, 'd-m-Y');
             })
+            ->latest('created_at')
             ->get();
+
         return $this->responder(__('messages.api.retrieved'), 200, ProductsMovementResource::collection($items))->respond();
     }
 }

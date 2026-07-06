@@ -22,10 +22,10 @@ class CustomerResource extends BaseResource
             'trn' => $this->trn,
             'deliveryAddress' => $this->location,
             'email' => $this->email,
-            'state' => StateResource::make($this->state),
-            'city' => CityResource::make($this->city),
-            'area' => AreaResource::make($this->area),
-            'acc4Code' => $this->acc4->code,
+            'state' => $this->state ? StateResource::make($this->state) : null,
+            'city' => $this->city ? CityResource::make($this->city) : null,
+            'area' => $this->area ? AreaResource::make($this->area) : null,
+            'acc4Code' => $this->acc4?->code,
         ]);
     }
 }

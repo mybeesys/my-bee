@@ -24,8 +24,10 @@ class SalesInvoiceItemResource extends BaseResource
             'price' => number_format($this->price, currency_decimals(), '.', ''),
             'subTotal' => number_format($this->subTotal, currency_decimals(), '.', ''),
             'canDelete' => $this->resource->invoice->isEditable(),
-            'selectedExtras' => ProductExtraResource::collection($this->extras->pluck('productExtra')->flatten()),
-            'user' => new UserResource($this->user),
+            'selectedExtras' => ProductExtraResource::collection(
+                $this->extras->pluck('productExtra')->filter()
+            ),
+            'user' => $this->user ? new UserResource($this->user) : null,
         ]);
     }
 }
