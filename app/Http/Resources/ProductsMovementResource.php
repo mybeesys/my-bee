@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\ProductMovementBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,7 +32,7 @@ class ProductsMovementResource extends BaseResource
             'entity_id' => $this->invoice->customer_id ?: $this->invoice->supplier_id,
             'invoice_no' => $this->invoice->no,
             'qty' => $this->qty,
-            'current_qty_movement_balance' => $this->current_qty_movement_balance,
+            'current_qty_movement_balance' => app(ProductMovementBalanceService::class)->balanceAfter($this->resource),
             'created_at' => $this->created_at->format('F j, Y, g:i a'),
         ]);
     }

@@ -9,12 +9,17 @@ use App\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Acc4 extends BaseModel
 {
     use HasFactory;
 
     protected $guarded = [];
+
+    protected $casts = [
+        'meta' => 'array',
+    ];
 
     protected $table = "acc4";
 
@@ -56,6 +61,89 @@ class Acc4 extends BaseModel
             $query->whereNull('item_type')
                 ->orWhereNotIn('item_type', static::inventoryItemClasses());
         });
+    }
+
+    public static function systemAccountCodes(): array
+    {
+        return [
+            '120100001',
+            '121800001',
+            '121900001',
+            '122600001',
+            '122300001',
+            '122300002',
+            '122300003',
+            '122500001',
+            '122500002',
+            '122700001',
+            '122100001',
+            '122800001',
+            '122800002',
+            '122800003',
+        ];
+    }
+
+    public function scopeOtherPartyAccounts(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('item_type')
+            ->whereNotIn('code', static::systemAccountCodes());
+    }
+
+    public function scopeBankAccounts(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('item_type')
+            ->where('acc3_code', '1227');
+    }
+
+    public function isBankAccount(): bool
+    {
+        return $this->item_type === null && (string) $this->acc3_code === '1227';
+    }
+
+    public function isSystemAccount(): bool
+    {
+        return in_array((string) $this->code, static::systemAccountCodes(), true);
+    }
+
+    public function isOtherPartyAccount(): bool
+    {
+        return $this->item_type === null && ! $this->isSystemAccount();
+    }
+
+    public function cashMovements(): HasMany
+    {
+        return $this->hasMany(CashDet::class, 'account_code', 'code');
+    }
+
+    public function hasTransactions(): bool
+    {
+        return $this->cashMovements()->exists();
+    }
+
+    public function canBeEdited(): bool
+    {
+        return $this->isOtherPartyAccount() || $this->isBankAccount() || $this->editable;
+    }
+
+    public function canBeDeleted(): bool
+    {
+        if ($this->isSystemAccount()) {
+            return false;
+        }
+
+        return $this->canBeEdited() && ! $this->hasTransactions();
+    }
+
+    public static function nextCodeForAcc3(string $acc3Code): string
+    {
+        $last = static::query()
+            ->where('code', 'like', $acc3Code.'%')
+            ->orderByDesc('code')
+            ->value('code');
+
+        return $last === null ? $acc3Code.'000001' : (string) ((int) $last + 1);
     }
 
     public function scopeOnlyInventoryItems(Builder $query): Builder

@@ -632,6 +632,13 @@ function percent($amount, $total): float|int|string
     return ($amount / $total) * 100;
 }
 
+function format_account_statement_text(?string $statement): string
+{
+    $text = strip_tags((string) $statement);
+
+    return str_replace('تسوية', 'سداد', $text);
+}
+
 function can_delete_product(\App\Models\Product $product): bool
 {
     return false;

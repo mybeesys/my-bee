@@ -158,25 +158,33 @@ class InventoryReportService
         $warehouseIds = $warehouseId ? [$warehouseId] : [];
         $productIds = $productId ? [$productId] : [];
 
-        $lines = collect()
-            ->merge($this->detailOpeningLines($from, $to, $warehouseIds, $productIds))
-            ->merge($this->detailPurchaseLines($from, $to, $warehouseIds, $productIds))
-            ->merge($this->detailSalesLines($from, $to, $warehouseIds, $productIds))
-            ->merge($this->detailTransferLines($from, $to, $warehouseIds, $productIds))
-            ->merge($this->detailPurchaseReturnLines($from, $to, $warehouseIds, $productIds))
-            ->merge($this->detailSalesReturnLines($from, $to, $warehouseIds, $productIds))
+        $historyLines = $this->collectDetailLines(null, $to, $warehouseIds, $productIds);
+        $historyWithBalances = $this->applyRunningBalances(
+            $historyLines
+                ->sortBy([
+                    ['sort_at', 'asc'],
+                    ['id', 'asc'],
+                ])
+                ->values()
+                ->all(),
+            0.0,
+        );
+        $balanceById = collect($historyWithBalances)->pluck('balance_after', 'id');
+
+        $lines = $this->collectDetailLines($from, $to, $warehouseIds, $productIds)
             ->sortBy([
                 ['sort_at', 'asc'],
                 ['id', 'asc'],
             ])
+            ->map(fn (array $line) => array_merge($line, [
+                'balance_after' => (float) ($balanceById[$line['id']] ?? 0),
+            ]))
             ->values()
             ->all();
 
         $stats = ($productId && $warehouseId)
-            ? $this->buildDetailStats($from, $to, $productId, $warehouseId)
+            ? $this->buildDetailStats($from, $to, $productId, $warehouseId, $historyWithBalances)
             : null;
-
-        $lines = $this->applyRunningBalances($lines, (float) ($stats['opening_inventory'] ?? 0));
 
         $lines = collect($lines)
             ->when($movementTypes !== [], fn (Collection $c) => $c->filter(
@@ -242,16 +250,20 @@ class InventoryReportService
         return ['confirmed', 'purchase_order'];
     }
 
-    protected function applyPurchaseInvoicePeriodFilter($query, ?Carbon $from, ?Carbon $to): void
+    protected function applyPurchaseInvoicePeriodFilter($query, ?Carbon $from, Carbon $to): void
     {
         $query->where('type', 'purchases')
             ->whereIn('status', $this->purchaseInvoiceStatuses())
             ->where(function ($periodQuery) use ($from, $to) {
-                $periodQuery->whereBetween('locked_at', [$from, $to])
-                    ->orWhere(function ($inner) use ($from, $to) {
-                        $inner->whereNull('locked_at')
-                            ->whereBetween('created_at', [$from, $to]);
-                    });
+                $periodQuery->where(function ($locked) use ($from, $to) {
+                    $locked->whereNotNull('locked_at')
+                        ->when($from, fn ($inner) => $inner->where('locked_at', '>=', $from))
+                        ->where('locked_at', '<=', $to);
+                })->orWhere(function ($created) use ($from, $to) {
+                    $created->whereNull('locked_at')
+                        ->when($from, fn ($inner) => $inner->where('created_at', '>=', $from))
+                        ->where('created_at', '<=', $to);
+                });
             });
     }
 
@@ -307,16 +319,20 @@ class InventoryReportService
         return ['confirmed'];
     }
 
-    protected function applySalesInvoicePeriodFilter($query, ?Carbon $from, ?Carbon $to): void
+    protected function applySalesInvoicePeriodFilter($query, ?Carbon $from, Carbon $to): void
     {
         $query->where('type', 'sales')
             ->whereIn('status', $this->salesInvoiceStatuses())
             ->where(function ($periodQuery) use ($from, $to) {
-                $periodQuery->whereBetween('locked_at', [$from, $to])
-                    ->orWhere(function ($inner) use ($from, $to) {
-                        $inner->whereNull('locked_at')
-                            ->whereBetween('created_at', [$from, $to]);
-                    });
+                $periodQuery->where(function ($locked) use ($from, $to) {
+                    $locked->whereNotNull('locked_at')
+                        ->when($from, fn ($inner) => $inner->where('locked_at', '>=', $from))
+                        ->where('locked_at', '<=', $to);
+                })->orWhere(function ($created) use ($from, $to) {
+                    $created->whereNull('locked_at')
+                        ->when($from, fn ($inner) => $inner->where('created_at', '>=', $from))
+                        ->where('created_at', '<=', $to);
+                });
             });
     }
 
@@ -533,16 +549,33 @@ class InventoryReportService
         return false;
     }
 
+    /** @return Collection<int, array<string, mixed>> */
+    protected function collectDetailLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): Collection
+    {
+        if (! $to) {
+            return collect();
+        }
+
+        return collect()
+            ->merge($this->detailOpeningLines($from, $to, $warehouseIds, $productIds))
+            ->merge($this->detailPurchaseLines($from, $to, $warehouseIds, $productIds))
+            ->merge($this->detailSalesLines($from, $to, $warehouseIds, $productIds))
+            ->merge($this->detailTransferLines($from, $to, $warehouseIds, $productIds))
+            ->merge($this->detailPurchaseReturnLines($from, $to, $warehouseIds, $productIds))
+            ->merge($this->detailSalesReturnLines($from, $to, $warehouseIds, $productIds));
+    }
+
     /** @return array<int, array<string, mixed>> */
     protected function detailOpeningLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): array
     {
-        if (! $from || ! $to) {
+        if (! $to) {
             return [];
         }
 
         return ItemStock::query()
             ->where('type', 'opening-stock')
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('date', '<=', $to->toDateString())
+            ->when($from, fn ($query) => $query->whereDate('date', '>=', $from->toDateString()))
             ->when($warehouseIds !== [], fn ($q) => $q->whereIn('warehouse_id', $warehouseIds))
             ->when($productIds !== [], fn ($q) => $q->whereIn('product_id', $productIds))
             ->get()
@@ -553,7 +586,7 @@ class InventoryReportService
     /** @return array<int, array<string, mixed>> */
     protected function detailPurchaseLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): array
     {
-        if (! $from || ! $to) {
+        if (! $to) {
             return [];
         }
 
@@ -600,7 +633,7 @@ class InventoryReportService
     /** @return array<int, array<string, mixed>> */
     protected function detailSalesLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): array
     {
-        if (! $from || ! $to) {
+        if (! $to) {
             return [];
         }
 
@@ -645,7 +678,7 @@ class InventoryReportService
     /** @return array<int, array<string, mixed>> */
     protected function detailTransferLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): array
     {
-        if (! $from || ! $to) {
+        if (! $to) {
             return [];
         }
 
@@ -654,7 +687,8 @@ class InventoryReportService
         ItemStock::query()
             ->with(['warehouse'])
             ->where('type', 'moved')
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('date', '<=', $to->toDateString())
+            ->when($from, fn ($query) => $query->whereDate('date', '>=', $from->toDateString()))
             ->when($warehouseIds !== [], fn ($q) => $q->whereIn('warehouse_id', $warehouseIds))
             ->when($productIds !== [], fn ($q) => $q->whereIn('product_id', $productIds))
             ->get()
@@ -664,7 +698,8 @@ class InventoryReportService
 
         StockMovement::query()
             ->with(['destinationWarehouse'])
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('date', '<=', $to->toDateString())
+            ->when($from, fn ($query) => $query->whereDate('date', '>=', $from->toDateString()))
             ->when($warehouseIds !== [], fn ($q) => $q->whereIn('target_warehouse_id', $warehouseIds))
             ->get()
             ->each(function (StockMovement $movement) use (&$lines, $productIds) {
@@ -692,7 +727,7 @@ class InventoryReportService
     /** @return array<int, array<string, mixed>> */
     protected function detailPurchaseReturnLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): array
     {
-        if (! $from || ! $to) {
+        if (! $to) {
             return [];
         }
 
@@ -700,7 +735,8 @@ class InventoryReportService
 
         PurchasesReturnsDetails::query()
             ->with(['invoiceItem.invoice.supplier'])
-            ->whereBetween('created_at', [$from, $to])
+            ->where('created_at', '<=', $to)
+            ->when($from, fn ($query) => $query->where('created_at', '>=', $from))
             ->when($productIds !== [], fn ($q) => $q->whereHas(
                 'invoiceItem',
                 fn ($inner) => $inner->whereIn('product_id', $productIds)
@@ -736,7 +772,7 @@ class InventoryReportService
     /** @return array<int, array<string, mixed>> */
     protected function detailSalesReturnLines(?Carbon $from, ?Carbon $to, array $warehouseIds, array $productIds): array
     {
-        if (! $from || ! $to) {
+        if (! $to) {
             return [];
         }
 
@@ -744,7 +780,8 @@ class InventoryReportService
 
         SalesReturnsDetails::query()
             ->with(['invoiceItem.invoice.customer'])
-            ->whereBetween('created_at', [$from, $to])
+            ->where('created_at', '<=', $to)
+            ->when($from, fn ($query) => $query->where('created_at', '>=', $from))
             ->when($productIds !== [], fn ($q) => $q->whereHas(
                 'invoiceItem',
                 fn ($inner) => $inner->whereIn('product_id', $productIds)
@@ -781,8 +818,13 @@ class InventoryReportService
     /**
      * @return array<string, mixed>
      */
-    public function buildDetailStats(?Carbon $from, ?Carbon $to, int $productId, int $warehouseId): array
-    {
+    public function buildDetailStats(
+        ?Carbon $from,
+        ?Carbon $to,
+        int $productId,
+        int $warehouseId,
+        array $historyWithBalances = [],
+    ): array {
         $warehouseIds = [$warehouseId];
         $productIds = [$productId];
         $key = $this->key($productId, $warehouseId);
@@ -794,20 +836,51 @@ class InventoryReportService
         $purchaseReturns = $this->purchaseReturnsInPeriod($from, $to, $warehouseIds, $productIds);
         $salesReturns = $this->salesReturnsInPeriod($from, $to, $warehouseIds, $productIds);
         $openingStock = $this->openingStockInPeriod($from, $to, $warehouseIds, $productIds);
-        $balances = $this->currentBalances($warehouseIds, $productIds);
 
-        $quantityOnInventory = (float) ($balances[$key] ?? 0);
+        $history = collect($historyWithBalances);
 
-        if (! ItemStock::query()
-            ->where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->exists()
-        ) {
-            $product = Product::find($productId);
+        if ($history->isEmpty() && $to) {
+            $history = collect($this->applyRunningBalances(
+                $this->collectDetailLines(null, $to, $warehouseIds, $productIds)
+                    ->sortBy([
+                        ['sort_at', 'asc'],
+                        ['id', 'asc'],
+                    ])
+                    ->values()
+                    ->all(),
+                0.0,
+            ));
+        }
 
-            if ($product) {
-                $quantityOnInventory = (float) StockService::instance()->getAvailableStock($product);
-            }
+        $openingInventory = 0.0;
+
+        if ($from) {
+            $beforePeriod = $history->filter(
+                fn (array $line) => Carbon::parse($line['sort_at'] ?? $line['date'])->lt($from)
+            );
+            $openingInventory = (float) ($beforePeriod->last()['balance_after'] ?? 0);
+        }
+
+        $quantityOnInventory = (float) ($history->last()['balance_after'] ?? $openingInventory);
+
+        if ($history->isEmpty()) {
+            $balances = $this->currentBalances($warehouseIds, $productIds);
+            $quantityOnInventory = (float) ($balances[$key] ?? 0);
+            $openingInventory = ($from && $to)
+                ? $this->deriveOpeningBalance([
+                    'quantity_on_inventory' => $quantityOnInventory,
+                    'purchased_quantity' => (float) ($purchases[$key] ?? 0),
+                    'opening_stock_entries' => (float) ($openingStock[$key] ?? 0),
+                    'transferred_quantity' => (float) ($transfersIn[$key] ?? 0),
+                    'sales_quantity' => (float) ($sales[$key] ?? 0),
+                    'purchase_returns' => (float) ($purchaseReturns[$key] ?? 0),
+                    'transferred_out_quantity' => (float) ($transfersOut[$key] ?? 0),
+                    'sales_returns' => (float) ($salesReturns[$key] ?? 0),
+                    'waste' => 0,
+                    'production_quantity' => 0,
+                    'counted_quantity' => 0,
+                ])
+                : $quantityOnInventory;
         }
 
         $row = [
@@ -819,15 +892,8 @@ class InventoryReportService
             'transferred_quantity' => (float) ($transfersIn[$key] ?? 0),
             'transferred_out_quantity' => (float) ($transfersOut[$key] ?? 0),
             'quantity_on_inventory' => $quantityOnInventory,
+            'opening_inventory' => $openingInventory,
         ];
-
-        $row['opening_inventory'] = ($from && $to)
-            ? $this->deriveOpeningBalance(array_merge($row, [
-                'waste' => 0,
-                'production_quantity' => 0,
-                'counted_quantity' => 0,
-            ]))
-            : (float) ($balances[$key] ?? 0);
 
         $unitName = $this->productUnitName($productId);
 

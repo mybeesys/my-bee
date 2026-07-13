@@ -33,6 +33,7 @@ class RolePermissionLabeler
         'tax::report' => 'fields.tax_report',
         'variant::library' => 'fields.variant_library',
         'bank::account::report' => 'fields.bank_account_report',
+        'bank::account' => 'fields.bank_accounts',
         'treasury::account::report' => 'fields.treasury_account_report',
         'account::statement' => 'fields.account_statement',
     ];

@@ -5,7 +5,6 @@ namespace App\Filament\Tenant\Resources\SalesReturnsResource\Pages;
 use App\Filament\Tenant\Resources\SalesReturnsResource;
 use App\Models\Invoice;
 use App\Services\AccountingService;
-use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateSalesReturns extends CreateRecord
@@ -22,6 +21,7 @@ class CreateSalesReturns extends CreateRecord
             $invoice = Invoice::find($invoiceId);
 
             $this->form->fill([
+                'return_mode' => 'invoice',
                 'invoice_id' => $invoiceId,
                 'prices_includes_taxes' => (bool) ($invoice?->prices_includes_taxes ?? true),
             ]);
@@ -36,30 +36,32 @@ class CreateSalesReturns extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['user_id'] = filament()->auth()->id() ?? auth()->id();
+        $returnMode = $this->data['return_mode'] ?? 'invoice';
+
+        if ($returnMode === 'customer') {
+            $data['invoice_id'] = null;
+        } else {
+            $data['customer_id'] = Invoice::find($data['invoice_id'])?->customer_id;
+        }
 
         return $data;
     }
 
     protected function beforeCreate(): void
     {
-        $invoice = Invoice::find($this->data['invoice_id']);
+        $message = SalesReturnsResource::validateReturnDetailsForCreate($this->data);
 
-        $total_paid_by_client_without_delivery_fees_or_other_fees = $invoice->getItemsCost(false, true, true);
-
-        if ($invoice->status !== 'confirmed') {
-            fns()->sendWarning(__('fields.you_need_to_confirm_invoice_before_this_operation'));
-            $this->halt();
-        }
-
-        if (SalesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []) > $total_paid_by_client_without_delivery_fees_or_other_fees) {
-            fns()->sendWarning(__('fields.to_be_returned_amount_is_greater_than_paid_amount'));
+        if ($message) {
+            fns()->sendWarning($message);
             $this->halt();
         }
     }
 
     public function afterCreate(): void
     {
-        if (!$this->record->invoice->customer->acc4->code) {
+        $customer = $this->record->resolveCustomer();
+
+        if (! $customer?->acc4?->code) {
             fns()->sendWarning('customer account cannot be found');
             $this->halt();
         }
@@ -78,7 +80,7 @@ class CreateSalesReturns extends CreateRecord
                 'Return paid amount to customer - إرجاع المبلغ المدفوع للعميل',
                 $this->record->invoice_id,
                 meta: ['type' => 'sales_returns', 'id' => $this->record->id],
-            )->make('120100001', $this->record->invoice->customer->acc4->code)
+            )->make('120100001', $customer->acc4->code)
             ->finish();
 
         foreach ($this->record->details as $detail) {

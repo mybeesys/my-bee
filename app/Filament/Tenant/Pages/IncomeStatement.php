@@ -115,7 +115,7 @@ class IncomeStatement extends Page implements HasForms
     public function mount(): void
     {
         $this->filters = [
-            'from' => now()->startOfMonth()->format('Y-m-d'),
+            'from' => now()->startOfYear()->format('Y-m-d'),
             'to' => now()->format('Y-m-d'),
         ];
 

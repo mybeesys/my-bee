@@ -19,7 +19,7 @@ class CashDetReportResource extends BaseResource
             'id' => $this->id,
             'accountCode' => $this->account_code,
             'date' => $this->date->format('Y-m-d h:i A'),
-            'statement' => $this->statement,
+            'statement' => format_account_statement_text($this->statement),
             'amountIn' => number_format($this->amount_in, currency_decimals(), ',', ''),
             'inFrom' => CashDet::with('account')->where('op_id', $this->op_id)->where('account_code', '!=', $this->account_code)?->first()->account?->name,
             'amountOut' => number_format($this->amount_out, currency_decimals(), ',', ''),

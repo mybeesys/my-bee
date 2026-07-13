@@ -20,9 +20,23 @@ trait InteractsWithInvoiceReturnLineItems
                     ->label(__('fields.prices_includes_taxes'))
                     ->inline(true)
                     ->extraFieldWrapperAttributes(['class' => 'invoice-lines-toolbar__toggle'])
+                    ->visible(fn (Get $get): bool => ($get('return_mode') ?? 'invoice') === 'invoice')
                     ->live()
                     ->afterStateUpdated(fn ($livewire) => static::refreshAllReturnDetails($livewire)),
             ]);
+    }
+
+    protected static function resolveReturnPricesIncludeTaxes(InvoiceItem $item, Get $get): bool
+    {
+        $returnMode = $get('data.return_mode') ?? $get('return_mode') ?? 'invoice';
+
+        if ($returnMode === 'customer') {
+            $item->loadMissing('invoice');
+
+            return (bool) ($item->invoice?->prices_includes_taxes ?? true);
+        }
+
+        return (bool) ($get('data.prices_includes_taxes') ?? true);
     }
 
     public static function calculateReturnLineAmounts(InvoiceItem $item, float $returnQty, bool $pricesIncludesTaxes): array
@@ -99,18 +113,23 @@ trait InteractsWithInvoiceReturnLineItems
     public static function refreshAllReturnDetails(object $livewire): void
     {
         $details = $livewire->data['details'] ?? [];
-        $pricesIncludesTaxes = (bool) ($livewire->data['prices_includes_taxes'] ?? true);
+        $returnMode = $livewire->data['return_mode'] ?? 'invoice';
+        $defaultPricesIncludesTaxes = (bool) ($livewire->data['prices_includes_taxes'] ?? true);
 
         foreach ($details as $key => $detail) {
             if (empty($detail['invoice_item_id']) || empty($detail['qty'])) {
                 continue;
             }
 
-            $item = InvoiceItem::find($detail['invoice_item_id']);
+            $item = InvoiceItem::with('invoice')->find($detail['invoice_item_id']);
 
             if (!$item) {
                 continue;
             }
+
+            $pricesIncludesTaxes = $returnMode === 'customer'
+                ? (bool) ($item->invoice?->prices_includes_taxes ?? true)
+                : $defaultPricesIncludesTaxes;
 
             $amounts = static::calculateReturnLineAmounts($item, (float) $detail['qty'], $pricesIncludesTaxes);
 

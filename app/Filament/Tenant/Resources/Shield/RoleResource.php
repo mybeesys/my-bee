@@ -374,7 +374,8 @@ class RoleResource extends Resource implements HasShieldPermissions
             'acc1' => 'fields.level_1',
             'acc2' => 'fields.level_2',
             'acc3' => 'fields.level_3',
-            'acc4' => 'fields.level_4',
+            'acc4' => 'fields.other_party_accounts',
+            'bank::account' => 'fields.bank_accounts',
         ];
 
         if (isset($known[$entity['resource']])) {

@@ -11,6 +11,7 @@ use App\Http\Resources\CashDetReportResource;
 use App\Http\Resources\ProductsMovementResource;
 use App\Models\CashDet;
 use App\Models\InvoiceItem;
+use App\Services\ProductMovementBalanceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -109,6 +110,8 @@ class ReportController extends BaseController
             })
             ->latest('created_at')
             ->get();
+
+        app(ProductMovementBalanceService::class)->preloadForItems($items);
 
         return $this->responder(__('messages.api.retrieved'), 200, ProductsMovementResource::collection($items))->respond();
     }

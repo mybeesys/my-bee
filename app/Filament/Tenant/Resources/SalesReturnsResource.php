@@ -64,34 +64,84 @@ class SalesReturnsResource extends Resource
                         hidden_user_id_field(),
                         hidden_tenant_id_field(),
 
+                        Forms\Components\ToggleButtons::make('return_mode')
+                            ->label(__('fields.sales_return_source'))
+                            ->options([
+                                'invoice' => __('fields.sales_return_by_invoice'),
+                                'customer' => __('fields.sales_return_by_customer'),
+                            ])
+                            ->default('invoice')
+                            ->inline()
+                            ->live()
+                            ->disabledOn('edit')
+                            ->dehydrated(false)
+                            ->columnSpanFull()
+                            ->afterStateUpdated(function ($state, Forms\Set $set): void {
+                                if ($state === 'customer') {
+                                    $set('invoice_id', null);
+                                    $set('prices_includes_taxes', true);
+                                } else {
+                                    $set('customer_id', null);
+                                }
+
+                                $set('details', []);
+                            }),
+
                         Forms\Components\Select::make('invoice_id')
-                            ->required()
-                            ->disabled(fn(Page $livewire) => $livewire instanceof Pages\EditSalesReturns)
+                            ->required(fn (Forms\Get $get): bool => ($get('return_mode') ?? 'invoice') === 'invoice')
+                            ->visible(fn (Forms\Get $get): bool => ($get('return_mode') ?? 'invoice') === 'invoice')
+                            ->disabled(fn (Page $livewire) => $livewire instanceof Pages\EditSalesReturns)
                             ->label(__('fields.sales_invoice'))
                             ->searchable()
                             ->live()
-                            ->afterStateUpdated(function ($state, Forms\Set $set) {
+                            ->afterStateUpdated(function ($state, Forms\Set $set): void {
+                                $set('details', []);
+
                                 if ($invoice = Invoice::find($state)) {
                                     $set('prices_includes_taxes', (bool) $invoice->prices_includes_taxes);
                                 }
                             })
                             ->options(function ($livewire) {
                                 $data = [];
-                                if ($livewire instanceof Pages\CreateSalesReturns)
+                                if ($livewire instanceof Pages\CreateSalesReturns) {
                                     $invoices = Invoice::with(['customer'])->doesntHave('salesReturns')->sales()->where('temp', 0)->get();
-                                else
+                                } else {
                                     $invoices = Invoice::with(['customer'])->sales()->where('temp', 0)->get();
+                                }
 
                                 foreach ($invoices as $invoice) {
                                     $partyName = $invoice->customer?->name ?? '-';
                                     $data[$invoice->id] = $partyName . ' - ' . $invoice->no;
                                 }
+
                                 return $data;
                             }),
-                    ]),
 
-                Forms\Components\Section::make()
-                    ->visible(fn(Forms\Get $get) => $get('invoice_id') !== null)
+                        Forms\Components\Select::make('customer_id')
+                            ->required(fn (Forms\Get $get): bool => ($get('return_mode') ?? 'invoice') === 'customer')
+                            ->visible(fn (Forms\Get $get): bool => ($get('return_mode') ?? 'invoice') === 'customer')
+                            ->disabled(fn (Page $livewire) => $livewire instanceof Pages\EditSalesReturns)
+                            ->label(__('fields.client'))
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(fn (Forms\Set $set) => $set('details', []))
+                            ->options(fn () => Customer::query()->orderBy('name')->pluck('name', 'id'))
+                            ->createOptionForm(CustomerResource::getSchema())
+                            ->createOptionUsing(function ($data) {
+                                $data['tenant_id'] = filament()->getTenant()->id;
+                                $model = Customer::create($data);
+
+                                return $model->id;
+                            })
+                            ->createOptionAction(
+                                fn (Forms\Components\Actions\Action $action) => $action->modalWidth('5xl'),
+                            ),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make(__('fields.items'))
+                    ->visible(fn (Forms\Get $get): bool => filled($get('invoice_id')) || filled($get('customer_id')))
+                    ->extraAttributes(['class' => 'invoice-lines-panel'])
                     ->schema([
                         static::returnLinesToolbar(),
 
@@ -185,27 +235,28 @@ class SalesReturnsResource extends Resource
                                 Forms\Components\Hidden::make('max_qty')->dehydrated(false),
 
                                 Forms\Components\Select::make('invoice_item_id')
-                                    ->disabled(fn($record) => $record !== null)
+                                    ->disabled(fn ($record) => $record !== null)
                                     ->required()
                                     ->label(__('fields.name'))
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->options(function (Forms\Get $get, $livewire) {
-                                        $invoice = $get('data.invoice_id', true);
-                                        $data = [];
-                                        foreach (InvoiceItem::with(['product', 'productVariant'])->where('invoice_id', $invoice)->get() as $item) {
-                                            $data[$item->id] = $item->name;
+                                        $returnMode = $get('data.return_mode') ?? 'invoice';
 
-                                            if ($item->qty > 0) {
-                                                $data[$item->id] = $item->name;
-                                            } else {
-                                                if ($livewire instanceof Pages\CreateSalesReturns)
-                                                    fns()->sendWarning("تم إخفاء عناصر تم إرجاعها مسبقآ");
-                                            }
+                                        if ($returnMode === 'customer') {
+                                            return static::returnableInvoiceItemOptionsForCustomer(
+                                                (int) $get('data.customer_id')
+                                            );
                                         }
-                                        return $data;
+
+                                        return static::returnableInvoiceItemOptionsForInvoice(
+                                            (int) $get('data.invoice_id'),
+                                            $livewire instanceof Pages\CreateSalesReturns
+                                        );
                                     })->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
-                                        $item = InvoiceItem::find($state);
-                                        $pricesIncludesTaxes = (bool) ($get('data.prices_includes_taxes', true) ?? true);
+                                        $item = InvoiceItem::with('invoice')->find($state);
+                                        $pricesIncludesTaxes = $item
+                                            ? static::resolveReturnPricesIncludeTaxes($item, $get)
+                                            : true;
 
                                         if ($item) {
                                             $qty = 1;
@@ -235,8 +286,10 @@ class SalesReturnsResource extends Resource
                                     ->maxValue(fn(Forms\Get $get) => $get('max_qty'))
                                     ->live(true)
                                     ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
-                                        $item = InvoiceItem::find($get('invoice_item_id'));
-                                        $pricesIncludesTaxes = (bool) ($get('data.prices_includes_taxes', true) ?? true);
+                                        $item = InvoiceItem::with('invoice')->find($get('invoice_item_id'));
+                                        $pricesIncludesTaxes = $item
+                                            ? static::resolveReturnPricesIncludeTaxes($item, $get)
+                                            : true;
 
                                         if ($item and $state) {
                                             static::applyReturnLineAmounts($set, $item, $state, $pricesIncludesTaxes);
@@ -298,11 +351,39 @@ class SalesReturnsResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('invoice.no')
                     ->label(__('fields.invoice'))
-                    ->searchable(),
+                    ->getStateUsing(function (SalesReturns $record): string {
+                        if ($record->isCustomerReturn()) {
+                            $numbers = $record->details
+                                ->map(fn ($detail) => $detail->invoiceItem?->invoice?->no)
+                                ->filter()
+                                ->unique()
+                                ->values();
 
-                Tables\Columns\TextColumn::make('invoice.customer.name')
+                            if ($numbers->count() > 1) {
+                                return __('fields.sales_return_multiple_invoices');
+                            }
+
+                            return $numbers->first() ?? '—';
+                        }
+
+                        return $record->invoice?->no ?? '—';
+                    })
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function (Builder $query) use ($search): void {
+                            $query->whereRelation('invoice', 'no', 'like', "%{$search}%")
+                                ->orWhereHas('details.invoiceItem.invoice', fn (Builder $q) => $q->where('no', 'like', "%{$search}%"));
+                        });
+                    }),
+
+                Tables\Columns\TextColumn::make('customer.name')
                     ->label(__('fields.client'))
-                    ->searchable(),
+                    ->getStateUsing(fn (SalesReturns $record): ?string => $record->resolveCustomer()?->name)
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query->where(function (Builder $query) use ($search): void {
+                            $query->whereRelation('customer', 'name', 'like', "%{$search}%")
+                                ->orWhereRelation('invoice.customer', 'name', 'like', "%{$search}%");
+                        });
+                    }),
 
                 Tables\Columns\TextColumn::make('qty')
                     ->label(__('fields.qty'))
@@ -351,7 +432,10 @@ class SalesReturnsResource extends Resource
                         return $query
                             ->when(
                                 $data['customer_id'],
-                                fn(Builder $query, $codes): Builder => $query->whereRelation('invoice', 'customer_id', $data['customer_id']),
+                                fn (Builder $query, $customerId): Builder => $query->where(function (Builder $query) use ($customerId): void {
+                                    $query->where('customer_id', $customerId)
+                                        ->orWhereRelation('invoice', 'customer_id', $customerId);
+                                }),
                             )
                             ->when(
                                 $data['date_from'],
@@ -392,6 +476,154 @@ class SalesReturnsResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['details', 'invoice.customer', 'user']);
+        return parent::getEloquentQuery()->with([
+            'details.invoiceItem.invoice',
+            'invoice.customer',
+            'customer',
+            'user',
+        ]);
+    }
+
+    /** @return array<int, string> */
+    public static function returnableInvoiceItemOptionsForInvoice(int $invoiceId, bool $warnWhenEmpty = false): array
+    {
+        if ($invoiceId <= 0) {
+            return [];
+        }
+
+        $options = [];
+
+        foreach (static::returnableInvoiceItemsQuery()->where('invoice_id', $invoiceId)->get() as $item) {
+            if ($item->qty <= 0) {
+                if ($warnWhenEmpty) {
+                    fns()->sendWarning(__('fields.sales_return_item_already_returned'));
+                }
+
+                continue;
+            }
+
+            $options[$item->id] = $item->name ?: $item->product?->name ?? '—';
+        }
+
+        return $options;
+    }
+
+    /** @return array<int, string> */
+    public static function returnableInvoiceItemOptionsForCustomer(int $customerId): array
+    {
+        if ($customerId <= 0) {
+            return [];
+        }
+
+        $options = [];
+
+        foreach (
+            static::returnableInvoiceItemsQuery()
+                ->whereHas('invoice', fn (Builder $query) => $query->where('customer_id', $customerId))
+                ->get()
+        as $item) {
+            if ($item->qty <= 0) {
+                continue;
+            }
+
+            $name = $item->name ?: $item->product?->name ?? '—';
+            $options[$item->id] = $name . ' — ' . __('fields.invoice_no') . ' ' . $item->invoice->no;
+        }
+
+        return $options;
+    }
+
+    protected static function returnableInvoiceItemsQuery(): Builder
+    {
+        return InvoiceItem::query()
+            ->with(['product', 'productVariant', 'invoice'])
+            ->where('cancelled', false)
+            ->whereHas('invoice', fn (Builder $query) => $query
+                ->sales()
+                ->where('temp', false)
+                ->where('status', 'confirmed'));
+    }
+
+    public static function validateReturnDetailsForCreate(array $data): ?string
+    {
+        $details = $data['details'] ?? [];
+        $returnMode = $data['return_mode'] ?? 'invoice';
+
+        if ($returnMode === 'customer') {
+            return static::validateCustomerReturnDetails($data, $details);
+        }
+
+        return static::validateInvoiceReturnDetails($data, $details);
+    }
+
+    protected static function validateInvoiceReturnDetails(array $data, array $details): ?string
+    {
+        $invoice = Invoice::find($data['invoice_id'] ?? null);
+
+        if (! $invoice) {
+            return __('fields.sales_return_invoice_required');
+        }
+
+        if ($invoice->status !== 'confirmed') {
+            return __('fields.you_need_to_confirm_invoice_before_this_operation');
+        }
+
+        $maxTotal = $invoice->getItemsCost(false, true, true);
+
+        if (static::sumReturnDetailsTotals($details) > $maxTotal) {
+            return __('fields.to_be_returned_amount_is_greater_than_paid_amount');
+        }
+
+        return null;
+    }
+
+    protected static function validateCustomerReturnDetails(array $data, array $details): ?string
+    {
+        $customerId = (int) ($data['customer_id'] ?? 0);
+
+        if ($customerId <= 0) {
+            return __('fields.sales_return_customer_required');
+        }
+
+        $grouped = collect($details)->groupBy(function (array $detail) {
+            return InvoiceItem::query()
+                ->with('invoice')
+                ->find($detail['invoice_item_id'] ?? null)
+                ?->invoice_id;
+        })->filter(fn ($group, $invoiceId) => filled($invoiceId));
+
+        foreach ($grouped as $invoiceId => $invoiceDetails) {
+            $invoice = Invoice::find($invoiceId);
+
+            if (! $invoice || (int) $invoice->customer_id !== $customerId) {
+                return __('fields.sales_return_item_not_for_customer');
+            }
+
+            if ($invoice->status !== 'confirmed') {
+                return __('fields.you_need_to_confirm_invoice_before_this_operation');
+            }
+
+            $maxTotal = $invoice->getItemsCost(false, true, true);
+
+            if (static::sumReturnDetailsTotals($invoiceDetails->all()) > $maxTotal) {
+                return __('fields.to_be_returned_amount_is_greater_than_paid_amount');
+            }
+        }
+
+        foreach ($details as $detail) {
+            $item = InvoiceItem::find($detail['invoice_item_id'] ?? null);
+
+            if (! $item) {
+                continue;
+            }
+
+            $qty = (float) ($detail['qty'] ?? 0);
+
+            if ($qty > $item->qty) {
+                return __('fields.sales_return_qty_exceeds_available');
+            }
+        }
+
+        return null;
     }
 }

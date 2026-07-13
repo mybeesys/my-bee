@@ -22,11 +22,6 @@ class CustomSettings extends Page
         return auth()->user()->hasRole(User::ROLE_CLIENT);
     }
 
-    public static function getNavigationGroup(): ?string
-    {
-        return __('fields.settings');
-    }
-
     public static function getNavigationLabel(): string
     {
         return __('fields.settings');

@@ -4,12 +4,12 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Exports\ProductMovementExporter;
 use App\Filament\Tenant\Resources\ProductsMovementResource\Pages;
-use App\Filament\Tenant\Resources\ProductsMovementResource\RelationManagers;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
 use App\Models\Supplier;
+use App\Services\ProductMovementBalanceService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -111,9 +111,9 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.qty'))
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('current_qty_movement_balance')
+                Tables\Columns\TextColumn::make('qty_after_movement')
                     ->label(__('fields.qty_after_movement'))
-                    ->searchable(),
+                    ->getStateUsing(fn (InvoiceItem $record): float => app(ProductMovementBalanceService::class)->balanceAfter($record)),
 
                 Tables\Columns\TextColumn::make('discount')
                     ->label(__('fields.discount'))

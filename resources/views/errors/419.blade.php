@@ -1,5 +1,13 @@
-@extends('errors::minimal')
-
-@section('title', __('Page Expired'))
-@section('code', '419')
-@section('message', __('Page Expired'))
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="0;url={{ url('/login') }}">
+    <title>{{ __('Page Expired') }}</title>
+    <script>
+        window.location.replace(@json(url('/login')));
+    </script>
+</head>
+<body></body>
+</html>

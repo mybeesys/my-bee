@@ -74,6 +74,11 @@ return [
     'religion' => 'Religion',
     'nationality' => 'Nationality',
     'bank_account' => 'Bank account',
+    'bank_accounts' => 'Bank accounts',
+    'bank_accounts_empty' => 'No bank accounts yet',
+    'bank_accounts_empty_description' => 'Add a bank account to use it in receipt and payment vouchers, expenses, and the bank report.',
+    'bank_account_number' => 'Bank account number',
+    'iban' => 'IBAN',
     'place_of_birth' => 'Place of birth',
     'date' => 'Date',
     'join_date' => 'Join date',
@@ -111,6 +116,10 @@ return [
     'level_2' => 'Accounts Level 2',
     'level_3' => 'Accounts Level 3',
     'level_4' => 'Accounts Level 4',
+    'other_party_account' => 'Other party account',
+    'other_party_accounts' => 'Other party accounts',
+    'other_party_accounts_empty' => 'No other party accounts yet',
+    'other_party_accounts_empty_description' => 'Create a new account using the add (+) button to use it in receipt and payment vouchers for other parties.',
 
     'accounts_statement_label' => 'Account statement',
     'accounts_statement_label_plural' => 'Account statements',
@@ -740,7 +749,7 @@ return [
     'receipt_voucher_select_at_least_one_invoice' => 'Please select at least one invoice',
     'receipt_voucher_no_unpaid_invoices' => 'There are no unpaid invoices for this customer',
     'receipt_voucher_amount_exceeds_allocatable' => 'Paid amount exceeds available outstanding balance',
-    'receipt_voucher_invoice_settlement' => 'Settlement for invoice :no',
+    'receipt_voucher_invoice_settlement' => 'Payment for invoice :no',
     'select_transactions' => 'Select transactions',
     'transaction_date' => 'Transaction date',
     'invoice_amount' => 'Invoice amount',
@@ -749,7 +758,7 @@ return [
     'payment_voucher_for_supplier' => 'Supplier',
     'payment_voucher_payment_account_hint' => 'Choose the account paid from',
     'payment_voucher_supplier_invoices_hint' => 'Supplier vouchers: purchase invoices only',
-    'payment_voucher_invoice_settlement' => 'Settlement for invoice :no',
+    'payment_voucher_invoice_settlement' => 'Payment for invoice :no',
 
     'total_payments' => 'Total payments',
 
@@ -956,6 +965,15 @@ return [
 
     'add_purchases_returns' => 'Add purchases return',
     'add_sales_returns' => 'Add sales return',
+    'sales_return_source' => 'Return method',
+    'sales_return_by_invoice' => 'By single invoice',
+    'sales_return_by_customer' => 'By customer',
+    'sales_return_multiple_invoices' => 'Multiple invoices',
+    'sales_return_item_already_returned' => 'Items already fully returned were hidden',
+    'sales_return_invoice_required' => 'Please select a sales invoice',
+    'sales_return_customer_required' => 'Please select a customer',
+    'sales_return_item_not_for_customer' => 'One of the selected products does not belong to this customer',
+    'sales_return_qty_exceeds_available' => 'Return quantity exceeds the available quantity',
 
     'unit_price' => 'Unit price',
 

@@ -103,7 +103,7 @@ class CustomerAccountStatementService
                 'id' => $line->id,
                 'date' => $line->date,
                 'voucher_no' => $line->operation?->no,
-                'statement' => strip_tags((string) $line->statement),
+                'statement' => format_account_statement_text($line->statement),
                 'debit' => (float) $line->amount_in,
                 'credit' => (float) $line->amount_out,
                 'balance' => (float) $line->balance_post_transaction,

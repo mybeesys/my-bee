@@ -74,6 +74,11 @@ return [
     'religion' => 'الديانة',
     'nationality' => 'الجنسية',
     'bank_account' => 'حساب البنك',
+    'bank_accounts' => 'حسابات البنك',
+    'bank_accounts_empty' => 'لا توجد حسابات بنكية بعد',
+    'bank_accounts_empty_description' => 'أضف حساب بنك جديد لاستخدامه في سندات القبض والصرف والمصروفات وتقرير البنك.',
+    'bank_account_number' => 'رقم الحساب البنكي',
+    'iban' => 'رقم الآيبان',
     'place_of_birth' => 'مكان الميلاد',
     'date' => 'التاريخ',
     'join_date' => 'تاريخ الإنضمام',
@@ -111,6 +116,10 @@ return [
     'level_2' => 'حسابات المستوى الثاني',
     'level_3' => 'حسابات المستوى الثالث',
     'level_4' => 'حسابات المستوى الرابع',
+    'other_party_account' => 'حساب جهة أخرى',
+    'other_party_accounts' => 'حسابات جهة أخرى',
+    'other_party_accounts_empty' => 'لا توجد حسابات جهة أخرى بعد',
+    'other_party_accounts_empty_description' => 'أنشئ حساباً جديداً من زر الإضافة (+) لاستخدامه في سندات القبض والصرف لجهة أخرى.',
 
     'accounts_statement_label' => 'كشف الحساب',
     'accounts_statement_label_plural' => 'كشوفات الحسابات',
@@ -744,7 +753,7 @@ return [
     'receipt_voucher_select_at_least_one_invoice' => 'يرجى تحديد فاتورة واحدة على الأقل',
     'receipt_voucher_no_unpaid_invoices' => 'لا توجد فواتير مستحقة لهذا العميل',
     'receipt_voucher_amount_exceeds_allocatable' => 'المبلغ المدفوع أكبر من إجمالي المستحقات المتاحة',
-    'receipt_voucher_invoice_settlement' => 'تسوية فاتورة :no',
+    'receipt_voucher_invoice_settlement' => 'سداد فاتورة :no',
     'select_transactions' => 'اختيار المعاملات',
     'transaction_date' => 'تاريخ العملية',
     'invoice_amount' => 'مبلغ الفاتورة',
@@ -753,7 +762,7 @@ return [
     'payment_voucher_for_supplier' => 'مورد',
     'payment_voucher_payment_account_hint' => 'اختر الحساب الذي تم منه الصرف',
     'payment_voucher_supplier_invoices_hint' => 'سندات الموردين: فواتير مشتريات فقط',
-    'payment_voucher_invoice_settlement' => 'تسوية فاتورة :no',
+    'payment_voucher_invoice_settlement' => 'سداد فاتورة :no',
 
     'total_payments' => 'إجمالي الدفعيات',
 
@@ -963,6 +972,15 @@ return [
 
     'add_purchases_returns' => 'إضافة مرتجع مشتريات',
     'add_sales_returns' => 'إضافة مرتجع مبيعات',
+    'sales_return_source' => 'طريقة الإرجاع',
+    'sales_return_by_invoice' => 'حسب فاتورة واحدة',
+    'sales_return_by_customer' => 'حسب العميل',
+    'sales_return_multiple_invoices' => 'عدة فواتير',
+    'sales_return_item_already_returned' => 'تم إخفاء عناصر تم إرجاعها مسبقاً',
+    'sales_return_invoice_required' => 'يرجى اختيار فاتورة المبيعات',
+    'sales_return_customer_required' => 'يرجى اختيار العميل',
+    'sales_return_item_not_for_customer' => 'أحد المنتجات المحددة لا يخص هذا العميل',
+    'sales_return_qty_exceeds_available' => 'كمية الإرجاع أكبر من الكمية المتاحة للإرجاع',
 
     'unit_price' => 'سعر الوحدة',
 

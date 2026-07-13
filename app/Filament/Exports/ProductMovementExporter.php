@@ -41,6 +41,10 @@ class ProductMovementExporter extends Exporter
             ExportColumn::make('qty')
                 ->label(__('fields.qty')),
 
+            ExportColumn::make('qty_after_movement')
+                ->label(__('fields.qty_after_movement'))
+                ->getStateUsing(fn (InvoiceItem $record): float => app(\App\Services\ProductMovementBalanceService::class)->balanceAfter($record)),
+
             ExportColumn::make('discount')
                 ->label(__('fields.discount'))
                 ->formatStateUsing(function (string $state, array $options): string {

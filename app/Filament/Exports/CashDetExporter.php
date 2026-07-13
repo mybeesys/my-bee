@@ -36,14 +36,15 @@ class CashDetExporter extends Exporter
                     return format_amount($state);
                 }),
 
-            ExportColumn::make('statement')
-                ->label(__('fields.statement')),
-
             ExportColumn::make('balance_post_transaction')
                 ->label(__('fields.balance'))
                 ->formatStateUsing(function (string $state, array $options): string {
                     return format_amount($state);
                 }),
+
+            ExportColumn::make('statement')
+                ->label(__('fields.statement'))
+                ->formatStateUsing(fn (?string $state): string => format_account_statement_text($state)),
 
             ExportColumn::make('created_at')
                 ->label(__('fields.created_at')),

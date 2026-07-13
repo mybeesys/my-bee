@@ -18,6 +18,7 @@ use Filament\Support\Colors\Color;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -82,6 +83,21 @@ class AppServiceProvider extends ServiceProvider
         FilamentView::registerRenderHook(
              'panels::global-search.after',
             fn (): View => view('shop'),
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::HEAD_END,
+            function (): string {
+                try {
+                    $loginUrl = Filament::getLoginUrl();
+                } catch (Throwable) {
+                    $loginUrl = url('/login');
+                }
+
+                return $loginUrl
+                    ? '<meta name="app-login-url" content="' . e($loginUrl) . '">'
+                    : '';
+            },
         );
 
         Order::observe(OrderObserver::class);

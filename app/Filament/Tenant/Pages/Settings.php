@@ -367,7 +367,7 @@ class Settings extends Page implements HasForms
 //                    ->url(fn() => Acc3Resource::getUrl()),
 //
                 \Filament\Actions\Action::make('level_4')
-                    ->label(__('fields.level_4'))
+                    ->label(__('fields.other_party_accounts'))
                     ->url(fn() => Acc4Resource::getUrl()),
 
             ])

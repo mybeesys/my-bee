@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Filament\Tenant\Resources\Acc4Resource\Pages;
+namespace App\Filament\Tenant\Resources\BankAccountResource\Pages;
 
 use App\Filament\Tenant\Pages\CustomSettings;
-use App\Filament\Tenant\Resources\Acc4Resource;
+use App\Filament\Tenant\Resources\BankAccountResource;
+use App\Models\Acc4;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Enums\ActionSize;
 
-class ManageAcc4s extends ManageRecords
+class ManageBankAccounts extends ManageRecords
 {
-    protected static string $resource = Acc4Resource::class;
+    protected static string $resource = BankAccountResource::class;
 
     protected function getActions(): array
     {
@@ -28,7 +29,7 @@ class ManageAcc4s extends ManageRecords
     public function getBreadcrumbs(): array
     {
         return array_merge([
-            CustomSettings::getUrl() => __('fields.settings')
+            CustomSettings::getUrl() => __('fields.settings'),
         ], parent::getBreadcrumbs());
     }
 
@@ -39,6 +40,8 @@ class ManageAcc4s extends ManageRecords
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $data['acc3_code'] = '1227';
+        $data['code'] = Acc4::nextCodeForAcc3('1227');
         $data['editable'] = true;
         $data['deletable'] = true;
 

@@ -140,10 +140,6 @@ class TenantPanelProvider extends PanelProvider
                     ->label(fn(): string => __('fields.nav_group_store'))
                     ->collapsed(),
 
-                NavigationGroup::make()
-                    ->label(fn(): string => __('fields.settings'))
-                    ->collapsed(),
-
             ])
             ->navigationItems([
 

@@ -3,16 +3,15 @@
 namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\Acc4Resource\Pages;
-use App\Filament\Tenant\Resources\Acc4Resource\RelationManagers;
 use App\Models\Acc3;
 use App\Models\Acc4;
 use App\Models\Client;
 use App\Models\Representative;
 use App\Models\Supplier;
 use App\Rules\UniqueTenantItemRule;
-use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\View;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,12 +22,11 @@ class Acc4Resource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $recordTitleAttribute = "name";
+    protected static ?string $recordTitleAttribute = 'name';
 
-    protected static ?string $slug = "finance/tree-accounts/level-four";
+    protected static ?string $slug = 'finance/tree-accounts/level-four';
 
     protected static ?int $navigationSort = 7;
-
 
     public static function getNavigationGroup(): ?string
     {
@@ -37,12 +35,12 @@ class Acc4Resource extends Resource
 
     public static function getLabel(): ?string
     {
-        return __('fields.account');
+        return __('fields.other_party_account');
     }
 
     public static function getPluralLabel(): ?string
     {
-        return __('fields.level_4');
+        return __('fields.other_party_accounts');
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -52,11 +50,13 @@ class Acc4Resource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return (string) static::getModel()::query()->excludeInventoryItems()->count();
     }
 
     public static function form(Forms\Form $form): Forms\Form
     {
+        $isEditing = $form->getRecord() !== null;
+
         return $form
             ->schema([
                 Forms\Components\Section::make()->schema([
@@ -64,17 +64,21 @@ class Acc4Resource extends Resource
 
                     Forms\Components\Select::make('acc3_code')
                         ->required()
+                        ->disabled($isEditing)
+                        ->dehydrated()
                         ->options(Acc3::pluck('name', 'code'))
                         ->label(__('fields.acc3_code'))
                         ->live()
-                        ->hint(function ($state){
-                            if($acc3 = Acc3::firstWhere('code', $state)){
+                        ->hint(function ($state) {
+                            if ($acc3 = Acc3::firstWhere('code', $state)) {
                                 return $acc3->code;
                             }
                         }),
 
                     Forms\Components\TextInput::make('code')
                         ->required()
+                        ->disabled($isEditing)
+                        ->dehydrated()
                         ->rules([new UniqueTenantItemRule(Acc4::class, 'code', $form->getRecord()?->id)])
                         ->label(__('fields.code')),
 
@@ -133,21 +137,20 @@ class Acc4Resource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Tables\Actions\Action::make('delete')
-                        ->visible(function ($record) {
-                            return $record->deletable;
-                        })
-                        ->icon('heroicon-o-trash')
-                        ->action(function (Acc4 $record) {
-                            if ($record->deletable) {
-                                $record->delete();
-                                Filament::notify('success', __('fields.alert_record_deleted'));
-                            } else {
-                                Filament::notify('danger', __('fields.alert_record_delete_failed'));
+                    Tables\Actions\EditAction::make()
+                        ->visible(fn (Acc4 $record): bool => $record->canBeEdited()),
+                    Tables\Actions\DeleteAction::make()
+                        ->visible(fn (Acc4 $record): bool => $record->canBeDeleted())
+                        ->before(function (Acc4 $record): void {
+                            if (! $record->canBeDeleted()) {
+                                Notification::make()
+                                    ->title(__('fields.record_in_use_alert'))
+                                    ->warning()
+                                    ->send();
+
+                                $this->halt();
                             }
-                        })
-                        ->requiresConfirmation()
-                        ->color('danger'),
+                        }),
                 ]),
             ]);
     }

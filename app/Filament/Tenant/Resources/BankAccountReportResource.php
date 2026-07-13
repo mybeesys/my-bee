@@ -127,20 +127,6 @@ class BankAccountReportResource extends Resource
                         return main_currency_iso_code() . " " . format_amount($state);
                     })),
 
-                Tables\Columns\TextColumn::make('statement')
-                    ->getStateUsing(function ($record) {
-                        return strip_tags($record->statement);
-                    })
-                    ->toggleable()
-                    ->label(__('fields.statement')),
-
-//                Tables\Columns\TextColumn::make('balance_pre_transaction')
-//                    ->toggleable()
-//                    ->label(__('fields.balance_pre_transaction'))
-//                    ->getStateUsing(function ($record) {
-//                        return number_format($record->balance_pre_transaction, currency_decimals(), '.', '.');
-//                    }),
-
                 Tables\Columns\TextColumn::make('balance_post_transaction')
                     ->toggleable()
                     ->label(__('fields.balance'))
@@ -153,6 +139,20 @@ class BankAccountReportResource extends Resource
                     ->getStateUsing(function ($record) {
                         return number_format($record->balance_post_transaction, currency_decimals(), '.', '.');
                     }),
+
+                Tables\Columns\TextColumn::make('statement')
+                    ->getStateUsing(function ($record) {
+                        return format_account_statement_text($record->statement);
+                    })
+                    ->toggleable()
+                    ->label(__('fields.statement')),
+
+//                Tables\Columns\TextColumn::make('balance_pre_transaction')
+//                    ->toggleable()
+//                    ->label(__('fields.balance_pre_transaction'))
+//                    ->getStateUsing(function ($record) {
+//                        return number_format($record->balance_pre_transaction, currency_decimals(), '.', '.');
+//                    }),
 
                 Tables\Columns\TextColumn::make('operation.files')
                     ->toggleable()

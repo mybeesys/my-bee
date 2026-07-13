@@ -1,20 +1,42 @@
+function resolveLoginUrl() {
+    const metaUrl = document.querySelector('meta[name="app-login-url"]')?.content
+
+    if (metaUrl) {
+        return metaUrl
+    }
+
+    return `${window.location.origin}/login`
+}
+
+function redirectToLogin() {
+    window.location.replace(resolveLoginUrl())
+}
+
 document.addEventListener('livewire:init', () => {
-    Livewire.hook('request', ({fail}) => {
-        fail(({status, preventDefault}) => {
-            if (status === 419) {
-                confirm('Page expired, please refresh the page to continue.')
-            } else if (status >= 500) {
-                // Server error — logged in Laravel; avoid noisy console + duplicate toasts.
-                preventDefault()
-            } else {
+    Livewire.hook('request', ({ fail }) => {
+        fail(({ status, preventDefault }) => {
+            if (status === 419 || status === 401) {
+                preventDefault?.()
+                redirectToLogin()
+
+                return
+            }
+
+            if (status >= 500) {
+                preventDefault?.()
+
+                return
+            }
+
+            if (typeof FilamentNotification !== 'undefined') {
                 new FilamentNotification()
                     .title('Something went wrong!')
                     .danger()
                     .persistent()
                     .send()
-
-                preventDefault()
             }
+
+            preventDefault?.()
         })
     })
 })
