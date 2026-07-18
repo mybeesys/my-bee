@@ -4,6 +4,12 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\TaxProfileResource\Pages;
 use App\Filament\Tenant\Resources\TaxProfileResource\RelationManagers;
+use App\Models\AdditionalCost;
+use App\Models\Expense;
+use App\Models\InvoiceItem;
+use App\Models\PriceOfferDetails;
+use App\Models\Product;
+use App\Models\Service;
 use App\Models\Tax;
 use App\Models\TaxProfile;
 use App\Rules\UniqueTenantItemRule;
@@ -190,6 +196,18 @@ class TaxProfileResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->action(function (TaxProfile $record) {
+                        if (static::taxProfileIsInUse($record)) {
+                            fns()->sendRecordInUse();
+
+                            return;
+                        }
+
+                        $record->taxes()->delete();
+                        $record->delete();
+                        fns()->deleted();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -223,6 +241,16 @@ class TaxProfileResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['taxes'])->latest();
+    }
+
+    protected static function taxProfileIsInUse(TaxProfile $record): bool
+    {
+        return Product::query()->where('tax_profile_id', $record->id)->exists()
+            || InvoiceItem::query()->where('tax_profile_id', $record->id)->exists()
+            || Expense::query()->where('tax_profile_id', $record->id)->exists()
+            || Service::query()->where('tax_profile_id', $record->id)->exists()
+            || AdditionalCost::query()->where('tax_profile_id', $record->id)->exists()
+            || PriceOfferDetails::query()->where('tax_profile_id', $record->id)->exists();
     }
 
 }

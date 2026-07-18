@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources\PaymentVoucherResource\Pages;
 
 use App\Filament\Tenant\Resources\PaymentVoucherResource;
+use App\Models\Acc4;
 use App\Models\Invoice;
 use App\Services\AccountingService;
 use App\Services\InvoicePaymentTermsService;
@@ -37,7 +38,7 @@ class CreatePaymentVoucher extends CreateRecord
             'allocation_mode' => 'selected',
             'acc4_code' => null,
             'invoice_id' => null,
-            'credit_acc4_code' => '120100001',
+            'credit_acc4_code' => Acc4::defaultCollectionAccountCode(),
             'paid_amount' => null,
             'description' => null,
             'preselected_invoice_id' => null,

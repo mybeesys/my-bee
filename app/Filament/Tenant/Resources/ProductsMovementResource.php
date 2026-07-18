@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Exports\ProductMovementExporter;
+use App\Filament\Tenant\Concerns\ConfiguresReportTableFilters;
 use App\Filament\Tenant\Resources\ProductsMovementResource\Pages;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductsMovementResource extends Resource
 {
+    use ConfiguresReportTableFilters;
+
     protected static ?string $model = InvoiceItem::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -53,7 +56,7 @@ class ProductsMovementResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return static::configureReportTableFilters($table)
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('fields.name'))
@@ -171,7 +174,9 @@ class ProductsMovementResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->label(__('fields.created_at'))
+                    ->columnSpanFull()
                     ->form([
+                        ...static::reportDateRangeFormFields(),
 
                         Forms\Components\Radio::make('type')
                             ->label(__('fields.type'))
@@ -185,77 +190,84 @@ class ProductsMovementResource extends Resource
                         Forms\Components\Select::make('customers')
                             ->label(__('fields.client'))
                             ->multiple()
+                            ->searchable()
                             ->options(Customer::pluck('name', 'id')),
 
                         Forms\Components\Select::make('suppliers')
                             ->label(__('fields.supplier'))
                             ->multiple()
+                            ->searchable()
                             ->options(Supplier::pluck('name', 'id')),
 
                         Forms\Components\Select::make('invoices')
                             ->label(__('fields.invoice'))
                             ->multiple()
+                            ->searchable()
                             ->options(Invoice::pluck('no', 'id')),
 
                         Forms\Components\Select::make('products')
                             ->label(__('fields.products'))
                             ->multiple()
+                            ->searchable()
                             ->options(Product::pluck('name', 'id')),
-
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label(__('fields.created_from')),
-
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label(__('fields.created_until')),
                     ])
+                    ->columns(4)
                     ->indicateUsing(function (array $data): ?string {
-                        $indicator = null;
-                        if ($data['type']) {
-                            $indicator = $indicator . __('fields.type');
+                        $indicator = static::reportDateRangeIndicator($data) ?? '';
+
+                        if ($data['type'] ?? null) {
+                            $indicator .= __('fields.type');
                         }
-                        if ($data['customers']) {
-                            $indicator = $indicator . __('fields.client');
+                        if ($data['customers'] ?? null) {
+                            $indicator .= __('fields.client');
                         }
-                        if ($data['suppliers']) {
-                            $indicator = $indicator . __('fields.supplier');
+                        if ($data['suppliers'] ?? null) {
+                            $indicator .= __('fields.supplier');
                         }
-                        if ($data['invoices']) {
-                            $indicator = $indicator . __('fields.invoice');
+                        if ($data['invoices'] ?? null) {
+                            $indicator .= __('fields.invoice');
                         }
-                        if ($data['products']) {
-                            $indicator = $indicator . __('fields.products');
+                        if ($data['products'] ?? null) {
+                            $indicator .= __('fields.products');
                         }
-                        if ($data['created_from'] or $data['created_until']) {
-                            $indicator = $indicator . __('fields.date');
-                        }
-                        return $indicator;
+
+                        return $indicator ?: null;
                     })
                     ->query(function ($query, array $data) {
-                        return $query
-                            ->when($data['customers'],
-                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                    $q->whereIn('customer_id', $data['customers']);
-                                }))
-                            ->when($data['suppliers'],
-                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                    $q->whereIn('supplier_id', $data['suppliers']);
-                                }))
-                            ->when($data['invoices'],
-                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                    $q->whereIn('id', $data['invoices']);
-                                }))
-                            ->when($data['type'],
-                                fn(Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                    $q->where('type', $data['type']);
-                                }))
-                            ->when($data['products'],
-                                fn($query) => $query->whereIn('product_id', $data['products']))
-                            ->when($data['created_from'],
-                                fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
-                            ->when($data['created_until'],
-                                fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
-                    })
-            ])
+                        return static::applyReportDateRangeQuery(
+                            $query
+                                ->when(
+                                    $data['customers'] ?? null,
+                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                        $q->whereIn('customer_id', $data['customers']);
+                                    })
+                                )
+                                ->when(
+                                    $data['suppliers'] ?? null,
+                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                        $q->whereIn('supplier_id', $data['suppliers']);
+                                    })
+                                )
+                                ->when(
+                                    $data['invoices'] ?? null,
+                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                        $q->whereIn('id', $data['invoices']);
+                                    })
+                                )
+                                ->when(
+                                    $data['type'] ?? null,
+                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
+                                        $q->where('type', $data['type']);
+                                    })
+                                )
+                                ->when(
+                                    $data['products'] ?? null,
+                                    fn ($query) => $query->whereIn('product_id', $data['products'])
+                                ),
+                            $data
+                        );
+                    }),
+            ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
             ])
             ->bulkActions([

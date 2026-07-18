@@ -99,22 +99,11 @@ class SalesReturnsResource extends Resource
 
                                 if ($invoice = Invoice::find($state)) {
                                     $set('prices_includes_taxes', (bool) $invoice->prices_includes_taxes);
+                                    $set('payment_terms', $invoice->payment_terms ?? 'cash');
                                 }
                             })
                             ->options(function ($livewire) {
-                                $data = [];
-                                if ($livewire instanceof Pages\CreateSalesReturns) {
-                                    $invoices = Invoice::with(['customer'])->doesntHave('salesReturns')->sales()->where('temp', 0)->get();
-                                } else {
-                                    $invoices = Invoice::with(['customer'])->sales()->where('temp', 0)->get();
-                                }
-
-                                foreach ($invoices as $invoice) {
-                                    $partyName = $invoice->customer?->name ?? '-';
-                                    $data[$invoice->id] = $partyName . ' - ' . $invoice->no;
-                                }
-
-                                return $data;
+                                return static::returnableInvoiceOptions('sales', $livewire instanceof Pages\CreateSalesReturns);
                             }),
 
                         Forms\Components\Select::make('customer_id')
@@ -221,8 +210,19 @@ class SalesReturnsResource extends Resource
 
                                 return array_merge($data, $amounts);
                             })
-                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data): array {
+                            ->mutateRelationshipDataBeforeSaveUsing(function (array $data, $state, $record, $livewire): array {
                                 $data['user_id'] = $data['user_id'] ?? filament()->auth()->id() ?? auth()->id();
+                                $returnMode = $livewire->data['return_mode'] ?? 'invoice';
+
+                                if ($returnMode === 'customer' && ! empty($data['product_line_key'])) {
+                                    $template = static::findTemplateInvoiceItemForProductKey(
+                                        (string) $data['product_line_key'],
+                                        'sales',
+                                        (int) ($livewire->data['customer_id'] ?? 0),
+                                    );
+                                    $data['invoice_item_id'] = $template?->id;
+                                    unset($data['product_line_key']);
+                                }
 
                                 return static::normalizeReturnDetailForSave($data);
                             })
@@ -236,20 +236,13 @@ class SalesReturnsResource extends Resource
 
                                 Forms\Components\Select::make('invoice_item_id')
                                     ->disabled(fn ($record) => $record !== null)
-                                    ->required()
+                                    ->visible(fn (Forms\Get $get, $livewire) => static::returnFormValue($get, 'return_mode', $livewire, 'invoice') === 'invoice')
+                                    ->required(fn (Forms\Get $get, $livewire) => static::returnFormValue($get, 'return_mode', $livewire, 'invoice') === 'invoice')
                                     ->label(__('fields.name'))
                                     ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                     ->options(function (Forms\Get $get, $livewire) {
-                                        $returnMode = $get('data.return_mode') ?? 'invoice';
-
-                                        if ($returnMode === 'customer') {
-                                            return static::returnableInvoiceItemOptionsForCustomer(
-                                                (int) $get('data.customer_id')
-                                            );
-                                        }
-
                                         return static::returnableInvoiceItemOptionsForInvoice(
-                                            (int) $get('data.invoice_id'),
+                                            (int) static::returnFormValue($get, 'invoice_id', $livewire),
                                             $livewire instanceof Pages\CreateSalesReturns
                                         );
                                     })->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get) {
@@ -277,6 +270,48 @@ class SalesReturnsResource extends Resource
                                         }
                                     }),
 
+                                Forms\Components\Select::make('product_line_key')
+                                    ->disabled(fn ($record) => $record !== null)
+                                    ->visible(fn (Forms\Get $get, $livewire) => static::returnFormValue($get, 'return_mode', $livewire, 'invoice') === 'customer')
+                                    ->required(fn (Forms\Get $get, $livewire) => static::returnFormValue($get, 'return_mode', $livewire, 'invoice') === 'customer')
+                                    ->label(__('fields.name'))
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->options(function (Forms\Get $get, $livewire) {
+                                        return static::returnableProductOptionsForCustomer(
+                                            (int) static::returnFormValue($get, 'customer_id', $livewire)
+                                        );
+                                    })
+                                    ->afterStateUpdated(function ($state, Forms\Set $set, Forms\Get $get, $livewire) {
+                                        $pricesIncludesTaxes = (bool) static::returnFormValue($get, 'prices_includes_taxes', $livewire, true);
+                                        $customerId = (int) static::returnFormValue($get, 'customer_id', $livewire);
+
+                                        if ($state && $customerId > 0) {
+                                            $available = static::getReturnableProductQty((string) $state, 'sales', $customerId);
+                                            $qty = min(1, $available);
+
+                                            $set('min_qty', $available > 0 ? 1 : null);
+                                            $set('max_qty', $available > 0 ? $available : null);
+                                            $set('qty', $available > 0 ? $qty : null);
+                                            static::applyProductReturnLineAmounts(
+                                                $set,
+                                                (string) $state,
+                                                $qty,
+                                                $pricesIncludesTaxes,
+                                                'sales',
+                                                $customerId,
+                                            );
+                                        } else {
+                                            $set('min_qty', null);
+                                            $set('max_qty', null);
+                                            $set('qty', null);
+                                            $set('unit_price', null);
+                                            $set('tax', null);
+                                            $set('discount', null);
+                                            $set('price', null);
+                                            $set('total', null);
+                                        }
+                                    }),
+
                                 TextInput::make('qty')
                                     ->disabled(fn($record) => $record !== null)
                                     ->label(__('fields.qty'))
@@ -285,13 +320,26 @@ class SalesReturnsResource extends Resource
                                     ->minValue(fn(Forms\Get $get) => $get('min_qty'))
                                     ->maxValue(fn(Forms\Get $get) => $get('max_qty'))
                                     ->live(true)
-                                    ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set) {
-                                        $item = InvoiceItem::with('invoice')->find($get('invoice_item_id'));
-                                        $pricesIncludesTaxes = $item
-                                            ? static::resolveReturnPricesIncludeTaxes($item, $get)
-                                            : true;
+                                    ->afterStateUpdated(function ($state, Forms\Get $get, Forms\Set $set, $livewire) {
+                                        $returnMode = static::returnFormValue($get, 'return_mode', $livewire, 'invoice');
+                                        $pricesIncludesTaxes = (bool) static::returnFormValue($get, 'prices_includes_taxes', $livewire, true);
 
-                                        if ($item and $state) {
+                                        if ($returnMode === 'customer' && filled($get('product_line_key')) && $state) {
+                                            static::applyProductReturnLineAmounts(
+                                                $set,
+                                                (string) $get('product_line_key'),
+                                                $state,
+                                                $pricesIncludesTaxes,
+                                                'sales',
+                                                (int) static::returnFormValue($get, 'customer_id', $livewire),
+                                            );
+
+                                            return;
+                                        }
+
+                                        $item = static::resolvePricingInvoiceItem($get, $livewire);
+
+                                        if ($item && $state) {
                                             static::applyReturnLineAmounts($set, $item, $state, $pricesIncludesTaxes);
                                         } else {
                                             $set('unit_price', null);
@@ -331,6 +379,8 @@ class SalesReturnsResource extends Resource
 
                             ])
                     ]),
+
+                static::returnPaymentSection(),
 
                 Forms\Components\Section::make()->schema([
                     Forms\Components\Textarea::make('notes')
@@ -484,66 +534,6 @@ class SalesReturnsResource extends Resource
         ]);
     }
 
-    /** @return array<int, string> */
-    public static function returnableInvoiceItemOptionsForInvoice(int $invoiceId, bool $warnWhenEmpty = false): array
-    {
-        if ($invoiceId <= 0) {
-            return [];
-        }
-
-        $options = [];
-
-        foreach (static::returnableInvoiceItemsQuery()->where('invoice_id', $invoiceId)->get() as $item) {
-            if ($item->qty <= 0) {
-                if ($warnWhenEmpty) {
-                    fns()->sendWarning(__('fields.sales_return_item_already_returned'));
-                }
-
-                continue;
-            }
-
-            $options[$item->id] = $item->name ?: $item->product?->name ?? '—';
-        }
-
-        return $options;
-    }
-
-    /** @return array<int, string> */
-    public static function returnableInvoiceItemOptionsForCustomer(int $customerId): array
-    {
-        if ($customerId <= 0) {
-            return [];
-        }
-
-        $options = [];
-
-        foreach (
-            static::returnableInvoiceItemsQuery()
-                ->whereHas('invoice', fn (Builder $query) => $query->where('customer_id', $customerId))
-                ->get()
-        as $item) {
-            if ($item->qty <= 0) {
-                continue;
-            }
-
-            $name = $item->name ?: $item->product?->name ?? '—';
-            $options[$item->id] = $name . ' — ' . __('fields.invoice_no') . ' ' . $item->invoice->no;
-        }
-
-        return $options;
-    }
-
-    protected static function returnableInvoiceItemsQuery(): Builder
-    {
-        return InvoiceItem::query()
-            ->with(['product', 'productVariant', 'invoice'])
-            ->where('cancelled', false)
-            ->whereHas('invoice', fn (Builder $query) => $query
-                ->sales()
-                ->where('temp', false)
-                ->where('status', 'confirmed'));
-    }
-
     public static function validateReturnDetailsForCreate(array $data): ?string
     {
         $details = $data['details'] ?? [];
@@ -585,41 +575,17 @@ class SalesReturnsResource extends Resource
             return __('fields.sales_return_customer_required');
         }
 
-        $grouped = collect($details)->groupBy(function (array $detail) {
-            return InvoiceItem::query()
-                ->with('invoice')
-                ->find($detail['invoice_item_id'] ?? null)
-                ?->invoice_id;
-        })->filter(fn ($group, $invoiceId) => filled($invoiceId));
-
-        foreach ($grouped as $invoiceId => $invoiceDetails) {
-            $invoice = Invoice::find($invoiceId);
-
-            if (! $invoice || (int) $invoice->customer_id !== $customerId) {
-                return __('fields.sales_return_item_not_for_customer');
-            }
-
-            if ($invoice->status !== 'confirmed') {
-                return __('fields.you_need_to_confirm_invoice_before_this_operation');
-            }
-
-            $maxTotal = $invoice->getItemsCost(false, true, true);
-
-            if (static::sumReturnDetailsTotals($invoiceDetails->all()) > $maxTotal) {
-                return __('fields.to_be_returned_amount_is_greater_than_paid_amount');
-            }
-        }
-
         foreach ($details as $detail) {
-            $item = InvoiceItem::find($detail['invoice_item_id'] ?? null);
+            $productKey = $detail['product_line_key'] ?? null;
 
-            if (! $item) {
+            if (! $productKey) {
                 continue;
             }
 
-            $qty = (float) ($detail['qty'] ?? 0);
+            $requested = (float) ($detail['qty'] ?? 0);
+            $available = static::getReturnableProductQty((string) $productKey, 'sales', $customerId);
 
-            if ($qty > $item->qty) {
+            if ($requested > $available) {
                 return __('fields.sales_return_qty_exceeds_available');
             }
         }

@@ -189,7 +189,7 @@ class StoreController extends BaseController
 
         $cart = self::getCart();
 
-        $product = Product::with(['extras.extra'])->findOrFail($request->product_id);
+        $product = Product::with(['extras.extra', 'media', 'variants.media'])->findOrFail($request->product_id);
 
         $extras = $product->extras->whereIn('id', $request->product_extras_ids ?? []);
 
@@ -225,7 +225,7 @@ class StoreController extends BaseController
                     ->respond();
 
             $available_stock = StockService::instance()->getAvailableStock($product);
-            $new_item['image'] = null;
+            $new_item['image'] = $this->resolveCartItemImage($product);
             $new_item['name'] = $product->name;
             $new_item['type'] = 'basic';
             $new_item['unitPrice'] = number_format(PricingService::instance()->getRetailPrice($product), currency_decimals(), '.', '');
@@ -254,7 +254,7 @@ class StoreController extends BaseController
 
             $available_stock = StockService::instance()->getAvailableStock($productVariant);
 
-            $new_item['image'] = null;
+            $new_item['image'] = $this->resolveCartItemImage($product, $productVariant);
             $new_item['name'] = $productVariant->name;
             $new_item['type'] = 'variants';
             $new_item['productVariantId'] = $productVariant->id;
@@ -761,16 +761,22 @@ class StoreController extends BaseController
         //remove missing products or variants or product extras
         foreach ($cart['items'] as $itemIndex => $item) {
 
-            $product = Product::find($item['productId']);
+            $product = Product::with('media')->find($item['productId']);
 
-            if (!$product)
+            if (!$product) {
                 unset($cart['items'][$itemIndex]);
+                continue;
+            }
+
+            $productVariant = null;
 
             if ($item['productVariantId']) {
-                $productVariant = ProductVariant::find($item['productVariantId']);
+                $productVariant = ProductVariant::with('media')->find($item['productVariantId']);
 
-                if (!$productVariant)
+                if (!$productVariant) {
                     unset($cart['items'][$itemIndex]);
+                    continue;
+                }
             }
 
             foreach ($item['extras'] ?? [] as $extraIndex => $extraArray) {
@@ -779,7 +785,8 @@ class StoreController extends BaseController
                     unset($cart['items'][$itemIndex][$extraIndex]);
             }
 
-            $cart['items'][$itemIndex]['extras'] = array_values($item['extras']);
+            $cart['items'][$itemIndex]['extras'] = array_values($item['extras'] ?? []);
+            $cart['items'][$itemIndex]['image'] = $this->resolveCartItemImage($product, $productVariant);
         }
 
         return $this->generateCartData($cart['items']);
@@ -925,6 +932,19 @@ class StoreController extends BaseController
             'priceFormatted' => number_format(PricingService::instance()->getRetailPrice($productExtra), currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
             'inStock' => true,
         ];
+    }
+
+    protected function resolveCartItemImage(Product $product, ?ProductVariant $variant = null): ?string
+    {
+        if ($variant) {
+            $variantImage = MediaService::mediaUrls($variant->getMedia('images'), true);
+
+            if ($variantImage) {
+                return $variantImage;
+            }
+        }
+
+        return MediaService::mediaUrls($product->getMedia('images'), true);
     }
 
     protected function getExistingVariantByCombination($product, $combinations): ?ProductVariant

@@ -2,16 +2,11 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Tenant\Concerns\PartyContactFormSchema;
 use App\Filament\Tenant\Resources\CustomerResource\Pages;
 use App\Filament\Tenant\Resources\CustomerResource\RelationManagers;
-use App\Models\Area;
-use App\Models\City;
-use App\Models\Country;
 use App\Models\Customer;
-use App\Models\State;
-use App\Rules\InternationalPhoneRule;
 use Filament\Forms;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\View;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -23,6 +18,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CustomerResource extends Resource
 {
+    use PartyContactFormSchema;
+
     protected static ?string $model = Customer::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
@@ -67,101 +64,16 @@ class CustomerResource extends Resource
     public static function getSchema(): array
     {
         return [
-
-            Forms\Components\Section::make([
-                hidden_tenant_id_field(),
-
-                Forms\Components\TextInput::make('name')
-                    ->label(__('fields.name'))
-                    ->required()
-                    ->autofocus(),
-
-                Forms\Components\TextInput::make('phone')
-                    ->label(__('fields.phone'))
-                    ->placeholder('966xxxxxxxxx')
-                    ->tel()
-                    ->rules([
-                        new InternationalPhoneRule(false)
-                    ])
-                    ->nullable(),
-
-                Forms\Components\TextInput::make('trn')
-                    ->label(__('fields.trn')),
-
-                Forms\Components\TextInput::make('email')
-                    ->label(__('fields.email'))
-                    ->email(),
-
-                Forms\Components\Hidden::make('country_id')
-                    ->dehydrated(false)
-                    ->default(Country::firstWhere('dial_code', '966')->id),
-
-                Forms\Components\Fieldset::make()->schema([
-                    Select::make('state_id')
-                        ->label(__('fields.district'))
-                        ->live()
-                        ->required()
-                        ->searchable()
-//                        ->dehydrated(false)
-                        ->afterStateUpdated(function ($state, Forms\Set $set){
-                            $set('city_id', null);
-                            $set('area_id', null);
-                        })
-                        ->options(State::pluck('name', 'id')),
-
-                    Select::make('city_id')
-                        ->visible(function (Forms\Get $get){
-                            return State::where('id', $get('state_id'))->has('cities')->count() > 0;
-                        })
-                        ->live()
-                        ->label(__('fields.city'))
-                        ->required()
-                        ->searchable()
-                        ->afterStateUpdated(function ($state, Forms\Set $set){
-                            $set('area_id', null);
-                        })
-                        ->options(function (Forms\Get $get) {
-                            $state_id = $get('state_id');
-                            if ($state_id) {
-                                return City::with('areas')->where('state_id', $state_id)->has('areas')->pluck('name', 'id');
-                            }
-                            return [];
-                        }),
-
-                    Select::make('area_id')
-                        ->visible(function (Forms\Get $get){
-                            return City::where('id', $get('city_id'))->has('areas')->count() > 0;
-                        })
-                        ->label(__('fields.area'))
-                        ->required()
-                        ->searchable()
-                        ->options(function (Forms\Get $get) {
-                            $city_id = $get('city_id');
-                            if ($city_id) {
-                                return Area::where('city_id', $city_id)->pluck('name', 'id');
-                            }
-                            return [];
-                        }),
-
-                    Forms\Components\TextInput::make('delivery_address')
-                        ->label(__('fields.delivery_address'))
-                        ->type('address')
-                        ->required(),
-                ])->columns(4),
-
-            ])->columns(4),
+            Forms\Components\Section::make(static::partyContactFormFields(__('fields.name')))
+                ->columns(4),
 
             View::make('components.loading'),
-
         ];
     }
 
     public static function mutateEditFormData(array $data, Customer $record): array
     {
-        $record->loadMissing('city');
-        $data['state_id'] = $record->city?->state_id ?? $record->state_id ?? null;
-
-        return $data;
+        return static::mutatePartyEditFormData($data, $record);
     }
 
     public static function table(Table $table): Table

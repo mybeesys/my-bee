@@ -113,8 +113,7 @@ class TenantUserProfile extends Page implements HasForms
                                         ->required(),
 
                                     TextInput::make('second_name')
-                                        ->label(__('fields.second_name'))
-                                        ->required(),
+                                        ->label(__('fields.second_name')),
 
                                     TextInput::make('third_name')
                                         ->label(__('fields.third_name')),

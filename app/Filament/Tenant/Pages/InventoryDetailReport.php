@@ -73,7 +73,7 @@ class InventoryDetailReport extends Page implements HasForms, HasTable
         $this->tableFilters = [
             'report' => [
                 'warehouse_id' => request('warehouse_id') ?: Warehouse::query()->orderBy('name')->value('id'),
-                'from' => $this->normalizeFilterDate(request('from')) ?? now()->startOfMonth()->format('Y-m-d'),
+                'from' => $this->normalizeFilterDate(request('from')) ?? now()->startOfYear()->format('Y-m-d'),
                 'to' => $this->normalizeFilterDate(request('to')) ?? now()->format('Y-m-d'),
                 'movement_types' => is_array($movementTypes) ? $movementTypes : [],
             ],
@@ -141,12 +141,6 @@ class InventoryDetailReport extends Page implements HasForms, HasTable
                     ->columnSpanFull()
                     ->columns(4)
                     ->form([
-                        Forms\Components\Select::make('warehouse_id')
-                            ->label(__('fields.warehouse'))
-                            ->searchable()
-                            ->required()
-                            ->options(fn () => Warehouse::query()->orderBy('name')->pluck('name', 'id'))
-                            ->live(),
                         Forms\Components\DatePicker::make('from')
                             ->label(__('fields.created_from'))
                             ->native(false)
@@ -157,6 +151,12 @@ class InventoryDetailReport extends Page implements HasForms, HasTable
                             ->native(false)
                             ->minDate(fn (Forms\Get $get) => $get('from'))
                             ->maxDate(now())
+                            ->live(),
+                        Forms\Components\Select::make('warehouse_id')
+                            ->label(__('fields.warehouse'))
+                            ->searchable()
+                            ->required()
+                            ->options(fn () => Warehouse::query()->orderBy('name')->pluck('name', 'id'))
                             ->live(),
                         Forms\Components\Select::make('movement_types')
                             ->label(__('fields.inventory_movement_type'))

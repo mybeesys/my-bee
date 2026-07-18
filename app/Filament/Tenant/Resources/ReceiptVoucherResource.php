@@ -107,7 +107,7 @@ class ReceiptVoucherResource extends Resource
                             if ($get('for') == "customer") {
                                 return Acc4::asOptions(only_item_class: [Customer::class]);
                             } else if ($get('for') == "other_entity") {
-                                return Acc4::asOptions(exclude_item_class: [Customer::class, Supplier::class, Product::class, ProductVariant::class, ProductExtra::class], with_code: true);
+                                return Acc4::userCreatedOtherPartyAccountOptions();
                             } else {
                                 return [];
                             }
@@ -329,18 +329,7 @@ class ReceiptVoucherResource extends Resource
                                 ->live()
                                 ->disabled(fn($record) => $record !== null)
                                 ->label(__('fields.account'))
-                                ->hint(function (Get $get) {
-                                    $acc_id = $get('debit_acc4_code');
-
-                                    if ($acc_id)
-                                        return Acc4::find($acc_id)->acc4_code;
-
-                                    return null;
-                                })
-                                ->options(function () {
-                                    //add bank transfers accounts
-                                    return Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code');
-                                })
+                                ->options(fn () => Acc4::voucherOtherEntityPaymentAccountOptions())
                                 ->required(),
 
                             TextInput::make('amount')
@@ -427,7 +416,7 @@ class ReceiptVoucherResource extends Resource
                         if ($record->invoice?->customer)
                             return $record->invoice->customer->name;
 
-                        return $record->acc4->name . " - " . $record->acc4->code;
+                        return $record->acc4->name;
 
                     })
                     ->url(function ($record) {

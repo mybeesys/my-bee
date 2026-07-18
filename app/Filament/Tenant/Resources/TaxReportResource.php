@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Exports\CashDetExporter;
+use App\Filament\Tenant\Concerns\ConfiguresReportTableFilters;
 use App\Filament\Tenant\Resources\TaxReportResource\Pages;
 use App\Filament\Tenant\Resources\TaxReportResource\RelationManagers;
 use App\Models\CashDet;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TaxReportResource extends Resource
 {
+    use ConfiguresReportTableFilters;
+
     protected static ?string $model = CashDet::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
@@ -67,7 +70,7 @@ class TaxReportResource extends Resource
 
     public static function table(Tables\Table $table): Tables\Table
     {
-        return $table
+        return static::configureReportTableFilters($table)
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('operation.no')
@@ -84,9 +87,6 @@ class TaxReportResource extends Resource
                 Tables\Columns\TextColumn::make('account.name')
                     ->toggleable()
                     ->searchable()
-                    ->description(function ($record) {
-                        return $record->account_code;
-                    })
                     ->color(Color::Sky)
                     ->url(function (CashDet $record) {
                         if ($record->meta and ($record->meta['type'] ?? null) == "expense") {
@@ -245,18 +245,51 @@ class TaxReportResource extends Resource
 //                    ->label(__('fields.currency'))
 //                    ->relationship('currency', 'name'),
 
-                Tables\Filters\SelectFilter::make('op_id')
-                    ->searchable()
-//                        ->multiple()
-                    ->label(__('fields.voucher_no'))
-                    ->relationship('operation', 'no'),
+                Tables\Filters\Filter::make('created_at')
+                    ->label(__('fields.created_at'))
+                    ->columnSpanFull()
+                    ->form([
+                        ...static::reportDateRangeFormFields(),
 
-                Tables\Filters\SelectFilter::make('transaction_id')
-                    ->searchable()
-                    ->options(CashDet::pluck('transaction_id', 'transaction_id')->unique()->toArray())
-                    ->label(__('fields.transaction_id')),
+                        Forms\Components\Select::make('op_id')
+                            ->searchable()
+                            ->label(__('fields.voucher_no'))
+                            ->relationship('operation', 'no'),
 
-            ])
+                        Forms\Components\Select::make('transaction_id')
+                            ->searchable()
+                            ->options(CashDet::pluck('transaction_id', 'transaction_id')->unique()->toArray())
+                            ->label(__('fields.transaction_id')),
+                    ])
+                    ->columns(4)
+                    ->indicateUsing(function (array $data): ?string {
+                        $indicator = static::reportDateRangeIndicator($data) ?? '';
+
+                        if ($data['op_id'] ?? null) {
+                            $indicator .= __('fields.voucher_no');
+                        }
+
+                        if ($data['transaction_id'] ?? null) {
+                            $indicator .= __('fields.transaction_id');
+                        }
+
+                        return $indicator ?: null;
+                    })
+                    ->query(function ($query, array $data) {
+                        return static::applyReportDateRangeQuery(
+                            $query
+                                ->when(
+                                    $data['op_id'] ?? null,
+                                    fn ($query) => $query->where('op_id', $data['op_id'])
+                                )
+                                ->when(
+                                    $data['transaction_id'] ?? null,
+                                    fn ($query) => $query->where('transaction_id', $data['transaction_id'])
+                                ),
+                            $data
+                        );
+                    }),
+            ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\ActionGroup::make([
 //                        Tables\Actions\EditAction::make(),

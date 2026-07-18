@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources\ReceiptVoucherResource\Pages;
 
 use App\Filament\Tenant\Resources\ReceiptVoucherResource;
+use App\Models\Acc4;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\ReceiptVoucher;
@@ -41,7 +42,7 @@ class CreateReceiptVoucher extends CreateRecord
             'allocation_mode' => 'selected',
             'acc4_code' => null,
             'invoice_id' => null,
-            'debit_acc4_code' => '120100001',
+            'debit_acc4_code' => Acc4::defaultCollectionAccountCode(),
             'paid_amount' => null,
             'description' => null,
             'preselected_invoice_id' => null,

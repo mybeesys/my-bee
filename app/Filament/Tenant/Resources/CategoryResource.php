@@ -44,7 +44,7 @@ class CategoryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return user_setting('fav.products_categories', false) ? __('fields.navigation_group_favourites') :  __('fields.shop');
+        return user_setting('fav.products_categories', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
     }
 
     public static function getLabel(): ?string

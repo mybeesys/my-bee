@@ -52,7 +52,7 @@ class CouponResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return user_setting('fav.coupons', false) ? __('fields.navigation_group_favourites') :  __('fields.shop');
+        return user_setting('fav.coupons', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
     }
 
     public static function getNavigationBadge(): ?string

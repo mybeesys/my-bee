@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Exports\CashDetExporter;
+use App\Filament\Tenant\Concerns\ConfiguresReportTableFilters;
 use App\Filament\Tenant\Resources\TreasuryAccountReportResource\Pages;
 use App\Filament\Tenant\Resources\TreasuryAccountReportResource\RelationManagers;
 use App\Models\CashDet;
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class TreasuryAccountReportResource extends Resource
 {
+    use ConfiguresReportTableFilters;
+
     protected static ?string $model = CashDet::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';
@@ -71,7 +74,7 @@ class TreasuryAccountReportResource extends Resource
 
     public static function table(Tables\Table $table): Tables\Table
     {
-        return $table
+        return static::configureReportTableFilters($table)
             ->emptyStateHeading(__('fields.table_empty_state'))
             ->columns([
                 Tables\Columns\TextColumn::make('operation.no')
@@ -207,28 +210,12 @@ class TreasuryAccountReportResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->label(__('fields.created_at'))
-                    ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label(__('fields.created_from')),
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label(__('fields.created_until')),
-                    ])
-                    ->indicateUsing(function (array $data): ?string {
-                        $indicator = null;
-                        if ($data['created_from'] or $data['created_until']) {
-                            $indicator = $indicator . __('fields.date');
-                        }
-                        return $indicator;
-                    })
-                    ->query(function ($query, array $data) {
-
-                        return $query
-                            ->when($data['created_from'],
-                                fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
-                            ->when($data['created_until'],
-                                fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
-                    })
-            ])
+                    ->columnSpanFull()
+                    ->form(static::reportDateRangeFormFields())
+                    ->columns(4)
+                    ->indicateUsing(fn (array $data): ?string => static::reportDateRangeIndicator($data))
+                    ->query(fn ($query, array $data) => static::applyReportDateRangeQuery($query, $data)),
+            ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
                 Tables\Actions\ActionGroup::make([
 //                        Tables\Actions\EditAction::make(),

@@ -36,4 +36,41 @@ class Supplier extends BaseModel
             ->where('temp', false);
     }
 
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
+
+    public function getLocationAttribute()
+    {
+        $this->loadMissing('city.state', 'area');
+
+        $location = null;
+
+        if ($this->city) {
+            $location = $this->city->state->name . ' - ' . $this->city->name;
+        }
+
+        if ($this->area) {
+            $location = $location . ' - ' . $this->area->name;
+        }
+
+        return $location;
+    }
+
+    public function setPhoneAttribute($value)
+    {
+        return $this->attributes['phone'] = str($value)->remove('+')->value();
+    }
+
 }

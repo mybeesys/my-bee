@@ -2,7 +2,6 @@
 
 namespace App\Filament\Tenant\Pages;
 
-use App\Models\User;
 use Filament\Pages\Page;
 use Filament\Support\Enums\MaxWidth;
 use Illuminate\Contracts\Support\Htmlable;
@@ -15,11 +14,11 @@ class CustomSettings extends Page
 
     protected static ?string $slug = "/settings/v2";
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 999;
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()->hasRole(User::ROLE_CLIENT);
+        return false;
     }
 
     public static function getNavigationLabel(): string

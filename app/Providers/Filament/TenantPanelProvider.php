@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Dashboard;
 use App\Filament\Tenant\Pages\EditTenantProfile;
 use App\Filament\Tenant\Pages\LoginTenant;
@@ -11,6 +12,7 @@ use App\Filament\Tenant\Pages\TenantUserProfile;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Models\Tenant;
+use App\Models\User;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -142,10 +144,12 @@ class TenantPanelProvider extends PanelProvider
 
             ])
             ->navigationItems([
-
-//                NavigationItem::make()
-//                    ->label(fn(): string => __('fields.clients')),
-
+                NavigationItem::make('tenant-settings')
+                    ->label(fn (): string => __('fields.settings'))
+                    ->url(fn (): string => CustomSettings::getUrl())
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->sort(PHP_INT_MAX)
+                    ->visible(fn (): bool => auth()->user()?->hasRole(User::ROLE_CLIENT) ?? false),
             ])
             ->middleware([
                 EncryptCookies::class,

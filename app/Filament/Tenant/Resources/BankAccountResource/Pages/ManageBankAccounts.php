@@ -14,10 +14,30 @@ class ManageBankAccounts extends ManageRecords
 {
     protected static string $resource = BankAccountResource::class;
 
-    protected function getActions(): array
+    protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->mutateFormDataUsing(function (array $data): array {
+                    $data['acc3_code'] = '1227';
+                    $data['code'] = Acc4::nextCodeForAcc3('1227');
+                    $data['editable'] = true;
+                    $data['deletable'] = true;
+
+                    $meta = $data['meta'] ?? [];
+                    $shouldBeDefault = (bool) ($meta['is_default'] ?? false)
+                        || ! Acc4::query()->bankAccounts()->exists();
+
+                    $meta['is_default'] = $shouldBeDefault;
+                    $data['meta'] = $meta;
+
+                    return $data;
+                })
+                ->after(function (Acc4 $record, array $data): void {
+                    if ($data['meta']['is_default'] ?? false) {
+                        $record->markAsDefaultBankAccount();
+                    }
+                }),
             Action::make('back')
                 ->icon('heroicon-m-arrow-uturn-left')
                 ->size(ActionSize::Large)
@@ -36,15 +56,5 @@ class ManageBankAccounts extends ManageRecords
     protected function getTableBulkActions(): array
     {
         return [];
-    }
-
-    protected function mutateFormDataBeforeCreate(array $data): array
-    {
-        $data['acc3_code'] = '1227';
-        $data['code'] = Acc4::nextCodeForAcc3('1227');
-        $data['editable'] = true;
-        $data['deletable'] = true;
-
-        return $data;
     }
 }

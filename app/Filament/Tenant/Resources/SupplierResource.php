@@ -2,10 +2,10 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Tenant\Concerns\PartyContactFormSchema;
 use App\Filament\Tenant\Resources\SupplierResource\Pages;
 use App\Filament\Tenant\Resources\SupplierResource\RelationManagers;
 use App\Models\Supplier;
-use App\Rules\InternationalPhoneRule;
 use Filament\Forms;
 use Filament\Forms\Components\View;
 use Filament\Resources\Resource;
@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SupplierResource extends Resource
 {
+    use PartyContactFormSchema;
+
     protected static ?string $model = Supplier::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
@@ -61,47 +63,16 @@ class SupplierResource extends Resource
     public static function getSchema(): array
     {
         return [
-            Forms\Components\Section::make([
-
-                hidden_tenant_id_field(),
-
-                Forms\Components\TextInput::make('name')
-                    ->label(__('fields.supplier_name'))
-                    ->autofocus()
-                    ->required(),
-
-                Forms\Components\TextInput::make('phone')
-                    ->label(__('fields.phone'))
-                    ->placeholder('966xxxxxxxxx')
-                    ->rules([new InternationalPhoneRule(false)])
-                    ->nullable(),
-
-                Forms\Components\TextInput::make('company')
-                    ->label(__('fields.company'))
-                    ->nullable(),
-
-                Forms\Components\TextInput::make('address')
-                    ->type('address')
-                    ->label(__('fields.address'))
-                    ->nullable(),
-
-                Forms\Components\TextInput::make('email')
-                    ->email()
-                    ->label(__('fields.email'))
-                    ->nullable(),
-
-            ])->columns(2),
-
-            Forms\Components\Section::make([
-                Forms\Components\Textarea::make('notes')
-                    ->cols(10)
-                    ->rows(5)
-                    ->label(__('fields.notes')),
-            ]),
+            Forms\Components\Section::make(static::partyContactFormFields(__('fields.supplier_name')))
+                ->columns(4),
 
             View::make('components.loading'),
-
         ];
+    }
+
+    public static function mutateEditFormData(array $data, Supplier $record): array
+    {
+        return static::mutatePartyEditFormData($data, $record);
     }
 
     public static function form(Forms\Form $form): Forms\Form
@@ -120,8 +91,7 @@ class SupplierResource extends Resource
                     ->searchable()
                     ->url(fn (Supplier $record) => static::getUrl('view', ['record' => $record->id])),
                 Tables\Columns\TextColumn::make('phone')->label(__('fields.phone'))->searchable(),
-                Tables\Columns\TextColumn::make('address')->label(__('fields.address'))->searchable(),
-                Tables\Columns\TextColumn::make('company')->label(__('fields.company'))->searchable(),
+                Tables\Columns\TextColumn::make('delivery_address')->label(__('fields.delivery_address'))->searchable(),
                 Tables\Columns\TextColumn::make('email')->label(__('fields.email'))->searchable(),
 
                 Tables\Columns\TextColumn::make('updated_at')
@@ -165,6 +135,7 @@ class SupplierResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make()
+                        ->mutateRecordDataUsing(fn (array $data, Supplier $record) => static::mutateEditFormData($data, $record))
                         ->modalWidth(MaxWidth::SevenExtraLarge),
                 ])
                     ->icon('heroicon-m-ellipsis-vertical')
@@ -185,7 +156,7 @@ class SupplierResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['acc4'])->latest();
+        return parent::getEloquentQuery()->with(['acc4', 'city.state', 'area'])->latest();
     }
 
     public static function getPages(): array

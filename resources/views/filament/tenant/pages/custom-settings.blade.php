@@ -28,7 +28,8 @@
                 'items' => [
                     ['url' => \App\Filament\Tenant\Resources\CategoryResource::getUrl(), 'title' => __('fields.products_categories'), 'icon' => 'heroicon-o-bolt', 'tone' => 'sky'],
                     ['url' => \App\Filament\Tenant\Resources\WarehouseResource::getUrl(), 'title' => __('fields.warehouses'), 'icon' => 'heroicon-o-building-storefront', 'tone' => 'violet'],
-                    ['url' => \App\Filament\Tenant\Resources\SupplierResource::getUrl(), 'title' => __('fields.suppliers'), 'icon' => 'heroicon-o-user', 'tone' => 'emerald'],
+                    // Temporarily hidden: suppliers card
+                    // ['url' => \App\Filament\Tenant\Resources\SupplierResource::getUrl(), 'title' => __('fields.suppliers'), 'icon' => 'heroicon-o-user', 'tone' => 'emerald'],
                     ['url' => \App\Filament\Tenant\Resources\ExpenseCategoryResource::getUrl(), 'title' => __('fields.expense_categories'), 'icon' => 'heroicon-o-rectangle-stack', 'tone' => 'amber'],
                     ['url' => \App\Filament\Tenant\Resources\Acc4Resource::getUrl(), 'title' => __('fields.other_party_accounts'), 'icon' => 'heroicon-o-credit-card', 'tone' => 'slate'],
                     ['url' => \App\Filament\Tenant\Resources\BankAccountResource::getUrl(), 'title' => __('fields.bank_accounts'), 'icon' => 'heroicon-o-building-library', 'tone' => 'sky'],

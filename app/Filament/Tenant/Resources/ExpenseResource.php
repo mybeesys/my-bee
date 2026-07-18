@@ -83,10 +83,8 @@ class ExpenseResource extends Resource
 
                             return null;
                         })
-                        ->options(function () {
-                            //add bank transfers accounts
-                            return Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->pluck('name', 'code');
-                        })
+                        ->default(fn () => Acc4::defaultCollectionAccountCode())
+                        ->options(fn () => Acc4::collectionAccountOptions())
                         ->required(),
 
                     Forms\Components\Hidden::make('debit_acc4_code')
@@ -319,7 +317,6 @@ class ExpenseResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('creditAccount.name')
                     ->label(__('fields.account'))
-                    ->description(fn($record) => $record->creditAccount->code)
                     ->searchable(),
 
 //                Tables\Columns\TextColumn::make('debitAccount.name')

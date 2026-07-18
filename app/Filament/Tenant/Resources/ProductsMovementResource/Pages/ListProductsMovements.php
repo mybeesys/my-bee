@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\ProductsMovementResource\Pages;
 
+use App\Filament\Tenant\Concerns\InitializesReportDateFilters;
 use App\Filament\Tenant\Resources\ProductsMovementResource;
 use App\Services\ProductMovementBalanceService;
 use Filament\Actions;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ListProductsMovements extends ListRecords
 {
+    use InitializesReportDateFilters;
+
     protected static string $resource = ProductsMovementResource::class;
 
     protected function paginateTableQuery(Builder $query): Paginator | CursorPaginator

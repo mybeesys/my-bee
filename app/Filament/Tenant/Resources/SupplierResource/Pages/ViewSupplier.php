@@ -28,10 +28,10 @@ class ViewSupplier extends ViewRecord
     {
         parent::mount($record);
 
-        $this->record->loadMissing(['acc4', 'supplyOrders', 'purchaseInvoices']);
+        $this->record->loadMissing(['acc4', 'supplyOrders', 'purchaseInvoices', 'city.state', 'area']);
 
         $this->filters = [
-            'from' => null,
+            'from' => now()->startOfYear()->format('Y-m-d'),
             'to' => now()->format('Y-m-d'),
         ];
 

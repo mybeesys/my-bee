@@ -283,6 +283,120 @@ class Invoice extends BaseModel
         return $total;
     }
 
+    public function resolveLineTaxAmount(InvoiceItem $item): float
+    {
+        if ((float) $item->tax > 0) {
+            return round((float) $item->tax, 4);
+        }
+
+        return round((float) $item->getTaxesAsAmount(), 4);
+    }
+
+    public function getLineGrossSubtotal(InvoiceItem $item): float
+    {
+        return round(
+            ($item->price * $item->qty) - (float) $item->discount + (float) $item->extras_total,
+            4
+        );
+    }
+
+    public function getLineNetSubtotal(InvoiceItem $item): float
+    {
+        $gross = $this->getLineGrossSubtotal($item);
+        $tax = $this->resolveLineTaxAmount($item);
+
+        return $this->prices_includes_taxes
+            ? round(max(0, $gross - $tax), 4)
+            : $gross;
+    }
+
+    public function getLineNetUnitCost(InvoiceItem $item): float
+    {
+        $qty = (float) $item->qty;
+
+        if ($qty <= 0) {
+            return 0;
+        }
+
+        return round($this->getLineNetSubtotal($item) / $qty, 4);
+    }
+
+    public function resolveAdditionalCostTaxAmount(AdditionalCost $additionalCost): float
+    {
+        if ($additionalCost->tax_profile_data) {
+            $totalPercentages = collect($additionalCost->tax_profile_data['taxes'] ?? [])->sum('percent');
+
+            if ($totalPercentages > 0) {
+                return round((float) MathService::instance()->getTax(
+                    (float) $additionalCost->cost,
+                    $totalPercentages,
+                    $this->prices_includes_taxes
+                ), 4);
+            }
+        }
+
+        $taxProfile = $additionalCost->taxProfile;
+
+        if ($taxProfile) {
+            return round((float) MathService::instance()->getTaxFromTaxProfile(
+                (float) $additionalCost->cost,
+                $taxProfile,
+                $this->prices_includes_taxes
+            ), 4);
+        }
+
+        return 0;
+    }
+
+    public function getAdditionalCostNetAmount(AdditionalCost $additionalCost): float
+    {
+        $cost = (float) $additionalCost->cost;
+        $tax = $this->resolveAdditionalCostTaxAmount($additionalCost);
+
+        return $this->prices_includes_taxes
+            ? round(max(0, $cost - $tax), 4)
+            : $cost;
+    }
+
+    public function getAccountingNetTotal(): float
+    {
+        $this->loadMissing(['items', 'additionalCosts.taxProfile', 'services.taxProfile']);
+
+        $total = 0;
+
+        foreach ($this->items as $item) {
+            $total += $this->getLineNetSubtotal($item);
+        }
+
+        foreach ($this->additionalCosts as $additionalCost) {
+            $total += $this->getAdditionalCostNetAmount($additionalCost);
+        }
+
+        foreach ($this->services as $service) {
+            $price = (float) $service->price;
+            $tax = 0;
+
+            if ($service->tax_profile_data) {
+                $totalPercentages = collect($service->tax_profile_data['taxes'] ?? [])->sum('percent');
+
+                if ($totalPercentages > 0) {
+                    $tax = MathService::instance()->getTax($price, $totalPercentages, $this->prices_includes_taxes);
+                }
+            } elseif ($service->taxProfile) {
+                $tax = MathService::instance()->getTaxFromTaxProfile($price, $service->taxProfile, $this->prices_includes_taxes);
+            }
+
+            $total += $this->prices_includes_taxes ? max(0, $price - $tax) : $price;
+        }
+
+        return round($total, 4);
+    }
+
+    public function getAccountingGrossTotal(): float
+    {
+        return round($this->getAccountingNetTotal() + (float) $this->getTaxesAsAmount(), 4);
+    }
+
     public function getServicesCost($withTaxes = false)
     {
         $total = 0;
@@ -469,7 +583,9 @@ class Invoice extends BaseModel
 
         $this->loadMissing(['customer.acc4', 'items', 'additionalCosts', 'services']);
 
-        $total = (float) $this->getItemsCost(true, true, true);
+        $tax = round((float) $this->getTaxesAsAmount(), 4);
+        $net = round((float) $this->getAccountingNetTotal(), 4);
+        $total = round((float) $this->getAccountingGrossTotal(), 4);
 
         if ($total <= 0) {
             return;
@@ -481,8 +597,6 @@ class Invoice extends BaseModel
             throw new \Exception(__('fields.invoice_payment_missing_customer_account'));
         }
 
-        $tax = round((float) $this->getTaxesAsAmount(), 4);
-        $net = round(max(0, $total - $tax), 4);
         $customerName = $this->customer->name;
         $statement = "Sales Invoice: {$customerName}";
         $meta = ['type' => 'sales_invoice', 'id' => $this->id];
@@ -708,31 +822,34 @@ class Invoice extends BaseModel
 
         $purchases_amount = 0;
 
-        foreach ($this->items as $invoiceItem) //loop invoice items and make stocks
-        {
-            $lineSubtotal = $invoiceItem->qty * $invoiceItem->price - $invoiceItem->discount;
-            $purchases_amount += $lineSubtotal;
+        foreach ($this->items as $invoiceItem) {
+            $lineNet = $this->getLineNetSubtotal($invoiceItem);
+            $purchases_amount += $lineNet;
 
-            $item = $invoiceItem->product_variant_id ? ProductVariant::find($invoiceItem->product_variant_id) : Product::find($invoiceItem->product_id);
+            $item = $invoiceItem->product_variant_id
+                ? ProductVariant::find($invoiceItem->product_variant_id)
+                : Product::find($invoiceItem->product_id);
 
             ItemStock::create(
                 [
                     'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
                     'type' => 'purchase',
                     'invoice_id' => $this->id,
-                    'warehouse_id' => $this->warehouse_id,//->warehouse_id,
+                    'warehouse_id' => $this->warehouse_id,
                     'product_id' => $invoiceItem->product_id,
                     'item_id' => $item->id,
                     'item_type' => get_class($item),
                     'qty_in' => $invoiceItem->qty,
                     'qty_out' => 0,
-                    'unit_cost' => $invoiceItem->price,
+                    'unit_cost' => $this->getLineNetUnitCost($invoiceItem),
                     'date' => now(),
                     'user_id' => auth()->id() ?? auth('sanctum')->id(),
                     'expiration_date' => $invoiceItem->expiration_date,
                 ]
             );
         }
+
+        $purchases_amount = round($purchases_amount, 4);
 
         $cat = ExpenseCategory::firstOrCreate(['name' => 'فواتير المشتريات'],
             [
@@ -761,8 +878,7 @@ class Invoice extends BaseModel
             ->finish();
 
         foreach ($this->additionalCosts as $additionalCost) {
-
-            $cost = (float) $additionalCost->cost;
+            $cost = $this->getAdditionalCostNetAmount($additionalCost);
 
             if ($cost <= 0) {
                 continue;
@@ -782,14 +898,12 @@ class Invoice extends BaseModel
                 )->make("120100001", "122300003")
                 ->finish();
 
-
-            //add cost to expenses
             Expense::create([
                 'tenant_id' => filament()->getTenant()->id ?? request()->header('Tenant-Id'),
                 'credit_acc4_code' => '122600001',
                 'debit_acc4_code' => '122300001',
                 'expense_category_id' => $cat->id,
-                'amount' => $additionalCost->cost,
+                'amount' => $cost,
                 'description' => $additionalCost->type->name . " - " . $additionalCost->statement,
                 'date' => $this->date,
                 'meta' => ['invoice_id' => $this->id, 'invoice_additional_cost_id' => $additionalCost->id]

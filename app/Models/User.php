@@ -82,16 +82,24 @@ class User extends Authenticatable implements MustVerifyEmail, HasTenants, Filam
         return $this->full_name;
     }
 
-    public function getFullNameAttribute()
+    public function getFullNameAttribute(): string
     {
-        $text = ucwords($this->first_name . ' ' . $this->second_name)
-            . ' ' . $this->third_name . ' ' . $this->fourth_name;
+        $parts = array_values(array_filter([
+            $this->first_name,
+            $this->second_name,
+            $this->third_name,
+            $this->fourth_name,
+        ], fn ($part) => filled(trim((string) $part))));
 
-        if (empty($text) || Str::length($text) == 1) {
-            return $this->attributes['phone'];
+        if ($parts === []) {
+            return (string) ($this->attributes['phone'] ?? $this->attributes['email'] ?? '');
         }
 
-        return $text;
+        $name = trim(implode(' ', $parts));
+
+        return app()->getLocale() === 'ar'
+            ? $name
+            : ucwords($name);
     }
 
     /**

@@ -2,13 +2,15 @@
 
 namespace App\Filament\Tenant\Resources\PurchasesReturnsResource\Pages;
 
+use App\Filament\Tenant\Concerns\HandlesReturnCreditPayments;
 use App\Filament\Tenant\Resources\PurchasesReturnsResource;
 use App\Models\Invoice;
-use App\Services\AccountingService;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreatePurchasesReturns extends CreateRecord
 {
+    use HandlesReturnCreditPayments;
+
     protected static string $resource = PurchasesReturnsResource::class;
 
     public function mount(): void
@@ -21,8 +23,10 @@ class CreatePurchasesReturns extends CreateRecord
             $invoice = Invoice::find($invoiceId);
 
             $this->form->fill([
+                'return_mode' => 'invoice',
                 'invoice_id' => $invoiceId,
                 'prices_includes_taxes' => (bool) ($invoice?->prices_includes_taxes ?? true),
+                'payment_terms' => $invoice?->payment_terms ?? 'cash',
             ]);
         }
     }
@@ -34,50 +38,48 @@ class CreatePurchasesReturns extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $data = $this->prepareReturnFormDataForPersistence($data);
         $data['user_id'] = filament()->auth()->id() ?? auth()->id();
+        $returnMode = $this->data['return_mode'] ?? 'invoice';
+
+        if ($returnMode === 'supplier') {
+            $data['invoice_id'] = null;
+        } else {
+            $data['supplier_id'] = Invoice::find($data['invoice_id'])?->supplier_id;
+        }
 
         return $data;
     }
 
     protected function beforeCreate(): void
     {
-        $invoice = Invoice::find($this->data['invoice_id']);
+        $message = PurchasesReturnsResource::validateReturnDetailsForCreate($this->data);
 
-        $total_paid_by_treasury_without_delivery_fees_or_other_fees = $invoice->getItemsCost(false, true, true);
-
-        if ($invoice->status !== 'confirmed') {
-            fns()->sendWarning(__('fields.you_need_to_confirm_invoice_before_this_operation'));
+        if ($message) {
+            fns()->sendWarning($message);
             $this->halt();
         }
 
-        if (PurchasesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []) > $total_paid_by_treasury_without_delivery_fees_or_other_fees) {
-            fns()->sendWarning(__('fields.to_be_returned_amount_is_greater_than_paid_amount'));
-            $this->halt();
+        if (($this->data['payment_terms'] ?? 'cash') === 'credit') {
+            $returnTotal = PurchasesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []);
+            $refundAmount = $this->normalizeReturnCreditPaymentAmount(
+                $this->returnCreditPaymentUiData()['credit_payment_amount'] ?? 0
+            );
+
+            if ($refundAmount > $returnTotal) {
+                fns()->sendWarning(__('fields.payments_are_bigger_than_invoice_amount'));
+                $this->halt();
+            }
         }
     }
+
     public function afterCreate(): void
     {
-        if (!$this->record->invoice->supplier->acc4->code) {
-            fns()->sendWarning('supplier account cannot be found');
-            $this->halt();
-        }
+        $returnMode = $this->data['return_mode'] ?? 'invoice';
+        $returnTotal = PurchasesReturnsResource::syncExpandedReturnDetails($this->record, $this->data, $returnMode, 'purchases');
 
-        $op = make_general_voucher_op();
-        $accService = new AccountingService();
-        $accService
-            ->setUp(
-                $op->id,
-                now(),
-                main_currency_iso_code(),
-                generate_double_entry_transaction_id(),
-                PurchasesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []),
-                null,
-                'Return paid amount to treasury - إرجاع المبلغ المدفوع للصندوق',
-                'Return paid amount to treasury - إرجاع المبلغ المدفوع للصندوق',
-                $this->record->invoice_id,
-                meta: ['type' => 'purchases_returns', 'id' => $this->record->id],
-            )->make($this->record->invoice->supplier->acc4->code, '120100001')
-            ->finish();
+        PurchasesReturnsResource::settlePurchaseReturnPayment($this->record, $this->data, $returnTotal);
+        $this->processPendingReturnCreditRefund('purchases', $returnTotal);
 
         foreach ($this->record->details as $detail) {
             $detail->update(['transaction_completed' => true]);

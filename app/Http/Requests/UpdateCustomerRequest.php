@@ -29,10 +29,11 @@ class UpdateCustomerRequest extends BaseRequest
             'phone' => ['sometimes', new InternationalPhoneRule(false), new ApiUniqueTenantItemRule(Customer::class, 'phone', $id)],
             'email' => ['sometimes', 'email', 'max:255'],
             'trn' => ['nullable', 'string', 'max:50'],
-            'state_id' => ['sometimes', 'exists:states,id'],
-            'city_id' => ['sometimes', 'exists:cities,id'],
-            'area_id' => ['sometimes', 'exists:areas,id'],
-            'delivery_address' => ['required', 'min:1', 'max:255'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'state_id' => ['nullable', 'exists:states,id'],
+            'city_id' => ['nullable', 'exists:cities,id'],
+            'area_id' => ['nullable', 'exists:areas,id'],
+            'delivery_address' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

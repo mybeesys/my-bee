@@ -2,13 +2,15 @@
 
 namespace App\Filament\Tenant\Resources\SalesReturnsResource\Pages;
 
+use App\Filament\Tenant\Concerns\HandlesReturnCreditPayments;
 use App\Filament\Tenant\Resources\SalesReturnsResource;
 use App\Models\Invoice;
-use App\Services\AccountingService;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateSalesReturns extends CreateRecord
 {
+    use HandlesReturnCreditPayments;
+
     protected static string $resource = SalesReturnsResource::class;
 
     public function mount(): void
@@ -24,6 +26,7 @@ class CreateSalesReturns extends CreateRecord
                 'return_mode' => 'invoice',
                 'invoice_id' => $invoiceId,
                 'prices_includes_taxes' => (bool) ($invoice?->prices_includes_taxes ?? true),
+                'payment_terms' => $invoice?->payment_terms ?? 'cash',
             ]);
         }
     }
@@ -35,6 +38,7 @@ class CreateSalesReturns extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $data = $this->prepareReturnFormDataForPersistence($data);
         $data['user_id'] = filament()->auth()->id() ?? auth()->id();
         $returnMode = $this->data['return_mode'] ?? 'invoice';
 
@@ -55,33 +59,27 @@ class CreateSalesReturns extends CreateRecord
             fns()->sendWarning($message);
             $this->halt();
         }
+
+        if (($this->data['payment_terms'] ?? 'cash') === 'credit') {
+            $returnTotal = SalesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []);
+            $refundAmount = $this->normalizeReturnCreditPaymentAmount(
+                $this->returnCreditPaymentUiData()['credit_payment_amount'] ?? 0
+            );
+
+            if ($refundAmount > $returnTotal) {
+                fns()->sendWarning(__('fields.payments_are_bigger_than_invoice_amount'));
+                $this->halt();
+            }
+        }
     }
 
     public function afterCreate(): void
     {
-        $customer = $this->record->resolveCustomer();
+        $returnMode = $this->data['return_mode'] ?? 'invoice';
+        $returnTotal = SalesReturnsResource::syncExpandedReturnDetails($this->record, $this->data, $returnMode, 'sales');
 
-        if (! $customer?->acc4?->code) {
-            fns()->sendWarning('customer account cannot be found');
-            $this->halt();
-        }
-
-        $op = make_general_voucher_op();
-        $accService = new AccountingService();
-        $accService
-            ->setUp(
-                $op->id,
-                now(),
-                main_currency_iso_code(),
-                generate_double_entry_transaction_id(),
-                SalesReturnsResource::sumReturnDetailsTotals($this->data['details'] ?? []),
-                null,
-                'Return paid amount to customer - إرجاع المبلغ المدفوع للعميل',
-                'Return paid amount to customer - إرجاع المبلغ المدفوع للعميل',
-                $this->record->invoice_id,
-                meta: ['type' => 'sales_returns', 'id' => $this->record->id],
-            )->make('120100001', $customer->acc4->code)
-            ->finish();
+        SalesReturnsResource::settleSalesReturnPayment($this->record, $this->data, $returnTotal);
+        $this->processPendingReturnCreditRefund('sales', $returnTotal);
 
         foreach ($this->record->details as $detail) {
             $detail->update(['transaction_completed' => true]);

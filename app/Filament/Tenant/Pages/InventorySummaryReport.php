@@ -52,7 +52,7 @@ class InventorySummaryReport extends Page implements HasForms
     public function mount(): void
     {
         $this->filters = [
-            'from' => request('from', now()->startOfMonth()->format('Y-m-d')),
+            'from' => request('from', now()->startOfYear()->format('Y-m-d')),
             'to' => request('to', now()->format('Y-m-d')),
             'warehouse_ids' => [],
             'product_ids' => [],

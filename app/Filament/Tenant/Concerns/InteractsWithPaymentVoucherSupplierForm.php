@@ -93,10 +93,8 @@ trait InteractsWithPaymentVoucherSupplierForm
                         ->placeholder(__('fields.payment_voucher_payment_account_hint'))
                         ->searchable()
                         ->live()
-                        ->options(fn () => Acc4::query()
-                            ->whereIn('code', [120100001])
-                            ->orWhereIn('acc3_code', [1227])
-                            ->pluck('name', 'code'))
+                        ->default(fn () => Acc4::defaultCollectionAccountCode())
+                        ->options(fn () => Acc4::collectionAccountOptions())
                         ->required(),
 
                     Select::make('acc4_code')

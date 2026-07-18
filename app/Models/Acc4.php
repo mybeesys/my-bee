@@ -15,6 +15,8 @@ class Acc4 extends BaseModel
 {
     use HasFactory;
 
+    public const TREASURY_ACCOUNT_CODE = '120100001';
+
     protected $guarded = [];
 
     protected $casts = [
@@ -97,9 +99,97 @@ class Acc4 extends BaseModel
             ->where('acc3_code', '1227');
     }
 
+    public function scopeUserCreatedOtherPartyAccounts(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('item_type')
+            ->where('acc3_code', '1217')
+            ->where('editable', true);
+    }
+
+    public function scopeVoucherOtherEntityPaymentAccounts(Builder $query): Builder
+    {
+        return $query
+            ->whereNull('item_type')
+            ->where(function (Builder $query) {
+                $query->where('code', '120100001')
+                    ->orWhere('acc3_code', '1227')
+                    ->orWhere('acc3_code', '1228')
+                    ->orWhere(function (Builder $query) {
+                        $query->where('acc3_code', '1217')->where('editable', true);
+                    });
+            });
+    }
+
+    public static function userCreatedOtherPartyAccountOptions(): array
+    {
+        return static::query()
+            ->userCreatedOtherPartyAccounts()
+            ->orderBy('name')
+            ->pluck('name', 'code')
+            ->all();
+    }
+
+    public static function voucherOtherEntityPaymentAccountOptions(): array
+    {
+        return static::query()
+            ->voucherOtherEntityPaymentAccounts()
+            ->orderBy('name')
+            ->pluck('name', 'code')
+            ->all();
+    }
+
     public function isBankAccount(): bool
     {
         return $this->item_type === null && (string) $this->acc3_code === '1227';
+    }
+
+    public function isDefaultBankAccount(): bool
+    {
+        return $this->isBankAccount() && (bool) ($this->meta['is_default'] ?? false);
+    }
+
+    public static function defaultBankAccount(): ?self
+    {
+        $default = static::query()
+            ->bankAccounts()
+            ->get()
+            ->first(fn (self $account): bool => $account->isDefaultBankAccount());
+
+        return $default ?? static::query()->bankAccounts()->orderBy('code')->first();
+    }
+
+    public static function defaultCollectionAccountCode(): string
+    {
+        return (string) (static::defaultBankAccount()?->code ?? static::TREASURY_ACCOUNT_CODE);
+    }
+
+    public static function collectionAccountOptions(): array
+    {
+        return static::query()
+            ->where(function (Builder $query) {
+                $query->where('code', static::TREASURY_ACCOUNT_CODE)
+                    ->orWhere('acc3_code', '1227');
+            })
+            ->orderBy('name')
+            ->pluck('name', 'code')
+            ->all();
+    }
+
+    public function markAsDefaultBankAccount(): void
+    {
+        if (! $this->isBankAccount()) {
+            return;
+        }
+
+        static::query()
+            ->bankAccounts()
+            ->get()
+            ->each(function (self $account): void {
+                $meta = $account->meta ?? [];
+                $meta['is_default'] = (string) $account->code === (string) $this->code;
+                $account->update(['meta' => $meta]);
+            });
     }
 
     public function isSystemAccount(): bool

@@ -271,6 +271,11 @@ class InvoicePaymentTermsService
         $payment->update(['transaction_completed' => 1]);
     }
 
+    public function completePaymentVoucherPaymentForReturn(PaymentVoucherPayment $payment, ?int $invoiceId): void
+    {
+        $this->completePaymentVoucherPayment($payment, $invoiceId);
+    }
+
     /**
      * @param  array<int, array{invoice_id: int, amount: float, invoice: Invoice}>  $allocations
      */

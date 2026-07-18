@@ -34,9 +34,19 @@
             <span class="party-view__detail-label">{{ __('fields.email') }}</span>
             <span class="party-view__detail-value">{{ $record->email ?: '—' }}</span>
         </div>
+        @if ($record->postal_code)
+            <div class="party-view__detail">
+                <span class="party-view__detail-label">{{ __('fields.postal_code') }}</span>
+                <span class="party-view__detail-value">{{ $record->postal_code }}</span>
+            </div>
+        @endif
         <div class="party-view__detail">
-            <span class="party-view__detail-label">{{ __('fields.address') }}</span>
-            <span class="party-view__detail-value">{{ $record->address ?: '—' }}</span>
+            <span class="party-view__detail-label">{{ __('fields.customer_location') }}</span>
+            <span class="party-view__detail-value">{{ $record->location ?: '—' }}</span>
+        </div>
+        <div class="party-view__detail">
+            <span class="party-view__detail-label">{{ __('fields.delivery_address') }}</span>
+            <span class="party-view__detail-value">{{ $record->delivery_address ?: ($record->address ?: '—') }}</span>
         </div>
         <div class="party-view__detail">
             <span class="party-view__detail-label">{{ __('fields.join_date') }}</span>

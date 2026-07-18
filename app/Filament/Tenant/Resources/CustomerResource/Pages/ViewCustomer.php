@@ -31,7 +31,7 @@ class ViewCustomer extends ViewRecord
         $this->record->loadMissing(['acc4', 'city.state', 'area', 'orders', 'invoices']);
 
         $this->filters = [
-            'from' => null,
+            'from' => now()->startOfYear()->format('Y-m-d'),
             'to' => now()->format('Y-m-d'),
         ];
 

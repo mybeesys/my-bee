@@ -34,13 +34,19 @@
             <span class="customer-view__detail-label">{{ __('fields.email') }}</span>
             <span class="customer-view__detail-value">{{ $record->email ?: '—' }}</span>
         </div>
-        <div class="customer-view__detail">
-            <span class="customer-view__detail-label">{{ __('fields.delivery_address') }}</span>
-            <span class="customer-view__detail-value">{{ $record->delivery_address ?: '—' }}</span>
-        </div>
+        @if ($record->postal_code)
+            <div class="customer-view__detail">
+                <span class="customer-view__detail-label">{{ __('fields.postal_code') }}</span>
+                <span class="customer-view__detail-value">{{ $record->postal_code }}</span>
+            </div>
+        @endif
         <div class="customer-view__detail">
             <span class="customer-view__detail-label">{{ __('fields.customer_location') }}</span>
             <span class="customer-view__detail-value">{{ $record->location ?: '—' }}</span>
+        </div>
+        <div class="customer-view__detail">
+            <span class="customer-view__detail-label">{{ __('fields.delivery_address') }}</span>
+            <span class="customer-view__detail-value">{{ $record->delivery_address ?: '—' }}</span>
         </div>
         @if ($record->trn)
             <div class="customer-view__detail">

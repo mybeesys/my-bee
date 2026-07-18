@@ -503,12 +503,9 @@ trait InvoiceDocumentFormLayout
                 ->label(__('fields.account'))
                 ->dehydrated(false)
                 ->disabled(false)
-                ->default('120100001')
+                ->default(fn () => Acc4::defaultCollectionAccountCode())
                 ->helperText(__('fields.payment_collection_account_hint'))
-                ->options(fn () => Acc4::query()
-                    ->whereIn('code', [120100001])
-                    ->orWhereIn('acc3_code', [1227])
-                    ->pluck('name', 'code'))
+                ->options(fn () => Acc4::collectionAccountOptions())
                 ->searchable(),
 
             Forms\Components\TextInput::make('credit_payment_amount')

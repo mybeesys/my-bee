@@ -3,6 +3,7 @@
 namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Exports\CashDetExporter;
+use App\Filament\Tenant\Concerns\ConfiguresReportTableFilters;
 use App\Filament\Tenant\Resources\AccountStatementResource\Pages;
 use App\Filament\Tenant\Resources\AccountStatementResource\RelationManagers;
 use App\Models\Acc4;
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AccountStatementResource extends Resource
 {
+    use ConfiguresReportTableFilters;
+
     protected static ?string $model = CashDet::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -52,7 +55,7 @@ class AccountStatementResource extends Resource
 
     public static function table(Tables\Table $table): Tables\Table
     {
-        return $table
+        return static::configureReportTableFilters($table)
             ->modifyQueryUsing(function (Builder $query) use ($table) {
 //                dd($table->getFilter('created_at')->getState()['account_code'], empty($table->getFilter('created_at')->getState()['account_code']));
                 if (empty($table->getFilter('created_at')->getState()['account_code'])) {
@@ -75,9 +78,6 @@ class AccountStatementResource extends Resource
                 Tables\Columns\TextColumn::make('account.name')
                     ->toggleable()
                     ->searchable()
-                    ->description(function ($record) {
-                        return $record->account_code;
-                    })
                     ->label(__('fields.account')),
 
 //                Tables\Columns\TextColumn::make('transaction_id')
@@ -194,40 +194,42 @@ class AccountStatementResource extends Resource
 
                         Forms\Components\Select::make('op_id')
                             ->searchable()
-//                        ->multiple()
                             ->label(__('fields.voucher_no'))
                             ->relationship('operation', 'no'),
 
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label(__('fields.created_from')),
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label(__('fields.created_until')),
+                        ...static::reportDateRangeFormFields(),
                     ])
                     ->columns(4)
                     ->indicateUsing(function (array $data): ?string {
-                        $indicator = null;
+                        $parts = [];
+
                         if ($data['account_code'] ?? null) {
-                            $indicator = $indicator . __('fields.account');
+                            $parts[] = __('fields.account');
                         }
+
                         if ($data['op_id'] ?? null) {
-                            $indicator = $indicator . __('fields.voucher_no');
+                            $parts[] = __('fields.voucher_no');
                         }
-                        if ($data['created_from'] or $data['created_until']) {
-                            $indicator = $indicator . __('fields.date');
+
+                        if ($dateIndicator = static::reportDateRangeIndicator($data)) {
+                            $parts[] = $dateIndicator;
                         }
-                        return $indicator;
+
+                        return $parts === [] ? null : implode(', ', $parts);
                     })
                     ->query(function ($query, array $data) {
-
-                        return $query
-                            ->when($data['account_code'] ?? null,
-                                fn($query) => $query->where('account_code', $data['account_code']))
-                            ->when($data['op_id'] ?? null,
-                                fn($query) => $query->where('op_id', $data['op_id']))
-                            ->when($data['created_from'],
-                                fn($query) => $query->whereDate('created_at', '>=', $data['created_from']))
-                            ->when($data['created_until'],
-                                fn($query) => $query->whereDate('created_at', '<=', $data['created_until']));
+                        return static::applyReportDateRangeQuery(
+                            $query
+                                ->when(
+                                    $data['account_code'] ?? null,
+                                    fn ($query) => $query->where('account_code', $data['account_code'])
+                                )
+                                ->when(
+                                    $data['op_id'] ?? null,
+                                    fn ($query) => $query->where('op_id', $data['op_id'])
+                                ),
+                            $data
+                        );
                     })
             ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->actions([

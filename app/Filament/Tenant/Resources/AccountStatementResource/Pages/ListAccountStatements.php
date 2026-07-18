@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\AccountStatementResource\Pages;
 
+use App\Filament\Tenant\Concerns\InitializesReportDateFilters;
 use App\Filament\Tenant\Resources\AccountStatementResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -10,6 +11,8 @@ use Illuminate\Support\HtmlString;
 
 class ListAccountStatements extends ListRecords
 {
+    use InitializesReportDateFilters;
+
     protected static string $resource = AccountStatementResource::class;
 
     protected function getHeaderActions(): array

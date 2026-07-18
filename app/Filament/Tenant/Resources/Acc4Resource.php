@@ -3,18 +3,13 @@
 namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\Acc4Resource\Pages;
-use App\Models\Acc3;
 use App\Models\Acc4;
-use App\Models\Client;
-use App\Models\Representative;
-use App\Models\Supplier;
 use App\Rules\UniqueTenantItemRule;
 use Filament\Forms;
 use Filament\Forms\Components\View;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Illuminate\Database\Eloquent\Builder;
 
 class Acc4Resource extends Resource
 {
@@ -50,91 +45,37 @@ class Acc4Resource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) static::getModel()::query()->excludeInventoryItems()->count();
+        return (string) static::getModel()::query()->userCreatedOtherPartyAccounts()->count();
     }
 
     public static function form(Forms\Form $form): Forms\Form
     {
-        $isEditing = $form->getRecord() !== null;
-
         return $form
             ->schema([
                 Forms\Components\Section::make()->schema([
                     hidden_tenant_id_field(),
 
-                    Forms\Components\Select::make('acc3_code')
-                        ->required()
-                        ->disabled($isEditing)
-                        ->dehydrated()
-                        ->options(Acc3::pluck('name', 'code'))
-                        ->label(__('fields.acc3_code'))
-                        ->live()
-                        ->hint(function ($state) {
-                            if ($acc3 = Acc3::firstWhere('code', $state)) {
-                                return $acc3->code;
-                            }
-                        }),
-
-                    Forms\Components\TextInput::make('code')
-                        ->required()
-                        ->disabled($isEditing)
-                        ->dehydrated()
-                        ->rules([new UniqueTenantItemRule(Acc4::class, 'code', $form->getRecord()?->id)])
-                        ->label(__('fields.code')),
-
                     Forms\Components\TextInput::make('name')
                         ->required()
                         ->rules([new UniqueTenantItemRule(Acc4::class, 'name', $form->getRecord()?->id)])
                         ->label(__('fields.name')),
-
-                ])->columns(3),
+                ]),
 
                 View::make('components.loading'),
-
             ]);
     }
 
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->emptyStateHeading(__('fields.other_party_accounts_empty'))
+            ->emptyStateDescription(__('fields.other_party_accounts_empty_description'))
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('fields.name'))
                     ->searchable(),
-                Tables\Columns\TextColumn::make('code')
-                    ->label(__('fields.code'))
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('acc3_code')
-                    ->searchable()
-                    ->description(function ($record) {
-                        return $record->acc3->code;
-                    })
-                    ->getStateUsing(function ($record) {
-                        return $record->acc3->name;
-                    }),
             ])
-            ->filters([
-                Tables\Filters\Filter::make('type')
-                    ->label(__('fields.type'))
-                    ->form([
-                        Forms\Components\Select::make('type')
-                            ->label(__('fields.type'))
-                            ->options([
-                                'clients' => __('fields.clients'),
-                                'suppliers' => __('fields.suppliers'),
-                                'representatives' => __('fields.representatives'),
-                            ]),
-                    ])
-                    ->query(function ($query, array $data) {
-                        return $query
-                            ->when($data['type'] == 'clients',
-                                fn (Builder $query) => $query->where('item_type', Client::class))
-                            ->when($data['type'] == 'suppliers',
-                                fn (Builder $query) => $query->where('item_type', Supplier::class))
-                            ->when($data['type'] == 'representatives',
-                                fn (Builder $query) => $query->where('item_type', Representative::class));
-                    }),
-            ])
+            ->filters([])
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make()
@@ -155,11 +96,10 @@ class Acc4Resource extends Resource
             ]);
     }
 
-    public static function getEloquentQuery(): Builder
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
     {
         return parent::getEloquentQuery()
-            ->excludeInventoryItems()
-            ->with(['acc3'])
+            ->userCreatedOtherPartyAccounts()
             ->latest();
     }
 

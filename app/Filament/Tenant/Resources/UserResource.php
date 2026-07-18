@@ -82,8 +82,7 @@ class UserResource extends Resource
                                 ->autofocus()
                                 ->required(),
                             Forms\Components\TextInput::make('second_name')
-                                ->label(__('fields.second_name'))
-                                ->required(),
+                                ->label(__('fields.second_name')),
                             Forms\Components\TextInput::make('third_name')
                                 ->label(__('fields.third_name')),
                             Forms\Components\TextInput::make('fourth_name')

@@ -60,7 +60,7 @@ class SalesStatementReport extends Page implements HasForms, HasTable
 
         $this->tableFilters = [
             'report' => [
-                'from' => $this->normalizeFilterDate(request('from')) ?? now()->startOfMonth()->format('Y-m-d'),
+                'from' => $this->normalizeFilterDate(request('from')) ?? now()->startOfYear()->format('Y-m-d'),
                 'to' => $this->normalizeFilterDate(request('to')) ?? now()->format('Y-m-d'),
                 'customer_ids' => [],
                 'product_ids' => [],
@@ -85,12 +85,6 @@ class SalesStatementReport extends Page implements HasForms, HasTable
                     ->columnSpanFull()
                     ->columns(3)
                     ->form([
-                        Forms\Components\Select::make('group_by')
-                            ->label(__('fields.sales_statement_group_by'))
-                            ->options($this->groupByOptions())
-                            ->default('product')
-                            ->native(false)
-                            ->live(),
                         Forms\Components\DatePicker::make('from')
                             ->label(__('fields.sales_statement_from'))
                             ->native(false)
@@ -103,6 +97,12 @@ class SalesStatementReport extends Page implements HasForms, HasTable
                             ->minDate(fn (Forms\Get $get) => $get('from'))
                             ->maxDate(now())
                             ->required()
+                            ->live(),
+                        Forms\Components\Select::make('group_by')
+                            ->label(__('fields.sales_statement_group_by'))
+                            ->options($this->groupByOptions())
+                            ->default('product')
+                            ->native(false)
                             ->live(),
                         Forms\Components\Select::make('line_types')
                             ->label(__('fields.sales_statement_movement_type'))

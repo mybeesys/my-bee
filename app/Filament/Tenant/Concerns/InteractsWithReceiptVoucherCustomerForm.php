@@ -98,10 +98,8 @@ trait InteractsWithReceiptVoucherCustomerForm
                         ->placeholder(__('fields.receipt_voucher_collection_account_hint'))
                         ->searchable()
                         ->live()
-                        ->options(fn () => Acc4::query()
-                            ->whereIn('code', [120100001])
-                            ->orWhereIn('acc3_code', [1227])
-                            ->pluck('name', 'code'))
+                        ->default(fn () => Acc4::defaultCollectionAccountCode())
+                        ->options(fn () => Acc4::collectionAccountOptions())
                         ->required(),
 
                     Select::make('acc4_code')
