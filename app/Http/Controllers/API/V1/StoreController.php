@@ -16,6 +16,7 @@ use App\Http\Requests\StoreCartItemRequest;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\StoreCheckoutRequest;
 use App\Http\Requests\StoreDeleteCartItemRequest;
+use App\Http\Requests\StoreTrackOrdersRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Requests\UpdateStoreCartRequest;
 use App\Http\Resources\CategoryResource;
@@ -48,6 +49,7 @@ use App\Services\MathService;
 use App\Services\MediaService;
 use App\Services\PricingService;
 use App\Services\StockService;
+use App\Support\StorePhone;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -416,14 +418,16 @@ class StoreController extends BaseController
         try {
             DB::beginTransaction();
 
-            $phone = str($data['phone'])->remove('+')->value();
+            $phone = StorePhone::normalize($data['phone']);
 
-            $customer = Customer::updateOrCreate(
-                [
-                    'tenant_id' => $tenant->id,
+            $customer = Customer::query()
+                ->where('tenant_id', $tenant->id)
+                ->whereIn('phone', StorePhone::variants($phone))
+                ->first();
+
+            if ($customer) {
+                $customer->update([
                     'phone' => $phone,
-                ],
-                [
                     'name' => $data['name'],
                     'state_id' => $data['state_id'],
                     'city_id' => $data['city_id'],
@@ -431,8 +435,20 @@ class StoreController extends BaseController
                     'delivery_address' => $data['delivery_address'],
                     'email' => $data['email'] ?? null,
                     'auto_registered' => true,
-                ]
-            );
+                ]);
+            } else {
+                $customer = Customer::create([
+                    'tenant_id' => $tenant->id,
+                    'phone' => $phone,
+                    'name' => $data['name'],
+                    'state_id' => $data['state_id'],
+                    'city_id' => $data['city_id'],
+                    'area_id' => $data['area_id'] ?? null,
+                    'delivery_address' => $data['delivery_address'],
+                    'email' => $data['email'] ?? null,
+                    'auto_registered' => true,
+                ]);
+            }
 
             $order = Order::create([
                 'tenant_id' => $tenant->id,
@@ -629,11 +645,13 @@ class StoreController extends BaseController
         return $this->responder(__('messages.api.retrieved'), 200, $this->getCart())->respond();
     }
 
-    public function trackOrders(Request $request): \Illuminate\Http\JsonResponse
+    public function trackOrders(StoreTrackOrdersRequest $request): \Illuminate\Http\JsonResponse
     {
+        $phoneVariants = StorePhone::variants($request->validated('phone'));
+
         $orders = Order::with(['tenant', 'details.item', 'details.orderDetailsExtras', 'customer', 'invoice'])
             ->whereRelation('tenant', 'slug', $request->header('Store-Slug'))
-            ->whereRelation('customer', 'phone', $request->phone)
+            ->whereHas('customer', fn (Builder $query) => $query->whereIn('phone', $phoneVariants))
             ->get();
 
         return $this->responder(__('messages.api.retrieved'), 200, OrderResource::collection($orders))->respond();

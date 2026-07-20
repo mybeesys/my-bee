@@ -2,7 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Rules\InternationalPhoneRule;
+use App\Rules\StorePhoneRule;
+use App\Support\StorePhone;
 
 class StoreCheckoutRequest extends BaseRequest
 {
@@ -14,6 +15,15 @@ class StoreCheckoutRequest extends BaseRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('phone')) {
+            $this->merge([
+                'phone' => StorePhone::normalize($this->input('phone')),
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -23,7 +33,7 @@ class StoreCheckoutRequest extends BaseRequest
     {
         return [
             'name' => ['required', 'string', 'min:1', 'max:255'],
-            'phone' => ['required', new InternationalPhoneRule(false)],
+            'phone' => ['required', 'string', new StorePhoneRule()],
             'state_id' => ['required', 'integer', 'exists:states,id'],
             'city_id' => ['required', 'integer', 'exists:cities,id'],
             'area_id' => ['required', 'integer', 'exists:areas,id'],
