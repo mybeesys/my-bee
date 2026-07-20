@@ -12,9 +12,17 @@ function redirectToLogin() {
     window.location.replace(resolveLoginUrl())
 }
 
+function isLivewireFileUploadRequest(uri) {
+    return typeof uri === 'string' && uri.includes('livewire/upload-file')
+}
+
 document.addEventListener('livewire:init', () => {
-    Livewire.hook('request', ({ fail }) => {
+    Livewire.hook('request', ({ uri, fail }) => {
         fail(({ status, preventDefault }) => {
+            if (isLivewireFileUploadRequest(uri)) {
+                return
+            }
+
             if (status === 419 || status === 401) {
                 preventDefault?.()
                 redirectToLogin()
@@ -23,8 +31,6 @@ document.addEventListener('livewire:init', () => {
             }
 
             if (status >= 500) {
-                preventDefault?.()
-
                 return
             }
 

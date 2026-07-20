@@ -218,7 +218,8 @@ class ProductResource extends Resource
                             ->openable()
                             ->downloadable()
                             ->multiple()
-                            ->maxSize(2048)
+                            ->maxSize(5120)
+                            ->visibility('public')
                             ->disk('public')
                             ->collection('images'),
 
@@ -415,7 +416,8 @@ class ProductResource extends Resource
                                             ->openable()
                                             ->downloadable()
                                             ->multiple()
-                                            ->maxSize(2048)
+                                            ->maxSize(5120)
+                                            ->visibility('public')
                                             ->disk('public')
                                             ->collection('images'),
 

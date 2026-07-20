@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Number;
 use Illuminate\Support\ServiceProvider;
 use Filament\Pages\Page;
@@ -61,7 +62,9 @@ class AppServiceProvider extends ServiceProvider
             Js::make('custom-script', __DIR__ . '/../../resources/js/custom.js'),
         ]);
         $this->configPublicPath();
+        $this->configureApplicationUrl();
         $this->configureFilesystemUrls();
+        $this->ensureUploadDirectoriesExist();
         $this->configFilament();
         $this->configMacros();
         $this->configSpatieBackupPluginPermissions();
@@ -153,6 +156,39 @@ class AppServiceProvider extends ServiceProvider
 
         if (is_dir($resolved)) {
             $this->app->usePublicPath($resolved);
+        }
+    }
+
+    protected function configureApplicationUrl(): void
+    {
+        if ($this->app->runningInConsole()) {
+            return;
+        }
+
+        $request = request();
+
+        if (! $request || ! $request->getHttpHost()) {
+            return;
+        }
+
+        $rootUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+
+        URL::forceRootUrl($rootUrl);
+
+        if ($request->isSecure()) {
+            URL::forceScheme('https');
+        }
+    }
+
+    protected function ensureUploadDirectoriesExist(): void
+    {
+        foreach ([
+            storage_path('app/livewire-tmp'),
+            storage_path('app/public'),
+        ] as $directory) {
+            if (! is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
         }
     }
 
