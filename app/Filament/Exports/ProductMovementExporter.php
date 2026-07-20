@@ -2,14 +2,15 @@
 
 namespace App\Filament\Exports;
 
-use App\Models\InvoiceItem;
+use App\Models\ProductMovementLine;
+use App\Services\ProductMovementBalanceService;
 use Filament\Actions\Exports\ExportColumn;
 use Filament\Actions\Exports\Exporter;
 use Filament\Actions\Exports\Models\Export;
 
 class ProductMovementExporter extends Exporter
 {
-    protected static ?string $model = InvoiceItem::class;
+    protected static ?string $model = ProductMovementLine::class;
 
     public static function getColumns(): array
     {
@@ -17,25 +18,20 @@ class ProductMovementExporter extends Exporter
             ExportColumn::make('name')
                 ->label(__('fields.name')),
 
-            ExportColumn::make('type')
+            ExportColumn::make('movement_type')
                 ->label(__('fields.type'))
-                ->getStateUsing(function (InvoiceItem $record) {
-                    return $record->invoice->type == "purchases" ?
-                        __('fields.products_movements_type_purchases')
-                        : __('fields.products_movements_type_sales');
+                ->getStateUsing(fn (ProductMovementLine $record) => match ($record->movement_type) {
+                    'purchases' => __('fields.products_movements_type_purchases'),
+                    'sales' => __('fields.products_movements_type_sales'),
+                    'sales_return' => __('fields.products_movements_type_sales_return'),
+                    'purchase_return' => __('fields.products_movements_type_purchase_return'),
+                    default => $record->movement_type,
                 }),
 
-            ExportColumn::make('entity')
-                ->label(__('fields.entity'))
-                ->getStateUsing(function (InvoiceItem $record) {
-                    if ($record->invoice->customer_id) {
-                        return $record->invoice->customer?->name ?? '-';
-                    }
+            ExportColumn::make('entity_name')
+                ->label(__('fields.entity')),
 
-                    return $record->invoice->supplier?->name ?? '-';
-                }),
-
-            ExportColumn::make('invoice.no')
+            ExportColumn::make('invoice_no')
                 ->label(__('fields.invoice_no')),
 
             ExportColumn::make('qty')
@@ -43,31 +39,23 @@ class ProductMovementExporter extends Exporter
 
             ExportColumn::make('qty_after_movement')
                 ->label(__('fields.qty_after_movement'))
-                ->getStateUsing(fn (InvoiceItem $record): float => app(\App\Services\ProductMovementBalanceService::class)->balanceAfter($record)),
+                ->getStateUsing(fn (ProductMovementLine $record): float => app(ProductMovementBalanceService::class)->balanceAfterMovement($record)),
 
             ExportColumn::make('discount')
                 ->label(__('fields.discount'))
-                ->formatStateUsing(function (string $state, array $options): string {
-                    return format_amount($state);
-                }),
+                ->formatStateUsing(fn (string $state): string => format_amount($state)),
 
             ExportColumn::make('tax')
                 ->label(__('fields.tax'))
-                ->formatStateUsing(function (string $state, array $options): string {
-                    return format_amount($state);
-                }),
+                ->formatStateUsing(fn (string $state): string => format_amount($state)),
 
             ExportColumn::make('price')
                 ->label(__('fields.price'))
-                ->formatStateUsing(function (string $state, array $options): string {
-                    return format_amount($state);
-                }),
+                ->formatStateUsing(fn (string $state): string => format_amount($state)),
 
             ExportColumn::make('sub_total')
                 ->label(__('fields.sub_total'))
-                ->formatStateUsing(function (string $state, array $options): string {
-                    return format_amount($state);
-                }),
+                ->formatStateUsing(fn (string $state): string => format_amount($state)),
 
             ExportColumn::make('created_at')
                 ->label(__('fields.created_at')),

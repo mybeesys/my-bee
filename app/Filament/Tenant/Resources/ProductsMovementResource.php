@@ -7,7 +7,7 @@ use App\Filament\Tenant\Concerns\ConfiguresReportTableFilters;
 use App\Filament\Tenant\Resources\ProductsMovementResource\Pages;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
+use App\Models\ProductMovementLine;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Services\ProductMovementBalanceService;
@@ -19,13 +19,12 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductsMovementResource extends Resource
 {
     use ConfiguresReportTableFilters;
 
-    protected static ?string $model = InvoiceItem::class;
+    protected static ?string $model = ProductMovementLine::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -62,50 +61,48 @@ class ProductsMovementResource extends Resource
                     ->label(__('fields.name'))
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('type')
+                Tables\Columns\TextColumn::make('movement_type')
                     ->label(__('fields.type'))
                     ->badge()
-                    ->color(function (InvoiceItem $record) {
-                        return match ($record->invoice->type) {
+                    ->color(function (ProductMovementLine $record) {
+                        return match ($record->movement_type) {
                             'purchases' => 'danger',
                             'sales' => 'success',
-                            default => 'warning',
+                            'sales_return' => 'warning',
+                            'purchase_return' => 'info',
+                            default => 'gray',
                         };
                     })
-                    ->getStateUsing(function (InvoiceItem $record) {
-                        return $record->invoice->type == "purchases" ?
-                            __('fields.products_movements_type_purchases')
-                            : __('fields.products_movements_type_sales');
+                    ->getStateUsing(fn (ProductMovementLine $record) => match ($record->movement_type) {
+                        'purchases' => __('fields.products_movements_type_purchases'),
+                        'sales' => __('fields.products_movements_type_sales'),
+                        'sales_return' => __('fields.products_movements_type_sales_return'),
+                        'purchase_return' => __('fields.products_movements_type_purchase_return'),
+                        default => $record->movement_type,
                     }),
 
-                Tables\Columns\TextColumn::make('entity')
+                Tables\Columns\TextColumn::make('entity_name')
                     ->label(__('fields.entity'))
                     ->color(Color::Sky)
-                    ->getStateUsing(function (InvoiceItem $record) {
-                        if ($record->invoice->customer_id) {
-                            return $record->invoice->customer?->name ?? '-';
+                    ->getStateUsing(fn (ProductMovementLine $record) => $record->entity_name ?? '-')
+                    ->url(function (ProductMovementLine $record) {
+                        if ($record->customer_id) {
+                            return CustomerResource::getUrl('edit', ['record' => $record->customer_id]);
                         }
 
-                        return $record->invoice->supplier?->name ?? '-';
-                    })
-                    ->url(function (InvoiceItem $record) {
-                        if ($record->invoice->customer_id && $record->invoice->customer) {
-                            return CustomerResource::getUrl('edit', ['record' => $record->invoice->customer_id]);
-                        }
-
-                        if ($record->invoice->supplier_id && $record->invoice->supplier) {
-                            return SupplierResource::getUrl('edit', ['record' => $record->invoice->supplier_id]);
+                        if ($record->supplier_id) {
+                            return SupplierResource::getUrl('edit', ['record' => $record->supplier_id]);
                         }
 
                         return null;
                     }, true),
 
-                Tables\Columns\TextColumn::make('invoice.no')
+                Tables\Columns\TextColumn::make('invoice_no')
                     ->label(__('fields.invoice_no'))
                     ->color(Color::Sky)
-                    ->url(function (InvoiceItem $record) {
-                        return $record->invoice->type == "purchases" ?
-                            PurchaseInvoiceResource::getUrl('edit', ['record' => $record->invoice_id])
+                    ->url(function (ProductMovementLine $record) {
+                        return $record->invoice_type === 'purchases'
+                            ? PurchaseInvoiceResource::getUrl('edit', ['record' => $record->invoice_id])
                             : SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice_id]);
                     }, true)
                     ->searchable(),
@@ -116,7 +113,7 @@ class ProductsMovementResource extends Resource
 
                 Tables\Columns\TextColumn::make('qty_after_movement')
                     ->label(__('fields.qty_after_movement'))
-                    ->getStateUsing(fn (InvoiceItem $record): float => app(ProductMovementBalanceService::class)->balanceAfter($record)),
+                    ->getStateUsing(fn (ProductMovementLine $record): float => app(ProductMovementBalanceService::class)->balanceAfterMovement($record)),
 
                 Tables\Columns\TextColumn::make('discount')
                     ->label(__('fields.discount'))
@@ -185,6 +182,8 @@ class ProductsMovementResource extends Resource
                                 null => __('fields.all'),
                                 'purchases' => __('fields.products_movements_type_purchases'),
                                 'sales' => __('fields.products_movements_type_sales'),
+                                'sales_return' => __('fields.products_movements_type_sales_return'),
+                                'purchase_return' => __('fields.products_movements_type_purchase_return'),
                             ]),
 
                         Forms\Components\Select::make('customers')
@@ -233,40 +232,7 @@ class ProductsMovementResource extends Resource
 
                         return $indicator ?: null;
                     })
-                    ->query(function ($query, array $data) {
-                        return static::applyReportDateRangeQuery(
-                            $query
-                                ->when(
-                                    $data['customers'] ?? null,
-                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                        $q->whereIn('customer_id', $data['customers']);
-                                    })
-                                )
-                                ->when(
-                                    $data['suppliers'] ?? null,
-                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                        $q->whereIn('supplier_id', $data['suppliers']);
-                                    })
-                                )
-                                ->when(
-                                    $data['invoices'] ?? null,
-                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                        $q->whereIn('id', $data['invoices']);
-                                    })
-                                )
-                                ->when(
-                                    $data['type'] ?? null,
-                                    fn (Builder $query) => $query->whereHas('invoice', function ($q) use ($data) {
-                                        $q->where('type', $data['type']);
-                                    })
-                                )
-                                ->when(
-                                    $data['products'] ?? null,
-                                    fn ($query) => $query->whereIn('product_id', $data['products'])
-                                ),
-                            $data
-                        );
-                    }),
+                    ->query(fn ($query) => $query),
             ], layout: Tables\Enums\FiltersLayout::AboveContent)
             ->actions([
             ])
@@ -294,7 +260,7 @@ class ProductsMovementResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['invoice.customer', 'invoice.supplier'])->latest();
+        return parent::getEloquentQuery()->whereRaw('0 = 1');
     }
 
     public static function canEdit(Model $record): bool

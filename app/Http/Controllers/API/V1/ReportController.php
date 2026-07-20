@@ -10,8 +10,9 @@ use App\Http\Requests\ListTrasuryReportRequest;
 use App\Http\Resources\CashDetReportResource;
 use App\Http\Resources\ProductsMovementResource;
 use App\Models\CashDet;
-use App\Models\InvoiceItem;
 use App\Services\ProductMovementBalanceService;
+use App\Services\ProductsMovementService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -84,35 +85,34 @@ class ReportController extends BaseController
 
     public function productsMovements(Request $request): \Illuminate\Http\JsonResponse
     {
-        $items = InvoiceItem::with(['invoice.customer', 'invoice.supplier'])
-            ->whereHas('invoice', function (Builder $q) use ($request) {
-                $q->when(filled($request->from_date) || filled($request->to_date), function (Builder $builder) use ($request) {
-                    $builder->whereDateBetween('date', $request->from_date, $request->to_date, 'd-m-Y');
-                })
-                    ->when($request->filled('type'), function (Builder $builder) use ($request) {
-                        $builder->where('type', $request->type);
-                    })
-                    ->when($request->filled('invoice_no'), function (Builder $builder) use ($request) {
-                        $builder->where('no', $request->invoice_no);
-                    })
-                    ->when($request->filled('customers'), function (Builder $builder) use ($request) {
-                        $builder->whereIn('customer_id', Arr::wrap($request->customers));
-                    })
-                    ->when($request->filled('suppliers'), function (Builder $builder) use ($request) {
-                        $builder->whereIn('supplier_id', Arr::wrap($request->suppliers));
-                    });
-            })
-            ->when($request->filled('products'), function (Builder $builder) use ($request) {
-                $builder->whereIn('product_id', Arr::wrap($request->products));
-            })
-            ->when(filled($request->from_date) || filled($request->to_date), function (Builder $builder) use ($request) {
-                $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, 'd-m-Y');
-            })
-            ->latest('created_at')
-            ->get();
+        $filters = [
+            'type' => $request->filled('type') ? $request->type : null,
+            'customers' => $request->filled('customers') ? Arr::wrap($request->customers) : null,
+            'suppliers' => $request->filled('suppliers') ? Arr::wrap($request->suppliers) : null,
+            'products' => $request->filled('products') ? Arr::wrap($request->products) : null,
+            'created_from' => filled($request->from_date)
+                ? Carbon::createFromFormat('d-m-Y', $request->from_date)->toDateString()
+                : null,
+            'created_until' => filled($request->to_date)
+                ? Carbon::createFromFormat('d-m-Y', $request->to_date)->toDateString()
+                : null,
+        ];
 
-        app(ProductMovementBalanceService::class)->preloadForItems($items);
+        if ($request->filled('invoice_no')) {
+            $invoiceIds = \App\Models\Invoice::query()
+                ->where('no', $request->invoice_no)
+                ->pluck('id')
+                ->all();
 
-        return $this->responder(__('messages.api.retrieved'), 200, ProductsMovementResource::collection($items))->respond();
+            $filters['invoices'] = $invoiceIds ?: [0];
+        }
+
+        $records = app(ProductsMovementService::class)->toRecords(
+            app(ProductsMovementService::class)->build($filters)
+        );
+
+        app(ProductMovementBalanceService::class)->preloadForMovementLines($records);
+
+        return $this->responder(__('messages.api.retrieved'), 200, ProductsMovementResource::collection($records))->respond();
     }
 }

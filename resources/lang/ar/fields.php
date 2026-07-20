@@ -1095,6 +1095,8 @@ return [
     'products_movement' => 'حركة المنتجات',
     'products_movements_type_purchases' => 'شراء',
     'products_movements_type_sales' => 'بيع',
+    'products_movements_type_sales_return' => 'مردود مبيعات',
+    'products_movements_type_purchase_return' => 'مردود مشتريات',
     'inventory_summary_report' => 'ملخص المخزون',
     'inventory_detail_report' => 'سجل صنف المخزون',
     'sales_statement_report' => 'تقرير المبيعات',

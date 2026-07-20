@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\InvoiceItem;
+use App\Models\ProductMovementLine;
 use App\Models\ItemStock;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -25,6 +26,13 @@ class ProductMovementBalanceService
         return (float) ($balances['invoice-item-' . $item->id] ?? 0);
     }
 
+    public function balanceAfterMovement(ProductMovementLine $line): float
+    {
+        $balances = $this->balancesForKey($this->movementStockKey($line));
+
+        return (float) ($balances[$line->movement_key] ?? 0);
+    }
+
     /** @param  iterable<InvoiceItem>  $items */
     public function preloadForItems(iterable $items): void
     {
@@ -33,9 +41,22 @@ class ProductMovementBalanceService
         }
     }
 
+    /** @param  iterable<ProductMovementLine>  $lines */
+    public function preloadForMovementLines(iterable $lines): void
+    {
+        foreach ($lines as $line) {
+            $this->balancesForKey($this->movementStockKey($line));
+        }
+    }
+
     protected function stockKey(InvoiceItem $item): string
     {
         return ($item->product_id ?? 0) . ':' . ($item->product_variant_id ?? 0);
+    }
+
+    protected function movementStockKey(ProductMovementLine $line): string
+    {
+        return ($line->product_id ?? 0) . ':' . ($line->product_variant_id ?? 0);
     }
 
     /** @return array<string, float> */

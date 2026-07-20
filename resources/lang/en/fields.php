@@ -1090,6 +1090,8 @@ return [
 
     'products_movements_type_purchases' => 'Purchase',
     'products_movements_type_sales' => 'Sale',
+    'products_movements_type_sales_return' => 'Sales return',
+    'products_movements_type_purchase_return' => 'Purchase return',
     'inventory_summary_report' => 'Inventory summary',
     'inventory_detail_report' => 'Item inventory ledger',
     'sales_statement_report' => 'Sales report',
