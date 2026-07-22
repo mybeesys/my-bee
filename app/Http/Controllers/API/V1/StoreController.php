@@ -43,6 +43,7 @@ use App\Models\ProductExtra;
 use App\Models\ProductVariant;
 use App\Models\SupplyOrder;
 use App\Models\Tenant;
+use App\Services\OrderDiscountService;
 use App\Services\CacheService;
 use App\Services\CouponService;
 use App\Services\MathService;
@@ -454,7 +455,7 @@ class StoreController extends BaseController
                 'tenant_id' => $tenant->id,
                 'source' => 'shop',
                 'delivery_type' => 'delivery',
-                'discount' => $cart['coupon']['amount'] ?? 0,
+                'discount' => ($cart['coupon']['valid'] ?? false) ? ($cart['coupon']['amount'] ?? 0) : 0,
                 'delivery' => 0,
                 'customer_id' => $customer->id,
                 'invoice_id' => null,
@@ -463,8 +464,10 @@ class StoreController extends BaseController
                 'area_id' => $data['area_id'] ?? null,
                 'delivery_address' => $data['delivery_address'],
                 'payment_method' => $data['payment_method'],
-                'coupon_id' => $cart['coupon']['id'],
-                'coupon_data' => Coupon::firstWhere('code', $cart['coupon']['code'] ?? null)?->toArray(),
+                'coupon_id' => ($cart['coupon']['valid'] ?? false) ? $cart['coupon']['id'] : null,
+                'coupon_data' => ($cart['coupon']['valid'] ?? false)
+                    ? Coupon::firstWhere('code', $cart['coupon']['code'] ?? null)?->toArray()
+                    : null,
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -478,10 +481,7 @@ class StoreController extends BaseController
                 'user_id' => null,
                 'date' => now(),
                 'notes' => 'فاتورية آلية عن طريق المتجر',
-                'discount_option' => $cart['coupon']['valid'] ? 'overall' : 'none',
-                'discount_method' => $cart['coupon']['percent'] == null ? 'amount' : 'percent',
-                'discount_amount' => $cart['coupon']['percent'] == null ? $cart['coupon']['amount'] : null,
-                'discount_percent' => $cart['coupon']['percent'] ?? null,
+                'prices_includes_taxes' => true,
             ]);
 
             $order->update(['invoice_id' => $invoice->id]);
@@ -499,18 +499,13 @@ class StoreController extends BaseController
                 $tax = 0;
                 $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
 
-                $discount = $cart['coupon']['valid'] ? ($cart['coupon']['amount'] / count($items)) : 0;
-
                 if ($item['type'] == "basic") {
                     $itemModel = $product;
                     $item_id = $product->id;
                     $item_type = get_class($product);
                     $unit_price = PricingService::instance()->getRetailPrice($product);
 
-                    $subTotal = $unit_price * $item['qty'];
-                    $subTotal -= $discount;
-
-                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
+                    $subTotal = ($unit_price * $item['qty']) + (PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty']);
 
                     if($product->taxProfile){
                         $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
@@ -523,10 +518,7 @@ class StoreController extends BaseController
                     $item_type = get_class($productVariant);
                     $unit_price = PricingService::instance()->getRetailPrice($productVariant);
 
-                    $subTotal = $unit_price * $item['qty'];
-                    $subTotal -= $discount;
-
-                    $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
+                    $subTotal = ($unit_price * $item['qty']) + (PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty']);
 
                     if($productVariant->product->taxProfile){
                         $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $productVariant->product->taxProfile, true);
@@ -559,7 +551,7 @@ class StoreController extends BaseController
                         'order_details_id' => null,//$od->id,
                         'tax_profile_id' => $tax_profile_id,
                         'tax_profile_data' => $tax_profile_data,
-                        'discount' => $discount, //handled as overall discount
+                        'discount' => 0,
                         'tax' => $tax,
                         'qty' => $item['qty'],
                         'price' => $unit_price,
@@ -608,6 +600,8 @@ class StoreController extends BaseController
                 'cost' => 0,
                 'meta' => ['type' => 'delivery_fees', 'client' => $order->customer->name, 'client_id' => $order->customer_id]
             ]);
+
+            OrderDiscountService::instance()->syncInvoiceDiscountFromOrder($order->fresh(['invoice.items']));
 
             DB::commit();
 
@@ -827,31 +821,25 @@ class StoreController extends BaseController
 
     protected function generateCartData(array $items): array
     {
-//        $extrasTotal = collect($items)->sum(function ($item) {
-//            return collect($item['extras'])->sum('price');
-//        });
-
+        $items = array_values($items);
         $subTotal = $this->calculateSubTotal($items);
-
         $couponData = $this->getCouponInfo($subTotal);
-
-        $taxes = $this->calculateTaxes(array_values($items), $couponData);
-
-        $subTotal = $subTotal - $taxes;
-        $total = $subTotal + $taxes;
+        $couponAmount = $couponData['valid'] ? (float) $couponData['amount'] : 0.0;
+        $taxes = $this->calculateTaxes($items, $couponAmount);
+        $total = max(0, $subTotal - $couponAmount);
 
         return [
             'subTotal' => $subTotal,
             'subTotalFormatted' => number_format($subTotal, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
-            'subTotalAfterDiscount' => $subTotal - $couponData['amount'],
-            'subTotalFormattedAfterDiscount' => number_format($subTotal - $couponData['amount'], currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
+            'subTotalAfterDiscount' => max(0, $subTotal - $couponAmount),
+            'subTotalFormattedAfterDiscount' => number_format(max(0, $subTotal - $couponAmount), currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
             'tax' => number_format($taxes, currency_decimals(), '.', ''),
             'taxFormatted' => number_format($taxes, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
-            'total' => number_format($total - $couponData['amount'], currency_decimals(), '.', ''),
-            'totalFormated' => number_format($total - $couponData['amount'], currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
+            'total' => number_format($total, currency_decimals(), '.', ''),
+            'totalFormated' => number_format($total, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
             'deliveryFees' => app()->getLocale() == "ar" ? "سيتم إحتساب رسوم التوصيل بناءً على موقعك" : "Delivery fees will be calculated based on your location",
             'coupon' => $couponData,
-            "items" => array_values($items)
+            "items" => $items
         ];
     }
 
@@ -870,13 +858,13 @@ class StoreController extends BaseController
         ];
     }
 
-    protected function calculateTaxes(array $items, $couponData)
+    protected function calculateTaxes(array $items, float $couponAmount = 0): float
     {
+        $items = array_values($items);
         $taxes = 0;
+
         foreach ($items as $item) {
             $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
-
-            $discount = $couponData['valid'] ? ($couponData['amount'] / count($items)) : 0;
 
             $product = Product::with(['taxProfile', 'lastPrice'])->find($item['productId']);
             if($product->taxProfile){
@@ -889,13 +877,19 @@ class StoreController extends BaseController
 
                 $unit_price = PricingService::instance()->getRetailPrice($model);
 
-                $subTotal = $unit_price * $item['qty'];
-                $subTotal -= $discount;
-                $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
+                $subTotal = ($unit_price * $item['qty']) + (PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty']);
 
                 $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
             }
         }
+
+        $subTotal = $this->calculateSubTotal($items);
+
+        if ($couponAmount > 0 && $subTotal > 0) {
+            $ratio = max(0, ($subTotal - $couponAmount) / $subTotal);
+            $taxes *= $ratio;
+        }
+
         return $taxes;
     }
 

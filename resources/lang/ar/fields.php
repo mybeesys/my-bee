@@ -447,6 +447,7 @@ return [
     'cheque_collected' => 'تم التحصيل',
     'cheques' => 'شيكات',
     'cash' => 'نقدا',
+    'cash_on_delivery' => 'الدفع عند الاستلام',
     'mbok' => 'بنكك',
     'fawry' => 'فوري',
     'bank_transfer' => 'تحويل بنكي',

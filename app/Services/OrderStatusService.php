@@ -6,6 +6,7 @@ use App\Models\AdditionalCost;
 use App\Models\AdditionalCostType;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Services\OrderDiscountService;
 use Illuminate\Support\Facades\DB;
 
 class OrderStatusService
@@ -68,6 +69,7 @@ class OrderStatusService
         }
 
         DB::transaction(function () use ($order) {
+            OrderDiscountService::instance()->syncInvoiceDiscountFromOrder($order->fresh(['invoice.items']));
             $order->invoice->confirmSalesInvoice();
         });
     }

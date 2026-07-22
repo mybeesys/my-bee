@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Invoice;
+use App\Services\OrderDiscountService;
 use Illuminate\Support\Facades\DB;
 
 class OrderResource extends BaseResource
@@ -26,7 +27,7 @@ class OrderResource extends BaseResource
             'paymentStatus' => $this->invoice?->payment_status,
             'paymentMethod' => $this->payment_method,
             'discount' => $this->invoice
-                ? number_format($this->invoice->getDiscountInAmount(), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
+                ? number_format(OrderDiscountService::instance()->orderDiscountAmount($this->resource), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
             'delivery' => number_format($this->delivery, currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol(),
             'extras' => $this->invoice
@@ -36,7 +37,7 @@ class OrderResource extends BaseResource
                 ? number_format($this->invoice->getTaxesAsAmount(), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
             'total' => $this->invoice
-                ? number_format($this->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
+                ? number_format(OrderDiscountService::instance()->orderGrandTotal($this->resource), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
             'orderDate' => $this->created_at->format('F j, Y, g:i a'),
             'deliveryDate' => $this->delivery_date?->format('F j, Y, g:i a'),

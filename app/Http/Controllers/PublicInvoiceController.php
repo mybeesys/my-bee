@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Setting;
 use App\Services\InvoicePdfService;
-use App\Services\InvoiceZatcaQrService;
+use App\Services\InvoicePublicViewService;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -16,20 +16,16 @@ class PublicInvoiceController extends Controller
         $invoice = $this->resolveInvoice($uid);
         $settings = $this->tenantSettings($invoice->tenant_id);
         $companyName = $settings['company.name'] ?? $invoice->tenant->name;
-        $qrService = InvoiceZatcaQrService::instance();
-        $vatSummary = $qrService->vatSummary($invoice);
+        $viewData = InvoicePublicViewService::instance()->build($invoice, $settings);
 
-        return view('invoices.public', [
+        return view('invoices.public', array_merge([
             'invoice' => $invoice,
             'tenant' => $invoice->tenant,
             'settings' => $settings,
             'companyName' => $companyName,
             'trn' => trim((string) ($invoice->tenant->trn ?? '')),
-            'vatSummary' => $vatSummary,
-            'qrPayload' => $qrService->tlvBase64($invoice, $invoice->tenant, $companyName),
-            'qrDataUri' => $qrService->qrDataUri($invoice, $invoice->tenant, $companyName),
             'pdfUrl' => route('public.invoice.pdf', ['uid' => $invoice->uid]),
-        ]);
+        ], $viewData));
     }
 
     public function pdf(string $uid): Response
@@ -50,8 +46,12 @@ class PublicInvoiceController extends Controller
             ->where('temp', false)
             ->with([
                 'tenant.media',
-                'customer',
-                'supplier',
+                'customer.state',
+                'customer.city',
+                'customer.area',
+                'supplier.state',
+                'supplier.city',
+                'supplier.area',
                 'representative',
                 'items.product',
                 'items.productVariant',

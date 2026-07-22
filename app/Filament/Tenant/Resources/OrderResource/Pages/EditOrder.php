@@ -11,6 +11,7 @@ use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductVariant;
+use App\Services\OrderDiscountService;
 use App\Services\PricingService;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Exceptions\Halt;
@@ -48,6 +49,7 @@ class EditOrder extends EditRecord
 
         //sync invoice items
         $this->syncInvoiceItems();
+        OrderDiscountService::instance()->syncInvoiceDiscountFromOrder($this->record->fresh(['invoice.items']));
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -189,7 +191,9 @@ class EditOrder extends EditRecord
             $invItem->update([
                 'qty' => $detail->qty,
                 'price' => $detail->unit_price,
-                'discount' => $detail->discount,
+                'discount' => $this->record->coupon_id || filled($this->record->coupon_data)
+                    ? 0
+                    : $detail->discount,
                 'tax_profile_id' => isset($detail['tax_profile_data']) ? ($detail['tax_profile_data']['id'] ?? null) : null,
             ]);
         }

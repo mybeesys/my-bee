@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\OrderDiscountService;
 use App\Traits\HasPrefixedId;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -144,7 +145,7 @@ class Order extends BaseModel implements HasMedia
 
     public function getTotalAttribute()
     {
-        return $this->invoice->getItemsCost(true, true, true);
+        return OrderDiscountService::instance()->orderGrandTotal($this);
     }
 
     public function getFullAddressAttribute()

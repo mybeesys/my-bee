@@ -25,7 +25,9 @@ use App\Models\State;
 use App\Models\Supplier;
 use App\Models\VariantLibrary;
 use App\Models\VariantLibraryOption;
+use App\Services\CouponService;
 use App\Services\InvoiceService;
+use App\Services\OrderDiscountService;
 use App\Services\PricingService;
 use App\Services\StockService;
 use Awcodes\Shout\Components\Shout;
@@ -846,10 +848,24 @@ class OrderResource extends Resource
         }
 
 
+        $couponDiscount = 0.0;
+
+        if (isset($livewire->record) && $livewire->record instanceof Order) {
+            $order = $livewire->record;
+
+            if (OrderDiscountService::instance()->orderHasCouponDiscount($order)) {
+                $coupon = OrderDiscountService::instance()->resolveCoupon($order);
+
+                $couponDiscount = $coupon
+                    ? (float) CouponService::instance()->amount($coupon->code, $total + $extras)
+                    : (float) $order->discount;
+            }
+        }
+
         $livewire->data['products_total'] = format_amount($total);
         $livewire->data['extras_total'] = format_amount($extras);
         $livewire->data['taxes_total'] = format_amount($taxes);
-        $livewire->data['total'] = format_amount($total + $extras + $taxes + $delivery);
+        $livewire->data['total'] = format_amount(max(0, $total + $extras + $taxes + $delivery - $couponDiscount));
     }
 
     protected static function getVariantFieldsBasedOnOptions($product_id, $livewire): array
@@ -983,15 +999,9 @@ class OrderResource extends Resource
                     ->copyable()
                     ->weight(FontWeight::Bold),
 
-                TextEntry::make('customer.name')
-                    ->label(__('fields.client'))
-                    ->color(Color::Sky)
-                    ->url(fn($record) => CustomerResource::getUrl('edit', ['record' => $record->customer_id]), true),
-
                 TextEntry::make('created_at')
                     ->label(__('fields.order_date'))
                     ->dateTime('l jS \of F h:i A'),
-
 
                 TextEntry::make('delivery_address')
                     ->label(__('fields.delivery_address'))
@@ -1006,16 +1016,57 @@ class OrderResource extends Resource
                     ->color(Color::Sky)
                     ->url(fn($record) => SalesInvoiceResource::getUrl('edit', ['record' => $record->invoice_id]), true),
 
+                TextEntry::make('coupon_discount')
+                    ->label(__('fields.discount'))
+                    ->visible(fn (Order $record) => OrderDiscountService::instance()->orderHasCouponDiscount($record))
+                    ->color(Color::Orange)
+                    ->getStateUsing(function (Order $record) {
+                        $amount = OrderDiscountService::instance()->orderDiscountAmount($record);
+                        $code = $record->coupon_data['code'] ?? $record->coupon?->code;
+
+                        return main_currency_iso_code() . ' ' . number_format($amount, currency_decimals(), '.', ',')
+                            . ($code ? " ({$code})" : '');
+                    }),
+
                 TextEntry::make('invoice_total')
                     ->label(__('fields.invoice_total'))
                     ->color(Color::Sky)
                     ->tooltip(function (Order $record) {
-                        return numbers_to_words(number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ','));
+                        return numbers_to_words(number_format(OrderDiscountService::instance()->orderGrandTotal($record), currency_decimals(), '.', ','));
                     })
                     ->getStateUsing(function (Order $record) {
-                        return main_currency_iso_code() . " " . number_format($record->invoice->getItemsCost(true, true, true), currency_decimals(), '.', ',');
+                        return main_currency_iso_code() . ' ' . number_format(OrderDiscountService::instance()->orderGrandTotal($record), currency_decimals(), '.', ',');
                     })
             ])->columns(2),
+
+            Section::make(__('fields.client'))
+                ->schema([
+                    TextEntry::make('customer.name')
+                        ->label(__('fields.name'))
+                        ->color(Color::Sky)
+                        ->url(fn ($record) => CustomerResource::getUrl('edit', ['record' => $record->customer_id]), true),
+
+                    TextEntry::make('customer.phone')
+                        ->label(__('fields.phone'))
+                        ->copyable()
+                        ->icon('heroicon-o-phone')
+                        ->placeholder('—'),
+
+                    TextEntry::make('customer.email')
+                        ->label(__('fields.email'))
+                        ->copyable()
+                        ->icon('heroicon-o-envelope')
+                        ->placeholder('—'),
+
+                    TextEntry::make('payment_method')
+                        ->label(__('fields.payment_method'))
+                        ->formatStateUsing(fn (?string $state) => filled($state) ? __('fields.' . $state) : '—'),
+
+                    TextEntry::make('notes')
+                        ->label(__('fields.notes'))
+                        ->placeholder('—')
+                        ->columnSpanFull(),
+                ])->columns(2),
 
             RepeatableEntry::make('invoice.items')
                 ->label(__('fields.items') . "(" . $infolist->getRecord()->invoice->items->count() . ")")

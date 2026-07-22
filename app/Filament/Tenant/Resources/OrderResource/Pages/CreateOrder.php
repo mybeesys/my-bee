@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductVariant;
 use App\Services\PricingService;
+use App\Services\OrderDiscountService;
 use App\Services\StockService;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Support\Exceptions\Halt;
@@ -117,6 +118,8 @@ class CreateOrder extends CreateRecord
             'cost' => $order->delivery,
             'meta' => ['type' => 'delivery_fees', 'client' => $order->customer->name, 'client_id' => $order->customer_id]
         ]);
+
+        OrderDiscountService::instance()->syncInvoiceDiscountFromOrder($order->fresh(['invoice.items']));
 
         return $invoice;
     }

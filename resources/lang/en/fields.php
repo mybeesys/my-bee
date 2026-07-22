@@ -442,6 +442,7 @@ return [
     'cheque_collected' => 'Cheque collected',
     'cheques' => 'Cheques',
     'cash' => 'Cash',
+    'cash_on_delivery' => 'Cash on delivery',
     'mbok' => 'Mbok',
     'fawry' => 'Fawry',
     'bank_transfer' => 'Bank transfer',

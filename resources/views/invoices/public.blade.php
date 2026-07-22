@@ -4,7 +4,6 @@
     $currency = $settings['main_currency'] ?? 'SAR';
     $companyAddress = $settings['company.address'] ?? ($tenant->store_address ?? '');
     $companyPhone = $settings['company.contact.phone'] ?? ($tenant->phone ?? '');
-    $partyName = $invoice->getInvoicePerson();
     $documentTitle = $invoice->type === 'sales' ? __('fields.sales_invoice') : __('fields.purchase_invoice');
     $subtotal = $vatSummary['subtotal'];
     $vatAmount = $vatSummary['vat'];
@@ -185,6 +184,28 @@
 
         .card p { margin: .15rem 0; }
 
+        .party-lines {
+            margin-top: .5rem;
+            font-size: .9rem;
+            color: #4b5563;
+        }
+
+        .party-lines p {
+            margin: .2rem 0;
+        }
+
+        .section-title {
+            margin: 2rem 0 .75rem;
+            font-size: 1rem;
+            color: #374151;
+        }
+
+        .item-extras {
+            margin-top: .25rem;
+            font-size: .82rem;
+            color: #6b7280;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -313,14 +334,24 @@
                     <p><strong>#{{ $invoice->no }}</strong></p>
                     <p>{{ __('fields.date') }}: {{ $invoice->date?->format('d-m-Y') }}</p>
                     <p>{{ __('fields.payment_status') }}: {{ $invoice->getPaymentStatus($locale) }}</p>
-                    @if($qrDataUri)
+                    @if($qrPayload)
                         <div class="meta-qr">
-                            <img src="{{ $qrDataUri }}" alt="{{ __('fields.vat') }} QR">
-                            <span>{{ __('fields.vat') }}</span>
-                        </div>
-                    @elseif($qrPayload ?? null)
-                        <div class="meta-qr">
-                            <canvas id="zatca-qr" width="120" height="120"></canvas>
+                            @if($qrDataUri)
+                                <img
+                                    src="{{ $qrDataUri }}"
+                                    alt="{{ __('fields.vat') }} QR"
+                                    id="invoice-qr-image"
+                                    onerror="window.renderInvoiceQrFallback && window.renderInvoiceQrFallback()"
+                                >
+                            @else
+                                <img
+                                    src=""
+                                    alt="{{ __('fields.vat') }} QR"
+                                    id="invoice-qr-image"
+                                    width="120"
+                                    height="120"
+                                >
+                            @endif
                             <span>{{ __('fields.vat') }}</span>
                         </div>
                     @endif
@@ -329,8 +360,15 @@
 
             <div class="party">
                 <div class="card">
-                    <h3>{{ $invoice->type === 'sales' ? __('fields.the_client') : __('fields.supplier') }}</h3>
-                    <p><strong>{{ $partyName }}</strong></p>
+                    <h3>{{ $party['label'] }}</h3>
+                    <p><strong>{{ $party['name'] }}</strong></p>
+                    @if(! empty($party['lines']))
+                        <div class="party-lines">
+                            @foreach($party['lines'] as $line)
+                                <p>{{ $line['label'] }}: {{ $line['value'] }}</p>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
                 <div class="card">
                     <h3>{{ __('fields.invoice_total') }}</h3>
@@ -338,6 +376,8 @@
                 </div>
             </div>
 
+            @if($invoice->items->isNotEmpty())
+            <h3 class="section-title">{{ __('fields.products') }}</h3>
             <table>
                 <thead>
                 <tr>
@@ -355,7 +395,16 @@
                         $lineTotal = ($item->price * $item->qty) + $item->extras_total - $item->discount;
                     @endphp
                     <tr>
-                        <td>{{ $name }}</td>
+                        <td>
+                            {{ $name }}
+                            @if($item->extras->isNotEmpty())
+                                <div class="item-extras">
+                                    @foreach($item->extras as $extra)
+                                        <div>+ {{ $extra->name ?? $extra->productExtra?->name ?? '—' }}</div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </td>
                         <td class="num">{{ format_amount($item->qty, 0) }}</td>
                         <td class="num">{{ format_amount($item->price) }}</td>
                         <td class="num">{{ format_amount($item->discount) }}</td>
@@ -364,8 +413,86 @@
                 @endforeach
                 </tbody>
             </table>
+            @endif
+
+            @if($invoice->services->isNotEmpty())
+                <h3 class="section-title">{{ __('fields.services') }}</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>{{ __('fields.service') }}</th>
+                        <th class="num">{{ __('fields.price') }}</th>
+                        <th class="num">{{ __('fields.tax') }}</th>
+                        <th class="num">{{ __('fields.total') }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($invoice->services as $service)
+                        @php
+                            $serviceTaxPercent = collect($service->tax_profile_data['taxes'] ?? [])->sum('percent');
+                            $serviceTax = $service->price * ($serviceTaxPercent / 100);
+                            $serviceTotal = $service->price + ($invoice->prices_includes_taxes ? 0 : $serviceTax);
+                        @endphp
+                        <tr>
+                            <td>
+                                {{ $service->type?->name ?? '—' }}
+                                @if(filled($service->description))
+                                    <div class="item-extras">{{ $service->description }}</div>
+                                @endif
+                            </td>
+                            <td class="num">{{ format_amount($service->price) }}</td>
+                            <td class="num">{{ format_amount($serviceTax) }}</td>
+                            <td class="num">{{ format_amount($serviceTotal) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if($invoice->additionalCosts->isNotEmpty())
+                <h3 class="section-title">{{ __('fields.additional_costs') }}</h3>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>{{ __('fields.additional_costs') }}</th>
+                        <th class="num">{{ __('fields.cost') }}</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($invoice->additionalCosts as $additionalCost)
+                        <tr>
+                            <td>
+                                {{ $additionalCost->type?->name ?? '—' }}
+                                @if(filled($additionalCost->statement))
+                                    <div class="item-extras">{{ $additionalCost->statement }}</div>
+                                @endif
+                            </td>
+                            <td class="num">{{ format_amount($additionalCost->cost) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            @endif
 
             <div class="totals">
+                @if($additionalCostsTotal > 0)
+                    <div>
+                        <span>{{ __('fields.additional_costs') }}</span>
+                        <span>{{ $currency }} {{ format_amount($additionalCostsTotal) }}</span>
+                    </div>
+                @endif
+                @if($servicesTotal > 0)
+                    <div>
+                        <span>{{ __('fields.services') }}</span>
+                        <span>{{ $currency }} {{ format_amount($servicesTotal) }}</span>
+                    </div>
+                @endif
+                @if($discountAmount > 0)
+                    <div>
+                        <span>{{ __('fields.discount') }}</span>
+                        <span>{{ $currency }} {{ format_amount($discountAmount) }}</span>
+                    </div>
+                @endif
                 <div>
                     <span>{{ __('fields.total_before_vat') }}</span>
                     <span>{{ $currency }} {{ format_amount($subtotal) }}</span>
@@ -389,12 +516,32 @@
         </div>
     </div>
 </div>
-@if(($qrPayload ?? null) && !($qrDataUri ?? null))
+@if($qrPayload ?? null)
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
     <script>
-        QRCode.toCanvas(document.getElementById('zatca-qr'), @json($qrPayload), {
-            width: 120,
-            margin: 1,
+        window.renderInvoiceQrFallback = function () {
+            const image = document.getElementById('invoice-qr-image');
+
+            if (!image || typeof QRCode === 'undefined') {
+                return;
+            }
+
+            QRCode.toDataURL(@json($qrPayload), {
+                width: 120,
+                margin: 1,
+            }, function (error, url) {
+                if (!error) {
+                    image.src = url;
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const image = document.getElementById('invoice-qr-image');
+
+            if (!image || !image.getAttribute('src')) {
+                window.renderInvoiceQrFallback();
+            }
         });
     </script>
 @endif
