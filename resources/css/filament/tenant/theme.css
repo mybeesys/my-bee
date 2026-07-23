@@ -65,8 +65,28 @@
 }
 
 /* —— Database notifications —— */
-.fi-panel-tenant .tenant-database-notifications-trigger .fi-badge {
-    @apply min-h-[1.125rem] min-w-[1.125rem] bg-danger-600 px-1.5 text-[11px] font-bold leading-none text-white shadow-md ring-2 ring-white dark:bg-danger-500 dark:text-white dark:ring-gray-900;
+.fi-panel-tenant .tenant-database-notifications-trigger .fi-icon-btn-badge-ctn {
+    background: transparent !important;
+}
+
+.fi-panel-tenant .tenant-database-notifications-trigger .fi-icon-btn-badge-ctn .fi-badge {
+    min-width: 1.125rem !important;
+    min-height: 1.125rem !important;
+    padding: 0.125rem 0.375rem !important;
+    border: 2px solid #ffffff !important;
+    background-color: #dc2626 !important;
+    color: #ffffff !important;
+    font-size: 0.6875rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.45) !important;
+    --tw-ring-color: rgb(220 38 38 / 0.15) !important;
+}
+
+.dark .fi-panel-tenant .tenant-database-notifications-trigger .fi-icon-btn-badge-ctn .fi-badge {
+    border-color: #111827 !important;
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
 }
 
 .fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item {
