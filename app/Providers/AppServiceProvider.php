@@ -63,8 +63,9 @@ class AppServiceProvider extends ServiceProvider
         ]);
         $this->configPublicPath();
         $this->configureApplicationUrl();
-        $this->configureFilesystemUrls();
         $this->ensureUploadDirectoriesExist();
+        $this->ensurePublicStorageSymlink();
+        $this->configureFilesystemUrls();
         $this->configFilament();
         $this->configMacros();
         $this->configSpatieBackupPluginPermissions();
@@ -185,51 +186,91 @@ class AppServiceProvider extends ServiceProvider
         foreach ([
             storage_path('app/livewire-tmp'),
             storage_path('app/public'),
+            storage_path('framework/cache/data'),
+            storage_path('framework/sessions'),
+            storage_path('framework/views'),
+            storage_path('logs'),
+            base_path('bootstrap/cache'),
         ] as $directory) {
             if (! is_dir($directory)) {
-                mkdir($directory, 0755, true);
+                mkdir($directory, 0775, true);
             }
         }
     }
 
+    protected function ensurePublicStorageSymlink(): void
+    {
+        if (! $this->app->environment('production')) {
+            return;
+        }
+
+        $linkPath = public_path('storage');
+        $targetPath = storage_path('app/public');
+
+        if (is_link($linkPath) && realpath($linkPath)) {
+            return;
+        }
+
+        if (file_exists($linkPath) && ! is_link($linkPath)) {
+            return;
+        }
+
+        if (! is_dir($targetPath)) {
+            return;
+        }
+
+        try {
+            app('files')->link($targetPath, $linkPath);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
+    }
+
+    protected function publicStorageLinkIsHealthy(): bool
+    {
+        $linkPath = public_path('storage');
+        $targetPath = storage_path('app/public');
+
+        return is_link($linkPath)
+            && realpath($linkPath)
+            && realpath($linkPath) === realpath($targetPath);
+    }
+
+    protected function shouldServeMediaThroughLaravel(): bool
+    {
+        if (filter_var(env('SERVE_MEDIA_THROUGH_LARAVEL', false), FILTER_VALIDATE_BOOL)) {
+            return true;
+        }
+
+        if (! $this->app->environment('production')) {
+            return false;
+        }
+
+        return ! $this->publicStorageLinkIsHealthy();
+    }
+
     protected function configureFilesystemUrls(): void
     {
-        if ($this->app->runningInConsole()) {
-            return;
+        $rootUrl = rtrim((string) config('app.url'), '/');
+
+        if (! $this->app->runningInConsole()) {
+            $request = request();
+
+            if ($request && $request->getHttpHost()) {
+                $rootUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+            }
         }
 
         $assetUrl = rtrim((string) (env('ASSET_URL') ?: env('MEDIA_URL') ?: ''), '/');
 
         if ($assetUrl !== '') {
-            config([
-                'filesystems.disks.public.url' => "{$assetUrl}/storage",
-                'filesystems.disks.cdn.url' => "{$assetUrl}/cdn",
-            ]);
-
-            return;
+            $rootUrl = $assetUrl;
         }
 
-        if ($this->app->environment('production')) {
-            $rootUrl = rtrim((string) config('app.url'), '/');
-
-            config([
-                'filesystems.disks.public.url' => "{$rootUrl}/storage",
-                'filesystems.disks.cdn.url' => "{$rootUrl}/cdn",
-            ]);
-
-            return;
-        }
-
-        $request = request();
-
-        if (! $request || ! $request->getHttpHost()) {
-            return;
-        }
-
-        $rootUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+        $publicBase = $this->shouldServeMediaThroughLaravel() ? 'media' : 'storage';
 
         config([
-            'filesystems.disks.public.url' => "{$rootUrl}/storage",
+            'filesystems.disks.public.url' => "{$rootUrl}/{$publicBase}",
             'filesystems.disks.cdn.url' => "{$rootUrl}/cdn",
         ]);
     }

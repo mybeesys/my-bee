@@ -84,6 +84,14 @@ Route::get('/login', function () {
 Route::get('/einvoice/{uid}', [\App\Http\Controllers\PublicInvoiceController::class, 'show'])
     ->name('public.invoice.show');
 
+Route::get('/media/{path}', [\App\Http\Controllers\PublicStorageController::class, 'show'])
+    ->where('path', '.*')
+    ->name('public.storage.show');
+
+Route::get('/storage/{path}', [\App\Http\Controllers\PublicStorageController::class, 'show'])
+    ->where('path', '.*')
+    ->name('public.storage.legacy');
+
 Route::get('/einvoice/{uid}/pdf', [\App\Http\Controllers\PublicInvoiceController::class, 'pdf'])
     ->name('public.invoice.pdf');
 
