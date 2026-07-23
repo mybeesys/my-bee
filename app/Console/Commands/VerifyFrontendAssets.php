@@ -73,7 +73,8 @@ class VerifyFrontendAssets extends Command
 
         $this->newLine();
         $this->comment('Browser check: open DevTools → Network → filter "theme" → confirm latest theme-*.css loads.');
-        $this->comment('View source: search for "tenant-database-notifications-trigger" near the bell icon.');
+        $this->comment('View source: search for data-notification-badge="custom" near the bell icon.');
+        $this->comment('If missing, run: php artisan view:clear && php artisan optimize:clear');
 
         return self::SUCCESS;
     }

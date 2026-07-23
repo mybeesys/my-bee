@@ -11,6 +11,7 @@
     @if (filled($unreadNotificationsCount))
         <span
             aria-hidden="true"
+            data-notification-badge="custom"
             class="pointer-events-none absolute start-full top-1 z-[2] flex min-h-[1.125rem] min-w-[1.125rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none text-white rtl:translate-x-1/2"
             style="background-color:#dc2626;border:2px solid #ffffff;box-shadow:0 2px 8px rgba(220,38,38,.5);color:#ffffff;"
         >

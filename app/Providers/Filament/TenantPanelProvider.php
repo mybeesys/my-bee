@@ -76,6 +76,15 @@ class TenantPanelProvider extends PanelProvider
                 fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.collapsed-topbar-logo'),
             )
             ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => '<style id="tenant-notification-badge-style">'
+                    .'.fi-panel-tenant .tenant-database-notifications-trigger > span[aria-hidden="true"],'
+                    .'.fi-panel-tenant .fi-topbar-database-notifications-btn .fi-icon-btn-badge-ctn .fi-badge'
+                    .'{background-color:#dc2626!important;color:#fff!important;border:2px solid #fff!important;'
+                    .'font-weight:700!important;box-shadow:0 2px 8px rgba(220,38,38,.5)!important;}'
+                    .'</style>',
+            )
+            ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.sidebar-accordion'),
             )

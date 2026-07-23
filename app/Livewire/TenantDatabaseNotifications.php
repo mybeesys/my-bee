@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use Filament\Facades\Filament;
 use Filament\Livewire\DatabaseNotifications as BaseDatabaseNotifications;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,10 +16,6 @@ class TenantDatabaseNotifications extends BaseDatabaseNotifications
 
     public function getTrigger(): View
     {
-        if (Filament::getCurrentPanel()?->getId() === 'tenant') {
-            return view('filament.tenant.components.database-notifications-trigger');
-        }
-
-        return parent::getTrigger();
+        return view('filament.tenant.components.database-notifications-trigger');
     }
 }
