@@ -33,6 +33,39 @@ class VerifyStorageLinks extends Command
         }
 
         $this->newLine();
+        $this->info('Write test');
+
+        $probePath = 'storage-verify-'.now()->timestamp.'.txt';
+        $canWritePublic = false;
+        $canWriteTemp = false;
+
+        try {
+            Storage::disk('public')->put($probePath, 'ok');
+            $canWritePublic = Storage::disk('public')->exists($probePath);
+            Storage::disk('public')->delete($probePath);
+        } catch (\Throwable $exception) {
+            $this->error('  public disk write failed: '.$exception->getMessage());
+        }
+
+        try {
+            Storage::disk(config('livewire.temporary_file_upload.disk', 'local'))
+                ->put('livewire-tmp/'.$probePath, 'ok');
+            $canWriteTemp = Storage::disk(config('livewire.temporary_file_upload.disk', 'local'))
+                ->exists('livewire-tmp/'.$probePath);
+            Storage::disk(config('livewire.temporary_file_upload.disk', 'local'))
+                ->delete('livewire-tmp/'.$probePath);
+        } catch (\Throwable $exception) {
+            $this->error('  livewire temp write failed: '.$exception->getMessage());
+        }
+
+        $this->line('  public disk writable: '.($canWritePublic ? 'YES' : 'NO'));
+        $this->line('  livewire temp writable: '.($canWriteTemp ? 'YES' : 'NO'));
+
+        if (! $canWritePublic || ! $canWriteTemp) {
+            $this->warn('  Fix permissions: chmod -R 775 storage bootstrap/cache && chown -R www-data:www-data storage bootstrap/cache');
+        }
+
+        $this->newLine();
         $this->info('Sample media files');
 
         $mediaItems = Media::query()->latest('id')->limit(5)->get();

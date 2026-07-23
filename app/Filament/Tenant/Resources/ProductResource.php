@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources;
 
+use App\Filament\Concerns\ConfiguresSpatieMediaUpload;
 use App\Filament\Tenant\Resources\ProductResource\Pages;
 use App\Filament\Tenant\Resources\ProductResource\RelationManagers;
 use App\Filament\Tenant\Resources\ProductResource\Widgets\PricingOverview;
@@ -55,6 +56,8 @@ use Illuminate\Support\Str;
 
 class ProductResource extends Resource
 {
+    use ConfiguresSpatieMediaUpload;
+
     protected static ?string $model = Product::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-bolt';
@@ -211,17 +214,19 @@ class ProductResource extends Resource
                     ->collapsible()
                     ->schema([
 
-                        SpatieMediaLibraryFileUpload::make('images')
-                            ->label("")
-                            ->image()
-                            ->reorderable()
-                            ->openable()
-                            ->downloadable()
-                            ->multiple()
-                            ->maxSize(5120)
-                            ->visibility('public')
-                            ->disk('public')
-                            ->collection('images'),
+                        self::configureSpatieMediaUpload(
+                            SpatieMediaLibraryFileUpload::make('images')
+                                ->label("")
+                                ->image()
+                                ->reorderable()
+                                ->openable()
+                                ->downloadable()
+                                ->multiple()
+                                ->maxSize(5120)
+                                ->visibility('public')
+                                ->disk('public')
+                                ->collection('images')
+                        ),
 
                         //                    Forms\Components\Actions::make([
 //                        Forms\Components\Actions\Action::make('Generate excerpt')
@@ -409,17 +414,19 @@ class ProductResource extends Resource
                                         Forms\Components\Hidden::make('name_ar'),
                                         Forms\Components\Hidden::make('name_en'),
 
-                                        SpatieMediaLibraryFileUpload::make('image')
-                                            ->label("")
-                                            ->image()
-                                            ->reorderable()
-                                            ->openable()
-                                            ->downloadable()
-                                            ->multiple()
-                                            ->maxSize(5120)
-                                            ->visibility('public')
-                                            ->disk('public')
-                                            ->collection('images'),
+                                        self::configureSpatieMediaUpload(
+                                            SpatieMediaLibraryFileUpload::make('image')
+                                                ->label("")
+                                                ->image()
+                                                ->reorderable()
+                                                ->openable()
+                                                ->downloadable()
+                                                ->multiple()
+                                                ->maxSize(5120)
+                                                ->visibility('public')
+                                                ->disk('public')
+                                                ->collection('images')
+                                        ),
 
 //                                        Forms\Components\Placeholder::make('test'),
 

@@ -65,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureApplicationUrl();
         $this->ensureUploadDirectoriesExist();
         $this->ensurePublicStorageSymlink();
+        $this->configureLivewireUploads();
         $this->configureFilesystemUrls();
         $this->configFilament();
         $this->configMacros();
@@ -181,6 +182,14 @@ class AppServiceProvider extends ServiceProvider
         }
     }
 
+    protected function configureLivewireUploads(): void
+    {
+        config([
+            'livewire.temporary_file_upload.disk' => env('LIVEWIRE_UPLOAD_DISK', 'local'),
+            'livewire.temporary_file_upload.directory' => 'livewire-tmp',
+        ]);
+    }
+
     protected function ensureUploadDirectoriesExist(): void
     {
         foreach ([
@@ -193,7 +202,11 @@ class AppServiceProvider extends ServiceProvider
             base_path('bootstrap/cache'),
         ] as $directory) {
             if (! is_dir($directory)) {
-                mkdir($directory, 0775, true);
+                @mkdir($directory, 0775, true);
+            }
+
+            if (is_dir($directory) && ! is_writable($directory)) {
+                @chmod($directory, 0775);
             }
         }
     }

@@ -31,6 +31,15 @@ document.addEventListener('livewire:init', () => {
             }
 
             if (status >= 500) {
+                if (typeof FilamentNotification !== 'undefined') {
+                    new FilamentNotification()
+                        .title('Upload failed')
+                        .body('Could not save the file. Check storage permissions on the server.')
+                        .danger()
+                        .persistent()
+                        .send()
+                }
+
                 return
             }
 
