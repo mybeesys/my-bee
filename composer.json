@@ -44,6 +44,7 @@
     },
     "autoload": {
         "files": [
+            "app/Support/polyfills.php",
             "app/Helpers/__helpers.php",
             "app/Helpers/__subscription.php"
         ],

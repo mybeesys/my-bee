@@ -60,6 +60,11 @@ class VerifyStorageLinks extends Command
 
         $this->line('  public disk writable: '.($canWritePublic ? 'YES' : 'NO'));
         $this->line('  livewire temp writable: '.($canWriteTemp ? 'YES' : 'NO'));
+        $this->line('  tmpfile() available: '.(function_exists('tmpfile') ? 'YES' : 'NO'));
+
+        if (! function_exists('tmpfile')) {
+            $this->error('  tmpfile() is disabled — Livewire uploads will fail until app/Support/polyfills.php is deployed');
+        }
 
         if (! $canWritePublic || ! $canWriteTemp) {
             $this->warn('  Fix permissions: chmod -R 775 storage bootstrap/cache && chown -R www-data:www-data storage bootstrap/cache');
