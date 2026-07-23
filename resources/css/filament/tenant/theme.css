@@ -66,7 +66,7 @@
 
 /* —— Database notifications —— */
 .fi-panel-tenant .tenant-database-notifications-trigger .fi-badge {
-    @apply bg-primary-500 text-gray-900 ring-2 ring-white dark:ring-gray-900;
+    @apply min-h-[1.125rem] min-w-[1.125rem] bg-danger-600 px-1.5 text-[11px] font-bold leading-none text-white shadow-md ring-2 ring-white dark:bg-danger-500 dark:text-white dark:ring-gray-900;
 }
 
 .fi-panel-tenant .tenant-database-notifications-modal .tenant-notification-item {
