@@ -110,7 +110,7 @@ class ClientController extends BaseController
             ])->respond();
         }
 
-        $user = User::with(['roles', 'tenants.client.user'])->where($method, $identifier)->first();
+        $user = User::with(['roles', 'tenants.client.user', 'client.subscription.plan'])->where($method, $identifier)->first();
 
         if ($user and $user->hasAnyRole([User::ROLE_SUPER_ADMIN, User::ROLE_SUPER_VISOR]))
             return $this->responder(__("auth.failed"), 401)->respond();
@@ -244,6 +244,7 @@ class ClientController extends BaseController
     public function me(Request $request)
     {
         $user = auth('sanctum')->user();
+        $user?->loadMissing(['client.subscription.plan', 'tenants']);
 
         return $this->responder(__('messages.updated'), 200, new UserResource($user))->respond();
     }

@@ -79,5 +79,6 @@ class Kernel extends HttpKernel
         'ensure_store_uuid_in_header' => \App\Http\Middleware\EnsureStoreUUIDInHeader::class,
         'ensure_tenant_store_enabled' => \App\Http\Middleware\EnsureTenantStoreEnabled::class,
         'ensure_client_subscription_active' => \App\Http\Middleware\EnsureClientSubscriptionActive::class,
+        'ensure_client_subscription_active_api' => \App\Http\Middleware\EnsureClientSubscriptionActiveApi::class,
     ];
 }

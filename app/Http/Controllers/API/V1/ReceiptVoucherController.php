@@ -167,7 +167,8 @@ class ReceiptVoucherController extends BaseController
 
     public function getOtherEntities()
     {
-        $data = Acc4::asOptions(exclude_item_class: [Supplier::class, Customer::class, Product::class, ProductVariant::class, ProductExtra::class], with_code: true);
+        $data = Acc4::userCreatedOtherPartyAccountOptions();
+
         return $this->responder(__('messages.api.retrieved'), 200, $data)->respond();
     }
 

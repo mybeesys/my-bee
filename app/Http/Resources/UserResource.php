@@ -3,8 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Services\SubscriptionApiService;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends BaseResource
 {
@@ -25,7 +25,11 @@ class UserResource extends BaseResource
             'settings' => $this->settings,
             'canCreateTenant' => $this->hasRole(User::ROLE_CLIENT),
             'canUpdateTenants' => $this->hasRole(User::ROLE_CLIENT),
-            'tenants' => TenantResource::collection($this->tenants),
+            'tenants' => TenantResource::collection($this->whenLoaded('tenants')),
+            'subscriptionSummary' => $this->when(
+                $this->hasRole(User::ROLE_CLIENT),
+                fn () => SubscriptionApiService::instance()->summaryForUser($this->client)
+            ),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
             'canDelete' => false,
         ]);

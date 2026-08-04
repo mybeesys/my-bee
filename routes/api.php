@@ -38,6 +38,16 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
     Route::post('me', [\App\Http\Controllers\API\V1\ClientController::class, 'me'])
         ->middleware(['auth:sanctum']);
 
+    Route::group(['prefix' => 'client', 'middleware' => ['auth:sanctum']], function () {
+        Route::get('subscription', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'show']);
+        Route::get('plans', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'plans']);
+        Route::post('subscription/quote', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'quote']);
+        Route::post('subscription/coupon/validate', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'validateCoupon']);
+        Route::post('subscription/subscribe', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'subscribe']);
+        Route::get('subscription/usage', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'usage']);
+        Route::get('subscription/coupons/available', [\App\Http\Controllers\API\V1\ClientSubscriptionController::class, 'couponsAvailable']);
+    });
+
     Route::group(['prefix' => 'store', 'middleware' => ['ensure_tenant_slug_in_header', 'ensure_store_uuid_in_header', 'ensure_tenant_store_enabled']], function () {
         Route::get('info', [\App\Http\Controllers\API\V1\StoreController::class, 'info']);
         Route::get('categories', [\App\Http\Controllers\API\V1\StoreController::class, 'categories']);
@@ -84,6 +94,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             'ensure_tenant_id_in_header',
             'ensure_user_can_access_tenant',
             'apply_api_tenant_scopes',
+            'ensure_client_subscription_active_api',
         ]
     ], function () {
 
@@ -114,6 +125,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             //returns
             Route::get('sales-returns-get-available-invoices', [\App\Http\Controllers\API\V1\SalesReturnsController::class, 'getAvailableInvoices']);
             Route::get('sales-returns-list-invoice-items-for-create/{no}', [\App\Http\Controllers\API\V1\SalesReturnsController::class, 'listInvoiceItemsForCreate']);
+            Route::get('sales-returns-returnable-products/{customerId}', [\App\Http\Controllers\API\V1\SalesReturnsController::class, 'returnableProductsForCustomer']);
             Route::get('purchases-returns-get-available-invoices', [\App\Http\Controllers\API\V1\PurchasesReturnsController::class, 'getAvailableInvoices']);
             Route::get('purchases-returns-list-invoice-items-for-create/{no}', [\App\Http\Controllers\API\V1\PurchasesReturnsController::class, 'listInvoiceItemsForCreate']);
 
@@ -225,6 +237,18 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
                     'destroy' => 'settings-clients.delete',
                 ]
             ]);
+            Route::get('acc4/other-parties', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'otherPartiesIndex']);
+            Route::post('acc4/other-parties', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'otherPartiesStore']);
+            Route::patch('acc4/other-parties/{code}', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'otherPartiesUpdate']);
+            Route::delete('acc4/other-parties/{code}', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'otherPartiesDestroy']);
+
+            Route::prefix('utils/accounts')->group(function () {
+                Route::get('collection', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'accountOptionsCollection']);
+                Route::get('other-parties', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'accountOptionsOtherParties']);
+                Route::get('voucher-payments', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'accountOptionsVoucherPayments']);
+                Route::get('statement', [\App\Http\Controllers\API\V1\Acc4Controller::class, 'accountOptionsStatement']);
+            });
+
             Route::apiResources([
                 'acc3' => \App\Http\Controllers\API\V1\Acc3Controller::class,
                 'acc4' => \App\Http\Controllers\API\V1\Acc4Controller::class,
