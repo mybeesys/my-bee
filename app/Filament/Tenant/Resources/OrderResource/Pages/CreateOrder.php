@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\OrderResource\Pages;
 
+use App\Filament\Tenant\Concerns\BlocksCreateWhenSubscriptionMaxed;
 use App\Filament\Tenant\Resources\OrderResource;
 use App\Models\AdditionalCost;
 use App\Models\AdditionalCostType;
@@ -25,12 +26,32 @@ use function Filament\Support\is_app_url;
 
 class CreateOrder extends CreateRecord
 {
+    use BlocksCreateWhenSubscriptionMaxed;
+
     protected static string $resource = OrderResource::class;
+
+    protected static function subscriptionLimitType(): string
+    {
+        return 'orders';
+    }
 
 
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
+    }
+
+    public function mount(): void
+    {
+        if (! plan_allows_store()) {
+            $this->redirect(OrderResource::getUrl('index'));
+
+            return;
+        }
+
+        parent::mount();
+
+        $this->abortCreateWhenSubscriptionMaxed(OrderResource::getUrl());
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

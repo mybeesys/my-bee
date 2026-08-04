@@ -17,7 +17,9 @@ class ListSalesInvoices extends ListRecords
 {
     protected static string $resource = SalesInvoiceResource::class;
 
-    protected static string $view = 'filament.tenant.resources.sales-invoices.pages.list-sales-invoices';
+    protected static string $view = 'filament.tenant.resources.pages.list-with-plan-limit';
+
+    public string $subscriptionLimitType = 'sales_invoices';
 
     protected function getTableQuery(): ?Builder
     {

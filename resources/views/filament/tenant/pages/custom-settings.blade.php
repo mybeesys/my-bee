@@ -10,22 +10,24 @@
             ],
             [
                 'title' => __('fields.settings_section_commerce'),
-                'items' => [
-                    ['url' => \App\Filament\Tenant\Pages\Store::getUrl(), 'title' => __('fields.shop'), 'icon' => 'heroicon-o-shopping-bag', 'tone' => 'emerald'],
+                'items' => array_values(array_filter([
+                    plan_allows_store() ? ['url' => \App\Filament\Tenant\Pages\Store::getUrl(), 'title' => __('fields.shop'), 'icon' => 'heroicon-o-shopping-bag', 'tone' => 'emerald'] : null,
                     ['url' => \App\Filament\Tenant\Resources\TaxProfileResource::getUrl(), 'title' => __('fields.tax_profiles'), 'icon' => 'heroicon-o-banknotes', 'tone' => 'amber'],
-                    ['url' => \App\Filament\Tenant\Resources\CouponResource::getUrl(), 'title' => __('fields.coupons'), 'icon' => 'heroicon-o-user-group', 'tone' => 'rose'],
-                ],
+                    plan_allows_store() ? ['url' => \App\Filament\Tenant\Resources\CouponResource::getUrl(), 'title' => __('fields.coupons'), 'icon' => 'heroicon-o-user-group', 'tone' => 'rose'] : null,
+                ])),
             ],
             [
                 'title' => __('fields.settings_section_team'),
-                'items' => [
+                'items' => array_values(array_filter([
                     ['url' => \App\Filament\Tenant\Resources\Shield\RoleResource::getUrl(), 'title' => __('fields.roles'), 'icon' => 'heroicon-o-user-circle', 'tone' => 'indigo'],
-                    ['url' => \App\Filament\Tenant\Resources\UserResource::getUrl(), 'title' => __('fields.user_management'), 'icon' => 'heroicon-o-user-group', 'tone' => 'teal'],
-                ],
+                    plan_allows_multiple_users()
+                        ? ['url' => \App\Filament\Tenant\Resources\UserResource::getUrl(), 'title' => __('fields.user_management'), 'icon' => 'heroicon-o-user-group', 'tone' => 'teal']
+                        : null,
+                ])),
             ],
             [
                 'title' => __('fields.settings_section_operations'),
-                'items' => [
+                'items' => array_values(array_filter([
                     ['url' => \App\Filament\Tenant\Resources\CategoryResource::getUrl(), 'title' => __('fields.products_categories'), 'icon' => 'heroicon-o-bolt', 'tone' => 'sky'],
                     ['url' => \App\Filament\Tenant\Resources\WarehouseResource::getUrl(), 'title' => __('fields.warehouses'), 'icon' => 'heroicon-o-building-storefront', 'tone' => 'violet'],
                     // Temporarily hidden: suppliers card
@@ -33,7 +35,7 @@
                     ['url' => \App\Filament\Tenant\Resources\ExpenseCategoryResource::getUrl(), 'title' => __('fields.expense_categories'), 'icon' => 'heroicon-o-rectangle-stack', 'tone' => 'amber'],
                     ['url' => \App\Filament\Tenant\Resources\Acc4Resource::getUrl(), 'title' => __('fields.other_party_accounts'), 'icon' => 'heroicon-o-credit-card', 'tone' => 'slate'],
                     ['url' => \App\Filament\Tenant\Resources\BankAccountResource::getUrl(), 'title' => __('fields.bank_accounts'), 'icon' => 'heroicon-o-building-library', 'tone' => 'sky'],
-                ],
+                ])),
             ],
         ];
     @endphp

@@ -17,7 +17,8 @@ class ListUsers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make(),
+            CreateAction::make()
+                ->hidden(fn () => users_maxed_out() || ! plan_allows_multiple_users()),
             Action::make('back')
                 ->icon('heroicon-m-arrow-uturn-left')
                 ->size(ActionSize::Large)

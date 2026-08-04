@@ -47,12 +47,17 @@ class CouponResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return user_setting('fav.coupons', false);
+        return plan_allows_store();
+    }
+
+    public static function canAccess(): bool
+    {
+        return parent::canAccess() && plan_allows_store();
     }
 
     public static function getNavigationGroup(): ?string
     {
-        return user_setting('fav.coupons', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
+        return user_setting('fav.coupons', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_online_store');
     }
 
     public static function getNavigationBadge(): ?string

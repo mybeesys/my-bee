@@ -25,6 +25,17 @@ class BaseModel extends Model
         return $this->belongsTo(Tenant::class);
     }
 
+    public function scopeCurrentClient(Builder $builder): Builder
+    {
+        $client = get_client();
+
+        if (! $client) {
+            return $builder->whereRaw('1 = 0');
+        }
+
+        return $builder->whereRelation('tenant', 'client_id', $client->id);
+    }
+
     public function scopeMine($query)
     {
         return $query->where('user_id', auth()->id());

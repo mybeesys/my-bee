@@ -12,7 +12,6 @@ use App\Filament\Tenant\Pages\TenantUserProfile;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Models\Tenant;
-use App\Models\User;
 use Filament\FontProviders\GoogleFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -69,6 +68,7 @@ class TenantPanelProvider extends PanelProvider
             ->tenantProfile(EditTenantProfile::class)
             ->tenantMiddleware([
                 ApplyTenantScopes::class,
+                \App\Http\Middleware\EnsureClientSubscriptionActive::class,
             ], isPersistent: true)
             ->sidebarCollapsibleOnDesktop()
             ->renderHook(
@@ -82,6 +82,13 @@ class TenantPanelProvider extends PanelProvider
                     .'.fi-panel-tenant .fi-topbar-database-notifications-btn .fi-icon-btn-badge-ctn .fi-badge'
                     .'{background-color:#dc2626!important;color:#fff!important;border:2px solid #fff!important;'
                     .'font-weight:700!important;box-shadow:0 2px 8px rgba(220,38,38,.5)!important;}'
+                    .'</style>'
+                    .'<style id="tenant-settings-footer-style">'
+                    .'.fi-panel-tenant .fi-sidebar-nav-groups{display:flex;flex:1 1 auto;flex-direction:column;min-height:100%;}'
+                    .'.fi-panel-tenant .fi-sidebar-group[data-settings-footer="1"]{margin-top:auto;padding-top:.5rem;border-top:1px solid rgb(229 231 235 / .5);}'
+                    .'.dark .fi-panel-tenant .fi-sidebar-group[data-settings-footer="1"]{border-top-color:rgb(31 41 55 / .5);}'
+                    .'.fi-panel-tenant .fi-sidebar-group[data-settings-footer="1"]>.fi-sidebar-group-button{display:none!important;}'
+                    .'.fi-panel-tenant .fi-sidebar-group[data-settings-footer="1"]>.fi-sidebar-group-items{display:flex!important;}'
                     .'</style>',
             )
             ->renderHook(
@@ -128,11 +135,15 @@ class TenantPanelProvider extends PanelProvider
                     ->collapsed(),
 
                 NavigationGroup::make()
-                    ->label(fn(): string => __('fields.invoices'))
+                    ->label(fn(): string => __('fields.nav_group_sales'))
                     ->collapsed(),
 
                 NavigationGroup::make()
                     ->label(fn(): string => __('fields.nav_group_purchases'))
+                    ->collapsed(),
+
+                NavigationGroup::make()
+                    ->label(fn(): string => __('fields.nav_group_online_store'))
                     ->collapsed(),
 
                 NavigationGroup::make()
@@ -151,14 +162,23 @@ class TenantPanelProvider extends PanelProvider
                     ->label(fn(): string => __('fields.nav_group_store'))
                     ->collapsed(),
 
+                NavigationGroup::make()
+                    ->label(fn (): string => __('fields.settings'))
+                    ->collapsible(false)
+                    ->extraSidebarAttributes([
+                        'data-settings-footer' => '1',
+                    ]),
+
             ])
             ->navigationItems([
                 NavigationItem::make('tenant-settings')
                     ->label(fn (): string => __('fields.settings'))
                     ->url(fn (): string => CustomSettings::getUrl())
                     ->icon('heroicon-o-cog-6-tooth')
-                    ->sort(PHP_INT_MAX)
-                    ->visible(fn (): bool => auth()->user()?->hasRole(User::ROLE_CLIENT) ?? false),
+                    ->group(fn (): string => __('fields.settings'))
+                    ->sort(1)
+                    ->visible(fn (): bool => filament()->auth()->check() && filled(filament()->getTenant()))
+                    ->isActiveWhen(fn (): bool => request()->routeIs(CustomSettings::getRouteName())),
             ])
             ->middleware([
                 EncryptCookies::class,

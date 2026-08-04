@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\PurchaseInvoiceResource\Pages;
 
+use App\Filament\Tenant\Concerns\BlocksCreateWhenSubscriptionMaxed;
 use App\Filament\Tenant\Concerns\HandlesInvoiceCreditPayments;
 use App\Filament\Tenant\Resources\PurchaseInvoiceResource;
 use App\Models\Invoice;
@@ -20,10 +21,16 @@ use Illuminate\Support\Str;
 class CreatePurchaseInvoice extends CreateRecord
 {
     use HandlesInvoiceCreditPayments;
+    use BlocksCreateWhenSubscriptionMaxed;
 
     protected static string $resource = PurchaseInvoiceResource::class;
 
     protected $supply_order_id;
+
+    protected static function subscriptionLimitType(): string
+    {
+        return 'purchase_invoices';
+    }
 
     protected function getRedirectUrl(): string
     {
@@ -34,10 +41,7 @@ class CreatePurchaseInvoice extends CreateRecord
     {
         parent::mount();
 
-        if (purchases_invoices_maxed_out()) {
-            fns()->sendInfo(__('fields.purchases_invoices_maxed_out_alert'));
-            $this->redirect(PurchaseInvoiceResource::getUrl());
-        }
+        $this->abortCreateWhenSubscriptionMaxed(PurchaseInvoiceResource::getUrl());
 
         $this->supply_order_id = request('supply_order_id', null);
 

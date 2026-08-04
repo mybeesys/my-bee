@@ -77,5 +77,7 @@ class Kernel extends HttpKernel
         'apply_api_tenant_scopes' => \App\Http\Middleware\ApplyApiTenantScopes::class,
         'ensure_tenant_slug_in_header' => \App\Http\Middleware\EnsureTenantSlugInHeader::class,
         'ensure_store_uuid_in_header' => \App\Http\Middleware\EnsureStoreUUIDInHeader::class,
+        'ensure_tenant_store_enabled' => \App\Http\Middleware\EnsureTenantStoreEnabled::class,
+        'ensure_client_subscription_active' => \App\Http\Middleware\EnsureClientSubscriptionActive::class,
     ];
 }

@@ -62,6 +62,11 @@ class PlanResource extends Resource
                 Forms\Components\Section::make()
                     ->schema([
 
+                        Forms\Components\TextInput::make('code')
+                            ->label(__('fields.plan_code'))
+                            ->maxLength(32)
+                            ->unique(ignoreRecord: true),
+
                         Forms\Components\TextInput::make('name')
                             ->label(__('fields.name'))
                             ->autofocus()
@@ -76,32 +81,51 @@ class PlanResource extends Resource
                                 Plan::SPAN_ONE_TIME => __('fields.one_time_subscription'),
                             ])
                             ->afterStateUpdated(function (Forms\Set $set, $state) {
-                                if ($state == Plan::SPAN_ONE_TIME)
+                                if ($state == Plan::SPAN_ONE_TIME) {
                                     $set('span_duration', 'unlimited');
-                                else
-                                    $set('span_duration', null);
-
+                                } else {
+                                    $set('span_duration', 'monthly');
+                                }
                             })
                             ->required(),
 
-                        Forms\Components\Select::make('span_duration')
-                            ->label(__('fields.span_duration'))
-                            ->visible(fn(Forms\Get $get) => $get('span') === Plan::SPAN_SPECIFIED)
-                            ->options([
-                                'monthly' => __('fields.monthly'),
-                                'yearly' => __('fields.yearly'),
-                            ])
-                            ->required(),
+                        Forms\Components\Hidden::make('span_duration')
+                            ->default('monthly')
+                            ->dehydrated(),
+
+                        Forms\Components\Placeholder::make('billing_model_note')
+                            ->label(__('fields.subscription_billing_period'))
+                            ->content(__('fields.plan_billing_model_note'))
+                            ->visible(fn (Forms\Get $get) => $get('span') === Plan::SPAN_SPECIFIED)
+                            ->columnSpan(1),
 
                         Forms\Components\TextInput::make('price')
-                            ->label(__('fields.price'))
+                            ->label(__('fields.plan_monthly_price_ex_tax'))
                             ->live(true)
                             ->numeric()
-                            ->formatStateUsing(fn($state) => $state ? number_format($state, 2, '.', '') : null)
+                            ->formatStateUsing(fn ($state) => $state !== null && $state !== '' ? number_format((float) $state, 2, '.', '') : null)
                             ->minValue(0)
                             ->maxValue(500000)
+                            ->helperText(function (Forms\Get $get) {
+                                $price = (float) ($get('price') ?? 0);
+                                if ($price <= 0) {
+                                    return __('fields.subscription_prices_ex_tax_note');
+                                }
 
-                            ->required(),
+                                $plan = new Plan(['price' => $price]);
+                                $pricing = \App\Services\SubscriptionPricingService::instance();
+                                $monthly = $pricing->quote($plan, 'monthly');
+                                $yearly = $pricing->quote($plan, 'yearly');
+
+                                return __('fields.plan_price_preview_helper', [
+                                    'monthly_total' => $pricing->formatMoney($monthly['total_inc_tax'], $monthly['currency']),
+                                    'yearly_total' => $pricing->formatMoney($yearly['total_inc_tax'], $yearly['currency']),
+                                    'yearly_ex_tax' => $pricing->formatMoney($yearly['subtotal_ex_tax'], $yearly['currency']),
+                                    'vat' => rtrim(rtrim(number_format($monthly['tax_percent'], 2, '.', ''), '0'), '.'),
+                                ]);
+                            })
+                            ->required()
+                            ->columnSpan(2),
                     ])->columns(4),
 
 
@@ -136,6 +160,33 @@ class PlanResource extends Resource
                         ->maxValue(9000000)
                         ->required(),
 
+                    Forms\Components\TextInput::make('max_allowed_supply_orders')
+                        ->label(__('fields.max_allowed_supply_orders'))
+                        ->visible(fn(Forms\Get $get) => $get('unlimited_supply_orders') === false)
+                        ->numeric()
+                        ->default(5)
+                        ->minValue(1)
+                        ->maxValue(9000000)
+                        ->required(),
+
+                    Forms\Components\TextInput::make('max_allowed_price_offers')
+                        ->label(__('fields.max_allowed_price_offers'))
+                        ->visible(fn(Forms\Get $get) => $get('unlimited_price_offers') === false)
+                        ->numeric()
+                        ->default(5)
+                        ->minValue(1)
+                        ->maxValue(9000000)
+                        ->required(),
+
+                    Forms\Components\TextInput::make('max_allowed_orders')
+                        ->label(__('fields.max_allowed_orders'))
+                        ->visible(fn(Forms\Get $get) => $get('unlimited_orders') === false)
+                        ->numeric()
+                        ->default(5)
+                        ->minValue(1)
+                        ->maxValue(9000000)
+                        ->required(),
+
                     Forms\Components\TextInput::make('max_allowed_users')
                         ->label(__('fields.max_allowed_users'))
                         ->visible(fn(Forms\Get $get) => $get('unlimited_users') === false)
@@ -149,6 +200,20 @@ class PlanResource extends Resource
                     Forms\Components\Toggle::make('enable_roles')
                         ->label(__('fields.enable_roles'))
                         ->default(0),
+
+                    Forms\Components\Toggle::make('enable_store')
+                        ->label(__('fields.enable_store'))
+                        ->default(false),
+
+                    Forms\Components\TextInput::make('sort_order')
+                        ->label(__('fields.sort_order'))
+                        ->numeric()
+                        ->default(0)
+                        ->minValue(0),
+
+                    Forms\Components\Toggle::make('is_featured')
+                        ->label(__('fields.is_featured'))
+                        ->default(false),
 
                     Forms\Components\Section::make()
                         ->schema([
@@ -197,6 +262,42 @@ class PlanResource extends Resource
                                         $set('max_allowed_sales_invoices', -1);
                                     } else {
                                         $set('max_allowed_sales_invoices', 5);
+                                    }
+                                })
+                                ->reactive(),
+
+                            Forms\Components\Checkbox::make('unlimited_orders')
+                                ->label(__('fields.unlimited_orders'))
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                    if ($state === true) {
+                                        $set('max_allowed_orders', -1);
+                                    } else {
+                                        $set('max_allowed_orders', 5);
+                                    }
+                                })
+                                ->reactive(),
+
+                            Forms\Components\Checkbox::make('unlimited_price_offers')
+                                ->label(__('fields.unlimited_price_offers'))
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                    if ($state === true) {
+                                        $set('max_allowed_price_offers', -1);
+                                    } else {
+                                        $set('max_allowed_price_offers', 5);
+                                    }
+                                })
+                                ->reactive(),
+
+                            Forms\Components\Checkbox::make('unlimited_supply_orders')
+                                ->label(__('fields.unlimited_supply_orders'))
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function (Forms\Set $set, $state) {
+                                    if ($state === true) {
+                                        $set('max_allowed_supply_orders', -1);
+                                    } else {
+                                        $set('max_allowed_supply_orders', 5);
                                     }
                                 })
                                 ->reactive(),
@@ -251,15 +352,40 @@ class PlanResource extends Resource
 
                 Tables\Columns\TextColumn::make('span')
                     ->label(__('fields.span'))
-                    ->formatStateUsing(fn($state) => __("fields.plan_span_$state"))
-                    ->description(fn(Plan $record) => $record->span === Plan::SPAN_ONE_TIME ? "∞" : $record->span_in_days)
+                    ->formatStateUsing(fn ($state) => __("fields.plan_span_$state"))
+                    ->description(fn (Plan $record) => $record->span === Plan::SPAN_ONE_TIME
+                        ? __('fields.one_time_subscription')
+                        : __('fields.plan_billing_model_note_short'))
                     ->toggleable()
                     ->searchable(),
 
                 Tables\Columns\TextColumn::make('price')
-                    ->label(__('fields.price'))
-                    ->prefix("SAR ")
-                    ->formatStateUsing(fn($state) => format_amount($state))
+                    ->label(__('fields.plan_monthly_price_ex_tax'))
+                    ->formatStateUsing(function ($state, Plan $record) {
+                        $pricing = \App\Services\SubscriptionPricingService::instance();
+                        $monthly = $pricing->quote($record, 'monthly');
+                        $yearly = $pricing->quote($record, 'yearly');
+
+                        if ($monthly['is_free']) {
+                            return __('fields.free');
+                        }
+
+                        return $pricing->formatMoney((float) $state, $monthly['currency']);
+                    })
+                    ->description(function (Plan $record) {
+                        $pricing = \App\Services\SubscriptionPricingService::instance();
+                        $monthly = $pricing->quote($record, 'monthly');
+                        $yearly = $pricing->quote($record, 'yearly');
+
+                        if ($monthly['is_free']) {
+                            return null;
+                        }
+
+                        return __('fields.plan_price_table_description', [
+                            'monthly_total' => $pricing->formatMoney($monthly['total_inc_tax'], $monthly['currency']),
+                            'yearly_total' => $pricing->formatMoney($yearly['total_inc_tax'], $yearly['currency']),
+                        ]);
+                    })
                     ->toggleable()
                     ->searchable(),
 

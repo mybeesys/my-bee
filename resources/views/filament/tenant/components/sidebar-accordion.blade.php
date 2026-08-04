@@ -2,10 +2,20 @@
     ;(() => {
         const isTenantPanel = () => document.body.classList.contains('fi-panel-tenant')
 
-        const sidebarGroupLabels = () =>
+        const isSettingsFooterGroup = (group) =>
+            group instanceof HTMLElement && group.dataset.settingsFooter === '1'
+
+        const sidebarGroups = () =>
             [...document.querySelectorAll('.fi-main-sidebar .fi-sidebar-group[data-group-label]')]
+
+        const sidebarGroupLabels = () =>
+            sidebarGroups()
+                .filter((group) => ! isSettingsFooterGroup(group))
                 .map((group) => group.dataset.groupLabel)
                 .filter(Boolean)
+
+        const settingsFooterLabel = () =>
+            sidebarGroups().find((group) => isSettingsFooterGroup(group))?.dataset.groupLabel ?? null
 
         const ensureCollapsedGroupsArray = (sidebar) => {
             if (Array.isArray(sidebar.collapsedGroups)) {
@@ -21,6 +31,16 @@
             }
 
             return sidebar.collapsedGroups
+        }
+
+        const keepSettingsFooterOpen = (sidebar) => {
+            const label = settingsFooterLabel()
+
+            if (! label || ! Array.isArray(sidebar.collapsedGroups)) {
+                return
+            }
+
+            sidebar.collapsedGroups = sidebar.collapsedGroups.filter((item) => item !== label)
         }
 
         const openOnlySidebarGroup = (openGroup) => {
@@ -42,6 +62,7 @@
 
             ensureCollapsedGroupsArray(sidebar)
             sidebar.collapsedGroups = labels.filter((label) => label !== openGroup)
+            keepSettingsFooterOpen(sidebar)
         }
 
         const syncActiveSidebarGroup = () => {
@@ -49,8 +70,17 @@
                 '.fi-main-sidebar .fi-sidebar-group.fi-active[data-group-label]',
             )?.dataset.groupLabel
 
-            if (activeGroup) {
+            if (activeGroup && ! isSettingsFooterGroup(
+                document.querySelector(`.fi-main-sidebar .fi-sidebar-group[data-group-label="${CSS.escape(activeGroup)}"]`)
+            )) {
                 openOnlySidebarGroup(activeGroup)
+            } else {
+                const sidebar = window.Alpine?.store('sidebar')
+
+                if (sidebar) {
+                    ensureCollapsedGroupsArray(sidebar)
+                    keepSettingsFooterOpen(sidebar)
+                }
             }
         }
 
@@ -76,7 +106,7 @@
 
                 const group = toggle.closest('.fi-sidebar-group[data-group-label]')
 
-                if (! group) {
+                if (! group || isSettingsFooterGroup(group)) {
                     return
                 }
 
@@ -93,6 +123,8 @@
 
                     if (! sidebar.collapsedGroups.includes(label)) {
                         openOnlySidebarGroup(label)
+                    } else {
+                        keepSettingsFooterOpen(sidebar)
                     }
                 })
             })
@@ -102,12 +134,71 @@
             })
         }
 
+        const moveSettingsNavToFooter = () => {
+            if (! isTenantPanel()) {
+                return
+            }
+
+            const navGroups = document.querySelector('.fi-main-sidebar .fi-sidebar-nav-groups')
+
+            if (! navGroups) {
+                return
+            }
+
+            const settingsLink = navGroups.querySelector('a[href*="settings/v2"]')
+
+            if (! settingsLink) {
+                return
+            }
+
+            const settingsItem = settingsLink.closest('.fi-sidebar-item')
+
+            if (! settingsItem || settingsItem.dataset.movedToFooter === '1') {
+                return
+            }
+
+            let footerGroup = navGroups.querySelector('[data-settings-footer="1"]')
+
+            if (! footerGroup) {
+                footerGroup = document.createElement('li')
+                footerGroup.className = 'fi-sidebar-group flex flex-col gap-y-1'
+                footerGroup.dataset.settingsFooter = '1'
+                footerGroup.dataset.groupLabel = settingsLink.closest('.fi-sidebar-group[data-group-label]')?.dataset.groupLabel
+                    ?? @json(__('fields.settings'))
+
+                const itemsList = document.createElement('ul')
+                itemsList.className = 'fi-sidebar-group-items flex flex-col gap-y-1'
+                footerGroup.appendChild(itemsList)
+                navGroups.appendChild(footerGroup)
+            }
+
+            footerGroup.querySelector('.fi-sidebar-group-items')?.appendChild(settingsItem)
+            settingsItem.dataset.movedToFooter = '1'
+
+            const sidebar = window.Alpine?.store('sidebar')
+
+            if (sidebar) {
+                ensureCollapsedGroupsArray(sidebar)
+                keepSettingsFooterOpen(sidebar)
+            }
+        }
+
         const bootSidebarAccordion = () => {
             installSidebarAccordion()
+            moveSettingsNavToFooter()
             syncActiveSidebarGroup()
+            moveSettingsNavToFooter()
         }
 
         document.addEventListener('alpine:initialized', bootSidebarAccordion)
+
+        document.addEventListener('livewire:navigated', () => {
+            queueMicrotask(() => {
+                moveSettingsNavToFooter()
+                syncActiveSidebarGroup()
+                moveSettingsNavToFooter()
+            })
+        })
 
         bootSidebarAccordion()
     })()

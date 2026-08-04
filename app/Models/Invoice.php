@@ -85,11 +85,6 @@ class Invoice extends BaseModel
         return $this->morphMany(AdditionalCost::class, 'item')->oldest();
     }
 
-    public function scopeCurrentClient(Builder $builder)
-    {
-        return $builder->whereRelation('tenant', 'client_id', get_client()->id);
-    }
-
 //    public function payments()
 //    {
 //        return $this->hasMany(InvoicePayment::class);

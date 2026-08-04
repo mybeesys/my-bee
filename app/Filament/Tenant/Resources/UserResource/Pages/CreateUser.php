@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\UserResource\Pages;
 
+use App\Filament\Tenant\Concerns\BlocksCreateWhenSubscriptionMaxed;
 use App\Filament\Tenant\Resources\UserResource;
 use App\Models\User;
 use App\Services\RoleService;
@@ -14,7 +15,14 @@ use Spatie\Permission\Models\Role;
 
 class CreateUser extends CreateRecord
 {
+    use BlocksCreateWhenSubscriptionMaxed;
+
     protected static string $resource = UserResource::class;
+
+    protected static function subscriptionLimitType(): string
+    {
+        return 'users';
+    }
 
     public array $localities = [];
     public $roles;

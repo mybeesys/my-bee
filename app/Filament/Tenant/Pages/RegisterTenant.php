@@ -39,12 +39,9 @@ class RegisterTenant extends BaseRegisterTenant
 
     public function getTitle(): string|Htmlable
     {
-        $client = tenant_client();
-
-        $activitiesLimitReached = $client->tenants->count() >= $client->subscription->plan->max_allowed_companies;
-
-        if ($activitiesLimitReached)
+        if ($this->hasReachedActivitiesLimit()) {
             return __('messages.activities_limit_reached');
+        }
 
         return __('messages.greeting') . ", " . filament()->auth()->user()->full_name;
     }
@@ -60,21 +57,16 @@ class RegisterTenant extends BaseRegisterTenant
 
     public function getSubheading(): string|Htmlable|null
     {
-        $client = tenant_client();
-
-        $activitiesLimitReached = $client->tenants->count() >= $client->subscription->plan->max_allowed_companies;
-
-        if ($activitiesLimitReached)
+        if ($this->hasReachedActivitiesLimit()) {
             return __('messages.activities_limit_reached_upgrade_plan_or_contact_support');
+        }
 
         return __('messages.complete_registration_to_continue');
     }
 
     public function hasReachedActivitiesLimit(): bool
     {
-        $client = tenant_client();
-
-        return $client->tenants->count() >= $client->subscription->plan->max_allowed_companies;
+        return companies_maxed_out();
     }
 
     public function form(Form $form): Form

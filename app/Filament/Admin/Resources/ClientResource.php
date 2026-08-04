@@ -13,8 +13,10 @@ use App\Rules\TenantEmailRule;
 use App\Rules\TenantPhoneRule;
 use App\Rules\UniqueClientAttributeRule;
 use App\Services\TenantService;
+use App\Services\SubscriptionPricingService;
 use Filament\Actions\Action;
 use Filament\Forms;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -31,8 +33,6 @@ use Filament\Support\Enums\ActionSize;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Facades\DB;
 
 class ClientResource extends Resource
@@ -77,112 +77,123 @@ class ClientResource extends Resource
     {
         return $form
             ->schema([
-                Section::make(__('fields.client_details'))->schema([
-
-                    TextInput::make('name')
-                        ->label(__('fields.name'))
-                        ->live(true)
-                        ->afterStateUpdated(function ($state, Get $get, Set $set) {
-                            if ($state) {
-                                $names = explode(' ', $state);
-                                $set('user_first_name', $names[0] ?? null);
-                                $set('user_second_name', $names[1] ?? null);
-                                $set('user_third_name', $names[2] ?? null);
-                                $set('user_fourth_name', $names[3] ?? null);
-                            }
-
-                        })
-                        ->required(),
-
-                    TextInput::make('phone')
-                        ->label(__('fields.phone'))
-                        ->rules(
-                            [
-                                new UniqueClientAttributeRule('phone',
-                                    'phone', ignore_client_id: $form->getRecord()?->id, ignore_user_id: $form->getRecord()?->user_id)
-                            ]
-                        )
-                        ->tel()
-                        ->live(true)
-                        ->afterStateUpdated(function ($state, Set $set) {
-                            $set('user_phone', $state);
-                        })
-                        ->required(),
-
-                    TextInput::make('mobile')
-                        ->label(__('fields.mobile'))
-                        ->rules(
-                            [
-                                new UniqueClientAttributeRule('mobile', ignore_client_id: $form->getRecord()?->id)
-                            ]
-                        )
-                        ->tel()
-                        ->required(),
-
-                    TextInput::make('email')
-                        ->label(__('fields.email'))
-                        ->rules(
-                            [
-                                new UniqueClientAttributeRule('email',
-                                    'email', ignore_client_id: $form->getRecord()?->id, ignore_user_id: $form->getRecord()?->user_id)
-                            ]
-                        )
-                        ->email()
-                        ->live(true)
-                        ->afterStateUpdated(function ($state, Set $set) {
-                            $set('user_email', $state);
-                        })
-                        ->required(),
-
-                    TextInput::make('address')
-                        ->label(__('fields.address')),
-
-                    Select::make('plan_id')
-                        ->label(__('fields.subscription_plan'))
-                        ->required()
-                        ->options(Plan::active()->pluck('name', 'id')),
-
-                ])->columns(4),
-
-                Section::make(__('fields.account_and_login_details'))
-                    ->visibleOn(Pages\CreateClient::class)
+                Section::make(__('fields.client_details'))
+                    ->icon('heroicon-o-user')
                     ->schema([
-                        TextInput::make('user_first_name')
-                            ->label(__('fields.first_name'))
-                            ->required(),
-
-                        TextInput::make('user_second_name')
-                            ->label(__('fields.second_name'))
-                            ->required(),
-
-                        TextInput::make('user_third_name')
-                            ->label(__('fields.third_name')),
-
-                        TextInput::make('user_fourth_name')
-                            ->label(__('fields.fourth_name')),
-
-                        TextInput::make('user_phone')
-                            ->label(__('fields.phone'))
-                            ->unique(table: 'users', column: 'phone', ignorable: fn(?Model $record): ?Model => $record)
-                            ->required(),
-
-                        TextInput::make('user_email')
-                            ->label(__('fields.email'))
-                            ->unique(table: 'users', column: 'email', ignorable: fn(?Model $record): ?Model => $record)
-                            ->required(),
-
-                        TextInput::make('user_password')
-                            ->label(__('fields.password'))
-                            ->password()
-                            ->required(),
-
-                        TextInput::make('user_password_confirmation')
-                            ->label(__('fields.password_confirmation'))
-                            ->password()
+                        TextInput::make('name')
+                            ->label(__('fields.name'))
                             ->required()
-                            ->same('user_password'),
+                            ->maxLength(255)
+                            ->columnSpan(['default' => 2, 'md' => 1]),
 
-                    ])->columns(4),
+                        TextInput::make('email')
+                            ->label(__('fields.email'))
+                            ->email()
+                            ->required()
+                            ->maxLength(255)
+                            ->rules([
+                                new UniqueClientAttributeRule(
+                                    'email',
+                                    'email',
+                                    ignore_client_id: $form->getRecord()?->id,
+                                    ignore_user_id: $form->getRecord()?->user_id
+                                ),
+                            ])
+                            ->columnSpan(['default' => 2, 'md' => 1]),
+
+                        TextInput::make('phone')
+                            ->label(__('fields.phone'))
+                            ->tel()
+                            ->nullable()
+                            ->rules([
+                                fn () => function (string $attribute, $value, $fail) use ($form) {
+                                    if (! filled($value)) {
+                                        return;
+                                    }
+
+                                    (new UniqueClientAttributeRule(
+                                        'phone',
+                                        'phone',
+                                        ignore_client_id: $form->getRecord()?->id,
+                                        ignore_user_id: $form->getRecord()?->user_id
+                                    ))->validate($attribute, $value, $fail);
+                                },
+                            ])
+                            ->columnSpan(['default' => 2, 'md' => 1]),
+
+                        TextInput::make('mobile')
+                            ->label(__('fields.mobile'))
+                            ->tel()
+                            ->nullable()
+                            ->rules([
+                                fn () => function (string $attribute, $value, $fail) use ($form) {
+                                    if (! filled($value)) {
+                                        return;
+                                    }
+
+                                    (new UniqueClientAttributeRule(
+                                        'mobile',
+                                        ignore_client_id: $form->getRecord()?->id
+                                    ))->validate($attribute, $value, $fail);
+                                },
+                            ])
+                            ->columnSpan(['default' => 2, 'md' => 1]),
+
+                        TextInput::make('address')
+                            ->label(__('fields.address'))
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        Radio::make('billing_period')
+                            ->label(__('fields.subscription_billing_period'))
+                            ->options([
+                                SubscriptionPricingService::BILLING_MONTHLY => __('fields.monthly'),
+                                SubscriptionPricingService::BILLING_YEARLY => __('fields.yearly'),
+                            ])
+                            ->descriptions([
+                                SubscriptionPricingService::BILLING_MONTHLY => __('fields.subscription_billing_monthly_hint'),
+                                SubscriptionPricingService::BILLING_YEARLY => __('fields.subscription_yearly_discount_note'),
+                            ])
+                            ->default(SubscriptionPricingService::BILLING_MONTHLY)
+                            ->live()
+                            ->required()
+                            ->inline()
+                            ->columnSpanFull(),
+
+                        Select::make('plan_id')
+                            ->label(__('fields.subscription_plan'))
+                            ->required()
+                            ->native(false)
+                            ->searchable()
+                            ->options(Plan::active()->orderBy('price')->pluck('name', 'id'))
+                            ->helperText(function (Get $get) {
+                                $planId = $get('plan_id');
+                                if (! $planId) {
+                                    return __('fields.subscription_prices_ex_tax_note');
+                                }
+
+                                $plan = Plan::find($planId);
+                                if (! $plan) {
+                                    return null;
+                                }
+
+                                $quote = subscription_pricing($plan, $get('billing_period'));
+                                $pricing = SubscriptionPricingService::instance();
+
+                                if ($quote['is_free']) {
+                                    return __('fields.free');
+                                }
+
+                                return __('fields.subscription_admin_price_helper', [
+                                    'total' => $pricing->formatMoney($quote['total_inc_tax'], $quote['currency']),
+                                    'ex_tax' => $pricing->formatMoney($quote['subtotal_ex_tax'], $quote['currency']),
+                                    'tax' => $pricing->formatMoney($quote['tax_amount'], $quote['currency']),
+                                    'vat' => rtrim(rtrim(number_format($quote['tax_percent'], 2, '.', ''), '0'), '.'),
+                                ]);
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
             ]);
     }
 
@@ -383,12 +394,22 @@ class ClientResource extends Resource
                         \Filament\Infolists\Components\Section::make()
                             ->schema([
                                 TextEntry::make('subscription.plan.name')->label(__('fields.subscription')),
-                                TextEntry::make('subscription.plan.span')->label(__('fields.span')),
+                                TextEntry::make('subscription.billing_period')
+                                    ->label(__('fields.subscription_billing_period'))
+                                    ->formatStateUsing(fn ($state) => $state === 'yearly' ? __('fields.yearly') : __('fields.monthly')),
+                                TextEntry::make('subscription.price_ex_tax')
+                                    ->label(__('fields.subscription_subtotal_ex_tax'))
+                                    ->formatStateUsing(fn ($state) => $state === null ? '—' : main_currency_iso_code() . ' ' . format_amount($state)),
+                                TextEntry::make('subscription.tax_amount')
+                                    ->label(__('fields.tax'))
+                                    ->formatStateUsing(fn ($state, $record) => $state === null
+                                        ? '—'
+                                        : main_currency_iso_code() . ' ' . format_amount($state)
+                                            . ' (' . rtrim(rtrim(number_format((float) ($record->subscription?->tax_percent ?? 0), 2, '.', ''), '0'), '.') . '%)'),
+                                TextEntry::make('subscription.price')
+                                    ->label(__('fields.subscription_total_inc_tax'))
+                                    ->formatStateUsing(fn ($state) => $state === null ? '—' : main_currency_iso_code() . ' ' . format_amount($state)),
                                 TextEntry::make('subscription.start_date')->label(__('fields.start_date')),
-//                                TextEntry::make('subscription.subscribed')
-//                                    ->formatStateUsing(fn($state) => __("fields.$state"))
-//                                    ->badge()
-//                                    ->label(__('fields.subscribed')),
                             ])->columns(2),
                     ]),
                 Tabs\Tab::make(__('fields.account_and_login_details'))

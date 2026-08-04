@@ -40,9 +40,10 @@ class SettingsSeeder extends Seeder
 
         $service->createOrUpdate('company.name', ['en' => 'Company name', 'ar' => 'إسم الشركة'],"My bee", 'text', false, $service->rulesForString(false), 'general', [], false, 'General', null, null, 1, 2);
         $service->createOrUpdate('company.address', ['en' => 'Company address', 'ar' => 'عنوان الشركة'], null, 'text', false, $service->rulesForString(false), 'general', [], false, 'General', null, null, 2, 2);
-        $service->createOrUpdate('company.contact.phone', ['en' => 'Company phone', 'ar' => 'رقم هاتف الشركة'], null, 'text', false, $service->rulesForInternationalPhone(false), 'general', [], false, 'General', null, null, 3, 2);
-        $service->createOrUpdate('company.contact.mobile', ['en' => 'Company mobile', 'ar' => 'رقم موبايل الشركة'], null, 'text', false, $service->rulesForInternationalPhone(false), 'general', [], false, 'General', null, null, 4, 2);
-        $service->createOrUpdate('company.contact.email', ['en' => 'Company email', 'ar' => 'إيميل الشركة'], null, 'text', false, $service->rulesForEmail(false), 'general', [], false, 'General', null, null, 5, 2);
+        $service->createOrUpdate('company.trn', ['en' => 'Tax registration number', 'ar' => 'الرقم الضريبي'], null, 'text', false, $service->rulesForString(false), 'general', [], false, 'General', null, null, 3, 2);
+        $service->createOrUpdate('company.contact.phone', ['en' => 'Company phone', 'ar' => 'رقم هاتف الشركة'], null, 'text', false, $service->rulesForInternationalPhone(false), 'general', [], false, 'General', null, null, 4, 2);
+        $service->createOrUpdate('company.contact.mobile', ['en' => 'Company mobile', 'ar' => 'رقم موبايل الشركة'], null, 'text', false, $service->rulesForInternationalPhone(false), 'general', [], false, 'General', null, null, 5, 2);
+        $service->createOrUpdate('company.contact.email', ['en' => 'Company email', 'ar' => 'إيميل الشركة'], null, 'text', false, $service->rulesForEmail(false), 'general', [], false, 'General', null, null, 6, 2);
 
 //        $service->createOrUpdate('company.about_ar', ['en' => 'About company (ar)', 'ar' => 'عن الشركة (عربي)'], "", 'rich-text', false, $service->rulesForString(), 'general', [], false, 'General', null, null, 6, 2);
 //        $service->createOrUpdate('company.about_en', ['en' => 'About company (en)', 'ar' => 'عن الشركة (إنجليزي)'], "", 'rich-text', false, $service->rulesForString(), 'general', [], false, 'General', null, null, 7, 2);

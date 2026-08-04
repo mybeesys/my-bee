@@ -8,9 +8,9 @@ use App\Services\ProductMovementBalanceService;
 use App\Services\ProductsMovementService;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Contracts\Pagination\CursorPaginator;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ListProductsMovements extends ListRecords
 {
@@ -33,7 +33,7 @@ class ListProductsMovements extends ListRecords
         return $this->movementLines;
     }
 
-    public function getTableRecords(): EloquentCollection | Paginator | CursorPaginator
+    public function getTableRecords(): EloquentCollection | Paginator | CursorPaginator | LengthAwarePaginator
     {
         if ($this->cachedTableRecords !== null) {
             return $this->cachedTableRecords;
@@ -74,6 +74,11 @@ class ListProductsMovements extends ListRecords
     {
         $this->movementLines = null;
         $this->resetTableRecordsCache();
+    }
+
+    protected function resetTableRecordsCache(): void
+    {
+        $this->cachedTableRecords = null;
     }
 
     protected function getHeaderActions(): array

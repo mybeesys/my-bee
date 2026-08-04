@@ -26,6 +26,8 @@ class ProductsMovementResource extends Resource
 
     protected static ?string $model = ProductMovementLine::class;
 
+    protected static bool $isScopedToTenant = false;
+
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     protected static ?int $navigationSort = 5;
@@ -175,11 +177,11 @@ class ProductsMovementResource extends Resource
                     ->form([
                         ...static::reportDateRangeFormFields(),
 
-                        Forms\Components\Radio::make('type')
+                        Forms\Components\Select::make('type')
                             ->label(__('fields.type'))
-                            ->default(null)
+                            ->native(false)
+                            ->placeholder(__('fields.all'))
                             ->options([
-                                null => __('fields.all'),
                                 'purchases' => __('fields.products_movements_type_purchases'),
                                 'sales' => __('fields.products_movements_type_sales'),
                                 'sales_return' => __('fields.products_movements_type_sales_return'),

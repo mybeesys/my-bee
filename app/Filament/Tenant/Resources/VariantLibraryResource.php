@@ -30,6 +30,11 @@ class VariantLibraryResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function getNavigationGroup(): ?string
+    {
+        return user_setting('fav.variant_libraries', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
+    }
+
     public static function getModelLabel(): string
     {
         return __('fields.variant_library');
@@ -38,11 +43,6 @@ class VariantLibraryResource extends Resource
     public static function getPluralModelLabel(): string
     {
         return __('fields.variant_libraries');
-    }
-
-    public static function getNavigationGroup(): ?string
-    {
-        return user_setting('fav.variant_libraries', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');
     }
 
     public static function form(Form $form): Form

@@ -59,7 +59,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
-use function PHPUnit\TestFixture\Generator\f;
 
 class OrderResource extends Resource
 {
@@ -78,6 +77,7 @@ class OrderResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
+        // Keep orders as a top-level sidebar item (not buried under the collapsed Store group).
         return user_setting('fav.orders', false) ? __('fields.navigation_group_favourites') : null;
     }
 
@@ -94,7 +94,16 @@ class OrderResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::new()->count();
+        try {
+            return (string) static::getModel()::query()->new()->count();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
     }
 
     public static function form(Forms\Form $form): Forms\Form

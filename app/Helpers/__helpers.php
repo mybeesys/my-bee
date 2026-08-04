@@ -90,6 +90,25 @@ if (!function_exists('setting')) {
     }
 }
 
+if (!function_exists('settings_tab_icon')) {
+    function settings_tab_icon(string $tab, string $default = 'heroicon-o-cog-6-tooth'): string
+    {
+        $key = 'settings.tabs.' . strtolower(str_replace(' ', '-', $tab)) . '.icon';
+        $icon = setting($key, $default);
+
+        if (! is_string($icon) || $icon === '') {
+            return $default;
+        }
+
+        // Reject encrypted leftovers / corrupt values used as Blade icon names.
+        if (str_starts_with($icon, 'eyJ') || strlen($icon) > 80 || ! preg_match('/^[a-zA-Z0-9:_-]+$/', $icon)) {
+            return $default;
+        }
+
+        return $icon;
+    }
+}
+
 if (!function_exists('settings_by_tag')) {
     function settings_by_tag(array $tags = []): Collection
     {

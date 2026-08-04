@@ -105,6 +105,8 @@ class SettingService
                     'helper_text' => $helper_text,
                     'visible_in_user_friendly_settings' => $visible_in_user_friendly_settings,
                     'options_cache_key' => $getOptionsFromCacheKey,
+                    'sort' => $sort,
+                    'tab_sort' => $tab_sort,
                 ]);
             return $setting;
         } else {

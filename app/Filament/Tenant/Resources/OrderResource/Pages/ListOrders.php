@@ -4,6 +4,7 @@ namespace App\Filament\Tenant\Resources\OrderResource\Pages;
 
 use App\Filament\MyActions\Pages\AddToFavourites;
 use App\Filament\Tenant\Resources\OrderResource;
+use Filament\Actions;
 use Filament\Pages\Concerns\ExposesTableToWidgets;
 use Filament\Resources\Pages\ListRecords;
 
@@ -14,6 +15,16 @@ class ListOrders extends ListRecords
     protected static string $resource = OrderResource::class;
 
     protected static string $view = 'filament.tenant.resources.orders.pages.list-orders';
+
+    public string $subscriptionLimitType = 'orders';
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make()
+                ->disabled(fn () => orders_maxed_out()),
+        ];
+    }
 
     protected function getActions(): array
     {

@@ -4,13 +4,24 @@
         'fi-resource-' . str_replace('/', '-', $this->getResource()::getSlug()),
     ])
 >
-    <div class="flex flex-col gap-y-6">
-        <x-filament-panels::resources.tabs />
+    @if (! plan_allows_store())
+        @include('filament.tenant.components.store-upgrade-panel', ['context' => 'orders'])
+    @else
+        <div class="flex flex-col gap-y-6">
+            <x-filament-panels::resources.tabs />
 
-        {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE, scopes: $this->getRenderHookScopes()) }}
+            @if (! empty($subscriptionLimitType))
+                @include('filament.tenant.components.plan-limit-banner', [
+                    'type' => $subscriptionLimitType,
+                    'upgradeUrl' => \App\Filament\Tenant\Pages\Subscription::getUrl(),
+                ])
+            @endif
 
-        {{ $this->table }}
+            {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE, scopes: $this->getRenderHookScopes()) }}
 
-        {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_AFTER, scopes: $this->getRenderHookScopes()) }}
-    </div>
+            {{ $this->table }}
+
+            {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::RESOURCE_PAGES_LIST_RECORDS_TABLE_AFTER, scopes: $this->getRenderHookScopes()) }}
+        </div>
+    @endif
 </x-filament-panels::page>

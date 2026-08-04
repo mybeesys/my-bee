@@ -37,12 +37,24 @@ class Client extends BaseModel
 
     public function setPhoneAttribute($value)
     {
-        return $this->attributes['phone'] = str($value)->remove('+')->value();
+        if ($value === null || $value === '') {
+            $this->attributes['phone'] = null;
+
+            return;
+        }
+
+        $this->attributes['phone'] = str($value)->remove('+')->value();
     }
 
     public function setMobileAttribute($value)
     {
-        return $this->attributes['mobile'] = str($value)->remove('+')->value();
+        if ($value === null || $value === '') {
+            $this->attributes['mobile'] = null;
+
+            return;
+        }
+
+        $this->attributes['mobile'] = str($value)->remove('+')->value();
     }
 
 }

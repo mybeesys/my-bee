@@ -2,13 +2,21 @@
 
 namespace App\Filament\Tenant\Resources\SupplyOrderResource\Pages;
 
+use App\Filament\Tenant\Concerns\BlocksCreateWhenSubscriptionMaxed;
 use App\Filament\Tenant\Resources\SupplyOrderResource;
 use App\Models\SupplyOrderDetails;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateSupplyOrder extends CreateRecord
 {
+    use BlocksCreateWhenSubscriptionMaxed;
+
     protected static string $resource = SupplyOrderResource::class;
+
+    protected static function subscriptionLimitType(): string
+    {
+        return 'supply_orders';
+    }
 
     protected function getRedirectUrl(): string
     {
@@ -18,6 +26,8 @@ class CreateSupplyOrder extends CreateRecord
     public function mount(): void
     {
         parent::mount();
+
+        $this->abortCreateWhenSubscriptionMaxed(SupplyOrderResource::getUrl());
 
         if (empty(SupplyOrderResource::inlineProductLinesFromState($this->data['details'] ?? []))) {
             SupplyOrderResource::ensureDefaultInvoiceLineOnCreate($this, 'details');

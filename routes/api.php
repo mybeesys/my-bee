@@ -38,7 +38,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
     Route::post('me', [\App\Http\Controllers\API\V1\ClientController::class, 'me'])
         ->middleware(['auth:sanctum']);
 
-    Route::group(['prefix' => 'store', 'middleware' => ['ensure_tenant_slug_in_header', 'ensure_store_uuid_in_header']], function () {
+    Route::group(['prefix' => 'store', 'middleware' => ['ensure_tenant_slug_in_header', 'ensure_store_uuid_in_header', 'ensure_tenant_store_enabled']], function () {
         Route::get('info', [\App\Http\Controllers\API\V1\StoreController::class, 'info']);
         Route::get('categories', [\App\Http\Controllers\API\V1\StoreController::class, 'categories']);
         Route::get('products', [\App\Http\Controllers\API\V1\StoreController::class, 'products']);

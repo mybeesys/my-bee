@@ -23,11 +23,15 @@ class UniqueTenantItemRule implements ValidationRule
         //tenant one cant have duplicate barcode (bc1)
         //but another tenant can have barcode (bc1)
 
-        $exists = app()->make($this->item_class)
+        $query = app()->make($this->item_class)
             ->where($this->item_attribute, $value)
-            ->where('tenant_id', filament()->getTenant()->id ?? request()->header('Tenant-Id'))
-            ->where('id', '!=', $this->ignore_id)
-            ->first();
+            ->where('tenant_id', filament()->getTenant()->id ?? request()->header('Tenant-Id'));
+
+        if (filled($this->ignore_id)) {
+            $query->where('id', '!=', $this->ignore_id);
+        }
+
+        $exists = $query->first();
 
         if ($exists) {
             $fail('validation.unique')->translate();

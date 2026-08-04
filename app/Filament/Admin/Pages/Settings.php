@@ -146,7 +146,7 @@ class Settings extends Page implements HasForms
                     $requiresSpecialAccess = \setting("settings.tabs." . strtolower(\Str::replace(' ', '-', $tab)) . ".requires_special_access", false);
                     return $requiresSpecialAccess ? $this->enable_full_access : true;
                 })
-                ->icon(\setting("settings.tabs." . strtolower(\Str::replace(' ', '-', $tab)) . ".icon"))
+                ->icon(settings_tab_icon($tab))
                 ->disabled(function () use ($tab) {
                     $requiresSpecialAccess = \setting("settings.tabs." . strtolower(\Str::replace(' ', '-', $tab)) . ".requires_special_access", false);
                     return $requiresSpecialAccess ? !$this->enable_full_access : false;

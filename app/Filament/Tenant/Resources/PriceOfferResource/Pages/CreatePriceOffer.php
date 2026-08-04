@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Resources\PriceOfferResource\Pages;
 
+use App\Filament\Tenant\Concerns\BlocksCreateWhenSubscriptionMaxed;
 use App\Filament\Tenant\Resources\PriceOfferResource;
 use App\Models\Invoice;
 use App\Models\Order;
@@ -22,7 +23,14 @@ use function Filament\Support\is_app_url;
 
 class CreatePriceOffer extends CreateRecord
 {
+    use BlocksCreateWhenSubscriptionMaxed;
+
     protected static string $resource = PriceOfferResource::class;
+
+    protected static function subscriptionLimitType(): string
+    {
+        return 'price_offers';
+    }
 
     protected function getRedirectUrl(): string
     {
@@ -32,6 +40,8 @@ class CreatePriceOffer extends CreateRecord
     public function mount(): void
     {
         parent::mount();
+
+        $this->abortCreateWhenSubscriptionMaxed(PriceOfferResource::getUrl());
 
         PriceOfferResource::ensureDefaultInvoiceLineOnCreate($this, 'details');
         PriceOfferResource::updateInvoicePropertiesFromLivewire($this);

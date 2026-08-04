@@ -399,6 +399,12 @@ class StoreController extends BaseController
 
         $tenant = Tenant::firstWhere('slug', \request()->header('Store-Slug'));
 
+        if (subscription_resource_maxed_out('orders', $tenant->client)) {
+            return $this->errorBadRequest()
+                ->message(subscription_limit_exceeded_message('orders', $tenant->client))
+                ->respond();
+        }
+
         $data = $request->validated();
 
         $cart = self::getCart();

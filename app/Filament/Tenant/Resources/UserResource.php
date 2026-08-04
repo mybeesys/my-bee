@@ -49,6 +49,11 @@ class UserResource extends Resource
         return __('fields.users');
     }
 
+    public static function canAccess(): bool
+    {
+        return parent::canAccess() && plan_allows_multiple_users();
+    }
+
 //    public static function getNavigationGroup(): ?string
 //    {
 //        return __('fields.user_management');

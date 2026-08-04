@@ -90,7 +90,7 @@ class RegisterClient extends SimplePage
                 'user_id' => $user->id,
             ]);
 
-            Subscription::subscribe(Plan::firstWhere('price', 0), $client);
+            Subscription::subscribe(Plan::query()->where('code', Plan::CODE_FREE)->first() ?? Plan::firstWhere('price', 0), $client);
 
             app()->bind(
                 \Illuminate\Auth\Listeners\SendEmailVerificationNotification::class,

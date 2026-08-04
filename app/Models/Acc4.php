@@ -103,8 +103,7 @@ class Acc4 extends BaseModel
     {
         return $query
             ->whereNull('item_type')
-            ->where('acc3_code', '1217')
-            ->where('editable', true);
+            ->where('acc3_code', '1217');
     }
 
     public function scopeVoucherOtherEntityPaymentAccounts(Builder $query): Builder

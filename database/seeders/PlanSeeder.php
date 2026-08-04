@@ -7,72 +7,86 @@ use Illuminate\Database\Seeder;
 
 class PlanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        Plan::firstOrCreate(
-            [
-                'name->en' => 'Trial',
-                'name->ar' => 'إشتراك تجريبي',
-            ],
+        Plan::query()->updateOrCreate(
+            ['code' => Plan::CODE_FREE],
             [
                 'name' => [
-                    'en' => 'Trial',
-                    'ar' => 'إشتراك تجريبي',
+                    'en' => 'Free',
+                    'ar' => 'مجاني',
                 ],
                 'price' => 0,
-                'span' => Plan::SPAN_ONE_TIME,
-                'span_duration' => 'unlimited',
-                'max_allowed_companies' => 2,
-                'max_allowed_users' => 1,
-                'max_allowed_purchase_invoices' => 10,
-                'max_allowed_sales_invoices' => 10,
-                'restrict_account_after_days' => 14,
-                'active' => 1,
-            ]
-        );
-
-        Plan::firstOrCreate([
-            'name->en' => 'Monthly',
-            'name->ar' => 'شهري',
-        ],
-            [
-                'name' => [
-                    'en' => 'Monthly',
-                    'ar' => 'شهري',
-                ],
-                'price' => 250,
                 'span' => Plan::SPAN_SPECIFIED,
                 'span_duration' => 'monthly',
-                'max_allowed_companies' => 2,
-                'max_allowed_users' => 2,
-                'max_allowed_purchase_invoices' => 25,
-                'max_allowed_sales_invoices' => 25,
-                'restrict_account_after_days' => -1,
-                'active' => 1,
+                'max_allowed_companies' => -1,
+                'max_allowed_users' => 1,
+                'max_allowed_sales_invoices' => 5,
+                'max_allowed_purchase_invoices' => 5,
+                'max_allowed_orders' => 5,
+                'max_allowed_price_offers' => 5,
+                'max_allowed_supply_orders' => 5,
+                'max_allowed_expenses' => 5,
+                'restrict_account_after_days' => 15,
+                'enable_roles' => false,
+                'enable_store' => false,
+                'active' => true,
+                'sort_order' => 1,
+                'is_featured' => false,
             ]
         );
 
-        Plan::firstOrCreate([
-            'name->en' => 'Annually',
-            'name->ar' => 'سنوي',
-        ],
+        Plan::query()->updateOrCreate(
+            ['code' => Plan::CODE_BUSINESS],
             [
                 'name' => [
-                    'en' => 'Annually',
-                    'ar' => 'سنوي',
+                    'en' => 'Launch',
+                    'ar' => 'انطلاقة',
                 ],
-                'price' => 2500,
+                'price' => 75,
                 'span' => Plan::SPAN_SPECIFIED,
-                'span_duration' => 'yearly',
-                'max_allowed_companies' => 2,
-                'max_allowed_users' => 3,
-                'max_allowed_purchase_invoices' => 25,
-                'max_allowed_sales_invoices' => 25,
+                'span_duration' => 'monthly',
+                'max_allowed_companies' => -1,
+                'max_allowed_users' => 1,
+                'max_allowed_sales_invoices' => -1,
+                'max_allowed_purchase_invoices' => -1,
+                'max_allowed_orders' => -1,
+                'max_allowed_price_offers' => -1,
+                'max_allowed_supply_orders' => -1,
+                'max_allowed_expenses' => -1,
                 'restrict_account_after_days' => -1,
-                'active' => 1,
+                'enable_roles' => true,
+                'enable_store' => false,
+                'active' => true,
+                'sort_order' => 2,
+                'is_featured' => false,
+            ]
+        );
+
+        Plan::query()->updateOrCreate(
+            ['code' => Plan::CODE_COMPLETE],
+            [
+                'name' => [
+                    'en' => 'Growth',
+                    'ar' => 'نمو',
+                ],
+                'price' => 100,
+                'span' => Plan::SPAN_SPECIFIED,
+                'span_duration' => 'monthly',
+                'max_allowed_companies' => -1,
+                'max_allowed_users' => 2,
+                'max_allowed_sales_invoices' => -1,
+                'max_allowed_purchase_invoices' => -1,
+                'max_allowed_orders' => -1,
+                'max_allowed_price_offers' => -1,
+                'max_allowed_supply_orders' => -1,
+                'max_allowed_expenses' => -1,
+                'restrict_account_after_days' => -1,
+                'enable_roles' => true,
+                'enable_store' => true,
+                'active' => true,
+                'sort_order' => 3,
+                'is_featured' => true,
             ]
         );
     }

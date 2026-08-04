@@ -116,6 +116,12 @@ class PurchaseInvoiceController extends BaseController
         if($invoice->items->isEmpty())
             return $this->errorBadRequest()->message(__('fields.invoice_must_at_least_have_one_product'))->respond();
 
+        if ($invoice->temp && subscription_resource_maxed_out('purchase_invoices', $this->getTenant(false)->client)) {
+            return $this->errorBadRequest()
+                ->message(subscription_limit_exceeded_message('purchase_invoices', $this->getTenant(false)->client))
+                ->respond();
+        }
+
         $data = $request->validated();
 
         $data['temp'] = false;
@@ -330,6 +336,16 @@ class PurchaseInvoiceController extends BaseController
 
         if ($invoice->status == "confirmed" or $invoice->status == "cancelled")
             return $this->errorBadRequest()->message(__('fields.invoice_locked_statement'))->respond();
+
+        if (
+            $request->status === 'confirmed'
+            && $invoice->temp
+            && subscription_resource_maxed_out('purchase_invoices', $this->getTenant(false)->client)
+        ) {
+            return $this->errorBadRequest()
+                ->message(subscription_limit_exceeded_message('purchase_invoices', $this->getTenant(false)->client))
+                ->respond();
+        }
 
         try {
             DB::beginTransaction();

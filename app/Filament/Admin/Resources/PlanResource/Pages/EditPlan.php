@@ -53,6 +53,10 @@ class EditPlan extends EditRecord
         if(!array_key_exists('restrict_account_after_days', $data))
             $data['restrict_account_after_days'] = -1;
 
+        if (($data['span'] ?? null) === \App\Models\Plan::SPAN_SPECIFIED) {
+            $data['span_duration'] = 'monthly';
+        }
+
         return $data;
     }
 }

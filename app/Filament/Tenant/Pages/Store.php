@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Pages;
 
+use App\Filament\Tenant\Pages\Subscription as SubscriptionPage;
 use App\Models\Setting;
 use App\Services\CacheService;
 use Filament\Actions\Action;
@@ -37,6 +38,11 @@ class Store extends Page implements HasForms
 
     protected static bool $shouldRegisterNavigation = false;
 
+    public static function canAccess(): bool
+    {
+        return parent::canAccess() && plan_allows_store();
+    }
+
     protected static ?string $slug = "settings/store";
 
     public ?array $data = [];
@@ -48,6 +54,13 @@ class Store extends Page implements HasForms
 
     public function mount(): void
     {
+        if (! plan_allows_store()) {
+            fns()->sendWarning(__('fields.store_not_available_on_plan'));
+            $this->redirect(SubscriptionPage::getUrl());
+
+            return;
+        }
+
         $tenant = get_tenant();
         $this->form->fill($tenant->toArray());
     }

@@ -37,11 +37,6 @@ class CategoryResource extends Resource
         return config('system.supported_languages', []);
     }
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        return user_setting('fav.products_categories', false);
-    }
-
     public static function getNavigationGroup(): ?string
     {
         return user_setting('fav.products_categories', false) ? __('fields.navigation_group_favourites') : __('fields.nav_group_store');

@@ -4,7 +4,7 @@ namespace App\Filament\Tenant\Resources;
 
 use App\Filament\Tenant\Resources\Acc4Resource\Pages;
 use App\Models\Acc4;
-use App\Rules\UniqueTenantItemRule;
+use App\Rules\UniqueAcc4OtherPartyNameRule;
 use Filament\Forms;
 use Filament\Forms\Components\View;
 use Filament\Notifications\Notification;
@@ -57,7 +57,9 @@ class Acc4Resource extends Resource
 
                     Forms\Components\TextInput::make('name')
                         ->required()
-                        ->rules([new UniqueTenantItemRule(Acc4::class, 'name', $form->getRecord()?->id)])
+                        ->rules([
+                            new UniqueAcc4OtherPartyNameRule($form->getRecord()?->getKey()),
+                        ])
                         ->label(__('fields.name')),
                 ]),
 

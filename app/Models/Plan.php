@@ -18,6 +18,17 @@ class Plan extends BaseModel
     public const SPAN_ONE_TIME = "one-time";
     public const SPAN_SPECIFIED = "specified";
 
+    public const CODE_FREE = 'free';
+    public const CODE_BUSINESS = 'business';
+    public const CODE_COMPLETE = 'complete';
+
+    protected $casts = [
+        'enable_store' => 'boolean',
+        'enable_roles' => 'boolean',
+        'is_featured' => 'boolean',
+        'active' => 'boolean',
+    ];
+
     public function clients(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Client::class, 'subscriptions', 'plan_id', 'client_id');
