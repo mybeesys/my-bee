@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Validator;
+
 class StorePhone
 {
     public static function normalize(?string $phone): ?string
@@ -13,6 +15,10 @@ class StorePhone
         $phone = self::toEnglishDigits(trim($phone));
         $phone = preg_replace('/[^\d+]/', '', $phone) ?? '';
         $phone = ltrim($phone, '+');
+
+        if (str_starts_with($phone, '00')) {
+            $phone = substr($phone, 2);
+        }
 
         if ($phone === '') {
             return null;
@@ -56,20 +62,60 @@ class StorePhone
         return array_values(array_unique($variants));
     }
 
-    public static function isValid(?string $phone): bool
+    public static function isSaudiMobile(?string $phone): bool
     {
         $normalized = self::normalize($phone);
 
-        if ($normalized === null) {
+        return $normalized !== null
+            && preg_match('/^9665\d{8}$/', $normalized) === 1;
+    }
+
+    public static function isValid(?string $phone): bool
+    {
+        return self::isValidForApi($phone);
+    }
+
+    public static function isValidForApi(?string $phone): bool
+    {
+        if ($phone === null || trim($phone) === '') {
             return false;
         }
 
-        $length = strlen($normalized);
+        if (self::isSaudiMobile($phone)) {
+            return true;
+        }
 
-        return ctype_digit($normalized) && $length >= 9 && $length <= 15;
+        $digits = preg_replace('/\D/', '', self::toEnglishDigits(trim($phone))) ?? '';
+
+        if ($digits === '' || ! ctype_digit($digits)) {
+            return false;
+        }
+
+        return Validator::make(
+            ['+' . $digits],
+            ['phone:INTERNATIONAL']
+        )->passes();
     }
 
-    protected static function toEnglishDigits(string $value): string
+    /** Digits-only representation used for uniqueness checks. */
+    public static function digits(?string $phone): ?string
+    {
+        if ($phone === null || trim($phone) === '') {
+            return null;
+        }
+
+        $normalized = self::normalize($phone);
+
+        if ($normalized !== null && self::isSaudiMobile($phone)) {
+            return $normalized;
+        }
+
+        $digits = preg_replace('/\D/', '', self::toEnglishDigits(trim($phone))) ?? '';
+
+        return $digits !== '' ? $digits : null;
+    }
+
+    public static function toEnglishDigits(string $value): string
     {
         return str_replace(
             ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'],
