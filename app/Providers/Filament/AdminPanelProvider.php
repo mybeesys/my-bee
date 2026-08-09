@@ -2,7 +2,6 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Admin\Resources\ClientResource\Widgets\LatestClients;
 use App\Filament\Pages\Backups;
 use App\Filament\Pages\Profile;
 use App\Http\Middleware\FilamentPanelsUserSettings;
@@ -20,6 +19,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\SpatieLaravelTranslatablePlugin;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -42,15 +42,35 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->domain($domain)
-            ->brandLogo(public_asset_if_exists('logo.jpg'))
-            ->favicon(public_asset_if_exists('logo.jpg'))
-            ->brandLogoHeight('2.8rem')
+            ->brandLogo(system_brand_logo_url())
+            ->favicon(system_logo_icon_url())
+            ->brandLogoHeight('4.75rem')
+            ->sidebarWidth('16rem')
+            ->collapsedSidebarWidth('4rem')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->globalSearch(false)
             ->databaseTransactions()
             ->databaseNotifications()
             ->unsavedChangesAlerts()
             ->spa()
             ->sidebarCollapsibleOnDesktop()
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_START,
+                fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.collapsed-topbar-logo'),
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => '<style id="admin-notification-badge-style">'
+                    .'.fi-panel-admin .fi-topbar-database-notifications-btn .fi-icon-btn-badge-ctn .fi-badge'
+                    .'{background-color:#dc2626!important;color:#fff!important;border:2px solid #fff!important;'
+                    .'font-weight:700!important;box-shadow:0 2px 8px rgba(220,38,38,.5)!important;}'
+                    .'</style>',
+            )
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): \Illuminate\Contracts\View\View => view('filament.admin.components.sidebar-accordion'),
+            )
+            ->font('Cairo', provider: GoogleFontProvider::class)
 //            ->font('Noto Kufi Arabic', provider: GoogleFontProvider::class)
 //            ->navigationGroups([
 //                NavigationGroup::make()
@@ -79,7 +99,6 @@ class AdminPanelProvider extends PanelProvider
                     ->url(fn(): string => \App\Filament\Admin\Pages\Profile::getUrl())
                     ->icon('heroicon-o-user-circle'),
             ])
-            ->topNavigation()
             ->default()
             ->login()
             ->colors([
@@ -88,15 +107,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
 //            ->discoverResources(in: app_path('Filament/Tenant/Resources'), for: 'App\\Filament\\Tenant\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
-            ->pages([
-                Pages\Dashboard::class,
-            ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
-//                Widgets\AccountWidget::class,
-//                Widgets\FilamentInfoWidget::class,
-//                ExpenseChart::class,
-                LatestClients::class,
             ])
             ->middleware([
 //                \Stancl\Tenant\Middleware\InitializeTenancyBySubdomain::class,

@@ -184,6 +184,8 @@ DELETE /api/v1/tenant/settings/acc4/{code}
 
 ## 3) Sales Returns API — مواصفة التعديل
 
+> **📄 مرجع حصرّي ومحدّث:** [`docs/sales-returns-api-spec.md`](sales-returns-api-spec.md) — استخدمه في Cursor لمرتجع المبيعات فقط.
+
 ### 3.1 الوضع الحالي vs الويب
 
 | | API الحالي | الويب |

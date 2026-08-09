@@ -1,30 +1,30 @@
 <?php
 
 if (!function_exists('get_subscription')) {
-    function get_subscription()
+    function get_subscription(): ?\App\Models\Subscription
     {
         return get_client()->subscription;
     }
 }
 
 if (!function_exists('get_plan')) {
-    function get_plan(): \App\Models\Plan
+    function get_plan(): ?\App\Models\Plan
     {
         return get_plan_for_client(get_client());
     }
 }
 
 if (!function_exists('get_plan_for_client')) {
-    function get_plan_for_client(\App\Models\Client $client): \App\Models\Plan
+    function get_plan_for_client(\App\Models\Client $client): ?\App\Models\Plan
     {
-        return $client->subscription->plan;
+        return $client->subscription?->plan;
     }
 }
 
 if (!function_exists('plan_allows_store')) {
     function plan_allows_store(): bool
     {
-        return (bool) get_plan()->enable_store;
+        return (bool) get_plan()?->enable_store;
     }
 }
 
@@ -52,7 +52,13 @@ if (!function_exists('subscription_trial_days')) {
             $client = get_client();
         }
 
-        $days = (int) get_plan_for_client($client)->restrict_account_after_days;
+        $plan = get_plan_for_client($client);
+
+        if (! $plan) {
+            return null;
+        }
+
+        $days = (int) $plan->restrict_account_after_days;
 
         return $days > 0 ? $days : null;
     }
@@ -114,10 +120,29 @@ if (!function_exists('subscription_trial_days_remaining')) {
     }
 }
 
+if (!function_exists('subscription_on_free_plan')) {
+    function subscription_on_free_plan(?\App\Models\Client $client = null): bool
+    {
+        if ($client === null) {
+            try {
+                $client = get_client();
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        return get_plan_for_client($client)?->code === \App\Models\Plan::CODE_FREE;
+    }
+}
+
 if (!function_exists('plan_user_limit')) {
     function plan_user_limit(?\App\Models\Plan $plan = null): int
     {
         $plan ??= get_plan();
+
+        if (! $plan) {
+            return 1;
+        }
 
         return match ($plan->code) {
             \App\Models\Plan::CODE_COMPLETE => 2,
@@ -132,6 +157,10 @@ if (!function_exists('plan_is_featured')) {
     {
         $plan ??= get_plan();
 
+        if (! $plan) {
+            return false;
+        }
+
         return $plan->code === \App\Models\Plan::CODE_COMPLETE;
     }
 }
@@ -140,6 +169,10 @@ if (!function_exists('subscription_plan_limit')) {
     function subscription_plan_limit(string $type, ?\App\Models\Plan $plan = null): int
     {
         $plan ??= get_plan();
+
+        if (! $plan) {
+            return -1;
+        }
 
         if ($type === 'users') {
             return plan_user_limit($plan);
@@ -215,7 +248,13 @@ if (!function_exists('subscription_resource_maxed_out')) {
             $client = get_client();
         }
 
-        $max = subscription_plan_limit($type, get_plan_for_client($client));
+        $plan = get_plan_for_client($client);
+
+        if (! $plan) {
+            return false;
+        }
+
+        $max = subscription_plan_limit($type, $plan);
 
         return $max > 0 && subscription_resource_count($type, $client) >= $max;
     }
@@ -288,7 +327,13 @@ if (!function_exists('subscription_limit_usage')) {
             $client = get_client();
         }
 
-        $max = subscription_plan_limit($type, get_plan_for_client($client));
+        $plan = get_plan_for_client($client);
+
+        if (! $plan) {
+            return null;
+        }
+
+        $max = subscription_plan_limit($type, $plan);
         $used = subscription_resource_count($type, $client);
         $isMaxed = subscription_resource_maxed_out($type, $client);
 
@@ -384,5 +429,52 @@ if (!function_exists('subscription_vat_percent')) {
     function subscription_vat_percent(): float
     {
         return \App\Services\SubscriptionPricingService::instance()->vatPercent();
+    }
+}
+
+if (!function_exists('store_registration_plan_selection')) {
+    function store_registration_plan_selection(int $planId, string $billingPeriod): void
+    {
+        session()->put('registration_plan_selection', [
+            'plan_id' => $planId,
+            'billing_period' => \App\Services\SubscriptionPricingService::instance()->normalizeBillingPeriod($billingPeriod),
+        ]);
+    }
+}
+
+if (!function_exists('registration_plan_selection')) {
+    /** @return array{plan_id: int, billing_period: string}|null */
+    function registration_plan_selection(): ?array
+    {
+        $selection = session('registration_plan_selection');
+
+        if (! is_array($selection) || ! isset($selection['plan_id'], $selection['billing_period'])) {
+            return null;
+        }
+
+        return [
+            'plan_id' => (int) $selection['plan_id'],
+            'billing_period' => \App\Services\SubscriptionPricingService::instance()->normalizeBillingPeriod((string) $selection['billing_period']),
+        ];
+    }
+}
+
+if (!function_exists('clear_registration_plan_selection')) {
+    function clear_registration_plan_selection(): void
+    {
+        session()->forget('registration_plan_selection');
+    }
+}
+
+if (!function_exists('registration_selected_plan')) {
+    function registration_selected_plan(): ?\App\Models\Plan
+    {
+        $selection = registration_plan_selection();
+
+        if ($selection === null) {
+            return null;
+        }
+
+        return \App\Models\Plan::query()->find($selection['plan_id']);
     }
 }

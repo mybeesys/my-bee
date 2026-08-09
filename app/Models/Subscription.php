@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Services\SubscriptionCouponService;
 use App\Services\SubscriptionPricingService;
+use App\Traits\HasPrefixedId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class Subscription extends BaseModel
 {
-    use HasFactory;
+    use HasFactory, HasPrefixedId;
 
     protected $guarded = [];
 
@@ -36,6 +39,40 @@ class Subscription extends BaseModel
     public function platformCoupon(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(PlatformCoupon::class);
+    }
+
+    public function ensurePublicUid(): string
+    {
+        if (! Schema::hasColumn($this->getTable(), 'uid')) {
+            throw new \RuntimeException('Run migrations: subscriptions.uid column is missing.');
+        }
+
+        if (filled($this->uid)) {
+            return (string) $this->uid;
+        }
+
+        do {
+            $uid = Str::upper(Str::random(12));
+        } while (static::query()->where('uid', $uid)->exists());
+
+        $this->forceFill(['uid' => $uid])->saveQuietly();
+
+        return $uid;
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return route('public.subscription-invoice.show', ['uid' => $this->ensurePublicUid()]);
+    }
+
+    public function getInvoiceNoAttribute(): string
+    {
+        return 'SUB-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function isFree(): bool
+    {
+        return (float) ($this->price ?? 0) <= 0.0;
     }
 
     public static function isSubscribedTo($plan_id, Client $client): bool

@@ -1,5 +1,8 @@
 @php
     $logoUrl = filament()->getBrandLogo();
+    $usesFullBrandLogo = filled($logoUrl)
+        && $logoUrl === system_brand_logo_url()
+        && system_brand_logo_url() !== system_logo_icon_url();
 @endphp
 
 <div class="tenant-login-page" dir="{{ __('filament-panels::layout.direction') }}">
@@ -26,6 +29,21 @@
                 </x-filament-panels::form>
 
                 {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, scopes: $this->getRenderHookScopes()) }}
+
+                @if (filament()->hasTenantRegistration())
+                    <div class="tenant-login-register-cta">
+                        <span class="tenant-login-register-cta__text">
+                            {{ __('fields.login_register_prompt') }}
+                        </span>
+                        <a
+                            href="{{ \App\Filament\Tenant\Pages\ChooseRegistrationPlan::getUrl() }}"
+                            class="tenant-login-register-cta__link"
+                            wire:navigate
+                        >
+                            {{ __('fields.login_register_cta') }}
+                        </a>
+                    </div>
+                @endif
             </div>
 
             {{-- Brand column (left in RTL) --}}
@@ -34,12 +52,14 @@
                     @if ($logoUrl)
                         <img
                             src="{{ $logoUrl }}"
-                            alt="{{ filament()->getBrandName() }}"
+                            alt="{{ config('app.name', 'MY BEE') }}"
                             class="tenant-login-brand__logo"
                         />
                     @endif
 
-                    <p class="tenant-login-brand__name">{{ config('app.name', 'MY BEE') }}</p>
+                    @unless ($usesFullBrandLogo)
+                        <p class="tenant-login-brand__name">{{ config('app.name', 'MY BEE') }}</p>
+                    @endunless
 
                     <h2 class="tenant-login-brand__title">
                         {{ __('fields.login_welcome_title') }}

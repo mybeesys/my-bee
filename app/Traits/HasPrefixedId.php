@@ -71,6 +71,12 @@ trait HasPrefixedId
             'type' => 'letters',
             'length' => 12,
         ],
+        \App\Models\Subscription::class => [
+            'attribute' => 'uid',
+            'prefix' => '',
+            'type' => 'letters',
+            'length' => 12,
+        ],
     ];
 
 

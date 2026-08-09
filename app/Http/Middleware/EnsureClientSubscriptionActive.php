@@ -44,7 +44,8 @@ class EnsureClientSubscriptionActive
 
     protected function canAccessWhileRestricted(Request $request): bool
     {
-        if (str_contains(trim($request->path(), '/'), 'subscription')) {
+        if (str_contains(trim($request->path(), '/'), 'subscription')
+            || str_contains(trim($request->path(), '/'), 'choose-plan')) {
             return true;
         }
 

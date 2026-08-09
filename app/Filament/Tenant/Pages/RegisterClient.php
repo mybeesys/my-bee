@@ -44,7 +44,9 @@ class RegisterClient extends SimplePage
     /**
      * @var view-string
      */
-    protected static string $view = 'filament-panels::pages.auth.register';
+    protected static string $view = 'filament.tenant.pages.auth.register';
+
+    protected static string $layout = 'filament.tenant.layout.login';
 
     /**
      * @var array<string, mixed> | null
@@ -55,12 +57,28 @@ class RegisterClient extends SimplePage
 
     public function mount(): void
     {
+        if ($lang = request()->query('lang')) {
+            $supported = config('system.supported_languages', ['ar', 'en']);
+
+            if (in_array($lang, $supported, true)) {
+                session(['locale' => $lang]);
+                app()->setLocale($lang);
+            }
+        }
+
         if (Filament::auth()->check()) {
             redirect()->intended(Filament::getUrl());
         }
 
         $this->form->fill();
     }
+
+    public function hasLogo(): bool
+    {
+        return false;
+    }
+
+    protected bool $hasTopbar = false;
 
     public function register(): ?RegistrationResponse
     {
@@ -177,7 +195,8 @@ class RegisterClient extends SimplePage
             ->rules([
                 new NumWords(2, 15, 'messages.full_name_min_words', 'messages.full_name_max_words', translateMessages: true)
             ])
-            ->autofocus();
+            ->autofocus()
+            ->extraInputAttributes(['class' => 'tenant-login-input']);
     }
 
     protected function getPhoneFormComponent(): Component
@@ -187,7 +206,8 @@ class RegisterClient extends SimplePage
             ->required()
             ->maxLength(255)
             ->tel()
-            ->rules([new InternationalPhoneRule(false), new UniqueClientAttributeRule('phone', 'phone')]);
+            ->rules([new InternationalPhoneRule(false), new UniqueClientAttributeRule('phone', 'phone')])
+            ->extraInputAttributes(['class' => 'tenant-login-input']);
     }
 
     protected function getEmailFormComponent(): Component
@@ -197,8 +217,8 @@ class RegisterClient extends SimplePage
             ->email()
             ->required()
             ->maxLength(255)
-            ->rules([new UniqueClientAttributeRule('email', 'email')]);
-
+            ->rules([new UniqueClientAttributeRule('email', 'email')])
+            ->extraInputAttributes(['class' => 'tenant-login-input']);
     }
 
     protected function getPasswordFormComponent(): Component
@@ -211,7 +231,8 @@ class RegisterClient extends SimplePage
             ->dehydrateStateUsing(fn($state) => Hash::make($state))
             ->same('passwordConfirmation')
             ->revealable()
-            ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute'));
+            ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute'))
+            ->extraInputAttributes(['class' => 'tenant-login-input']);
     }
 
     protected function getPasswordConfirmationFormComponent(): Component
@@ -221,7 +242,8 @@ class RegisterClient extends SimplePage
             ->password()
             ->required()
             ->revealable()
-            ->dehydrated(false);
+            ->dehydrated(false)
+            ->extraInputAttributes(['class' => 'tenant-login-input']);
     }
 
     public function loginAction(): Action
@@ -249,12 +271,12 @@ class RegisterClient extends SimplePage
 
     public function getTitle(): string|Htmlable
     {
-        return __('filament-panels::pages/auth/register.title');
+        return '';
     }
 
     public function getHeading(): string|Htmlable
     {
-        return __('filament-panels::pages/auth/register.heading');
+        return '';
     }
 
     /**
@@ -270,8 +292,9 @@ class RegisterClient extends SimplePage
     public function getRegisterFormAction(): Action
     {
         return Action::make('register')
-            ->label(__('filament-panels::pages/auth/register.form.actions.register.label'))
-            ->submit('register');
+            ->label(__('fields.register_submit'))
+            ->submit('register')
+            ->extraAttributes(['class' => 'tenant-login-submit-btn']);
     }
 
     protected function hasFullWidthFormActions(): bool

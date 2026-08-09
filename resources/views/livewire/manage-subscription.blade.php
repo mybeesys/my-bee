@@ -7,7 +7,7 @@
         $plansList = $this->plans->values();
     @endphp
 
-    @if ($currentPlan && $subscription)
+    @if ($currentPlan && $subscription && ! $onboarding)
         @php
             $trialDaysRemaining = subscription_trial_days_remaining();
             $trialExpiresAt = subscription_trial_expires_at();
@@ -125,12 +125,172 @@
         </section>
     @endif
 
+    @if ($this->showSubscriptionHistory)
+        @php
+            $historyEntries = $this->subscriptionHistory;
+        @endphp
+
+        <section class="subscription-page__card subscription-page__history">
+            <header class="subscription-page__card-header">
+                <div>
+                    <p class="subscription-page__eyebrow">{{ __('fields.subscription_history_eyebrow') }}</p>
+                    <h2 class="subscription-page__title">{{ __('fields.subscription_history_title') }}</h2>
+                    <p class="subscription-page__subtitle">{{ __('fields.subscription_history_subtitle') }}</p>
+                </div>
+                <span class="subscription-page__history-count">
+                    {{ trans_choice('fields.subscription_history_count', $historyEntries->count(), ['count' => $historyEntries->count()]) }}
+                </span>
+            </header>
+
+            <div class="subscription-page__card-body">
+                <div class="subscription-page__history-list">
+                    @foreach ($historyEntries as $entry)
+                        <article @class([
+                            'subscription-page__history-item',
+                            'subscription-page__history-item--current' => $entry['is_current'],
+                            'subscription-page__history-item--past' => ! $entry['is_current'],
+                            'subscription-page__history-item--tier-' . $entry['tier'],
+                        ])>
+                            <div class="subscription-page__history-marker" aria-hidden="true">
+                                @if ($entry['is_current'])
+                                    <x-filament::icon icon="heroicon-m-check" class="subscription-page__history-marker-icon" />
+                                @else
+                                    <x-filament::icon icon="heroicon-m-archive-box" class="subscription-page__history-marker-icon" />
+                                @endif
+                            </div>
+
+                            <div class="subscription-page__history-card">
+                                <div class="subscription-page__history-head">
+                                    <div class="subscription-page__history-head-main">
+                                        <div class="subscription-page__history-badges">
+                                            <span class="subscription-page__tier-label subscription-page__tier-label--{{ $entry['tier'] }}">
+                                                {{ $entry['tier_label'] }}
+                                            </span>
+
+                                            @if ($entry['is_current'])
+                                                <span class="subscription-page__history-status subscription-page__history-status--current">
+                                                    {{ $entry['status_label'] }}
+                                                </span>
+                                            @else
+                                                <span class="subscription-page__history-status subscription-page__history-status--past">
+                                                    {{ $entry['status_label'] }}
+                                                </span>
+                                            @endif
+
+                                            @if ($entry['change_label'])
+                                                <span @class([
+                                                    'subscription-page__history-change',
+                                                    'subscription-page__history-change--upgrade' => $entry['change_direction'] === 'upgrade',
+                                                    'subscription-page__history-change--downgrade' => $entry['change_direction'] === 'downgrade',
+                                                    'subscription-page__history-change--lateral' => $entry['change_direction'] === 'lateral',
+                                                ])>
+                                                    {{ $entry['change_label'] }}
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <h3 class="subscription-page__history-plan">{{ $entry['plan_name'] }}</h3>
+                                        <p class="subscription-page__history-period">{{ $entry['period_label'] }}</p>
+                                    </div>
+
+                                    <div class="subscription-page__history-total">
+                                        <span class="subscription-page__history-total-label">{{ __('fields.subscription_total_inc_tax') }}</span>
+                                        <strong>{{ $entry['total_formatted'] }}</strong>
+                                    </div>
+                                </div>
+
+                                <dl class="subscription-page__history-details">
+                                    <div class="subscription-page__history-detail">
+                                        <dt>{{ __('fields.span') }}</dt>
+                                        <dd>{{ $entry['billing_label'] }}</dd>
+                                    </div>
+
+                                    <div class="subscription-page__history-detail">
+                                        <dt>{{ __('fields.subscription_subtotal_ex_tax') }}</dt>
+                                        <dd>
+                                            @if ($entry['is_free'])
+                                                {{ __('fields.free') }}
+                                            @else
+                                                {{ $entry['price_ex_tax_formatted'] }}
+                                            @endif
+                                        </dd>
+                                    </div>
+
+                                    <div class="subscription-page__history-detail">
+                                        <dt>{{ __('fields.subscription_tax_amount', ['vat' => rtrim(rtrim(number_format($entry['tax_percent'], 2, '.', ''), '0'), '.')]) }}</dt>
+                                        <dd>
+                                            @if ($entry['is_free'])
+                                                —
+                                            @else
+                                                {{ $entry['tax_amount_formatted'] }}
+                                            @endif
+                                        </dd>
+                                    </div>
+
+                                    <div class="subscription-page__history-detail">
+                                        <dt>{{ __('fields.subscription_coupon') }}</dt>
+                                        <dd>
+                                            @if ($entry['coupon_code'])
+                                                <span class="subscription-page__history-coupon">
+                                                    {{ $entry['coupon_code'] }}
+                                                    @if ($entry['discount_amount_formatted'])
+                                                        <span class="subscription-page__history-coupon-discount">
+                                                            -{{ $entry['discount_amount_formatted'] }}
+                                                        </span>
+                                                    @endif
+                                                </span>
+                                            @else
+                                                —
+                                            @endif
+                                        </dd>
+                                    </div>
+                                </dl>
+
+                                @unless ($entry['is_free'])
+                                    <div class="subscription-page__history-footer">
+                                        <span class="subscription-page__history-invoice-no">
+                                            {{ __('fields.invoice_no') }}: {{ $entry['invoice_no'] }}
+                                        </span>
+
+                                        @if ($entry['invoice_url'])
+                                            <a
+                                                href="{{ $entry['invoice_url'] }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="subscription-page__history-invoice-link"
+                                            >
+                                                <x-filament::icon icon="heroicon-m-document-text" class="subscription-page__history-invoice-icon" />
+                                                {{ __('fields.view_invoice') }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                @endunless
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     <section class="subscription-page__card">
         <header class="subscription-page__card-header">
             <div>
-                <p class="subscription-page__eyebrow">{{ __('fields.subscription_change_plan') }}</p>
-                <h2 class="subscription-page__title">{{ __('fields.subscription_plans') }}</h2>
-                <p class="subscription-page__subtitle">{{ __('fields.subscription_plans_marketing_hint') }}</p>
+                @if ($onboarding || $registrationFlow)
+                    <p class="subscription-page__eyebrow">
+                        {{ $registrationFlow ? __('fields.registration_choose_plan_eyebrow') : __('fields.choose_subscription_eyebrow') }}
+                    </p>
+                    <h2 class="subscription-page__title">
+                        {{ $registrationFlow ? __('fields.registration_choose_plan_plans_heading') : __('fields.choose_subscription_plans_heading') }}
+                    </h2>
+                    <p class="subscription-page__subtitle">
+                        {{ $registrationFlow ? __('fields.registration_choose_plan_plans_hint') : __('fields.choose_subscription_plans_hint') }}
+                    </p>
+                @else
+                    <p class="subscription-page__eyebrow">{{ __('fields.subscription_change_plan') }}</p>
+                    <h2 class="subscription-page__title">{{ __('fields.subscription_plans') }}</h2>
+                    <p class="subscription-page__subtitle">{{ __('fields.subscription_plans_marketing_hint') }}</p>
+                @endif
             </div>
         </header>
 
@@ -159,12 +319,24 @@
                 </button>
             </div>
 
-            <p class="subscription-page__price-note subscription-page__price-note--global">
-                {{ __('fields.subscription_prices_ex_tax_note') }}
-                @if ($billingPeriod === 'yearly')
-                    — {{ __('fields.subscription_yearly_discount_note') }}
-                @endif
-            </p>
+            <div class="subscription-page__info-alert" role="note">
+                <x-filament::icon
+                    icon="heroicon-o-information-circle"
+                    class="subscription-page__info-alert-icon"
+                />
+                <div class="subscription-page__info-alert-content">
+                    <p>{{ __('fields.subscription_prices_ex_tax_note') }}</p>
+                    @if ($billingPeriod === 'yearly')
+                        <p class="subscription-page__info-alert-yearly">
+                            <x-filament::icon
+                                icon="heroicon-o-gift"
+                                class="subscription-page__info-alert-gift-icon"
+                            />
+                            <strong>{{ __('fields.subscription_yearly_discount_note') }}</strong>
+                        </p>
+                    @endif
+                </div>
+            </div>
 
             @if ($plansList->isEmpty())
                 <p class="subscription-page__empty">{{ __('fields.subscription_no_plans') }}</p>
@@ -179,6 +351,8 @@
                             $featureSections = $this->planFeatureGroups($plan);
                             $isFeatured = $this->planIsFeatured($plan);
                             $quote = $this->planQuote($plan);
+                            $cardPrice = $this->planCardDisplayPricing($plan);
+                            $pricingService = \App\Services\SubscriptionPricingService::instance();
                         @endphp
 
                         <label @class([
@@ -228,19 +402,42 @@
 
                                 <div class="subscription-page__plan-price subscription-page__plan-price--{{ $tier }}">
                                     <div class="subscription-page__price-block subscription-page__price-block--compact">
-                                        <div class="subscription-page__price-main">
-                                            @if ($quote['is_free'])
+                                        @if ($cardPrice['is_free'])
+                                            <div class="subscription-page__price-main">
                                                 <span class="subscription-page__price-amount">{{ __('fields.free') }}</span>
-                                            @else
-                                                <span class="subscription-page__price-amount">
-                                                    {{ \App\Services\SubscriptionPricingService::instance()->formatMoney($quote['subtotal_ex_tax'], $quote['currency']) }}
+                                            </div>
+                                        @elseif ($cardPrice['show_yearly_monthly_marketing'])
+                                            <div class="subscription-page__price-main subscription-page__price-main--yearly-marketing">
+                                                <span class="subscription-page__price-effective-wrap">
+                                                    <span class="subscription-page__price-amount">
+                                                        {{ $pricingService->formatMoney($cardPrice['display_amount'], $cardPrice['currency']) }}
+                                                    </span>
+                                                </span>
+                                                <span class="subscription-page__price-compare-wrap">
+                                                    <span class="subscription-page__price-compare">
+                                                        {{ $pricingService->formatMoney($cardPrice['compare_amount'], $cardPrice['currency']) }}
+                                                    </span>
+                                                </span>
+                                                <span class="subscription-page__price-cycle">{{ $cardPrice['suffix'] }}</span>
+                                            </div>
+                                            @if ($cardPrice['monthly_savings'] > 0)
+                                                <span class="subscription-page__price-savings">
+                                                    {{ __('fields.subscription_yearly_monthly_savings', [
+                                                        'amount' => $pricingService->formatMoney($cardPrice['monthly_savings'], $cardPrice['currency']),
+                                                    ]) }}
                                                 </span>
                                             @endif
-                                            @if ($suffix = $this->planPriceSuffix($plan))
-                                                <span class="subscription-page__price-cycle">{{ $suffix }}</span>
-                                            @endif
-                                        </div>
-                                        @unless ($quote['is_free'])
+                                        @else
+                                            <div class="subscription-page__price-main">
+                                                <span class="subscription-page__price-amount">
+                                                    {{ $pricingService->formatMoney($cardPrice['display_amount'], $cardPrice['currency']) }}
+                                                </span>
+                                                @if ($cardPrice['suffix'])
+                                                    <span class="subscription-page__price-cycle">{{ $cardPrice['suffix'] }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        @unless ($cardPrice['is_free'])
                                             <span class="subscription-page__price-incl">{{ __('fields.subscription_price_ex_tax_label') }}</span>
                                         @endunless
                                     </div>
@@ -355,17 +552,7 @@
                             <h3 class="subscription-page__quote-plan">{{ $selectedPlan->name }}</h3>
                             <p class="subscription-page__quote-period">
                                 {{ $billingPeriod === 'yearly' ? __('fields.yearly') : __('fields.monthly') }}
-                                · {{ __('fields.subscription_prices_ex_tax_note') }}
                             </p>
-                        </div>
-
-                        <div class="subscription-page__quote-total">
-                            @if ($selectedQuote['is_free'])
-                                <strong>{{ __('fields.free') }}</strong>
-                            @else
-                                <strong>{{ $pricingService->formatMoney($selectedQuote['total_inc_tax'], $selectedQuote['currency']) }}</strong>
-                                <span>{{ $this->planPriceSuffix($selectedPlan) }}</span>
-                            @endif
                         </div>
                     </div>
 
@@ -399,17 +586,9 @@
                                 <strong>{{ $pricingService->formatMoney($selectedQuote['total_inc_tax'], $selectedQuote['currency']) }}</strong>
                             </div>
                         </div>
-
-                        @if ($billingPeriod === 'yearly')
-                            <div class="subscription-page__yearly-chip">
-                                <span>{{ __('fields.subscription_yearly_paid_months_label', ['months' => $selectedQuote['months']]) }}</span>
-                                <span class="subscription-page__yearly-chip-sep" aria-hidden="true"></span>
-                                <span>{{ __('fields.subscription_yearly_free_months_label', ['months' => $selectedQuote['discount_months']]) }}</span>
-                            </div>
-                        @endif
                     @endunless
 
-                    @if ($this->hasActiveCoupons)
+                    @if ($this->hasActiveCoupons && ! $registrationFlow)
                         <div class="subscription-page__coupon">
                             <label class="subscription-page__coupon-label" for="subscription-coupon-code">
                                 {{ __('fields.subscription_coupon_code_label') }}
@@ -466,9 +645,15 @@
                     wire:click="openConfirmModal"
                     wire:loading.attr="disabled"
                     class="w-full"
-                    :disabled="$this->isCurrentSelection($selectedPlan)"
+                    :disabled="! $onboarding && ! $registrationFlow && $this->isCurrentSelection($selectedPlan)"
                 >
-                    {{ __('fields.subscription_update_plan') }}
+                    @if ($registrationFlow)
+                        {{ __('fields.registration_continue_to_account') }}
+                    @elseif ($onboarding)
+                        {{ __('fields.choose_subscription_continue') }}
+                    @else
+                        {{ __('fields.subscription_update_plan') }}
+                    @endif
                 </x-filament::button>
             </footer>
         @endif

@@ -1,0 +1,300 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config '../../../../tailwind.config.js';
+
+/* ═══════════════════════════════════════════════════════════════
+   Admin shell — sidebar & topbar (amber primary + logo)
+   ═══════════════════════════════════════════════════════════════ */
+.fi-panel-admin.fi-body {
+    @apply bg-slate-50/90 dark:bg-gray-950;
+}
+
+.fi-panel-admin .fi-main-ctn {
+    @apply bg-slate-50/90 dark:bg-gray-950;
+}
+
+.fi-panel-admin .fi-main {
+    @apply py-5 md:py-6 lg:py-8;
+}
+
+/* —— Top bar —— */
+.fi-panel-admin .fi-topbar {
+    @apply z-20;
+}
+
+.fi-panel-admin .fi-topbar > nav {
+    @apply relative h-14 border-0 bg-white/95 shadow-none ring-0 backdrop-blur-md dark:bg-gray-900/95;
+}
+
+.fi-panel-admin .fi-topbar > nav::after {
+    content: '';
+    @apply pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent;
+}
+
+.fi-panel-admin .fi-topbar .ms-auto {
+    @apply gap-2 sm:gap-3;
+}
+
+.fi-panel-admin .fi-topbar .fi-icon-btn {
+    @apply rounded-xl ring-1 ring-gray-200/70 transition duration-200 hover:bg-amber-50/60 hover:ring-amber-300/50 dark:ring-gray-700/80 dark:hover:bg-amber-500/10 dark:hover:ring-amber-500/30;
+}
+
+.fi-panel-admin .fi-topbar-item-button {
+    @apply rounded-xl px-3 py-2 transition duration-200;
+}
+
+.fi-panel-admin .fi-topbar-item.fi-active .fi-topbar-item-button {
+    @apply bg-amber-50 shadow-sm ring-1 ring-amber-200/80 dark:bg-amber-500/10 dark:ring-amber-500/30;
+}
+
+.fi-panel-admin .fi-topbar nav {
+    @apply px-4 md:px-6 lg:px-8;
+}
+
+.fi-panel-admin .fi-topbar-collapsed-brand .fi-logo img,
+.fi-panel-admin .fi-topbar-collapsed-brand .fi-logo-brand,
+.fi-panel-admin .fi-sidebar-header .fi-logo img {
+    @apply object-contain;
+    image-rendering: auto;
+}
+
+.fi-panel-admin .fi-sidebar-header .fi-logo {
+    @apply flex min-w-0 flex-1 items-center;
+}
+
+.fi-panel-admin .fi-sidebar-header .fi-logo img {
+    height: auto !important;
+    width: 11.75rem !important;
+    max-width: calc(100% - 0.25rem) !important;
+    max-height: 4.25rem !important;
+    @apply object-left rtl:object-right;
+}
+
+.dark .fi-panel-admin .fi-sidebar-header .fi-logo img {
+    @apply rounded-lg bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-gray-950/5;
+}
+
+.fi-panel-admin .fi-topbar-collapsed-brand .fi-logo img,
+.fi-panel-admin .fi-topbar-collapsed-brand .fi-logo-brand {
+    height: auto !important;
+    width: 10.5rem !important;
+    max-width: min(42vw, 10.5rem) !important;
+    max-height: 3.5rem !important;
+}
+
+@media (min-width: 640px) {
+    .fi-panel-admin .fi-topbar-collapsed-brand .fi-logo img,
+    .fi-panel-admin .fi-topbar-collapsed-brand .fi-logo-brand {
+        width: 11.75rem !important;
+        max-width: 11.75rem !important;
+    }
+}
+
+.dark .fi-panel-admin .fi-topbar-collapsed-brand .fi-logo img,
+.dark .fi-panel-admin .fi-topbar-collapsed-brand .fi-logo-brand {
+    @apply rounded-lg bg-white px-2 py-1 shadow-sm ring-1 ring-gray-950/5;
+}
+
+.fi-panel-admin .fi-topbar .fi-user-menu-trigger {
+    @apply rounded-xl ring-1 ring-gray-200/70 transition duration-200 hover:ring-amber-300/50 dark:ring-gray-700/80 dark:hover:ring-amber-500/30;
+}
+
+.fi-panel-admin .fi-topbar .fi-dropdown-trigger {
+    @apply rounded-xl;
+}
+
+/* Language switch in topbar */
+.fi-panel-admin .fi-topbar .fi-dropdown.fls-display-on button,
+.fi-panel-admin .fi-topbar [class*='language-switch'] button {
+    @apply rounded-xl ring-1 ring-gray-200/70 transition duration-200 hover:bg-amber-50/60 hover:ring-amber-300/50 dark:ring-gray-700/80 dark:hover:bg-amber-500/10;
+}
+
+/* —— Sidebar —— */
+.fi-panel-admin .fi-main-sidebar.fi-sidebar {
+    @apply border-e-0 bg-white shadow-[1px_0_0_rgba(15,23,42,0.04)] dark:bg-gray-900 dark:shadow-none lg:bg-white lg:dark:bg-gray-900;
+}
+
+.fi-panel-admin .fi-sidebar-header {
+    @apply relative min-h-[5.25rem] shrink-0 border-0 border-b border-gray-200/50 bg-white px-3 py-2.5 ring-0 dark:border-gray-800/50 dark:bg-gray-900;
+}
+
+.fi-panel-admin .fi-sidebar-header::after {
+    content: '';
+    @apply pointer-events-none absolute inset-x-3.5 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent;
+}
+
+.fi-panel-admin .fi-sidebar-header .fi-icon-btn {
+    @apply h-8 w-8 rounded-lg transition duration-200 hover:bg-amber-50 dark:hover:bg-amber-500/10;
+}
+
+.fi-panel-admin .fi-sidebar-nav {
+    @apply gap-y-3 border-e border-gray-200/40 px-2.5 py-3 dark:border-gray-800/50;
+}
+
+.fi-panel-admin .fi-sidebar-nav-groups {
+    @apply -mx-1 flex flex-col gap-y-2;
+}
+
+.fi-panel-admin .fi-sidebar-group {
+    @apply gap-y-0.5;
+}
+
+.fi-panel-admin .fi-sidebar-group-items,
+.fi-panel-admin .fi-sidebar-sub-group-items {
+    @apply gap-y-0.5;
+}
+
+.fi-panel-admin .fi-sidebar-group-button {
+    @apply mt-1 gap-x-2 rounded-lg px-2 py-1.5 transition duration-200 hover:bg-slate-50 dark:hover:bg-white/5;
+}
+
+.fi-panel-admin .fi-sidebar-group-icon {
+    @apply h-[1.125rem] w-[1.125rem] text-gray-400 dark:text-gray-500;
+}
+
+.fi-panel-admin .fi-sidebar-group-label {
+    @apply text-[0.875rem] font-semibold leading-5 text-gray-700 dark:text-gray-200;
+}
+
+.fi-panel-admin .fi-sidebar-group-collapse-button {
+    @apply h-6 w-6 rounded-md;
+}
+
+.fi-panel-admin .fi-sidebar-item-button {
+    @apply min-h-[2.125rem] gap-x-2.5 rounded-xl px-2.5 py-2 transition duration-200;
+}
+
+.fi-panel-admin .fi-sidebar-item-icon {
+    @apply h-[1.125rem] w-[1.125rem] shrink-0 text-gray-400 dark:text-gray-500;
+}
+
+.fi-panel-admin .fi-sidebar-item-label {
+    @apply text-[0.8125rem] font-medium leading-5 text-gray-600 dark:text-gray-400;
+}
+
+.fi-panel-admin .fi-sidebar-group-items .fi-sidebar-item-label,
+.fi-panel-admin .fi-sidebar-sub-group-items .fi-sidebar-item-label {
+    @apply font-normal;
+}
+
+.fi-panel-admin .fi-sidebar-item-button:hover {
+    @apply bg-slate-50 dark:bg-white/5;
+}
+
+.fi-panel-admin .fi-sidebar-item-button:hover .fi-sidebar-item-icon,
+.fi-panel-admin .fi-sidebar-item-button:hover .fi-sidebar-item-label {
+    @apply text-gray-700 dark:text-gray-300;
+}
+
+.fi-panel-admin .fi-sidebar-item.fi-active > .fi-sidebar-item-button {
+    @apply bg-gradient-to-r from-amber-50 to-amber-50/40 font-medium shadow-none ring-1 ring-amber-200/70 dark:from-amber-500/15 dark:to-amber-500/5 dark:ring-amber-500/25;
+}
+
+.fi-panel-admin .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+.fi-panel-admin .fi-sidebar-item.fi-active .fi-sidebar-item-label {
+    @apply text-amber-700 dark:text-amber-300;
+}
+
+.fi-panel-admin .fi-sidebar-item .fi-badge {
+    @apply bg-amber-100 px-1.5 py-0 text-[0.625rem] text-amber-800 dark:bg-amber-500/20 dark:text-amber-200;
+}
+
+.fi-panel-admin .fi-sidebar-close-overlay {
+    @apply backdrop-blur-[2px];
+}
+
+/* Collapsed desktop sidebar */
+@media (min-width: 1024px) {
+    .fi-panel-admin .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-button {
+        @apply min-h-[2.125rem] justify-center px-1.5 py-2;
+    }
+
+    .fi-panel-admin .fi-sidebar:not(.fi-sidebar-open) .fi-sidebar-item-icon {
+        @apply mx-auto;
+    }
+}
+
+/* Page headers — softer */
+.fi-panel-admin .fi-header {
+    @apply mb-5;
+}
+
+.fi-panel-admin .fi-header-heading {
+    @apply text-xl font-bold tracking-tight text-gray-900 dark:text-white;
+}
+
+.fi-panel-admin .fi-breadcrumbs {
+    @apply mb-1;
+}
+
+.fi-panel-admin .fi-breadcrumbs-item-label {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+/* Admin dashboard — platform control center */
+.fi-panel-admin.fi-dashboard-page,
+.fi-admin-dashboard {
+    --admin-accent: theme('colors.amber.500');
+}
+
+.fi-admin-dashboard .dashboard-hero {
+    @apply relative overflow-hidden rounded-2xl border border-gray-200/80 bg-gradient-to-br from-white via-white to-amber-50/40 shadow-sm dark:border-gray-700 dark:from-gray-900 dark:via-gray-900 dark:to-amber-950/20;
+}
+
+.fi-admin-dashboard .dashboard-hero__glow {
+    @apply pointer-events-none absolute -end-20 -top-20 h-56 w-56 rounded-full bg-amber-400/25 blur-3xl dark:bg-amber-500/15;
+}
+
+.fi-admin-dashboard .dashboard-hero__pattern {
+    @apply pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.06];
+    background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
+    background-size: 24px 24px;
+}
+
+.fi-admin-dashboard .dashboard-hero__content {
+    @apply relative flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between lg:p-8;
+}
+
+.fi-admin-dashboard .dashboard-hero__eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400;
+}
+
+.fi-admin-dashboard .dashboard-hero__title {
+    @apply mt-1 text-2xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-3xl;
+}
+
+.fi-admin-dashboard .dashboard-hero__subtitle {
+    @apply mt-2 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.fi-admin-dashboard .dashboard-hero__actions {
+    @apply flex flex-wrap gap-2;
+}
+
+.fi-admin-dashboard .dashboard-hero__chip {
+    @apply inline-flex items-center gap-2 rounded-xl border border-gray-200/90 bg-white/80 px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur-sm transition duration-200 hover:border-amber-300 hover:bg-amber-50 hover:text-amber-800 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:border-amber-500/50 dark:hover:bg-amber-500/10 dark:hover:text-amber-300;
+}
+
+.fi-admin-dashboard .dashboard-widgets .fi-wi-widget {
+    @apply transition-shadow duration-200 hover:shadow-md;
+}
+
+.fi-admin-dashboard .fi-wi-stats-overview-stat {
+    @apply rounded-xl ring-1 ring-gray-950/5 transition duration-200 hover:ring-amber-500/20 dark:ring-white/10;
+}
+
+.fi-admin-dashboard .fi-wi-chart {
+    @apply rounded-xl;
+}
+
+.fi-admin-dashboard .fi-ta-table {
+    @apply rounded-xl;
+}
+
+.fi-admin-dashboard .fi-wi-stats-overview-stat .fi-wi-stats-overview-stat-value {
+    @apply tracking-tight;
+}
+
+.fi-admin-dashboard .fi-wi-stats-overview-stat .fi-icon {
+    @apply text-amber-500 dark:text-amber-400;
+}

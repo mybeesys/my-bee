@@ -10,6 +10,7 @@ use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class PlatformCouponResource extends Resource
@@ -77,11 +78,18 @@ class PlatformCouponResource extends Resource
                             ->maxValue(fn (Get $get) => $get('type') === PlatformCoupon::TYPE_PERCENT ? 100 : null)
                             ->suffix(fn (Get $get): ?string => $get('type') === PlatformCoupon::TYPE_PERCENT ? '%' : main_currency_iso_code()),
 
-                        Forms\Components\DateTimePicker::make('valid_until')
+                        Forms\Components\DatePicker::make('valid_until')
                             ->label(__('fields.subscription_coupon_valid_until'))
                             ->required()
                             ->native(false)
-                            ->seconds(false),
+                            ->minDate(today())
+                            ->maxDate(now()->addYears(10))
+                            ->default(now()->addMonth())
+                            ->format('Y-m-d')
+                            ->displayFormat('d/m/Y')
+                            ->dehydrateStateUsing(fn (?string $state): ?string => filled($state)
+                                ? Carbon::parse($state)->endOfDay()->toDateTimeString()
+                                : null),
 
                         Forms\Components\Toggle::make('active')
                             ->label(__('fields.active'))
@@ -126,7 +134,7 @@ class PlatformCouponResource extends Resource
 
                 Tables\Columns\TextColumn::make('valid_until')
                     ->label(__('fields.subscription_coupon_valid_until'))
-                    ->dateTime()
+                    ->date('d/m/Y')
                     ->sortable(),
 
                 Tables\Columns\IconColumn::make('active')

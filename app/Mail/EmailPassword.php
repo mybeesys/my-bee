@@ -23,7 +23,7 @@ class EmailPassword extends Mailable
     public function __construct($secret)
     {
         $this->secret = $secret;
-        $this->logo = null;
+        $this->logo = system_logo_url();
     }
 
     public function build()

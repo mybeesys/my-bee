@@ -21,7 +21,7 @@ class EmailVerification extends Mailable
      */
     public function __construct($to)
     {
-        $this->logo = null;
+        $this->logo = system_logo_url();
         $token = \Str::random(16);
         CacheManager::put($to, $token, CacheManager::ttl_day);
         $expires = now()->addHours(24)->timestamp;

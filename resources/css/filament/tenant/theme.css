@@ -60,8 +60,85 @@
     @apply rounded-lg object-contain;
 }
 
-.fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo img {
-    @apply rounded-lg object-contain drop-shadow-sm;
+.fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo img,
+.fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo-brand {
+    height: auto !important;
+    width: 10.5rem !important;
+    max-width: min(42vw, 10.5rem) !important;
+    max-height: 3.5rem !important;
+    @apply object-contain;
+}
+
+@media (min-width: 640px) {
+    .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo img,
+    .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo-brand {
+        width: 11.75rem !important;
+        max-width: 11.75rem !important;
+    }
+}
+
+.dark .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo img,
+.dark .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo-brand {
+    @apply rounded-lg bg-white px-2 py-1 shadow-sm ring-1 ring-gray-950/5;
+}
+
+/* —— Topbar tenant context + free plan promo —— */
+.tenant-topbar-context {
+    @apply me-2 flex min-w-0 flex-1 items-center gap-2 sm:gap-3;
+}
+
+.tenant-topbar-context__tenant {
+    @apply flex min-w-0 max-w-[9rem] items-center gap-2 sm:max-w-[12rem] lg:max-w-[16rem];
+}
+
+.tenant-topbar-context__icon-wrap {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 ring-1 ring-primary-200/70 dark:bg-primary-500/10 dark:text-primary-400 dark:ring-primary-500/25;
+}
+
+.tenant-topbar-context__icon {
+    @apply h-4 w-4;
+}
+
+.tenant-topbar-context__name {
+    @apply truncate text-sm font-semibold tracking-tight text-gray-800 dark:text-gray-100;
+}
+
+.tenant-topbar-context__hint {
+    @apply hidden min-w-0 max-w-[14rem] items-center gap-1 truncate rounded-lg px-1 py-0.5 text-[11px] leading-none text-gray-500 no-underline transition-colors hover:bg-gray-100/70 hover:text-gray-700 sm:inline-flex lg:max-w-none dark:text-gray-400 dark:hover:bg-gray-800/50 dark:hover:text-gray-300;
+}
+
+.tenant-topbar-context__hint-text {
+    @apply truncate font-normal;
+}
+
+.tenant-topbar-context__hint-sep {
+    @apply shrink-0 text-gray-300 dark:text-gray-600;
+}
+
+.tenant-topbar-context__hint-action {
+    @apply shrink-0 font-medium text-primary-600/75 hover:text-primary-700 dark:text-primary-400/80 dark:hover:text-primary-300;
+}
+
+.tenant-topbar-context__hint--warning .tenant-topbar-context__hint-text {
+    @apply text-amber-700/75 dark:text-amber-400/80;
+}
+
+.tenant-topbar-context__hint--expired .tenant-topbar-context__hint-text {
+    @apply text-red-600/75 dark:text-red-400/80;
+}
+
+.tenant-topbar-context__plan-pill {
+    @apply hidden truncate rounded-md bg-gray-100/80 px-2 py-0.5 text-[11px] font-medium text-gray-500 sm:inline dark:bg-gray-800/60 dark:text-gray-400;
+}
+
+@media (max-width: 639px) {
+    .tenant-topbar-context__hint-text {
+        @apply hidden;
+    }
+
+    .tenant-topbar-context__hint-sep {
+        @apply hidden;
+    }
 }
 
 /* —— Database notifications —— */
@@ -120,15 +197,27 @@
 }
 
 .fi-panel-tenant .fi-sidebar-header {
-    @apply relative h-14 shrink-0 border-0 border-b border-gray-200/50 bg-white px-3.5 ring-0 dark:border-gray-800/50 dark:bg-gray-900 lg:shadow-none;
+    @apply relative min-h-[5.25rem] shrink-0 border-0 border-b border-gray-200/50 bg-white px-3 py-2.5 ring-0 dark:border-gray-800/50 dark:bg-gray-900 lg:shadow-none;
 }
 
 .fi-panel-tenant .fi-sidebar-header::after {
     content: none;
 }
 
+.fi-panel-tenant .fi-sidebar-header .fi-logo {
+    @apply flex min-w-0 flex-1 items-center;
+}
+
 .fi-panel-tenant .fi-sidebar-header .fi-logo img {
-    @apply rounded-md object-contain drop-shadow-sm;
+    height: auto !important;
+    width: 11.75rem !important;
+    max-width: calc(100% - 0.25rem) !important;
+    max-height: 4.25rem !important;
+    @apply object-contain object-left rtl:object-right;
+}
+
+.dark .fi-panel-tenant .fi-sidebar-header .fi-logo img {
+    @apply rounded-lg bg-white px-2.5 py-1.5 shadow-sm ring-1 ring-gray-950/5;
 }
 
 .fi-panel-tenant .fi-sidebar-header .fi-icon-btn {
@@ -378,6 +467,89 @@ body:has(.tenant-login-page) .fls-display-on {
     color: rgb(107 114 128);
 }
 
+.tenant-login-register-cta {
+    margin-top: 1.25rem;
+    border-top: 1px solid rgb(243 244 246);
+    padding-top: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem 0.5rem;
+    text-align: center;
+}
+
+.tenant-login-register-cta--login {
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.tenant-login-register-cta__text {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: rgb(107 114 128);
+}
+
+.tenant-login-register-cta__btn {
+    display: inline-flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.875rem;
+    border: 1px solid rgb(var(--primary-200) / 0.9);
+    background: linear-gradient(180deg, rgb(var(--primary-50)) 0%, rgb(255 255 255) 100%);
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: rgb(var(--primary-700));
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.tenant-login-register-cta__btn:hover {
+    transform: translateY(-1px);
+    border-color: rgb(var(--primary-300));
+    background: linear-gradient(180deg, rgb(var(--primary-100)) 0%, rgb(var(--primary-50)) 100%);
+    box-shadow: 0 8px 20px -14px rgb(var(--primary-500) / 0.65);
+    color: rgb(var(--primary-800));
+}
+
+.tenant-login-register-cta__btn-icon {
+    height: 1.125rem;
+    width: 1.125rem;
+}
+
+.tenant-login-register-cta__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: rgb(var(--primary-600));
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.tenant-login-register-cta__link:hover {
+    color: rgb(var(--primary-700));
+    text-decoration: underline;
+}
+
+.tenant-register-page .fi-fo-placeholder {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: rgb(107 114 128);
+}
+
+.tenant-register-page .fi-fo-placeholder a {
+    color: rgb(var(--primary-600));
+    font-weight: 600;
+}
+
 .tenant-login-card__brand {
     display: flex;
     align-items: center;
@@ -404,8 +576,9 @@ body:has(.tenant-login-page) .fls-display-on {
 }
 
 .tenant-login-brand__logo {
-    height: 3.5rem;
-    width: auto;
+    width: min(100%, 22rem);
+    max-height: 7rem;
+    height: auto;
     object-fit: contain;
 }
 
@@ -685,8 +858,116 @@ body:has(.tenant-login-page) .fls-display-on {
     @apply inline-block max-w-full truncate rounded-md bg-gray-100 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300;
 }
 
+.fi-panel-tenant .register-activity-name-hint {
+    @apply mt-1 block text-xs font-medium text-amber-700 dark:text-amber-400;
+}
+
+.fi-panel-tenant .choose-subscription-intro {
+    @apply mb-4 text-center;
+}
+
+.fi-panel-tenant .choose-subscription-card {
+    @apply rounded-2xl border border-gray-200/80 bg-white/95 p-4 shadow-sm backdrop-blur-sm dark:border-gray-700/80 dark:bg-gray-900/95 sm:p-6;
+}
+
+.fi-panel-tenant .choose-subscription-page .subscription-page {
+    @apply max-w-none p-0;
+}
+
+.fi-panel-tenant .fi-simple-layout:has(.choose-subscription-page) {
+    @apply tenant-login-layout;
+}
+
+.fi-panel-tenant .fi-simple-layout:has(.choose-subscription-page) .fi-simple-main {
+    @apply max-w-6xl;
+}
+
+.fi-panel-tenant .registration-steps {
+    @apply mb-6;
+}
+
+.fi-panel-tenant .registration-steps__list {
+    @apply mx-auto flex max-w-xl items-center justify-center gap-2 sm:gap-4;
+}
+
+.fi-panel-tenant .registration-steps__item {
+    @apply flex min-w-0 flex-1 flex-col items-center gap-2 text-center;
+}
+
+.fi-panel-tenant .registration-steps__marker {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-gray-200 bg-white text-sm font-bold text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500;
+}
+
+.fi-panel-tenant .registration-steps__label {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400 sm:text-sm;
+}
+
+.fi-panel-tenant .registration-steps__item--active .registration-steps__marker {
+    @apply border-primary-500 bg-primary-500 text-white shadow-sm;
+}
+
+.fi-panel-tenant .registration-steps__item--active .registration-steps__label {
+    @apply font-semibold text-gray-900 dark:text-white;
+}
+
+.fi-panel-tenant .registration-steps__item--completed .registration-steps__marker {
+    @apply border-primary-500 bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-300;
+}
+
+.fi-panel-tenant .registration-steps__item--completed .registration-steps__label {
+    @apply text-primary-700 dark:text-primary-300;
+}
+
+.fi-panel-tenant .registration-steps__connector {
+    @apply mb-6 hidden h-0.5 w-8 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700 sm:block;
+}
+
+.fi-panel-tenant .registration-plan-summary {
+    @apply mb-5 rounded-2xl border border-primary-200/70 bg-primary-50/70 p-4 dark:border-primary-500/30 dark:bg-primary-500/10;
+}
+
+.fi-panel-tenant .registration-plan-summary__header {
+    @apply mb-3 flex items-center justify-between gap-3;
+}
+
+.fi-panel-tenant .registration-plan-summary__eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-300;
+}
+
+.fi-panel-tenant .registration-plan-summary__change {
+    @apply text-xs font-semibold text-primary-700 underline-offset-2 transition hover:underline dark:text-primary-300;
+}
+
+.fi-panel-tenant .registration-plan-summary__name {
+    @apply text-lg font-bold text-gray-950 dark:text-white;
+}
+
+.fi-panel-tenant .registration-plan-summary__billing {
+    @apply mt-1 text-sm text-gray-600 dark:text-gray-300;
+}
+
+.fi-panel-tenant .registration-plan-summary__price {
+    @apply mt-2 text-base font-semibold text-primary-700 dark:text-primary-300;
+}
+
+.fi-panel-tenant .choose-registration-plan-page .register-activity-login-hint {
+    @apply mt-6 text-center text-sm text-white;
+}
+
+.fi-panel-tenant .choose-registration-plan-page .register-activity-login-hint__link {
+    @apply font-semibold text-primary-500 underline-offset-2 transition hover:text-primary-400 hover:underline dark:text-primary-400 dark:hover:text-primary-300;
+}
+
 .fi-panel-tenant .register-activity-form-actions {
     @apply mt-6 border-t border-gray-100 pt-6 dark:border-gray-800;
+}
+
+.fi-panel-tenant .register-activity-login-hint {
+    @apply mt-4 text-center text-sm text-gray-500 dark:text-gray-400;
+}
+
+.fi-panel-tenant .register-activity-login-hint__link {
+    @apply font-semibold text-primary-600 transition hover:text-primary-700 hover:underline dark:text-primary-400 dark:hover:text-primary-300;
 }
 
 .fi-panel-tenant .register-activity-form-actions .fi-btn {
@@ -2643,6 +2924,147 @@ body:has(.tenant-login-page) .fls-display-on {
     @apply mt-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100;
 }
 
+.subscription-page__history-count {
+    @apply inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 ring-1 ring-gray-200/80 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700/80;
+}
+
+.subscription-page__history-list {
+    @apply relative flex flex-col;
+}
+
+.subscription-page__history-item {
+    @apply relative grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0 pb-6 last:pb-0;
+}
+
+.subscription-page__history-item:not(:last-child)::before {
+    content: '';
+    @apply pointer-events-none absolute bottom-0 start-[11px] top-8 w-px bg-gradient-to-b from-gray-200 via-gray-200 to-transparent dark:from-gray-700 dark:via-gray-700;
+}
+
+.subscription-page__history-marker {
+    @apply relative z-10 mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-4 ring-white dark:ring-gray-900;
+}
+
+.subscription-page__history-marker-icon {
+    @apply h-3.5 w-3.5;
+}
+
+.subscription-page__history-item--current .subscription-page__history-marker {
+    @apply bg-emerald-500 text-white shadow-[0_0_0_4px_rgba(16,185,129,0.15)];
+}
+
+.subscription-page__history-item--past .subscription-page__history-marker {
+    @apply bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-300;
+}
+
+.subscription-page__history-card {
+    @apply rounded-2xl border border-gray-200/80 bg-gradient-to-b from-gray-50/80 to-white p-4 shadow-sm dark:border-gray-700/80 dark:from-gray-900/50 dark:to-gray-900/30;
+}
+
+.subscription-page__history-item--current .subscription-page__history-card {
+    @apply border-emerald-200/80 from-emerald-50/40 to-white ring-1 ring-emerald-100/80 dark:border-emerald-900/40 dark:from-emerald-950/20 dark:to-gray-900/30 dark:ring-emerald-900/30;
+}
+
+.subscription-page__history-head {
+    @apply flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 pb-4 dark:border-gray-800;
+}
+
+.subscription-page__history-head-main {
+    @apply min-w-0 flex-1;
+}
+
+.subscription-page__history-badges {
+    @apply flex flex-wrap items-center gap-2;
+}
+
+.subscription-page__history-status {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide;
+}
+
+.subscription-page__history-status--current {
+    @apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60;
+}
+
+.subscription-page__history-status--past {
+    @apply bg-gray-100 text-gray-600 ring-1 ring-gray-200/80 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-700/80;
+}
+
+.subscription-page__history-change {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide;
+}
+
+.subscription-page__history-change--upgrade {
+    @apply bg-violet-50 text-violet-700 ring-1 ring-violet-200/70 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800/50;
+}
+
+.subscription-page__history-change--downgrade {
+    @apply bg-amber-50 text-amber-700 ring-1 ring-amber-200/70 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800/50;
+}
+
+.subscription-page__history-change--lateral {
+    @apply bg-sky-50 text-sky-700 ring-1 ring-sky-200/70 dark:bg-sky-950/40 dark:text-sky-300 dark:ring-sky-800/50;
+}
+
+.subscription-page__history-plan {
+    @apply mt-2 text-base font-semibold text-gray-900 dark:text-white;
+}
+
+.subscription-page__history-period {
+    @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__history-total {
+    @apply flex min-w-[8.5rem] flex-col items-end gap-1 text-end;
+}
+
+.subscription-page__history-total-label {
+    @apply text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__history-total strong {
+    @apply text-lg font-bold tracking-tight text-gray-900 dark:text-white;
+}
+
+.subscription-page__history-item--current .subscription-page__history-total strong {
+    @apply text-emerald-700 dark:text-emerald-300;
+}
+
+.subscription-page__history-details {
+    @apply mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4;
+}
+
+.subscription-page__history-detail dt {
+    @apply text-[11px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__history-detail dd {
+    @apply mt-1 text-sm font-semibold text-gray-900 dark:text-gray-100;
+}
+
+.subscription-page__history-coupon {
+    @apply inline-flex flex-wrap items-center gap-2;
+}
+
+.subscription-page__history-coupon-discount {
+    @apply rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60;
+}
+
+.subscription-page__history-footer {
+    @apply mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-800;
+}
+
+.subscription-page__history-invoice-no {
+    @apply text-xs font-medium text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__history-invoice-link {
+    @apply inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary-500 dark:bg-primary-500 dark:hover:bg-primary-400;
+}
+
+.subscription-page__history-invoice-icon {
+    @apply h-4 w-4;
+}
+
 .subscription-page__price {
     @apply mt-5 flex flex-wrap items-baseline gap-2 border-t border-gray-100 pt-4 dark:border-gray-800;
 }
@@ -2661,6 +3083,30 @@ body:has(.tenant-login-page) .fls-display-on {
 
 .subscription-page__price-note--global {
     @apply mb-4 mt-3;
+}
+
+.subscription-page__info-alert {
+    @apply mb-4 mt-3 flex items-start gap-3 rounded-2xl border border-sky-100/90 bg-gradient-to-br from-sky-50/80 via-white to-sky-50/40 px-4 py-3.5 text-sm leading-6 text-gray-600 shadow-[0_1px_2px_rgba(14,116,144,0.04)] dark:border-sky-900/25 dark:from-sky-950/20 dark:via-gray-900/40 dark:to-sky-950/10 dark:text-gray-300;
+}
+
+.subscription-page__info-alert-icon {
+    @apply mt-0.5 h-5 w-5 shrink-0 text-sky-400/90 dark:text-sky-500/90;
+}
+
+.subscription-page__info-alert-content p {
+    @apply leading-6;
+}
+
+.subscription-page__info-alert-yearly {
+    @apply mt-3 flex items-center gap-2.5 rounded-xl border border-sky-200/70 bg-white/75 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:border-sky-800/35 dark:bg-sky-950/25 dark:shadow-none;
+}
+
+.subscription-page__info-alert-gift-icon {
+    @apply h-5 w-5 shrink-0 text-red-500 dark:text-red-400;
+}
+
+.subscription-page__info-alert-yearly strong {
+    @apply font-bold tracking-tight text-teal-700 dark:text-teal-300;
 }
 
 .subscription-page__price-breakdown {
@@ -2714,6 +3160,34 @@ body:has(.tenant-login-page) .fls-display-on {
 
 .subscription-page__price-main {
     @apply flex flex-wrap items-baseline gap-x-2 gap-y-1;
+}
+
+.subscription-page__price-main--yearly-marketing {
+    @apply flex flex-row flex-wrap items-baseline gap-x-2.5 gap-y-0;
+}
+
+.subscription-page__price-compare-wrap {
+    @apply inline-flex shrink-0 items-baseline;
+}
+
+.subscription-page__price-compare {
+    @apply text-[0.8rem] font-semibold tabular-nums leading-none text-red-500 line-through decoration-red-400/90 decoration-2 dark:text-red-400;
+}
+
+.subscription-page__price-effective-wrap {
+    @apply inline-flex shrink-0 items-baseline;
+}
+
+.subscription-page__price-main--yearly-marketing .subscription-page__price-amount {
+    @apply text-[1.65rem] font-bold leading-none tracking-tight;
+}
+
+.subscription-page__price-main--yearly-marketing .subscription-page__price-cycle {
+    @apply shrink-0 text-sm font-semibold leading-none text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__price-savings {
+    @apply inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/60;
 }
 
 .subscription-page__price-amount {

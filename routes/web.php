@@ -84,6 +84,9 @@ Route::get('/login', function () {
 Route::get('/einvoice/{uid}', [\App\Http\Controllers\PublicInvoiceController::class, 'show'])
     ->name('public.invoice.show');
 
+Route::get('/subscription-invoice/{uid}', [\App\Http\Controllers\PublicSubscriptionInvoiceController::class, 'show'])
+    ->name('public.subscription-invoice.show');
+
 Route::get('/media/{path}', [\App\Http\Controllers\PublicStorageController::class, 'show'])
     ->where('path', '.*')
     ->name('public.storage.show');

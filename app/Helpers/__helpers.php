@@ -90,6 +90,44 @@ if (!function_exists('setting')) {
     }
 }
 
+if (!function_exists('platform_settings')) {
+    function platform_settings(): \Illuminate\Support\Collection
+    {
+        return \App\Services\CacheService::instance()->remember(
+            'platform_settings',
+            \App\Services\CacheService::TTL_DAY,
+            fn () => \App\Models\Setting::query()
+                ->whereNull('tenant_id')
+                ->orderBy('sort')
+                ->get(),
+        );
+    }
+}
+
+if (!function_exists('platform_setting')) {
+    function platform_setting(string $key, mixed $default = ''): ?string
+    {
+        $item = platform_settings()->firstWhere('key', $key);
+
+        return $item === null ? $default : $item->value;
+    }
+}
+
+if (!function_exists('platform_company_profile')) {
+    /** @return array{name: string, address: string, phone: string, mobile: string, email: string, trn: string} */
+    function platform_company_profile(): array
+    {
+        return [
+            'name' => trim((string) platform_setting('company.name', 'MyBee System')),
+            'address' => trim((string) platform_setting('company.address', '')),
+            'phone' => trim((string) platform_setting('company.contact.phone', '')),
+            'mobile' => trim((string) platform_setting('company.contact.mobile', '')),
+            'email' => trim((string) platform_setting('company.contact.email', '')),
+            'trn' => trim((string) platform_setting('company.trn', '')),
+        ];
+    }
+}
+
 if (!function_exists('settings_tab_icon')) {
     function settings_tab_icon(string $tab, string $default = 'heroicon-o-cog-6-tooth'): string
     {
@@ -968,6 +1006,65 @@ if (!function_exists('public_asset_if_exists')) {
     function public_asset_if_exists(string $path): ?string
     {
         return is_file(public_path($path)) ? asset($path) : null;
+    }
+}
+
+if (!function_exists('system_logo_icon_url')) {
+    function system_logo_icon_url(): ?string
+    {
+        if (is_file(public_path('logo-icon.svg'))) {
+            return asset('logo-icon.svg');
+        }
+
+        foreach ([
+            'logo-icon.png' => IMAGETYPE_PNG,
+            'logo.jpg' => IMAGETYPE_JPEG,
+            'logo.webp' => defined('IMAGETYPE_WEBP') ? IMAGETYPE_WEBP : null,
+        ] as $filename => $expectedType) {
+            $path = public_path($filename);
+
+            if (! is_file($path) || $expectedType === null) {
+                continue;
+            }
+
+            if (@exif_imagetype($path) === $expectedType) {
+                return asset($filename);
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('system_brand_logo_url')) {
+    function system_brand_logo_url(): ?string
+    {
+        if (is_file(public_path('brand-logo.svg'))) {
+            return asset('brand-logo.svg');
+        }
+
+        foreach (['brand-logo.png', 'brand-logo.webp', 'brand-logo.jpg'] as $filename) {
+            $path = public_path($filename);
+
+            if (! is_file($path)) {
+                continue;
+            }
+
+            $type = @exif_imagetype($path);
+
+            if ($type === IMAGETYPE_PNG || $type === IMAGETYPE_JPEG || (defined('IMAGETYPE_WEBP') && $type === IMAGETYPE_WEBP)) {
+                return asset($filename);
+            }
+        }
+
+        return system_logo_icon_url();
+    }
+}
+
+if (!function_exists('system_logo_url')) {
+    function system_logo_url(): ?string
+    {
+        return system_brand_logo_url();
     }
 }
 

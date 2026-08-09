@@ -9,11 +9,19 @@ use App\Models\Subscription;
 use App\Services\SubscriptionCouponService;
 use App\Services\SubscriptionPricingService;
 use Carbon\Carbon;
+use Filament\Facades\Filament;
+use Filament\Support\Facades\FilamentView;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 
+use function Filament\Support\is_app_url;
+
 class ManageSubscription extends Component
 {
+    public bool $onboarding = false;
+
+    public bool $registrationFlow = false;
+
     public ?int $selectedPlanId = null;
 
     public string $billingPeriod = SubscriptionPricingService::BILLING_MONTHLY;
@@ -24,12 +32,46 @@ class ManageSubscription extends Component
 
     public ?int $appliedCouponId = null;
 
-    public function mount(): void
+    public function mount(bool $onboarding = false, bool $registrationFlow = false): void
     {
-        $subscription = get_subscription();
-        $this->selectedPlanId = $subscription?->plan_id;
-        $this->billingPeriod = SubscriptionPricingService::instance()
-            ->normalizeBillingPeriod($subscription?->billing_period);
+        $this->onboarding = $onboarding;
+        $this->registrationFlow = $registrationFlow;
+
+        $subscription = null;
+
+        if (! $this->registrationFlow) {
+            try {
+                $subscription = get_subscription();
+            } catch (\Throwable) {
+                $subscription = null;
+            }
+        }
+
+        if ($this->registrationFlow) {
+            $selection = registration_plan_selection();
+
+            if ($selection) {
+                $this->selectedPlanId = $selection['plan_id'];
+                $this->billingPeriod = SubscriptionPricingService::instance()
+                    ->normalizeBillingPeriod($selection['billing_period']);
+            } else {
+                $this->billingPeriod = SubscriptionPricingService::BILLING_MONTHLY;
+            }
+        } else {
+            $this->selectedPlanId = $subscription?->plan_id;
+            $this->billingPeriod = SubscriptionPricingService::instance()
+                ->normalizeBillingPeriod($subscription?->billing_period);
+        }
+
+        if ($this->selectedPlanId === null) {
+            $defaultPlan = Plan::query()
+                ->where('active', true)
+                ->where('code', Plan::CODE_FREE)
+                ->first()
+                ?? Plan::query()->where('active', true)->orderBy('sort_order')->orderBy('price')->first();
+
+            $this->selectedPlanId = $defaultPlan?->id;
+        }
 
         if (session()->pull('subscription_updated')) {
             fns()->sendSuccess(__('fields.subscription_updated'));
@@ -86,7 +128,15 @@ class ManageSubscription extends Component
 
     public function getCurrentSubscriptionProperty(): ?Subscription
     {
-        return get_subscription();
+        if ($this->registrationFlow) {
+            return null;
+        }
+
+        try {
+            return get_subscription();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function getCurrentPlanProperty(): ?Plan
@@ -94,6 +144,128 @@ class ManageSubscription extends Component
         $subscription = $this->currentSubscription;
 
         return $subscription?->plan;
+    }
+
+    public function getShowSubscriptionHistoryProperty(): bool
+    {
+        if ($this->registrationFlow || $this->onboarding) {
+            return false;
+        }
+
+        return $this->subscriptionHistory->isNotEmpty();
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    public function getSubscriptionHistoryProperty(): Collection
+    {
+        if ($this->registrationFlow || $this->onboarding) {
+            return collect();
+        }
+
+        $client = get_client();
+
+        if (! $client) {
+            return collect();
+        }
+
+        $subscriptions = $client->subscriptions()
+            ->with(['plan', 'platformCoupon'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        if ($subscriptions->isEmpty()) {
+            return collect();
+        }
+
+        $pricing = SubscriptionPricingService::instance();
+        $currentId = $this->currentSubscription?->id;
+
+        return $subscriptions->values()->map(function (Subscription $subscription, int $index) use ($subscriptions, $pricing, $currentId) {
+            $newer = $index > 0 ? $subscriptions[$index - 1] : null;
+            $older = $subscriptions[$index + 1] ?? null;
+            $plan = $subscription->plan;
+            $period = $pricing->normalizeBillingPeriod($subscription->billing_period);
+            $isCurrent = (int) $subscription->id === (int) $currentId;
+            $currency = main_currency_iso_code();
+            $total = (float) ($subscription->price ?? 0);
+            $priceExTax = (float) ($subscription->price_ex_tax ?? 0);
+            $taxAmount = (float) ($subscription->tax_amount ?? 0);
+            $taxPercent = (float) ($subscription->tax_percent ?? $pricing->vatPercent());
+            $discountAmount = (float) ($subscription->discount_amount ?? 0);
+            $isFree = $subscription->isFree();
+
+            $changeDirection = null;
+
+            if ($older) {
+                $olderTotal = (float) ($older->price ?? 0);
+
+                if ($total > $olderTotal) {
+                    $changeDirection = 'upgrade';
+                } elseif ($total < $olderTotal) {
+                    $changeDirection = 'downgrade';
+                } else {
+                    $changeDirection = 'lateral';
+                }
+            }
+
+            return [
+                'id' => $subscription->id,
+                'is_current' => $isCurrent,
+                'status_label' => $isCurrent
+                    ? __('fields.subscription_history_status_current')
+                    : __('fields.subscription_history_status_past'),
+                'change_direction' => $changeDirection,
+                'change_label' => match ($changeDirection) {
+                    'upgrade' => __('fields.subscription_confirm_upgrade_badge'),
+                    'downgrade' => __('fields.subscription_confirm_downgrade_badge'),
+                    'lateral' => __('fields.subscription_confirm_lateral_badge'),
+                    default => null,
+                },
+                'tier' => $plan ? $this->planTier($plan) : 'business',
+                'tier_label' => $plan ? $this->planTierLabel($plan) : '',
+                'plan_name' => $plan?->name ?? '—',
+                'billing_label' => $period === SubscriptionPricingService::BILLING_YEARLY
+                    ? __('fields.yearly')
+                    : __('fields.monthly'),
+                'started_at' => $subscription->start_date,
+                'ended_at' => $newer?->start_date,
+                'period_label' => $this->subscriptionHistoryPeriodLabel($subscription->start_date, $newer?->start_date, $isCurrent),
+                'invoice_no' => $subscription->invoice_no,
+                'invoice_url' => $isFree ? null : $subscription->url,
+                'is_free' => $isFree,
+                'coupon_code' => $subscription->coupon_code,
+                'discount_amount' => $discountAmount,
+                'price_ex_tax' => $priceExTax,
+                'tax_amount' => $taxAmount,
+                'tax_percent' => $taxPercent,
+                'total' => $total,
+                'currency' => $currency,
+                'total_formatted' => $isFree
+                    ? __('fields.free')
+                    : $pricing->formatMoney($total, $currency),
+                'price_ex_tax_formatted' => $pricing->formatMoney($priceExTax, $currency),
+                'tax_amount_formatted' => $pricing->formatMoney($taxAmount, $currency),
+                'discount_amount_formatted' => $discountAmount > 0
+                    ? $pricing->formatMoney($discountAmount, $currency)
+                    : null,
+            ];
+        });
+    }
+
+    public function subscriptionHistoryPeriodLabel(?Carbon $startedAt, ?Carbon $endedAt, bool $isCurrent): string
+    {
+        $start = $startedAt ? Carbon::parse($startedAt)->format('d/m/Y') : '—';
+
+        if ($isCurrent) {
+            return __('fields.subscription_history_period_current', ['start' => $start]);
+        }
+
+        $end = $endedAt ? Carbon::parse($endedAt)->format('d/m/Y') : '—';
+
+        return __('fields.subscription_history_period_range', [
+            'start' => $start,
+            'end' => $end,
+        ]);
     }
 
     /** @return Collection<int, Plan> */
@@ -111,6 +283,18 @@ class ManageSubscription extends Component
         $plan = Plan::query()->find($this->selectedPlanId);
 
         if (! $plan) {
+            return;
+        }
+
+        if ($this->registrationFlow) {
+            $this->continueRegistration();
+
+            return;
+        }
+
+        if ($this->onboarding && ! $this->currentSubscription) {
+            $this->updateSubscription();
+
             return;
         }
 
@@ -134,6 +318,21 @@ class ManageSubscription extends Component
     {
         $this->showConfirmModal = false;
         $this->updateSubscription();
+    }
+
+    public function continueRegistration(): void
+    {
+        $plan = Plan::query()->find($this->selectedPlanId);
+
+        if (! $plan) {
+            return;
+        }
+
+        store_registration_plan_selection($plan->id, $this->billingPeriod);
+
+        $redirectUrl = filament()->getTenantRegistrationUrl();
+
+        $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
     }
 
     public function updateSubscription(): void
@@ -175,6 +374,13 @@ class ManageSubscription extends Component
         }
 
         Subscription::subscribe($plan, $client, $this->billingPeriod, $coupon);
+
+        if ($this->onboarding) {
+            session()->flash('subscription_updated', true);
+            $this->redirect(Filament::getUrl(), navigate: false);
+
+            return;
+        }
 
         session()->flash('subscription_updated', true);
 
@@ -241,6 +447,65 @@ class ManageSubscription extends Component
         }
 
         return SubscriptionPricingService::instance()->formatMoney($quote['subtotal_ex_tax'], $quote['currency']);
+    }
+
+    /**
+     * Marketing display for plan cards only. Invoice summary keeps real yearly totals.
+     *
+     * @return array{
+     *     is_free: bool,
+     *     show_yearly_monthly_marketing: bool,
+     *     compare_amount: float|null,
+     *     display_amount: float,
+     *     monthly_savings: float,
+     *     currency: string,
+     *     suffix: string,
+     * }
+     */
+    public function planCardDisplayPricing(Plan $plan): array
+    {
+        $quote = $this->planQuote($plan);
+
+        if ($quote['is_free']) {
+            return [
+                'is_free' => true,
+                'show_yearly_monthly_marketing' => false,
+                'compare_amount' => null,
+                'display_amount' => 0.0,
+                'monthly_savings' => 0.0,
+                'currency' => $quote['currency'],
+                'suffix' => '',
+            ];
+        }
+
+        if (
+            $this->billingPeriod === SubscriptionPricingService::BILLING_YEARLY
+            && $plan->span !== Plan::SPAN_ONE_TIME
+        ) {
+            $compareAmount = round((float) $quote['monthly_price'], currency_decimals());
+            $displayAmount = round((float) $quote['subtotal_ex_tax'] / 12, currency_decimals());
+            $monthlySavings = max(0, round($compareAmount - $displayAmount, currency_decimals()));
+
+            return [
+                'is_free' => false,
+                'show_yearly_monthly_marketing' => true,
+                'compare_amount' => $compareAmount,
+                'display_amount' => $displayAmount,
+                'monthly_savings' => $monthlySavings,
+                'currency' => $quote['currency'],
+                'suffix' => __('fields.subscription_per_month'),
+            ];
+        }
+
+        return [
+            'is_free' => false,
+            'show_yearly_monthly_marketing' => false,
+            'compare_amount' => null,
+            'display_amount' => (float) $quote['subtotal_ex_tax'],
+            'monthly_savings' => 0.0,
+            'currency' => $quote['currency'],
+            'suffix' => $this->planPriceSuffix($plan),
+        ];
     }
 
     public function planTagline(Plan $plan): string

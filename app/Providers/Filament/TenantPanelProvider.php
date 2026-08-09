@@ -2,11 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Tenant\Pages\ChooseRegistrationPlan;
 use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Dashboard;
 use App\Filament\Tenant\Pages\EditTenantProfile;
 use App\Filament\Tenant\Pages\LoginTenant;
-use App\Filament\Tenant\Pages\RegisterClient;
 use App\Filament\Tenant\Pages\RegisterTenant;
 use App\Filament\Tenant\Pages\TenantUserProfile;
 use App\Http\Middleware\ApplyTenantScopes;
@@ -49,9 +49,9 @@ class TenantPanelProvider extends PanelProvider
             ->path('')
             ->domain($domain)
             ->viteTheme('resources/css/filament/tenant/theme.css')
-            ->favicon(public_asset_if_exists('logo.jpg'))
-            ->brandLogo(public_asset_if_exists('logo.jpg'))
-            ->brandLogoHeight('2rem')
+            ->favicon(system_logo_icon_url())
+            ->brandLogo(system_brand_logo_url())
+            ->brandLogoHeight('4.75rem')
             ->sidebarWidth('16rem')
             ->collapsedSidebarWidth('4rem')
             ->databaseTransactions()
@@ -61,9 +61,9 @@ class TenantPanelProvider extends PanelProvider
             ->spa()
             ->brandName(fn() => filament()->getTenant()?->name)
             ->globalSearch(false)
-//            ->registration(RegisterClient::class)
 //            ->passwordReset()
             ->tenant(Tenant::class, slugAttribute: 'slug')
+            ->routes(fn (Panel $panel) => ChooseRegistrationPlan::routes($panel))
             ->tenantRegistration(RegisterTenant::class)
             ->tenantProfile(EditTenantProfile::class)
             ->tenantMiddleware([
@@ -74,6 +74,12 @@ class TenantPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::TOPBAR_START,
                 fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.collapsed-topbar-logo'),
+            )
+            ->renderHook(
+                PanelsRenderHook::TOPBAR_START,
+                fn (): \Illuminate\Contracts\View\View|string => filament()->auth()->check() && filled(filament()->getTenant())
+                    ? view('filament.tenant.components.topbar-tenant-context')
+                    : '',
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
@@ -117,7 +123,7 @@ class TenantPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Tenant/Resources'), for: 'App\\Filament\\Tenant\\Resources')
             ->discoverPages(in: app_path('Filament/Tenant/Pages'), for: 'App\\Filament\\Tenant\\Pages')
             ->pages([
-                Dashboard::class
+                Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Tenant/Widgets'), for: 'App\\Filament\\Tenant\\Widgets')
             ->widgets([

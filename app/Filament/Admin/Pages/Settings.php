@@ -230,6 +230,7 @@ class Settings extends Page implements HasForms
                     }
 
                     CacheService::instance()->forget('settings');
+                    CacheService::instance()->forget('platform_settings');
 
                     fns()->saved();
                 })
