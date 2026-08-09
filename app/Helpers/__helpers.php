@@ -65,16 +65,36 @@ if (!function_exists('arr_rand')) {
     }
 }
 
+if (!function_exists('is_admin_panel')) {
+    function is_admin_panel(): bool
+    {
+        if (! class_exists(\Filament\Facades\Filament::class)) {
+            return false;
+        }
+
+        try {
+            return filament()->getCurrentPanel()?->getId() === 'admin';
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+}
+
 if (!function_exists('settings')) {
     function settings(array $type = []): Collection
     {
-        $settings = \App\Services\CacheService::instance()
-            ->remember('settings', \App\Services\CacheService::TTL_DAY, function () {
-                return \App\Models\Setting::where('tenant_id', filament()->getTenant()?->id)->orderBy('sort')->get();
-            });
+        if (is_admin_panel()) {
+            $settings = platform_settings();
+        } else {
+            $settings = \App\Services\CacheService::instance()
+                ->remember('settings', \App\Services\CacheService::TTL_DAY, function () {
+                    return \App\Models\Setting::where('tenant_id', filament()->getTenant()?->id)->orderBy('sort')->get();
+                });
+        }
 
-        if (count($type) > 0)
-            $settings = $settings->whereIn("type", $type);
+        if (count($type) > 0) {
+            $settings = $settings->whereIn('type', $type);
+        }
 
         return $settings;
     }
@@ -83,6 +103,9 @@ if (!function_exists('settings')) {
 if (!function_exists('setting')) {
     function setting($key, $default = ''): ?string
     {
+        if (is_admin_panel()) {
+            return platform_setting($key, $default);
+        }
 
         $item = settings()->firstWhere('key', $key);
 
@@ -164,7 +187,10 @@ if (!function_exists('settings_by_group')) {
 if (!function_exists('settings_by_tab')) {
     function settings_by_tab(string $tab, array $type = []): Collection
     {
-        return settings($type)->whereIn('tab', $tab);
+        return settings($type)
+            ->where('tab', $tab)
+            ->sortBy('sort')
+            ->values();
     }
 }
 

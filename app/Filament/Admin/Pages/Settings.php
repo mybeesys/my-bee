@@ -66,10 +66,22 @@ class Settings extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->form->fill();
+        $this->form->fill($this->getInitialFormState());
 
-        if (config('app.debug'))
+        if (config('app.debug')) {
             $this->enable_full_access = true;
+        }
+    }
+
+    protected function getInitialFormState(): array
+    {
+        $state = [];
+
+        foreach (platform_settings()->where('visible_in_user_friendly_settings', true) as $setting) {
+            $state[$setting->id] = $setting->value;
+        }
+
+        return $state;
     }
 
     protected function getActions(): array
@@ -117,9 +129,12 @@ class Settings extends Page implements HasForms
 
     public function getTabs(): array
     {
-        $tabs = settings()->pluck('tab')->unique()->toArray();
-
-        $tabs = array_filter($tabs);
+        $tabs = platform_settings()
+            ->pluck('tab')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
         $data = [];
 
@@ -160,7 +175,10 @@ class Settings extends Page implements HasForms
     {
         $fields = [];
 
-        $settings = settings_by_tab($tab)->where('visible_in_user_friendly_settings', true);
+        $settings = platform_settings()
+            ->where('tab', $tab)
+            ->where('visible_in_user_friendly_settings', true)
+            ->sortBy('sort');
 
         foreach ($settings as $setting) {
             if ($setting->type == "text") {
