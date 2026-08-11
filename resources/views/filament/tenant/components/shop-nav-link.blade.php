@@ -4,11 +4,13 @@
     use Filament\Facades\Filament;
 
     $tenantPanel = Filament::getCurrentPanel()?->getId() === 'tenant';
+    $tenant = Filament::getTenant();
     $isClientOwner = auth()->user()?->hasRole(User::ROLE_CLIENT) ?? false;
+    $canSeeShopNav = $tenantPanel && auth()->check() && filled($tenant);
     $hasStore = false;
     $storePlan = null;
 
-    if ($tenantPanel && $isClientOwner) {
+    if ($canSeeShopNav) {
         try {
             $hasStore = plan_allows_store();
             $storePlan = subscription_store_plan();
@@ -19,12 +21,12 @@
     }
 
     $subscriptionUrl = $tenantPanel ? Subscription::getUrl() : '#';
-    $shopUrl = $tenantPanel && Filament::getTenant()
-        ? config('app.shop_url') . Filament::getTenant()->slug
+    $shopUrl = $canSeeShopNav
+        ? config('app.shop_url') . $tenant->slug
         : '#';
 @endphp
 
-@if ($tenantPanel && $isClientOwner)
+@if ($canSeeShopNav && ($hasStore || $isClientOwner))
     <div
         x-data="{ open: false }"
         class="shop-nav-link"
