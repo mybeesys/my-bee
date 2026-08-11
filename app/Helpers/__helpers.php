@@ -221,10 +221,15 @@ if (!function_exists('get_client')) {
      */
     function get_client(): ?\App\Models\Client
     {
-        if ($user = get_user()) {
-            return $user->client;
+        if (! $user = get_user()) {
+            throw new Exception("User not logged in");
         }
-        throw new Exception("User not logged in");
+
+        if (! $user instanceof \App\Models\User) {
+            return null;
+        }
+
+        return resolve_tenant_client_for_user($user);
     }
 }
 
@@ -759,10 +764,50 @@ function fns(): \App\Services\FilamentNotificationService
     return new \App\Services\FilamentNotificationService();
 }
 
+if (!function_exists('resolve_tenant_client_for_user')) {
+    function resolve_tenant_client_for_user(?\App\Models\User $user = null): ?\App\Models\Client
+    {
+        $user ??= auth()->user();
+
+        if (! $user instanceof \App\Models\User) {
+            return null;
+        }
+
+        if ($user->client) {
+            return $user->client;
+        }
+
+        try {
+            $tenant = filament()->getTenant();
+
+            if ($tenant instanceof \App\Models\Tenant) {
+                $tenant->loadMissing('client');
+
+                if ($tenant->client) {
+                    return $tenant->client;
+                }
+            }
+        } catch (\Throwable) {
+            // Filament may not be booted during early auth.
+        }
+
+        return $user->tenants()
+            ->with('client')
+            ->first()
+            ?->client;
+    }
+}
+
 if (!function_exists('tenant_client')) {
     function tenant_client(): ?\App\Models\Client
     {
-        return filament()->auth()->user()->client;
+        $user = filament()->auth()->user();
+
+        if (! $user instanceof \App\Models\User) {
+            return null;
+        }
+
+        return resolve_tenant_client_for_user($user);
     }
 }
 

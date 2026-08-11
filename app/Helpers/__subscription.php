@@ -3,7 +3,7 @@
 if (!function_exists('get_subscription')) {
     function get_subscription(): ?\App\Models\Subscription
     {
-        return get_client()->subscription;
+        return get_client()?->subscription;
     }
 }
 
@@ -15,9 +15,9 @@ if (!function_exists('get_plan')) {
 }
 
 if (!function_exists('get_plan_for_client')) {
-    function get_plan_for_client(\App\Models\Client $client): ?\App\Models\Plan
+    function get_plan_for_client(?\App\Models\Client $client): ?\App\Models\Plan
     {
-        return $client->subscription?->plan;
+        return $client?->subscription?->plan;
     }
 }
 
@@ -48,8 +48,10 @@ if (!function_exists('subscription_store_plan')) {
 if (!function_exists('subscription_trial_days')) {
     function subscription_trial_days(?\App\Models\Client $client = null): ?int
     {
-        if ($client === null) {
-            $client = get_client();
+        $client ??= get_client();
+
+        if (! $client) {
+            return null;
         }
 
         $plan = get_plan_for_client($client);
@@ -67,8 +69,10 @@ if (!function_exists('subscription_trial_days')) {
 if (!function_exists('subscription_trial_expires_at')) {
     function subscription_trial_expires_at(?\App\Models\Client $client = null): ?\Carbon\Carbon
     {
-        if ($client === null) {
-            $client = get_client();
+        $client ??= get_client();
+
+        if (! $client) {
+            return null;
         }
 
         $days = subscription_trial_days($client);
@@ -99,6 +103,18 @@ if (!function_exists('subscription_trial_expired')) {
 if (!function_exists('subscription_account_restricted')) {
     function subscription_account_restricted(?\App\Models\Client $client = null): bool
     {
+        if ($client === null) {
+            try {
+                $client = get_client();
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        if (! $client) {
+            return false;
+        }
+
         return subscription_trial_expired($client);
     }
 }
@@ -200,8 +216,10 @@ if (!function_exists('subscription_plan_limit')) {
 if (!function_exists('subscription_resource_count')) {
     function subscription_resource_count(string $type, ?\App\Models\Client $client = null): int
     {
-        if ($client === null) {
-            $client = get_client();
+        $client ??= get_client();
+
+        if (! $client) {
+            return 0;
         }
 
         return match ($type) {
@@ -244,8 +262,10 @@ if (!function_exists('subscription_resource_count')) {
 if (!function_exists('subscription_resource_maxed_out')) {
     function subscription_resource_maxed_out(string $type, ?\App\Models\Client $client = null): bool
     {
-        if ($client === null) {
-            $client = get_client();
+        $client ??= get_client();
+
+        if (! $client) {
+            return false;
         }
 
         $plan = get_plan_for_client($client);
@@ -323,8 +343,10 @@ if (!function_exists('subscription_limit_usage')) {
      */
     function subscription_limit_usage(string $type, ?\App\Models\Client $client = null): ?array
     {
-        if ($client === null) {
-            $client = get_client();
+        $client ??= get_client();
+
+        if (! $client) {
+            return null;
         }
 
         $plan = get_plan_for_client($client);

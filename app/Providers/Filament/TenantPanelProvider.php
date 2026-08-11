@@ -101,10 +101,9 @@ class TenantPanelProvider extends PanelProvider
                 PanelsRenderHook::BODY_END,
                 fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.sidebar-accordion'),
             )
-//            ->tenantMenuItems([
-//                'test' => MenuItem::make()->label('Register new team')->url(null)
-//                // ...
-//            ])
+            ->tenantMenuItems([
+                'register' => MenuItem::make()->hidden(),
+            ])
             ->font('Cairo', provider: GoogleFontProvider::class)
             ->login(LoginTenant::class)
             ->colors([
