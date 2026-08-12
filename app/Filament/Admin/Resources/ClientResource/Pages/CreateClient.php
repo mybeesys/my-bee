@@ -134,7 +134,7 @@ class CreateClient extends CreateRecord
                     ->columns(3),
 
                 Section::make(__('fields.subscription_plan'))
-                    ->description(__('fields.create_client_plan_hint') . ' — ' . __('fields.subscription_prices_ex_tax_note'))
+                    ->description(__('fields.create_client_plan_hint'))
                     ->icon('heroicon-o-rectangle-stack')
                     ->extraAttributes(['class' => 'create-client-section'])
                     ->schema([

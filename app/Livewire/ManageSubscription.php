@@ -49,13 +49,19 @@ class ManageSubscription extends Component
 
         if ($this->registrationFlow) {
             $selection = registration_plan_selection();
+            $returningFromRegistration = request()->query('from') === 'registration';
 
             if ($selection) {
                 $this->selectedPlanId = $selection['plan_id'];
-                $this->billingPeriod = SubscriptionPricingService::instance()
-                    ->normalizeBillingPeriod($selection['billing_period']);
-            } else {
-                $this->billingPeriod = SubscriptionPricingService::BILLING_MONTHLY;
+
+                if ($returningFromRegistration) {
+                    $this->billingPeriod = SubscriptionPricingService::instance()
+                        ->normalizeBillingPeriod($selection['billing_period']);
+                }
+            }
+
+            if (! $returningFromRegistration || ! $selection) {
+                $this->billingPeriod = SubscriptionPricingService::BILLING_YEARLY;
             }
         } else {
             $this->selectedPlanId = $subscription?->plan_id;

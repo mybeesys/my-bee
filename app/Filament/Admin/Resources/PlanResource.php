@@ -109,7 +109,7 @@ class PlanResource extends Resource
                             ->helperText(function (Forms\Get $get) {
                                 $price = (float) ($get('price') ?? 0);
                                 if ($price <= 0) {
-                                    return __('fields.subscription_prices_ex_tax_note');
+                                    return null;
                                 }
 
                                 $plan = new Plan(['price' => $price]);

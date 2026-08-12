@@ -169,7 +169,7 @@ class ClientResource extends Resource
                             ->helperText(function (Get $get) {
                                 $planId = $get('plan_id');
                                 if (! $planId) {
-                                    return __('fields.subscription_prices_ex_tax_note');
+                                    return null;
                                 }
 
                                 $plan = Plan::find($planId);

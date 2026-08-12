@@ -103,9 +103,6 @@
                 </div>
 
                 @unless ($currentQuote['is_free'])
-                    <p class="subscription-page__price-note">
-                        {{ __('fields.subscription_prices_ex_tax_note') }}
-                    </p>
                     <dl class="subscription-page__price-breakdown">
                         <div>
                             <dt>{{ __('fields.subscription_subtotal_ex_tax') }}</dt>
@@ -227,10 +224,10 @@
                                         </dd>
                                     </div>
 
-                                    <div class="subscription-page__history-detail">
-                                        <dt>{{ __('fields.subscription_coupon') }}</dt>
-                                        <dd>
-                                            @if ($entry['coupon_code'])
+                                    @if ($entry['coupon_code'])
+                                        <div class="subscription-page__history-detail">
+                                            <dt>{{ __('fields.subscription_coupon') }}</dt>
+                                            <dd>
                                                 <span class="subscription-page__history-coupon">
                                                     {{ $entry['coupon_code'] }}
                                                     @if ($entry['discount_amount_formatted'])
@@ -239,11 +236,9 @@
                                                         </span>
                                                     @endif
                                                 </span>
-                                            @else
-                                                —
-                                            @endif
-                                        </dd>
-                                    </div>
+                                            </dd>
+                                        </div>
+                                    @endif
                                 </dl>
 
                                 @unless ($entry['is_free'])
@@ -319,14 +314,13 @@
                 </button>
             </div>
 
-            <div class="subscription-page__info-alert" role="note">
-                <x-filament::icon
-                    icon="heroicon-o-information-circle"
-                    class="subscription-page__info-alert-icon"
-                />
-                <div class="subscription-page__info-alert-content">
-                    <p>{{ __('fields.subscription_prices_ex_tax_note') }}</p>
-                    @if ($billingPeriod === 'yearly')
+            @if ($billingPeriod === 'yearly')
+                <div class="subscription-page__info-alert" role="note">
+                    <x-filament::icon
+                        icon="heroicon-o-information-circle"
+                        class="subscription-page__info-alert-icon"
+                    />
+                    <div class="subscription-page__info-alert-content">
                         <p class="subscription-page__info-alert-yearly">
                             <x-filament::icon
                                 icon="heroicon-o-gift"
@@ -334,9 +328,9 @@
                             />
                             <strong>{{ __('fields.subscription_yearly_discount_note') }}</strong>
                         </p>
-                    @endif
+                    </div>
                 </div>
-            </div>
+            @endif
 
             @if ($plansList->isEmpty())
                 <p class="subscription-page__empty">{{ __('fields.subscription_no_plans') }}</p>

@@ -8,7 +8,7 @@
     </div>
 
     <div class="choose-subscription-card">
-        <livewire:manage-subscription :registration-flow="true" />
+        <livewire:manage-subscription :registration-flow="true" wire:key="registration-plan-picker" />
     </div>
 
     <p class="register-activity-login-hint">

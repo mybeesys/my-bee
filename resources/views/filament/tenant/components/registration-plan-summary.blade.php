@@ -16,7 +16,7 @@
         <div class="registration-plan-summary__header">
             <span class="registration-plan-summary__eyebrow">{{ __('fields.registration_selected_plan_label') }}</span>
             <a
-                href="{{ \App\Filament\Tenant\Pages\ChooseRegistrationPlan::getUrl() }}"
+                href="{{ \App\Filament\Tenant\Pages\ChooseRegistrationPlan::getUrl(['from' => 'registration']) }}"
                 wire:navigate
                 class="registration-plan-summary__change"
             >

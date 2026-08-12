@@ -78,7 +78,6 @@
                     @else
                         {{ $pricing->formatMoney($storeQuote['total_inc_tax'], $storeQuote['currency']) }}
                         {{ __('fields.subscription_per_month') }}
-                        · {{ __('fields.subscription_prices_ex_tax_note') }}
                     @endif
                 </small>
             </div>
