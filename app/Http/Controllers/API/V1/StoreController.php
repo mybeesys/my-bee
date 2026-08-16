@@ -1007,22 +1007,22 @@ class StoreController extends BaseController
         switch ($request->for) {
             case "sales":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library'])->has('lastPrice')->get();
+                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->has('lastPrice')->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
             case "purchases":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library'])->get();
+                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
             case "supply_orders":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library'])->get();
+                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
             case "price_offers":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library'])->get();
+                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
 

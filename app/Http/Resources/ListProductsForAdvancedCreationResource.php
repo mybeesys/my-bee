@@ -20,7 +20,9 @@ class ListProductsForAdvancedCreationResource extends BaseResource
             'id' => $this->id,
             'type' => $this->type,
             'name' => $this->name,
+            'taxProfileId' => $this->tax_profile_id,
             'selectVariantOptions' => ListProductsForAdvancedCreationVariantOptionsResource::collection($this->variantOptions),
+            'variants' => ListProductsForAdvancedCreationVariantResource::collection($this->variants),
             'selectExtras' => ListProductsForAdvancedCreationExtrasResource::collection($this->extras),
         ];
     }

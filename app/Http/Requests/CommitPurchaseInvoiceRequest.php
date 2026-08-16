@@ -56,6 +56,8 @@ class CommitPurchaseInvoiceRequest extends BaseRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
+            'items.*.selected_variant_options_ids' => ['sometimes', 'array'],
+            'items.*.selected_variant_options_ids.*' => ['integer'],
             'items.*.qty' => ['required', 'integer', 'min:1', 'max:' . PHP_INT_MAX],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0.01', 'max:' . PHP_INT_MAX],
             'items.*.discount' => ['sometimes', 'numeric', 'min:0', 'max:' . PHP_INT_MAX],

@@ -148,29 +148,63 @@ class PurchaseInvoiceService
      */
     public function resolveProduct(array $line): array
     {
-        if (! empty($line['product_variant_id'])) {
-            $variant = ProductVariant::query()->findOrFail($line['product_variant_id']);
+        $product = Product::query()->with('variants')->findOrFail($line['product_id']);
+        $variantId = $line['product_variant_id'] ?? null;
 
-            if (! empty($line['product_id']) && (int) $variant->product_id !== (int) $line['product_id']) {
+        if (empty($variantId) && ! empty($line['selected_variant_options_ids'])) {
+            $variantId = $this->variantIdFromOptionIds($product, $line['selected_variant_options_ids']);
+        }
+
+        if ($product->type === Product::$TYPE_VARIANTS && empty($variantId)) {
+            throw ValidationException::withMessages([
+                'items' => __('validation.required', ['attribute' => 'product_variant_id']),
+            ]);
+        }
+
+        if (! empty($variantId)) {
+            $variant = $product->variants->firstWhere('id', (int) $variantId)
+                ?? ProductVariant::query()->findOrFail($variantId);
+
+            if ((int) $variant->product_id !== (int) $product->id) {
                 throw ValidationException::withMessages([
                     'items' => __('validation.exists', ['attribute' => 'product_variant_id']),
                 ]);
             }
 
             return [
-                'product_id' => (int) $variant->product_id,
+                'product_id' => (int) $product->id,
                 'product_variant_id' => (int) $variant->id,
                 'name' => $variant->name,
             ];
         }
-
-        $product = Product::query()->findOrFail($line['product_id']);
 
         return [
             'product_id' => (int) $product->id,
             'product_variant_id' => null,
             'name' => $product->name,
         ];
+    }
+
+    /**
+     * @param  array<int, mixed>  $optionIds
+     */
+    protected function variantIdFromOptionIds(Product $product, array $optionIds): ?int
+    {
+        $wanted = array_map('intval', $optionIds);
+        sort($wanted);
+
+        foreach ($product->variants as $variant) {
+            $have = array_map('intval', $variant->variant_library_options_ids ?? []);
+            sort($have);
+
+            if ($have === $wanted) {
+                return (int) $variant->id;
+            }
+        }
+
+        throw ValidationException::withMessages([
+            'items' => __('validation.exists', ['attribute' => 'selected_variant_options_ids']),
+        ]);
     }
 
     /**
