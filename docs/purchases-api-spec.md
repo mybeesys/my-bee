@@ -77,6 +77,34 @@ flowchart TD
 **منتجات الفورم:**  
 `POST /api/v1/tenant/shop/list-products-for-advanced-creation` مع `{ "for": "purchases" }`.
 
+`selectVariantOptions` بقي كما هو (مسار المبيعات/temp القديم: لون ثم مقاس).  
+**للـ commit استخدم `variants[]` — كل عنصر هو تركيبة جاهزة بـ `id`:**
+
+```json
+{
+  "id": 15,
+  "type": "variants",
+  "name": "تيشيرت",
+  "taxProfileId": 3,
+  "selectVariantOptions": [
+    {
+      "variantLibraryName": "اللون",
+      "variantLibraryId": 1,
+      "options": [{ "id": 10, "name": "أحمر" }, { "id": 11, "name": "أزرق" }]
+    }
+  ],
+  "variants": [
+    { "id": 44, "productId": 15, "name": "أحمر / L", "sku": "TSH-R-L", "variantLibraryOptionsIds": [10, 21] },
+    { "id": 45, "productId": 15, "name": "أزرق / M", "sku": "TSH-B-M", "variantLibraryOptionsIds": [11, 22] }
+  ],
+  "selectExtras": []
+}
+```
+
+- `type=basic`: أرسل `product_id` فقط، `variants` فارغة.
+- `type=variants`: اعرض `variants` كقائمة اختيار (كل صف = `product_variant_id`). لا تحسب التركيب من `selectVariantOptions`.
+- بديل: أرسل `selected_variant_options_ids: [10, 21]` بدون `product_variant_id` والسيرفر يحوّلها. المسار الأوضح للموبايل هو `variants[].id`.
+
 **حسابات التحصيل لدفعة الآجل:**  
 `GET /api/v1/tenant/settings/utils/accounts/collection`
 
@@ -160,6 +188,13 @@ POST /api/v1/tenant/shop/purchases/commit
       "unit_cost": 25.5,
       "discount": 0,
       "tax_profile_id": 3
+    },
+    {
+      "product_id": 15,
+      "product_variant_id": 44,
+      "qty": 2,
+      "unit_cost": 40,
+      "tax_profile_id": 3
     }
   ],
   "additional_costs": [
@@ -184,6 +219,7 @@ POST /api/v1/tenant/shop/purchases/commit
 - `supplier_id` و `warehouse_id` و `items` إلزامية. بند واحد على الأقل.
 - `unit_cost` يمكن إرساله باسم `price`. الحد الأدنى `0.01`.
 - `qty` عدد صحيح ≥ 1.
+- منتج `type=variants`: **إلزامي** `product_variant_id` (من `variants[].id`) أو `selected_variant_options_ids`. بدونها `422`.
 - `payment_terms` افتراضي `credit`. `cash` لا يُنشئ سند صرف تلقائي (مثل الويب).
 - `credit_payment` **اختياري**، وفقط مع الآجل. `amount` ≤ المتبقي بعد التأكيد. إن فشل الدفع تُلغى الفاتورة كلها (`422`).
 - `date` ضمن آخر 30 يوماً حتى اليوم.
@@ -246,7 +282,9 @@ GET /api/v1/tenant/shop/purchases/{id}
 
 ---
 
-## 9) التحويل من أمر توريد (المسار الجديد)
+## 9) التحويل من أمر توريد
+
+**نفّذ هذا القسم فقط عندما توجد شاشة أوامر توريد في الموبايل.** الـ endpoints جاهزة على الباك؛ لا حاجة لمسار مؤقت داخل فاتورة المشتريات.
 
 ```
 GET /api/v1/tenant/shop/supply-orders/{id}/purchase-prefill
@@ -311,8 +349,8 @@ NEW screens MUST use POST purchases/commit (one-shot confirmed). Do NOT use the 
 
 Must implement:
 1) List: GET purchases. search on no/supplier name. Filters: payment_terms, supplier, dates. Show settlementStatusKey, paid/unpaid, supplier. Open GET purchases/{id}.
-2) Create: supplier (search + optional POST /suppliers name only), warehouse from GET /api/v1/tenant/settings/warehouses (optional quick create), payment_terms default credit, date Y-m-d last 30 days to today, lines via POST list-products-for-advanced-creation { "for": "purchases" }. Each line: product_id, optional product_variant_id, qty, unit_cost (>=0.01), optional discount, optional tax_profile_id. Optional additional_costs. If credit, optional credit_payment { account_code from GET /api/v1/tenant/settings/utils/accounts/collection, amount, date, statement }. Server computes tax, stocks, journals. Do not post cash payment yourself.
-3) Convert from supply order: GET supply-orders/{id}/purchase-prefill, require the user to fill unitCost, then POST purchases/commit. Do not call start-purchase-invoice in the new UI.
+2) Create: supplier (search + optional POST /suppliers name only), warehouse from GET /api/v1/tenant/settings/warehouses (optional quick create), payment_terms default credit, date Y-m-d last 30 days to today, lines via POST list-products-for-advanced-creation { "for": "purchases" }. Show BOTH basic and variants products. For type=variants pick from variants[] (each has id) and send product_id + product_variant_id. Do NOT try to cartesian-product selectVariantOptions yourself. Each line: product_id, optional product_variant_id, qty, unit_cost (>=0.01), optional discount, optional tax_profile_id (default taxProfileId from the product). Optional additional_costs. If credit, optional credit_payment { account_code from GET /api/v1/tenant/settings/utils/accounts/collection, amount, date, statement }. Server computes tax, stocks, journals. Do not post cash payment yourself.
+3) Convert from supply order: SKIP until the app has a Supply Orders screen. Endpoints exist (GET supply-orders/{id}/purchase-prefill then POST purchases/commit) but must not be wired from the purchases form yet.
 4) Confirmed invoices are locked (lockedAt set, canEdit false). No PATCH/DELETE. Purchase return is a later screen using hasPurchaseReturn / paymentVoucherId.
 5) Keep calling old temp endpoints only if existing production code already depends on them.
 
@@ -335,6 +373,8 @@ Body snake_case, response camelCase.
 | 8 | `GET purchases/{id}` بعد commit | بنود + `paymentTerms` + `supplierId` |
 | 9 | مسار temp القديم `store` → add-item → save | ما زال `purchase_order` حتى `update-status` |
 | 10 | variant لا يتبع المنتج | `422` على `items` |
+| 11 | منتج variants بدون `product_variant_id` | `422` |
+| 12 | `product_variant_id` من `variants[].id` | بند بالاسم المركّب (مثلاً أحمر / L) |
 
 ---
 

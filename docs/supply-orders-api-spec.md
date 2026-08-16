@@ -70,6 +70,8 @@ flowchart TD
 منتجات الفورم:  
 `POST /api/v1/tenant/shop/list-products-for-advanced-creation` مع `{ "for": "supply_orders" }`.
 
+منتج `type=variants`: اختر من `variants[]` وأرسل `product_variant_id` (نفس قائمة المشتريات).
+
 ---
 
 ## 5) Endpoints
