@@ -116,7 +116,23 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
                 'sales-returns' => \App\Http\Controllers\API\V1\SalesReturnsController::class,
                 'payment-vouchers' => \App\Http\Controllers\API\V1\PaymentVoucherController::class,
                 'receipt-vouchers' => \App\Http\Controllers\API\V1\ReceiptVoucherController::class,
+                'supply-orders' => \App\Http\Controllers\API\V1\SupplyOrderController::class,
             ]);
+
+            Route::get('clients/{id}/account-statement', [\App\Http\Controllers\API\V1\CustomerController::class, 'accountStatement']);
+            Route::get('clients/{id}/invoices', [\App\Http\Controllers\API\V1\CustomerController::class, 'invoices']);
+            Route::get('clients/{id}/orders', [\App\Http\Controllers\API\V1\CustomerController::class, 'orders']);
+
+            Route::get('suppliers/{id}/account-statement', [\App\Http\Controllers\API\V1\SupplierController::class, 'accountStatement']);
+            Route::get('suppliers/{id}/purchase-invoices', [\App\Http\Controllers\API\V1\SupplierController::class, 'purchaseInvoices']);
+            Route::get('suppliers/{id}/supply-orders', [\App\Http\Controllers\API\V1\SupplierController::class, 'supplyOrders']);
+
+            Route::post('supply-orders/{id}/start-purchase-invoice', [\App\Http\Controllers\API\V1\SupplyOrderController::class, 'startPurchaseInvoice']);
+            Route::get('supply-orders/{id}/purchase-prefill', [\App\Http\Controllers\API\V1\SupplyOrderController::class, 'purchasePrefill']);
+
+            Route::get('location/states', [\App\Http\Controllers\API\V1\LocationController::class, 'tenantStates']);
+            Route::get('location/cities', [\App\Http\Controllers\API\V1\LocationController::class, 'tenantCities']);
+            Route::get('location/areas', [\App\Http\Controllers\API\V1\LocationController::class, 'tenantAreas']);
 
             //clear temp invoices
             Route::post('purchases-clear-temp-invoices', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'clearTempInvoices']);
@@ -145,6 +161,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::post('purchases/update-status', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'updateStatus']);
 
             Route::post('purchases/save', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'save']);
+            Route::post('purchases/commit', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'commit']);
 
 
             //sales

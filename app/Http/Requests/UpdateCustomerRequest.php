@@ -2,12 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesPartyContactLocation;
 use App\Models\Customer;
 use App\Rules\ApiUniqueTenantItemRule;
 use App\Rules\InternationalPhoneRule;
 
 class UpdateCustomerRequest extends BaseRequest
 {
+    use ValidatesPartyContactLocation;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -23,17 +26,26 @@ class UpdateCustomerRequest extends BaseRequest
      */
     public function rules(): array
     {
-        $id = str(request()->getRequestUri())->afterLast('/')->value();
-        return [
+        $id = $this->route('client') ?? $this->route('id');
+
+        return array_merge([
             'name' => ['sometimes', 'string', 'max:255', new ApiUniqueTenantItemRule(Customer::class, 'name', $id)],
-            'phone' => ['sometimes', new InternationalPhoneRule(false), new ApiUniqueTenantItemRule(Customer::class, 'phone', $id)],
-            'email' => ['sometimes', 'email', 'max:255'],
+            'phone' => $this->phoneRules($id),
+            'email' => ['nullable', 'email', 'max:255'],
             'trn' => ['nullable', 'string', 'max:50'],
             'postal_code' => ['nullable', 'string', 'max:20'],
-            'state_id' => ['nullable', 'exists:states,id'],
-            'city_id' => ['nullable', 'exists:cities,id'],
-            'area_id' => ['nullable', 'exists:areas,id'],
             'delivery_address' => ['nullable', 'string', 'max:255'],
-        ];
+        ], $this->partyContactLocationRules());
+    }
+
+    protected function phoneRules(mixed $ignoreId): array
+    {
+        $rules = ['sometimes', 'nullable', new InternationalPhoneRule(false)];
+
+        if (filled($this->input('phone'))) {
+            $rules[] = new ApiUniqueTenantItemRule(Customer::class, 'phone', $ignoreId);
+        }
+
+        return $rules;
     }
 }

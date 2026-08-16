@@ -27,6 +27,9 @@ class SavePurchaseInvoiceResource extends BaseRequest
             'date' => ['required', 'date', 'date_format:d-m-Y'],
             'supplier_id' => ['required', 'exists:suppliers,id'],
             'warehouse_id' => ['required', 'exists:warehouses,id'],
+            'payment_terms' => ['sometimes', 'in:cash,credit'],
+            'prices_includes_taxes' => ['sometimes', 'boolean'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ];
     }
 }

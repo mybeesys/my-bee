@@ -2,36 +2,37 @@
 
 namespace App\Http\Requests;
 
-
+use App\Http\Requests\Concerns\ValidatesPartyContactLocation;
 use App\Models\Supplier;
 use App\Rules\ApiUniqueTenantItemRule;
 use App\Rules\InternationalPhoneRule;
 
 class UpdateSupplierRequest extends BaseRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    use ValidatesPartyContactLocation;
+
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $id = str(request()->getRequestUri())->afterLast('/')->value();
-        return [
+        $id = $this->route('supplier') ?? $this->route('id');
+
+        return array_merge([
             'name' => ['sometimes', 'string', 'max:255', new ApiUniqueTenantItemRule(Supplier::class, 'name', $id)],
-            'phone' => ['sometimes', new InternationalPhoneRule(false)],
-            'address' => ['sometimes', 'string', 'max:255'],
-            'company' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'string', 'max:255'],
-            'notes' => ['sometimes', 'max:1200'],
-        ];
+            'phone' => ['sometimes', 'nullable', new InternationalPhoneRule(false)],
+            'email' => ['nullable', 'email', 'max:255'],
+            'trn' => ['nullable', 'string', 'max:50'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
+            'delivery_address' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'company' => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:1200'],
+        ], $this->partyContactLocationRules());
     }
 }

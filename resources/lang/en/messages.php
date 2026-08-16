@@ -6,6 +6,7 @@ return [
         "updated" => "Record updated.",
         "deleted" => "Record deleted.",
         "retrieved" => "Data retrieved.",
+        "validation_error" => "The given data was invalid.",
         "max_records" => "You have exceeded the maximum allowed records.",
     ],
 

@@ -18,6 +18,12 @@ class StateResource extends BaseResource
             'id' => $this->id,
             'name' => $this->name,
             'countryId' => $this->country_id,
+            'hasCities' => $this->when(
+                isset($this->cities_count) || $this->relationLoaded('cities'),
+                fn () => isset($this->cities_count)
+                    ? $this->cities_count > 0
+                    : $this->cities->isNotEmpty()
+            ),
         ]);
     }
 }

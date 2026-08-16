@@ -42,4 +42,56 @@ class LocationController extends BaseController
         $areas = Area::where('city_id', request()->input('city_id'))->get();
         return $this->responder(__('messages.api.retrieved'), 200, AreaResource::collection($areas))->respond();
     }
+
+    /**
+     * States for customer/supplier forms — same options as PartyContactFormSchema.
+     */
+    public function tenantStates(): \Illuminate\Http\JsonResponse
+    {
+        $states = State::query()
+            ->withCount('cities')
+            ->orderBy('id')
+            ->get();
+
+        return $this->responder(__('messages.api.retrieved'), 200, StateResource::collection($states))->respond();
+    }
+
+    /**
+     * Cities for a state — all cities (not only those with areas), matching the web form.
+     */
+    public function tenantCities(): \Illuminate\Http\JsonResponse
+    {
+        $stateId = request()->input('state_id');
+
+        if (! filled($stateId)) {
+            return $this->responder(__('messages.api.retrieved'), 200, [])->respond();
+        }
+
+        $cities = City::query()
+            ->where('state_id', $stateId)
+            ->withCount('areas')
+            ->orderBy('id')
+            ->get();
+
+        return $this->responder(__('messages.api.retrieved'), 200, CityResource::collection($cities))->respond();
+    }
+
+    /**
+     * Areas for a city — matching the web form.
+     */
+    public function tenantAreas(): \Illuminate\Http\JsonResponse
+    {
+        $cityId = request()->input('city_id');
+
+        if (! filled($cityId)) {
+            return $this->responder(__('messages.api.retrieved'), 200, [])->respond();
+        }
+
+        $areas = Area::query()
+            ->where('city_id', $cityId)
+            ->orderBy('id')
+            ->get();
+
+        return $this->responder(__('messages.api.retrieved'), 200, AreaResource::collection($areas))->respond();
+    }
 }

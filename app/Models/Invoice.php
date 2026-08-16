@@ -487,6 +487,11 @@ class Invoice extends BaseModel
         return $this->hasOne(ReceiptVoucher::class, 'invoice_id');
     }
 
+    public function paymentVoucher(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PaymentVoucher::class, 'invoice_id');
+    }
+
     public function getInvoicePerson()
     {
         $description = "Unknown";

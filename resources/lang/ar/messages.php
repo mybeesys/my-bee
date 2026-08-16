@@ -6,6 +6,7 @@ return [
         "updated" => "تم الحفظ",
         "deleted" => "تم الحذف",
         "retrieved" => "تم جلب البيانات",
+        "validation_error" => "البيانات المدخلة غير صحيحة",
         'permission_denied' => 'ليس لديك صلاحية لإجراء هذة العملية',
         "max_records" => "لقد تجاوزت الحد المسموح به",
     ],

@@ -18,6 +18,12 @@ class CityResource extends BaseResource
             'id' => $this->id,
             'name' => $this->name,
             'stateId' => $this->state_id,
+            'hasAreas' => $this->when(
+                isset($this->areas_count) || $this->relationLoaded('areas'),
+                fn () => isset($this->areas_count)
+                    ? $this->areas_count > 0
+                    : $this->areas->isNotEmpty()
+            ),
         ]);
     }
 }

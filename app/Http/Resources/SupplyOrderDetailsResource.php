@@ -2,22 +2,26 @@
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use App\Models\Product;
+use App\Models\ProductVariant;
 
 class SupplyOrderDetailsResource extends BaseResource
 {
     /**
-     * Transform the resource into an array.
-     *
      * @return array<string, mixed>
      */
     public function toArray($request): array
     {
-        return [
+        $item = $this->item;
+        $isVariant = $item instanceof ProductVariant;
+
+        return $this->filterFields([
             'id' => $this->id,
-            'name' => $this->item->name,
-            'qty' => $this->qty,
-        ];
+            'name' => $item?->name,
+            'qty' => (int) $this->qty,
+            'productId' => $isVariant ? $item?->product_id : ($item instanceof Product ? $item->id : null),
+            'productVariantId' => $isVariant ? $item?->id : null,
+            'itemType' => $isVariant ? Product::$TYPE_VARIANTS : Product::$TYPE_BASIC,
+        ]);
     }
 }

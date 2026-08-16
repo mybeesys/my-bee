@@ -6,6 +6,7 @@ use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\AddAdditionalCostForPurchaseInvoiceRequest;
 use App\Http\Requests\AddProductForPurchaseInvoiceRequest;
 use App\Http\Requests\ApplyOverallDiscountForPurchaseInvoiceRequest;
+use App\Http\Requests\CommitPurchaseInvoiceRequest;
 use App\Http\Requests\DeleteAdditionalCostForPurchaseInvoiceRequest;
 use App\Http\Requests\DeleteItemForPurchaseInvoiceRequest;
 use App\Http\Requests\ListPurchaseInvoiceRequest;
@@ -20,27 +21,45 @@ use App\Models\AdditionalCost;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Supplier;
 use App\Models\TaxProfile;
 use App\Models\Warehouse;
 use App\Services\FilamentVariantBuilderService;
+use App\Services\InvoicePaymentTermsService;
 use App\Services\PricingService;
-use App\Services\ProductService;
+use App\Services\PurchaseInvoiceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseInvoiceController extends BaseController
 {
+    public function __construct(
+        protected PurchaseInvoiceService $purchases
+    ) {
+    }
+
     public function index(ListPurchaseInvoiceRequest $request)
     {
         $sort = $request->input('sort', 'latest');
 
         $data = Invoice::purchases()
-            ->with(['items.product', 'items.productVariant', 'items.taxProfile', 'items.purchasesReturnsDetails', 'items.invoice', 'items.user', 'additionalCosts.type', 'purchasePayments', 'supplier', 'user', 'reviewedBy', 'stocks', 'purchasesReturns'])
+            ->with(PurchaseInvoiceService::eagerLoads())
+            ->withCount('purchasesReturns')
             ->where('temp', 0)
             ->when($request->status, function (Builder $builder) use ($request) {
                 return $builder->where('status', $request->status);
+            })
+            ->when($request->payment_terms, function (Builder $builder) use ($request) {
+                return $builder->where('payment_terms', $request->payment_terms);
+            })
+            ->when($request->filled('search'), function (Builder $builder) use ($request) {
+                $search = $request->input('search');
+
+                $builder->where(function (Builder $query) use ($search) {
+                    $query->where('no', 'like', "%{$search}%")
+                        ->orWhereHas('supplier', fn (Builder $supplier) => $supplier->where('name', 'like', "%{$search}%"));
+                });
             })
             ->when($request->payment_method, function (Builder $builder) use ($request) {
                 return $builder->where('payment_method', $request->payment_method);
@@ -77,8 +96,13 @@ class PurchaseInvoiceController extends BaseController
                 return $invoice->getPaymentStatus("en") == $request->payment_status;
             });
 
-        return $this->responder(__('messages.api.retrieved'), 200, PurchaseInvoiceResource::collection($data))
-            ->respond();
+        $payload = collect(PurchaseInvoiceResource::collection($data)->resolve());
+
+        if ($request->boolean('paginate')) {
+            return $this->responder(__('messages.api.retrieved'), 200)->paginate($payload);
+        }
+
+        return $this->responder(__('messages.api.retrieved'), 200, $payload)->respond();
     }
 
     public function store(StorePurchaseInvoiceRequest $request)
@@ -106,6 +130,51 @@ class PurchaseInvoiceController extends BaseController
             ->respond();
     }
 
+    public function show(string $id)
+    {
+        $invoice = Invoice::purchases()
+            ->with(PurchaseInvoiceService::eagerLoads())
+            ->withCount('purchasesReturns')
+            ->findOrFail($id);
+
+        return $this->responder(__('messages.api.retrieved'), 200, new PurchaseInvoiceResource($invoice))->respond();
+    }
+
+    public function commit(CommitPurchaseInvoiceRequest $request)
+    {
+        if (subscription_resource_maxed_out('purchase_invoices', $this->getTenant(false)->client)) {
+            return $this->errorBadRequest()
+                ->message(subscription_limit_exceeded_message('purchase_invoices', $this->getTenant(false)->client))
+                ->respond();
+        }
+
+        try {
+            $invoice = $this->purchases->commit(
+                $request->validated(),
+                (int) $this->getTenantId(),
+                (int) auth('sanctum')->id(),
+            );
+
+            return $this->responder(__('messages.api.created'), 201, new PurchaseInvoiceResource($invoice))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->error($exception)->respond();
+        }
+    }
+
+    public function update()
+    {
+        return $this->errorBadRequest()->message(__('fields.invoice_locked_statement'))->respond();
+    }
+
+    public function destroy()
+    {
+        abort(403, __('messages.api.permission_denied'));
+    }
+
     public function save(SavePurchaseInvoiceResource $request)
     {
         $invoice = Invoice::firstWhere('uid', $request->uid);
@@ -131,7 +200,7 @@ class PurchaseInvoiceController extends BaseController
 
         $invoice->update($data);
 
-        $invoice->load(['items.product', 'items.productVariant', 'items.taxProfile', 'items.purchasesReturnsDetails', 'items.invoice', 'items.user', 'additionalCosts.type', 'purchasePayments', 'supplier', 'user', 'reviewedBy', 'stocks', 'purchasesReturns']);
+        $invoice->load(PurchaseInvoiceService::eagerLoads())->loadCount('purchasesReturns');
 
         return $this->responder(__('messages.api.retrieved'), 200, new PurchaseInvoiceResource($invoice))
             ->respond();
@@ -349,19 +418,38 @@ class PurchaseInvoiceController extends BaseController
 
         try {
             DB::beginTransaction();
+            if ($request->filled('payment_terms')) {
+                $invoice->update(['payment_terms' => $request->payment_terms]);
+            }
             if ($request->status == "confirmed") {
                 $invoice->confirmPurchaseInvoice();
+
+                $credit = $request->input('credit_payment');
+                if (is_array($credit) && (float) ($credit['amount'] ?? 0) > 0) {
+                    InvoicePaymentTermsService::instance()->recordCreditPayment($invoice->refresh(), [
+                        'amount' => $credit['amount'],
+                        'account_code' => $credit['account_code'] ?? null,
+                        'date' => $credit['date'] ?? now(),
+                        'statement' => $credit['statement'] ?? '',
+                    ]);
+                }
             } else {
                 $invoice->update(['status' => $request->status]);
             }
             $invoice->refresh();
             DB::commit();
+        } catch (ValidationException $exception) {
+            DB::rollBack();
+
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
         } catch (\Throwable $exception) {
             DB::rollBack();
             report($exception);
 
             return $this->error($exception)->respond();
         }
+
+        $invoice->load(PurchaseInvoiceService::eagerLoads())->loadCount('purchasesReturns');
 
         return $this->responder(__('messages.api.retrieved'), 200, new PurchaseInvoiceResource($invoice))
             ->respond();
