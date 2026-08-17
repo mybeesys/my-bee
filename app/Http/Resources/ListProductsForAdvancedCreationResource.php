@@ -21,6 +21,9 @@ class ListProductsForAdvancedCreationResource extends BaseResource
             'type' => $this->type,
             'name' => $this->name,
             'taxProfileId' => $this->tax_profile_id,
+            'suggestedPrice' => $this->lastPrice
+                ? number_format((float) \App\Services\PricingService::instance()->getRetailPrice($this->resource, 0), currency_decimals(), '.', '')
+                : null,
             'selectVariantOptions' => ListProductsForAdvancedCreationVariantOptionsResource::collection($this->variantOptions),
             'variants' => ListProductsForAdvancedCreationVariantResource::collection($this->variants),
             'selectExtras' => ListProductsForAdvancedCreationExtrasResource::collection($this->extras),

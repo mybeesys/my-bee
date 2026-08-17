@@ -17,6 +17,8 @@ class ServiceResource extends BaseResource
         $tax = $this->price * (collect($this->tax_profile_data['taxes'] ?? null)->sum('percent') / 100);
         return $this->filterFields([
             'id' => $this->id,
+            'serviceTypeId' => $this->service_type_id,
+            'taxProfileId' => $this->tax_profile_id,
             'name' => $this->type?->name ?? '-',
             'description' => $this->description,
             'price' => number_format($this->price, currency_decimals(), '.', ''),

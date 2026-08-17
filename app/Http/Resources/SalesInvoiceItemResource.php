@@ -17,6 +17,8 @@ class SalesInvoiceItemResource extends BaseResource
         return $this->filterFields([
             'id' => $this->id,
             'name' => $this->name,
+            'productId' => $this->product_id,
+            'productVariantId' => $this->product_variant_id,
             'taxProfileId' => $this->taxProfile?->id,
             'qty' => $this->qty,
             'discount' => number_format($this->discount, currency_decimals(), '.', ''),

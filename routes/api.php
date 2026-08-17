@@ -104,6 +104,8 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::post('generate-no', [\App\Http\Controllers\API\V1\StoreController::class, 'generateNo']);
             Route::post('list-products-for-advanced-creation', [\App\Http\Controllers\API\V1\StoreController::class, 'listProductsForAdvancedCreation']);
 
+            Route::get('price-offers/{id}/sales-prefill', [\App\Http\Controllers\API\V1\PriceOfferController::class, 'salesPrefill']);
+
             Route::apiResources([
                 'categories' => \App\Http\Controllers\API\V1\CategoryController::class,
                 'suppliers' => \App\Http\Controllers\API\V1\SupplierController::class,
@@ -117,6 +119,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
                 'payment-vouchers' => \App\Http\Controllers\API\V1\PaymentVoucherController::class,
                 'receipt-vouchers' => \App\Http\Controllers\API\V1\ReceiptVoucherController::class,
                 'supply-orders' => \App\Http\Controllers\API\V1\SupplyOrderController::class,
+                'price-offers' => \App\Http\Controllers\API\V1\PriceOfferController::class,
             ]);
 
             Route::get('clients/{id}/account-statement', [\App\Http\Controllers\API\V1\CustomerController::class, 'accountStatement']);
@@ -184,6 +187,9 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::post('sales/update-status', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'updateStatus']);
 
             Route::post('sales/save', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'save']);
+            Route::post('sales/commit', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'commit']);
+            Route::post('sales/{id}/credit-payment', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'creditPayment']);
+            Route::get('price-offers-for-sales', [\App\Http\Controllers\API\V1\SaleInvoiceController::class, 'priceOffers']);
 
 
             Route::post('payment-vouchers/payments/add', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'addPayment']);

@@ -17,6 +17,12 @@ class ListProductsForAdvancedCreationExtrasResource extends BaseResource
         return $this->filterFields([
             'id' => $this->id,
             'name' => $this->name,
+            'price' => number_format(
+                (float) \App\Services\PricingService::instance()->getRetailPrice($this->resource, 0),
+                currency_decimals(),
+                '.',
+                ''
+            ),
         ]);
     }
 }

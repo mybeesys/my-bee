@@ -26,6 +26,9 @@ class SaveSalesInvoiceRequest extends BaseRequest
             'uid' => ['required', 'exists:invoices,uid'],
             'date' => ['required', 'date', 'date_format:d-m-Y'],
             'customer_id' => ['required', 'exists:customers,id'],
+            'payment_terms' => ['sometimes', 'in:cash,credit'],
+            'prices_includes_taxes' => ['sometimes', 'boolean'],
+            'notes' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ];
     }
 }

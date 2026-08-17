@@ -7,10 +7,12 @@ use App\Http\Requests\AddAdditionalCostForSalesInvoiceRequest;
 use App\Http\Requests\AddProductForSalesInvoiceRequest;
 use App\Http\Requests\AddServiceForSalesInvoiceRequest;
 use App\Http\Requests\ApplyOverallDiscountForSalesInvoiceRequest;
+use App\Http\Requests\CommitSalesInvoiceRequest;
 use App\Http\Requests\DeleteAdditionalCostForSalesInvoiceRequest;
 use App\Http\Requests\DeleteProductForSalesInvoiceRequest;
 use App\Http\Requests\DeleteServiceForSalesInvoiceRequest;
 use App\Http\Requests\ListSalesInvoiceRequest;
+use App\Http\Requests\RecordSalesCreditPaymentRequest;
 use App\Http\Requests\RemoveOverallDiscountForSalesInvoiceRequest;
 use App\Http\Requests\SaveSalesInvoiceRequest;
 use App\Http\Requests\UpdateAdditionalCostForSalesInvoiceRequest;
@@ -23,27 +25,50 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\InvoiceItemExtra;
+use App\Models\PriceOffer;
 use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\Service;
 use App\Models\TaxProfile;
 use App\Services\FilamentVariantBuilderService;
+use App\Services\InvoicePaymentTermsService;
 use App\Services\PricingService;
+use App\Services\SalesInvoiceService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SaleInvoiceController extends BaseController
 {
+    public function __construct(
+        protected SalesInvoiceService $sales
+    ) {
+    }
+
     public function index(ListSalesInvoiceRequest $request)
     {
         $sort = $request->input('sort', 'latest');
 
         $data = Invoice::sales()
-            ->with(['services.type', 'services.taxProfile', 'items.product', 'items.productVariant', 'items.taxProfile', 'items.salesReturnsDetails', 'items.invoice', 'items.user', 'additionalCosts.type', 'salesPayments', 'customer', 'user', 'reviewedBy', 'stocks', 'salesReturns'])
+            ->listedInSalesModule()
+            ->with(SalesInvoiceService::eagerLoads())
+            ->withCount('salesReturns')
             ->where('temp', 0)
             ->when($request->status, function (Builder $builder) use ($request) {
                 return $builder->where('status', $request->status);
+            })
+            ->when($request->payment_terms, function (Builder $builder) use ($request) {
+                return $builder->where('payment_terms', $request->payment_terms);
+            })
+            ->when($request->filled('search'), function (Builder $builder) use ($request) {
+                $search = $request->input('search');
+
+                $builder->where(function (Builder $query) use ($search) {
+                    $query->where('no', 'like', "%{$search}%")
+                        ->orWhereHas('customer', fn (Builder $customer) => $customer->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('order', fn (Builder $order) => $order->where('no', 'like', "%{$search}%"));
+                });
             })
             ->when($request->payment_method, function (Builder $builder) use ($request) {
                 return $builder->where('payment_method', $request->payment_method);
@@ -77,8 +102,13 @@ class SaleInvoiceController extends BaseController
                 return $invoice->getPaymentStatus("en") == $request->payment_status;
             });
 
-        return $this->responder(__('messages.api.retrieved'), 200, SalesInvoiceResource::collection($data))
-            ->respond();
+        $payload = collect(SalesInvoiceResource::collection($data)->resolve());
+
+        if ($request->boolean('paginate')) {
+            return $this->responder(__('messages.api.retrieved'), 200)->paginate($payload);
+        }
+
+        return $this->responder(__('messages.api.retrieved'), 200, $payload)->respond();
     }
 
     public function store()
@@ -103,6 +133,105 @@ class SaleInvoiceController extends BaseController
             'uid' => $invoice->uid
         ])
             ->respond();
+    }
+
+    public function show(string $id)
+    {
+        $invoice = Invoice::sales()
+            ->with(SalesInvoiceService::eagerLoads())
+            ->withCount('salesReturns')
+            ->findOrFail($id);
+
+        return $this->responder(__('messages.api.retrieved'), 200, new SalesInvoiceResource($invoice))->respond();
+    }
+
+    public function commit(CommitSalesInvoiceRequest $request)
+    {
+        if (subscription_resource_maxed_out('sales_invoices', $this->getTenant(false)->client)) {
+            return $this->errorBadRequest()
+                ->message(subscription_limit_exceeded_message('sales_invoices', $this->getTenant(false)->client))
+                ->respond();
+        }
+
+        try {
+            $invoice = $this->sales->commit(
+                $request->validated(),
+                (int) $this->getTenantId(),
+                (int) auth('sanctum')->id(),
+            );
+
+            return $this->responder(__('messages.api.created'), 201, new SalesInvoiceResource($invoice))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->error($exception)->respond();
+        }
+    }
+
+    public function creditPayment(RecordSalesCreditPaymentRequest $request, string $id)
+    {
+        $invoice = Invoice::sales()->findOrFail($id);
+
+        try {
+            $invoice = $this->sales->recordCreditPayment($invoice, $request->validated());
+
+            return $this->responder(__('messages.api.updated'), 200, new SalesInvoiceResource($invoice))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->error($exception)->respond();
+        }
+    }
+
+    /**
+     * Active (not expired) price offers for the sales-list convert action.
+     */
+    public function priceOffers()
+    {
+        $offers = PriceOffer::query()
+            ->notExpired()
+            ->with('customer')
+            ->latest()
+            ->get()
+            ->map(fn (PriceOffer $offer) => [
+                'id' => $offer->id,
+                'no' => $offer->no,
+                'description' => $offer->description,
+                'customerId' => $offer->customer_id,
+                'customerName' => $offer->customer?->name,
+                'expiresAt' => $offer->expires_at?->toDateString(),
+            ]);
+
+        return $this->responder(__('messages.api.retrieved'), 200, $offers)->respond();
+    }
+
+    public function priceOfferPrefill(string $id)
+    {
+        $offer = PriceOffer::query()->findOrFail($id);
+
+        try {
+            return $this->responder(
+                __('messages.api.retrieved'),
+                200,
+                $this->sales->priceOfferPrefill($offer)
+            )->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        }
+    }
+
+    public function update()
+    {
+        return $this->errorBadRequest()->message(__('fields.invoice_locked_statement'))->respond();
+    }
+
+    public function destroy()
+    {
+        abort(403, __('messages.api.permission_denied'));
     }
 
     public function save(SaveSalesInvoiceRequest $request)
@@ -137,7 +266,7 @@ class SaleInvoiceController extends BaseController
             $invoice->refresh();
         }
 
-        $invoice->load(['services.type', 'services.taxProfile', 'items.product', 'items.productVariant', 'items.taxProfile', 'items.salesReturnsDetails', 'items.invoice', 'items.user', 'additionalCosts.type', 'salesPayments', 'customer', 'user', 'reviewedBy', 'stocks', 'salesReturns']);
+        $invoice->load(SalesInvoiceService::eagerLoads())->loadCount('salesReturns');
 
         return $this->responder(__('messages.api.retrieved'), 200, new SalesInvoiceResource($invoice))
             ->respond();
@@ -450,19 +579,38 @@ class SaleInvoiceController extends BaseController
 
         try {
             DB::beginTransaction();
+            if ($request->filled('payment_terms')) {
+                $invoice->update(['payment_terms' => $request->payment_terms]);
+            }
             if ($request->status == "confirmed") {
                 $invoice->confirmSalesInvoice();
+
+                $credit = $request->input('credit_payment');
+                if (is_array($credit) && (float) ($credit['amount'] ?? 0) > 0) {
+                    InvoicePaymentTermsService::instance()->recordCreditPayment($invoice->refresh(), [
+                        'amount' => $credit['amount'],
+                        'account_code' => $credit['account_code'] ?? null,
+                        'date' => $credit['date'] ?? now(),
+                        'statement' => $credit['statement'] ?? '',
+                    ]);
+                }
             } else {
                 $invoice->update(['status' => $request->status]);
             }
             $invoice->refresh();
             DB::commit();
+        } catch (ValidationException $exception) {
+            DB::rollBack();
+
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
         } catch (\Throwable $exception) {
             DB::rollBack();
             report($exception);
 
             return $this->error($exception)->respond();
         }
+
+        $invoice->load(SalesInvoiceService::eagerLoads())->loadCount('salesReturns');
 
         return $this->responder(__('messages.api.retrieved'), 200, new SalesInvoiceResource($invoice))
             ->respond();

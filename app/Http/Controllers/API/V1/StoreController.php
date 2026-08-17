@@ -701,7 +701,7 @@ class StoreController extends BaseController
 
     public function priceOffer($no): \Illuminate\Http\JsonResponse
     {
-        $priceOffer = PriceOffer::with(['tenant', 'details.item', 'details.offerDetailsExtras', 'customer', 'services.type', 'additionalCosts.type'])
+        $priceOffer = PriceOffer::with(['tenant', 'details.item', 'details.offerDetailsExtras', 'details.taxProfile', 'customer', 'services.type', 'services.taxProfile', 'additionalCosts.type', 'additionalCosts.taxProfile'])
             ->where('no', $no)
             ->firstOrFail();
 
@@ -1007,12 +1007,12 @@ class StoreController extends BaseController
         switch ($request->for) {
             case "sales":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->has('lastPrice')->get();
+                $products = Product::with(['extras.extra', 'extras.lastPrice', 'lastPrice', 'variantOptions.library', 'variants.lastPrice'])->has('lastPrice')->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
             case "purchases":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->get();
+                $products = Product::with(['extras.extra', 'extras.lastPrice', 'lastPrice', 'variantOptions.library', 'variants.lastPrice'])->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
             case "supply_orders":
@@ -1022,7 +1022,7 @@ class StoreController extends BaseController
             }
             case "price_offers":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->get();
+                $products = Product::with(['extras.extra', 'extras.lastPrice', 'lastPrice', 'variantOptions.library', 'variants.lastPrice'])->has('lastPrice')->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
 

@@ -24,6 +24,12 @@ class UpdateStatusForSalesInvoiceRequest extends BaseRequest
         return [
             'sale_invoice_uid' => ['required', 'exists:invoices,uid'],
             'status' => ['required', 'in:confirmed,cancelled'],
+            'payment_terms' => ['sometimes', 'in:cash,credit'],
+            'credit_payment' => ['sometimes', 'nullable', 'array'],
+            'credit_payment.account_code' => ['sometimes', 'nullable', 'exists:acc4,code'],
+            'credit_payment.amount' => ['sometimes', 'numeric', 'min:0', 'max:' . PHP_INT_MAX],
+            'credit_payment.date' => ['sometimes', 'date'],
+            'credit_payment.statement' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
     }
 }
