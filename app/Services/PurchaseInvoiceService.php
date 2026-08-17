@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Models\TaxProfile;
 use App\Services\Concerns\ResolvesInvoiceProductLines;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PurchaseInvoiceService
 {
@@ -65,8 +66,10 @@ class PurchaseInvoiceService
                 'supplier_id' => $payload['supplier_id'],
                 'user_id' => $userId,
                 'prices_includes_taxes' => (bool) ($payload['prices_includes_taxes'] ?? true),
-                'discount_option' => $hasLineDiscount ? 'per-item' : 'none',
-                'discount_method' => $hasLineDiscount ? 'amount' : 'none',
+                'discount_option' => $payload['discount_option'] ?? ($hasLineDiscount ? 'per-item' : 'none'),
+                'discount_method' => $payload['discount_method'] ?? ($hasLineDiscount ? 'amount' : 'none'),
+                'discount_amount' => $payload['discount_amount'] ?? null,
+                'discount_percent' => $payload['discount_percent'] ?? null,
                 'notes' => $payload['notes'] ?? null,
                 'temp' => false,
             ]);
@@ -87,6 +90,36 @@ class PurchaseInvoiceService
 
             return $invoice->fresh()->load(self::eagerLoads())->loadCount('purchasesReturns');
         });
+    }
+
+    /**
+     * Credit payment on a confirmed credit invoice (web payments tab, works after lock).
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function recordCreditPayment(Invoice $invoice, array $payload): Invoice
+    {
+        if ($invoice->type !== Invoice::$TYPE_PURCHASES) {
+            throw ValidationException::withMessages([
+                'invoice' => __('fields.invoice_locked_statement'),
+            ]);
+        }
+
+        if ($invoice->status !== 'confirmed' || $invoice->temp) {
+            throw ValidationException::withMessages([
+                'invoice' => __('fields.invoice_locked_statement'),
+            ]);
+        }
+
+        if (! InvoicePaymentTermsService::instance()->isCredit($invoice)) {
+            throw ValidationException::withMessages([
+                'payment_terms' => __('fields.payment_terms_credit'),
+            ]);
+        }
+
+        $this->recordOptionalCreditPayment($invoice, ['credit_payment' => $payload]);
+
+        return $invoice->fresh()->load(self::eagerLoads())->loadCount('purchasesReturns');
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Http\Requests\CommitPurchaseInvoiceRequest;
 use App\Http\Requests\DeleteAdditionalCostForPurchaseInvoiceRequest;
 use App\Http\Requests\DeleteItemForPurchaseInvoiceRequest;
 use App\Http\Requests\ListPurchaseInvoiceRequest;
+use App\Http\Requests\RecordPurchaseCreditPaymentRequest;
 use App\Http\Requests\RemoveOverallDiscountForPurchaseInvoiceRequest;
 use App\Http\Requests\SavePurchaseInvoiceResource;
 use App\Http\Requests\StorePurchaseInvoiceRequest;
@@ -156,6 +157,23 @@ class PurchaseInvoiceController extends BaseController
             );
 
             return $this->responder(__('messages.api.created'), 201, new PurchaseInvoiceResource($invoice))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->error($exception)->respond();
+        }
+    }
+
+    public function creditPayment(RecordPurchaseCreditPaymentRequest $request, string $id)
+    {
+        $invoice = Invoice::purchases()->findOrFail($id);
+
+        try {
+            $invoice = $this->purchases->recordCreditPayment($invoice, $request->validated());
+
+            return $this->responder(__('messages.api.updated'), 200, new PurchaseInvoiceResource($invoice))->respond();
         } catch (ValidationException $exception) {
             return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
         } catch (\Throwable $exception) {

@@ -165,6 +165,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
 
             Route::post('purchases/save', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'save']);
             Route::post('purchases/commit', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'commit']);
+            Route::post('purchases/{id}/credit-payment', [\App\Http\Controllers\API\V1\PurchaseInvoiceController::class, 'creditPayment']);
 
 
             //sales

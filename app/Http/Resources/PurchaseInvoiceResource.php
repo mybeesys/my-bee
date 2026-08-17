@@ -38,18 +38,34 @@ class PurchaseInvoiceResource extends BaseResource
                 : null,
             'supplierId' => $this->supplier_id,
             'warehouseId' => $this->warehouse_id,
+            'shareUrl' => $this->uid && ! $this->temp ? $this->url : null,
+            'pdfUrl' => $this->uid && ! $this->temp ? $this->pdf_url : null,
             'totalAmount' => number_format($this->getItemsCost(true, true, true), currency_decimals(), '.', ''),
             'totalAmountWritten' => numbers_to_words($this->getItemsCost(true, true, true)),
             'paidAmount' => number_format($this->total_paid, currency_decimals(), '.', ''),
             'paidAmountPercent' => number_format($this->total_paid_percent, currency_decimals(), '.', ''),
             'unpaidAmount' => number_format($this->total_unpaid, currency_decimals(), '.', ''),
+            'additionalCostsTotal' => number_format($this->getAdditionalCosts(true), currency_decimals(), '.', ''),
             'canUpdateStatus' => $this->status == "purchase_order",
             'canEdit' => $this->locked_at === null && $this->status !== 'cancelled',
             'hasPurchaseReturn' => (int) ($this->purchases_returns_count ?? $this->purchasesReturns?->count() ?? 0) > 0,
             'purchasesReturnsCount' => (int) ($this->purchases_returns_count ?? $this->purchasesReturns?->count() ?? 0),
+            'purchasesReturnId' => $this->relationLoaded('purchasesReturns')
+                ? $this->purchasesReturns->first()?->id
+                : null,
             'paymentVoucherId' => $this->relationLoaded('paymentVoucher')
                 ? $this->paymentVoucher?->id
                 : null,
+            'actions' => [
+                'canShare' => filled($this->uid) && ! $this->temp,
+                'canPurchaseReturn' => $this->status === 'confirmed' && ! $this->temp,
+                'canCompletePayment' => ! $this->paid && $this->status === 'confirmed' && ! $this->temp,
+                'canCreditPayment' => ($this->payment_terms ?? 'credit') === 'credit'
+                    && $this->status === 'confirmed'
+                    && ! $this->temp
+                    && ! $this->paid,
+                'canEdit' => $this->locked_at === null && $this->status !== 'cancelled',
+            ],
             'footerTotals' => [
                 'total' => number_format($this->getItemsCost(true, false, false), currency_decimals(), '.', ''),
                 'discount' => number_format($this->getDiscountInAmount(), currency_decimals(), '.', ''),
