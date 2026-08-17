@@ -22,6 +22,12 @@ class SupplierSupplyOrderListResource extends BaseResource
             'description' => $order->description,
             'shareUrl' => $order->url,
             'createdAt' => $order->created_at?->format('Y-m-d H:i:s'),
+            'actions' => [
+                'canShare' => true,
+                'canConvertToPurchaseInvoice' => true,
+                'canEdit' => true,
+                'canDelete' => false,
+            ],
         ]);
     }
 }

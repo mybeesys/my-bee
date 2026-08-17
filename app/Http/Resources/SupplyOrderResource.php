@@ -18,8 +18,15 @@ class SupplyOrderResource extends BaseResource
             'createdAt' => $this->created_at?->format('Y-m-d H:i:s'),
             'updatedAt' => $this->updated_at?->format('Y-m-d H:i:s'),
             'shareUrl' => $this->url,
+            'detailsCount' => $this->when(isset($this->details_count), (int) $this->details_count),
             'supplier' => $this->whenLoaded('supplier', fn () => new SupplierResource($this->supplier)),
             'items' => $this->whenLoaded('details', fn () => SupplyOrderDetailsResource::collection($this->details)),
+            'actions' => [
+                'canShare' => true,
+                'canConvertToPurchaseInvoice' => true,
+                'canEdit' => true,
+                'canDelete' => true,
+            ],
         ]);
     }
 }

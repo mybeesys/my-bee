@@ -16,6 +16,7 @@ use App\Models\Warehouse;
 use App\Services\SupplyOrderService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SupplyOrderController extends BaseController
 {
@@ -64,19 +65,24 @@ class SupplyOrderController extends BaseController
                 ->respond();
         }
 
-        $order = $this->supplyOrders->create(
-            $request->validated(),
-            $this->getTenant()->id,
-            (int) auth('sanctum')->id(),
-        );
+        try {
+            $order = $this->supplyOrders->create(
+                $request->validated(),
+                $this->getTenant()->id,
+                (int) auth('sanctum')->id(),
+            );
 
-        return $this->responder(__('messages.api.created'), 201, new SupplyOrderResource($order))->respond();
+            return $this->responder(__('messages.api.created'), 201, new SupplyOrderResource($order))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        }
     }
 
     public function show(string $id)
     {
         $order = SupplyOrder::query()
-            ->with(['supplier.acc4', 'supplier.state', 'supplier.city.state', 'supplier.area', 'details.item', 'tenant'])
+            ->with(SupplyOrderService::eagerLoads())
+            ->withCount('details')
             ->findOrFail($id);
 
         return $this->responder(__('messages.api.retrieved'), 200, new SupplyOrderResource($order))->respond();
@@ -86,14 +92,18 @@ class SupplyOrderController extends BaseController
     {
         $order = SupplyOrder::query()->findOrFail($id);
 
-        $order = $this->supplyOrders->update(
-            $order,
-            $request->validated(),
-            $this->getTenant()->id,
-            (int) auth('sanctum')->id(),
-        );
+        try {
+            $order = $this->supplyOrders->update(
+                $order,
+                $request->validated(),
+                $this->getTenant()->id,
+                (int) auth('sanctum')->id(),
+            );
 
-        return $this->responder(__('messages.api.updated'), 200, new SupplyOrderResource($order))->respond();
+            return $this->responder(__('messages.api.updated'), 200, new SupplyOrderResource($order))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        }
     }
 
     public function destroy(string $id)

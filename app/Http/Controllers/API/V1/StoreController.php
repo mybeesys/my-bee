@@ -1017,7 +1017,7 @@ class StoreController extends BaseController
             }
             case "supply_orders":
             {
-                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants'])->get();
+                $products = Product::with(['extras.extra', 'lastPrice', 'variantOptions.library', 'variants.lastPrice'])->get();
                 return $this->responder(__('messages.api.retrieved'), 200, ListProductsForAdvancedCreationResource::collection($products))->respond();
             }
             case "price_offers":

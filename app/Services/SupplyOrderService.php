@@ -6,11 +6,28 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\SupplyOrder;
 use App\Models\SupplyOrderDetails;
+use App\Services\Concerns\ResolvesInvoiceProductLines;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class SupplyOrderService
 {
+    use ResolvesInvoiceProductLines;
+
+    /**
+     * @return array<int, string>
+     */
+    public static function eagerLoads(): array
+    {
+        return [
+            'supplier.acc4',
+            'supplier.state',
+            'supplier.city.state',
+            'supplier.area',
+            'details.item',
+            'tenant',
+        ];
+    }
+
     public function create(array $payload, int $tenantId, int $userId): SupplyOrder
     {
         return DB::transaction(function () use ($payload, $tenantId, $userId) {
@@ -23,24 +40,31 @@ class SupplyOrderService
 
             $this->syncDetails($order, $payload['details'], $tenantId, $userId);
 
-            return $order->fresh()->load(['supplier.acc4', 'supplier.state', 'supplier.city.state', 'supplier.area', 'details.item', 'tenant']);
+            return $order->fresh()->load(self::eagerLoads())->loadCount('details');
         });
     }
 
     public function update(SupplyOrder $order, array $payload, int $tenantId, int $userId): SupplyOrder
     {
         return DB::transaction(function () use ($order, $payload, $tenantId, $userId) {
-            $order->update(array_filter([
-                'supplier_id' => $payload['supplier_id'] ?? null,
-                'description' => $payload['description'] ?? null,
-            ], fn ($value) => $value !== null));
+            $header = [];
+
+            foreach (['supplier_id', 'description'] as $field) {
+                if (array_key_exists($field, $payload)) {
+                    $header[$field] = $payload[$field];
+                }
+            }
+
+            if ($header !== []) {
+                $order->update($header);
+            }
 
             if (array_key_exists('details', $payload)) {
                 $order->details()->delete();
                 $this->syncDetails($order, $payload['details'], $tenantId, $userId);
             }
 
-            return $order->fresh()->load(['supplier.acc4', 'supplier.state', 'supplier.city.state', 'supplier.area', 'details.item', 'tenant']);
+            return $order->fresh()->load(self::eagerLoads())->loadCount('details');
         });
     }
 
@@ -58,14 +82,15 @@ class SupplyOrderService
     protected function syncDetails(SupplyOrder $order, array $details, int $tenantId, int $userId): void
     {
         foreach ($details as $detail) {
-            $resolved = $this->resolveItem($detail);
+            $resolved = $this->resolveProduct($detail, 'details');
+            $morph = $this->morphItem($resolved);
 
             SupplyOrderDetails::create([
                 'tenant_id' => $tenantId,
                 'supply_order_id' => $order->id,
                 'user_id' => $userId,
-                'item_id' => $resolved['item_id'],
-                'item_type' => $resolved['item_type'],
+                'item_id' => $morph['item_id'],
+                'item_type' => $morph['item_type'],
                 'qty' => $detail['qty'],
             ]);
         }
@@ -114,28 +139,20 @@ class SupplyOrderService
     }
 
     /**
-     * @param  array<string, mixed>  $detail
+     * @param  array{product_id: int, product_variant_id: int|null, name: string}  $resolved
      * @return array{item_id: int, item_type: class-string}
      */
-    public function resolveItem(array $detail): array
+    protected function morphItem(array $resolved): array
     {
-        if (! empty($detail['product_variant_id'])) {
-            $variant = ProductVariant::query()->findOrFail($detail['product_variant_id']);
-
-            if (! empty($detail['product_id']) && (int) $variant->product_id !== (int) $detail['product_id']) {
-                throw ValidationException::withMessages([
-                    'details' => __('validation.exists', ['attribute' => 'product_variant_id']),
-                ]);
-            }
-
+        if (! empty($resolved['product_variant_id'])) {
             return [
-                'item_id' => $variant->id,
+                'item_id' => (int) $resolved['product_variant_id'],
                 'item_type' => ProductVariant::class,
             ];
         }
 
         return [
-            'item_id' => (int) $detail['product_id'],
+            'item_id' => (int) $resolved['product_id'],
             'item_type' => Product::class,
         ];
     }

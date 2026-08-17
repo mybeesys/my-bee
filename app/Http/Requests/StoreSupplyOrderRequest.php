@@ -20,6 +20,8 @@ class StoreSupplyOrderRequest extends BaseRequest
             'details' => ['required', 'array', 'min:1'],
             'details.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'details.*.product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
+            'details.*.selected_variant_options_ids' => ['sometimes', 'array'],
+            'details.*.selected_variant_options_ids.*' => ['integer'],
             'details.*.qty' => ['required', 'integer', 'min:1', 'max:250000'],
         ];
     }
