@@ -308,67 +308,16 @@ if (!function_exists('get_notifications')) {
 
 function send_notification_FCM_via_tokens(array $tokens, $title, $body, $icon = null)
 {
-
-
-    if (!$icon)
-        $icon = "https://pinkstore.sd/images/PinkStoreLogo.png";
-
-    $serverKey = 'AAAA_OIz0vs:APA91bGg6XIaZrHcndgtm1RQHCH1VBA2dg6cZ1emTnf7BJy_vxc0REk0NhHXGQfVfw_lN3p7_RqhJAztuj_B3vN0Vs1hncZZHfwJiIEPQDhJmUEtUxppg-WXrxytQBOnFVH23TlMUlor';
-    $url = "https://fcm.googleapis.com/fcm/send";
-    $notification = array('title' => $title, 'body' => $body, 'sound' => 'default', 'badge' => '1', 'image' => $icon);
-
-
-    // MONZER REPLACE /TOPICS/ALL with $token -> This mean device token to send to spac device
-    //to does not accept array
-    $arrayToSend = array("registration_ids" => $tokens, 'notification' => $notification, 'priority' => 'high');
-    $json = json_encode($arrayToSend);
-    $headers = array();
-    $headers[] = 'Content-Type: application/json';
-    $headers[] = 'Authorization: key=' . $serverKey;
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    //Send the request
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return $response;
+    return json_encode(app(\App\Services\FcmService::class)->sendToTokens($tokens, (string) $title, (string) $body, $icon));
 }
 
 function send_notification_FCM_via_topic($topic, $title, $body, $icon = null)
 {
-
-    if (!in_array($topic, ['/topics/all', '/topics/customers', '/topics/drivers', '/topics/admins']))
+    if (! in_array($topic, ['/topics/all', '/topics/customers', '/topics/drivers', '/topics/admins', 'all', 'customers', 'drivers', 'admins'], true)) {
         abort(400, 'invalid fcm topic');
+    }
 
-    if (!$icon)
-        $icon = "https://pinkstore.sd/images/PinkStoreLogo.png";
-
-    $serverKey = env('FCM_KEY');
-    $url = "https://fcm.googleapis.com/fcm/send";
-    $notification = array('title' => $title, 'body' => $body, 'sound' => 'default', 'badge' => '1', 'icon' => $icon);
-
-    // MONZER REPLACE /TOPICS/ALL with $token -> This mean device token to send to spac device
-    //to does not accept array
-    $arrayToSend = array("to" => $topic, 'notification' => $notification, 'priority' => 'high');
-    $json = json_encode($arrayToSend);
-    $headers = array();
-    $headers[] = 'Content-Type: application/json';
-    $headers[] = 'Authorization: key=' . $serverKey;
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    //Send the request
-    $response = curl_exec($ch);
-    curl_close($ch);
-    return $response;
+    return json_encode(app(\App\Services\FcmService::class)->sendToTopic((string) $topic, (string) $title, (string) $body, $icon));
 }
 
 function sanitize_sdn_phone($phone, $withPayload = true)

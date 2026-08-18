@@ -1,6 +1,6 @@
 # مواصفة مواءمة API التطبيق مع الويب (MyBee)
 
-> **الهدف:** جعل تطبيق الموبايل يطابق سلوك الويب في: **العملاء**، **الموردين**، **أوامر التوريد**، **فواتير المشتريات**، **مرتجع المبيعات**، **حسابات الأطراف الأخرى (المستوى الرابع)**، **الاشتراكات وكوبونات المنصة**.  
+> **الهدف:** جعل تطبيق الموبايل يطابق سلوك الويب في: **العملاء**، **الموردين**، **أوامر التوريد**، **فواتير المشتريات**، **فواتير المبيعات**، **عروض الأسعار**، **مرتجع المبيعات**، **حسابات الأطراف الأخرى (المستوى الرابع)**، **الاشتراكات وكوبونات المنصة**.  
 > **مبدأ العمل:** توسيع الـ API الحالي **بدون كسر** العقود القديمة — إضافة حقول/مسارات/معاملات اختيارية، واستخراج منطق الويب إلى Services مشتركة بدل نسخ الكود.
 
 **مرجع الويب:**
@@ -8,6 +8,8 @@
 - الموردون: `app/Filament/Tenant/Resources/SupplierResource.php` + `PartyContactFormSchema` — **📄 مواصفة حصرية:** [`docs/suppliers-api-spec.md`](suppliers-api-spec.md)
 - أوامر التوريد: `app/Filament/Tenant/Resources/SupplyOrderResource.php` — **📄 مواصفة حصرية:** [`docs/supply-orders-api-spec.md`](supply-orders-api-spec.md)
 - فواتير المشتريات: `app/Filament/Tenant/Resources/PurchaseInvoiceResource.php` — **📄 مواصفة حصرية:** [`docs/purchases-api-spec.md`](purchases-api-spec.md)
+- فواتير المبيعات: `app/Filament/Tenant/Resources/SalesInvoiceResource.php` — **📄 مواصفة حصرية:** [`docs/sales-api-spec.md`](sales-api-spec.md)
+- عروض الأسعار: `app/Filament/Tenant/Resources/PriceOfferResource.php` — **📄 مواصفة حصرية:** [`docs/price-offers-api-spec.md`](price-offers-api-spec.md)
 - مرتجع المبيعات: `app/Filament/Tenant/Resources/SalesReturnsResource.php`
 - حسابات المستوى الرابع: `app/Filament/Tenant/Resources/Acc4Resource.php` (slug: `finance/tree-accounts/level-four`)
 - كشف الحساب (فلتر الحساب): `app/Filament/Tenant/Resources/AccountStatementResource.php`
@@ -23,8 +25,10 @@
 |--------|--------|---------|
 | **العملاء** | ✅ منفّذ | CRUD + كشف حساب + فواتير/طلبات + location للفورم — انظر `docs/customers-api-spec.md` |
 | **الموردون** | ✅ منفّذ | CRUD + كشف حساب + فواتير مشتريات/أوامر توريد + location — انظر `docs/suppliers-api-spec.md` |
-| **أوامر التوريد** | ✅ منفّذ | CRUD + مشاركة رابط + تحويل لفاتورة مشتريات temp / prefill — انظر `docs/supply-orders-api-spec.md` |
-| **فواتير المشتريات** | ✅ منفّذ | مسار temp القديم + `POST purchases/commit` مؤكد دفعة واحدة — انظر `docs/purchases-api-spec.md` |
+| **أوامر التوريد** | ✅ API جاهز — شاشة الموبايل **جديدة تُبنى من الصفر** | CRUD + مشاركة + تحويل لمشتريات عبر prefill — انظر `docs/supply-orders-api-spec.md` |
+| **فواتير المشتريات** | ✅ منفّذ | `POST purchases/commit` + إجراءات الصف (مشاركة/PDF/مرتجع/سند صرف/دفعة آجل) — انظر `docs/purchases-api-spec.md` |
+| **فواتير المبيعات** | ✅ منفّذ | `POST sales/commit` + إجراءات الصف (مشاركة/PDF/مرتجع/سند/دفعة آجل/عرض سعر) — انظر `docs/sales-api-spec.md` |
+| **عروض الأسعار** | ✅ منفّذ | CRUD tenant + مشاركة + تحويل لمبيعات عبر prefill — انظر `docs/price-offers-api-spec.md` |
 | **مرتجع المبيعات** | ✅ منفّذ | `SalesReturnService` + أوضاع `invoice` / `customer` + مسارات returnable |
 | **حسابات الأطراف الأخرى** | ✅ منفّذ | `GET/POST/PATCH/DELETE .../acc4/other-parties` + `?scope=other_parties` + utils |
 | **سندات — get-other-entities** | ✅ منفّذ | يستخدم `userCreatedOtherPartyAccountOptions()` |
@@ -64,6 +68,19 @@ GET    /api/v1/tenant/shop/supply-orders/{id}/purchase-prefill
 GET    /api/v1/tenant/shop/purchases
 GET    /api/v1/tenant/shop/purchases/{id}
 POST   /api/v1/tenant/shop/purchases/commit
+POST   /api/v1/tenant/shop/purchases/{id}/credit-payment
+
+GET    /api/v1/tenant/shop/sales
+GET    /api/v1/tenant/shop/sales/{id}
+POST   /api/v1/tenant/shop/sales/commit
+POST   /api/v1/tenant/shop/sales/{id}/credit-payment
+GET    /api/v1/tenant/shop/price-offers
+POST   /api/v1/tenant/shop/price-offers
+GET    /api/v1/tenant/shop/price-offers/{id}
+PATCH  /api/v1/tenant/shop/price-offers/{id}
+DELETE /api/v1/tenant/shop/price-offers/{id}
+GET    /api/v1/tenant/shop/price-offers/{id}/sales-prefill
+GET    /api/v1/tenant/shop/price-offers-for-sales
 
 GET  /api/v1/tenant/shop/sales-returns-returnable-products/{customerId}
 GET  /api/v1/tenant/settings/acc4?scope=other_parties
@@ -90,6 +107,8 @@ GET  /api/v1/client/subscription/coupons/available
 **ملفات Laravel الجديدة:**
 - `app/Services/SalesReturnService.php`, `SalesReturnWorkflow.php`
 - `app/Services/PurchaseInvoiceService.php`
+- `app/Services/SalesInvoiceService.php`
+- `app/Services/PriceOfferService.php`
 - `app/Services/SupplyOrderService.php`
 - `app/Services/SubscriptionApiService.php`
 - `app/Http/Controllers/API/V1/ClientSubscriptionController.php`

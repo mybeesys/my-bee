@@ -361,7 +361,7 @@ GET /api/v1/tenant/shop/suppliers/{id}/supply-orders
 
 الويب يعرض العدد في البطاقة؛ تبويب أوامر التوريد موجود في الكود وغير مربوط في `getRelations()`. الـ API يوفّر القائمة للنقر على البطاقة.
 
-**CRUD الكامل + التحويل لفاتورة مشتريات:** [`docs/supply-orders-api-spec.md`](supply-orders-api-spec.md).
+**CRUD الكامل (وحدة موبايل جديدة تُبنى من الصفر):** [`docs/supply-orders-api-spec.md`](supply-orders-api-spec.md). النقر على البطاقة يفتح تلك الوحدة وليس شاشة داخل المورد.
 
 **Query:** `search` (رقم/وصف)، `from_date`, `to_date`.
 

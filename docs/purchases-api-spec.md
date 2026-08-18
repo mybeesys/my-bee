@@ -1,8 +1,9 @@
 # مواصفة API فواتير المشتريات (Purchase Invoices)
 
-> **الغرض:** مرجع حصرّي لشاشة فواتير المشتريات — مواءمة التطبيق مع الويب، ولـ Cursor.  
+> **الغرض:** مرجع حصرّي لشاشة فواتير المشتريات **وكل الإجراءات التابعة لها** — مواءمة التطبيق مع الويب، ولـ Cursor.  
 > **الحالة:** ✅ منفّذ على Laravel.  
 > **يكمل:** [`docs/supply-orders-api-spec.md`](supply-orders-api-spec.md) (التحويل من أمر توريد).  
+> **الموردون (إنشاء سريع من الفورم):** [`docs/suppliers-api-spec.md`](suppliers-api-spec.md)  
 > **مرجع عام:** [`docs/mobile-api-parity-spec.md`](mobile-api-parity-spec.md)
 
 ---
@@ -30,7 +31,11 @@
 | دفعة آجل | ❌ | `credit_payment` اختياري مع الآجل |
 | تفاصيل | ❌ `GET purchases/{id}` كان يفشل | `GET purchases/{id}` |
 | تحويل من أمر توريد | `start-purchase-invoice` يبني temp بأسعار 0 (`update-item` يرفض `unit_cost < 1`) | `GET supply-orders/{id}/purchase-prefill` ثم `commit` بالأسعار |
-| قفل بعد التأكيد | غير موثّق | `lockedAt` + `canEdit: false` — لا تعديل بعد التأكيد |
+| قفل بعد التأكيد | غير موثّق | `lockedAt` + `canEdit: false` — لا تعديل بنود بعد التأكيد |
+| مشاركة / PDF | ❌ | `shareUrl` + `pdfUrl` |
+| مرتجع مشتريات | شاشة موجودة قديماً | `actions.canPurchaseReturn` + `purchasesReturnId` |
+| إكمال الدفع (سند صرف) | `paymentVoucherId` فقط | `actions.canCompletePayment` + سند صرف |
+| دفعة آجل بعد القفل | فقط مع `commit` | `POST purchases/{id}/credit-payment` (مثل تبويب الدفعات في الويب) |
 
 **مسار الـ temp القديم ما زال يعمل** — لا تحذفه. الشاشات الجديدة تستخدم `commit`.
 
@@ -61,18 +66,62 @@ Accept: application/json
 flowchart TD
     A[قائمة فواتير المشتريات] --> B[إنشاء جديد]
     A --> C[من أمر توريد]
-    A --> D[عرض / تعديل إن لم تُقفل]
-    B --> E[مورد + شروط دفع + مستودع + بنود بسعر]
-    E --> F[اختياري: تكاليف إضافية]
-    E --> G[آجل: دفعة جزئية اختيارية]
-    E --> H[حفظ = تأكيد + مخزون + قيود]
-    C --> I[Prefill كميات بدون سعر]
-    I --> E
+    A --> D[عرض / قفل بعد التأكيد]
+    A --> E[مشاركة رابط / PDF]
+    A --> F[مرتجع مشتريات]
+    A --> G[تفاصيل الدفع / سند صرف]
+    B --> H[مورد + شروط دفع + مستودع + بنود بسعر]
+    H --> I[اختياري: تكاليف إضافية]
+    H --> J[آجل: دفعة جزئية]
+    H --> K[commit = تأكيد + مخزون + قيود]
+    K -->|نقد| L[مؤكدة بدون سند تلقائي]
+    K -->|آجل| M[due أو partial حسب الدفعة]
+    C --> N[prefill ثم نفس فورم الإنشاء]
+    D --> F
+    D --> G
+    D --> O[دفعة آجل إضافية إن لم تُدفع بالكامل]
 ```
 
 **فورم الإنشاء:** رقم (سيرفر)، تاريخ (آخر 30 يوماً حتى اليوم)، مورد (إنشاء سريع)، `payment_terms` افتراضي credit، مستودع (إنشاء سريع)، بنود: منتج + كمية + **سعر** + خصم + ضريبة، تبويب تكاليف إضافية، تبويب دفعات (ظاهر للآجل).
 
-**بعد الحفظ:** الحالة `confirmed` و`locked_at` مُعبأ. النقد لا يُسجّل سند صرف تلقائياً في المشتريات (عكس المبيعات) — هذا سلوك الويب.
+**بعد الحفظ:** الحالة `confirmed` و`locked_at` مُعبأ. النقد **لا** يُسجّل سند صرف تلقائياً في المشتريات (عكس المبيعات) — هذا سلوك الويب.
+
+لا خدمات ولا extras على بنود المشتريات (عكس المبيعات). تبويبات الويب: خصم + دفعات (آجل) + تكاليف إضافية.
+
+### 4.1 إجراءات صف القائمة (مثل `ActionGroup` في الويب)
+
+كل صف في `GET purchases` يرجع `actions` + روابط جاهزة. **لا تخفِ إجراء موجود في الويب.**
+
+| إجراء الويب | متى يظهر | ماذا يفعل الموبايل |
+|-------------|----------|---------------------|
+| **رابط الفاتورة** | `actions.canShare` | انسخ/افتح `shareUrl`. زر تحميل: `pdfUrl` |
+| **مرتجع مشتريات** | `actions.canPurchaseReturn` | إن `purchasesReturnId` → `GET purchases-returns/{id}`. وإلا إنشاء: `GET purchases-returns-list-invoice-items-for-create/{no}` ثم `POST purchases-returns` مع `invoice_no` = رقم الفاتورة. الويب يسمح بمرتجع **واحد** لكل فاتورة |
+| **تفاصيل الدفع** | `actions.canCompletePayment` (`isPaid=false`) | إن `paymentVoucherId` → `GET/PATCH payment-vouchers/{id}`. وإلا → `POST payment-vouchers` مع `invoice_id` و`for=supplier` |
+| **دفعة آجل** | `actions.canCreditPayment` | `POST purchases/{id}/credit-payment` (تبويب الدفعات يعمل بعد القفل) |
+| فتح/عرض | دائماً | `GET purchases/{id}` — البنود مقفولة إذا `canEdit=false` |
+
+الويب **لا يحذف** فاتورة مشتريات من الجدول. لا تضع زر حذف.
+
+### 4.2 أزرار أعلى القائمة (مثل الويب)
+
+1. **إنشاء فاتورة** → فورم `commit`. معطّل إذا حد الاشتراك `purchase_invoices`.
+2. **من أمر توريد** → عندما توجد شاشة أوامر توريد: `GET supply-orders` ثم `GET supply-orders/{id}/purchase-prefill` ثم نفس فورم الإنشاء (عبّئ الأسعار) ثم `commit`. لا تربط هذا الزر قبل بناء شاشة أوامر التوريد.
+
+### 4.3 فورم الإنشاء (مطابقة الويب)
+
+| الحقل | إلزامي | ملاحظات |
+|-------|--------|---------|
+| رقم الفاتورة | سيرفر | لا ترسل `no` |
+| التاريخ | لا (افتراضي اليوم) | آخر 30 يوماً حتى اليوم |
+| المورد | نعم | بحث `GET suppliers` + إنشاء سريع `POST suppliers` بالاسم |
+| `payment_terms` | لا | افتراضي `credit`. `cash` \| `credit` |
+| المستودع | نعم | `GET /api/v1/tenant/settings/warehouses` + إنشاء سريع `POST .../warehouses` بالاسم |
+| البنود | نعم | سعر شراء (`unit_cost`)، كمية 1–250000، خصم بند، ضريبة. **بدون extras** |
+| تكاليف إضافية | لا | تبويب |
+| خصم إجمالي | لا | `discount_option` / `discount_method` / `discount_amount` أو `discount_percent` |
+| دفعة آجل | لا | ظاهرة فقط إذا `credit`. حسابات: `GET .../utils/accounts/collection` |
+
+**نقد (`cash`):** الفاتورة مؤكدة وقد تبقى `settlementStatusKey: due` — لا تنشئ سند صرف من عندك.
 
 **منتجات الفورم:**  
 `POST /api/v1/tenant/shop/list-products-for-advanced-creation` مع `{ "for": "purchases" }`.
@@ -120,8 +169,9 @@ flowchart TD
 | Method | Path | الوصف |
 |--------|------|--------|
 | `GET` | `purchases` | قائمة (غير temp) |
-| `GET` | `purchases/{id}` | تفاصيل |
+| `GET` | `purchases/{id}` | تفاصيل + `actions` |
 | `POST` | `purchases/commit` | **إنشاء مؤكد دفعة واحدة (المسار الجديد)** |
+| `POST` | `purchases/{id}/credit-payment` | دفعة آجل بعد القفل |
 | `POST` | `purchases` | مسودة temp (legacy) |
 | `POST` | `purchases/add-item` | legacy |
 | `POST` | `purchases/update-item` | legacy — `unit_cost` min **1** |
@@ -255,11 +305,21 @@ GET /api/v1/tenant/shop/purchases/{id}
   "lockedAt": "2026-08-16 15:04:00",
   "supplierId": 7,
   "warehouseId": 1,
+  "shareUrl": "https://…/invoices/{uid}",
+  "pdfUrl": "https://…/invoices/{uid}/pdf",
   "canUpdateStatus": false,
   "canEdit": false,
   "hasPurchaseReturn": false,
   "purchasesReturnsCount": 0,
+  "purchasesReturnId": null,
   "paymentVoucherId": 12,
+  "actions": {
+    "canShare": true,
+    "canPurchaseReturn": true,
+    "canCompletePayment": true,
+    "canCreditPayment": true,
+    "canEdit": false
+  },
   "items": [
     {
       "id": 1,
@@ -279,6 +339,53 @@ GET /api/v1/tenant/shop/purchases/{id}
 `date` / `createdAt` بقيت بصيغة `F j, Y, g:i a` للتوافق مع التطبيق القديم.
 
 `settlementStatusKey`: `cash` \| `paid` \| `due` \| `partial`.
+
+---
+
+## 8.1 دفعة آجل بعد القفل
+
+```
+POST /api/v1/tenant/shop/purchases/{id}/credit-payment
+```
+
+```json
+{
+  "account_code": "120100001",
+  "amount": 50,
+  "date": "2026-08-17",
+  "statement": "دفعة ثانية"
+}
+```
+
+- فقط فاتورة مشتريات `confirmed` و`payment_terms=credit` وغير مدفوعة بالكامل.
+- `amount` ≤ المتبقي. حسابات: `GET .../settings/utils/accounts/collection`.
+- `200` + الفاتورة محدّثة (`paidAmount`, `paymentVoucherId`, `settlementStatusKey`).
+
+---
+
+## 8.2 مرتجع المشتريات (من صف الفاتورة)
+
+لا تعِد بناء API المرتجع هنا. استخدم المسارات الموجودة:
+
+1. `actions.canPurchaseReturn === true`
+2. إن `purchasesReturnId` → `GET purchases-returns/{purchasesReturnId}`
+3. وإلا → `GET purchases-returns-list-invoice-items-for-create/{no}` ثم `POST purchases-returns` `{ invoice_no, notes, items: [{ id, qty }] }`
+4. مساعدة لاختيار فاتورة من شاشة المرتجعات: `GET purchases-returns-get-available-invoices` (فواتير بلا مرتجع)
+
+الويب: مرتجع **واحد** لكل فاتورة مشتريات.
+
+---
+
+## 8.3 إكمال الدفع (سند صرف)
+
+يظهر الزر إذا `!isPaid`.
+
+| الحالة | الإجراء |
+|--------|---------|
+| `paymentVoucherId` موجود | افتح سند الصرف للتعديل / إضافة دفعة |
+| لا يوجد | `POST /api/v1/tenant/shop/payment-vouchers` مع `invoice_id` |
+
+هذا غير `credit-payment`: السند شاشة مستقلة؛ دفعة الآجل تسجّل من تبويب الفاتورة.
 
 ---
 
@@ -338,21 +445,36 @@ GET /api/v1/tenant/shop/supply-orders/{id}/purchase-prefill
 انسخ هذا البرومبت كما هو:
 
 ```
-Implement Purchase Invoices screens to match the MyBee web app using docs/purchases-api-spec.md as the single source of truth.
+Implement Purchase Invoices to match the MyBee web app using docs/purchases-api-spec.md as the single source of truth. Also implement EVERY related row/header action from the web list and invoice screen.
 
-Web: Filament PurchaseInvoiceResource — list, create confirmed invoice (supplier, payment_terms cash|credit default credit, warehouse, priced lines, optional additional costs, optional credit payment), lock after save. Convert from supply order pre-fills qty with null prices.
-
+Web: Filament PurchaseInvoiceResource.
 API base: /api/v1/tenant/shop/
 Auth: Bearer + Tenant-Id.
 
-NEW screens MUST use POST purchases/commit (one-shot confirmed). Do NOT use the temp draft flow (POST purchases + add-item + save + update-status) for new UI.
+NEW create MUST use POST purchases/commit. Do not use the temp draft flow for new UI.
 
 Must implement:
-1) List: GET purchases. search on no/supplier name. Filters: payment_terms, supplier, dates. Show settlementStatusKey, paid/unpaid, supplier. Open GET purchases/{id}.
-2) Create: supplier (search + optional POST /suppliers name only), warehouse from GET /api/v1/tenant/settings/warehouses (optional quick create), payment_terms default credit, date Y-m-d last 30 days to today, lines via POST list-products-for-advanced-creation { "for": "purchases" }. Show BOTH basic and variants products. For type=variants pick from variants[] (each has id) and send product_id + product_variant_id. Do NOT try to cartesian-product selectVariantOptions yourself. Each line: product_id, optional product_variant_id, qty, unit_cost (>=0.01), optional discount, optional tax_profile_id (default taxProfileId from the product). Optional additional_costs. If credit, optional credit_payment { account_code from GET /api/v1/tenant/settings/utils/accounts/collection, amount, date, statement }. Server computes tax, stocks, journals. Do not post cash payment yourself.
-3) Convert from supply order: SKIP until the app has a Supply Orders screen. Endpoints exist (GET supply-orders/{id}/purchase-prefill then POST purchases/commit) but must not be wired from the purchases form yet.
-4) Confirmed invoices are locked (lockedAt set, canEdit false). No PATCH/DELETE. Purchase return is a later screen using hasPurchaseReturn / paymentVoucherId.
-5) Keep calling old temp endpoints only if existing production code already depends on them.
+
+A) List GET purchases
+- Columns: no, supplier, settlementStatusKey, date, paidAmount (+ percent), invoice total, optional additional costs, purchase-return indicator if purchasesReturnsCount > 0.
+- Search no / supplier.
+- Row actions from data.actions (do not invent visibility):
+  1. Share: copy/open shareUrl; download pdfUrl.
+  2. Purchase return: if purchasesReturnId open GET purchases-returns/{id}, else GET purchases-returns-list-invoice-items-for-create/{no} then POST purchases-returns with invoice_no.
+  3. Complete payment if canCompletePayment: payment voucher via paymentVoucherId or POST payment-vouchers with invoice_id.
+  4. Credit payment if canCreditPayment: POST purchases/{id}/credit-payment.
+- Header: Create. Convert from supply order: SKIP until Supply Orders screen exists (then GET purchase-prefill → commit).
+
+B) Create form
+- supplier (GET/POST suppliers), warehouse (GET/POST settings/warehouses), payment_terms default credit, date Y-m-d last 30 days.
+- Lines: POST list-products-for-advanced-creation { "for": "purchases" }. Show basic AND variants. Variants: pick variants[].id as product_variant_id. unit_cost >= 0.01, qty 1–250000. NO extras, NO services.
+- Tabs: additional costs, credit payment only if credit (collection accounts from GET settings/utils/accounts/collection). Optional overall discount.
+- Cash: after commit do NOT create a payment voucher automatically.
+- Stock/accounting errors from server: show message, do not keep a draft.
+
+C) Show GET purchases/{id}. Locked after confirm (canEdit false). Still allow credit-payment, purchase-return, share, and payment voucher.
+
+D) Keep old temp endpoints only if existing production code already depends on them.
 
 Body snake_case, response camelCase.
 ```
@@ -374,8 +496,11 @@ Body snake_case, response camelCase.
 | 9 | مسار temp القديم `store` → add-item → save | ما زال `purchase_order` حتى `update-status` |
 | 10 | variant لا يتبع المنتج | `422` على `items` |
 | 11 | منتج variants بدون `product_variant_id` | `422` |
-| 12 | `product_variant_id` من `variants[].id` | بند بالاسم المركّب (مثلاً أحمر / L) |
+| 13 | `shareUrl` / `pdfUrl` | يفتحان الصفحة العامة / PDF |
+| 14 | `canPurchaseReturn` | يفتح إنشاء مرتجع أو المرتجع الموجود |
+| 15 | `POST credit-payment` بعد القفل | يزيد المدفوع |
+| 16 | قائمة | إجراءات الصف من `actions` فقط |
 
 ---
 
-*آخر تحديث: 2026-08-16.*
+*آخر تحديث: 2026-08-17.*

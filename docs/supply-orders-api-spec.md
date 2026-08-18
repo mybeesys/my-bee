@@ -1,9 +1,15 @@
 # مواصفة API أوامر التوريد (Supply Orders)
 
-> **الغرض:** مرجع حصرّي لشاشة أوامر التوريد — مواءمة التطبيق مع الويب، ولـ Cursor.  
+> **الغرض:** مرجع حصرّي لشاشة أوامر التوريد — الوحدة **غير موجودة** في تطبيق الموبايل؛ ابنِها **من الصفر** لتطابق الويب.  
 > **الحالة:** ✅ منفّذ على Laravel.  
-> **يكمل:** [`docs/suppliers-api-spec.md`](suppliers-api-spec.md) (بطاقة أوامر التوريد عند المورد).  
-> **التحويل لفاتورة:** [`docs/purchases-api-spec.md`](purchases-api-spec.md)
+> **الموردون (إنشاء سريع من الفورم):** [`docs/suppliers-api-spec.md`](suppliers-api-spec.md)  
+> **التحويل لفاتورة مشتريات:** [`docs/purchases-api-spec.md`](purchases-api-spec.md)  
+> **مرجع عام:** [`docs/mobile-api-parity-spec.md`](mobile-api-parity-spec.md)
+
+**مهم:** مسار الـ API هو `supply-orders` تحت `/api/v1/tenant/shop/`.  
+الرابط العام للمتجر `GET /api/v1/store/supply-orders/{no}` للعميل فقط — **لا تستخدمه** داخل شاشات التاجر.
+
+لا تحدّث شاشة قديمة: **لا توجد شاشة**. ابنِ قائمة + إنشاء/تعديل + تفاصيل + إجراءات الصف كوحدة جديدة في مجموعة المشتريات (مثل الويب).
 
 ---
 
@@ -24,13 +30,16 @@
 
 ## 2) الفرق: قبل / بعد
 
-| الموضوع | API القديم | الويب + API الحالي |
-|---------|------------|---------------------|
+| الموضوع | API / التطبيق قبل | الويب + API الحالي |
+|---------|-------------------|---------------------|
+| شاشة الموبايل | ❌ غير موجودة | وحدة كاملة جديدة: قائمة + إنشاء/تعديل + مشاركة + تحويل لمشتريات + حذف |
 | CRUD tenant | ❌ (رابط عام بالمتجر فقط) | `GET/POST/PATCH/DELETE shop/supply-orders` |
 | بنود | الاسم والكمية في الرابط العام | `productId`, `productVariantId`, `qty` |
-| مشاركة | ❌ | `shareUrl` |
-| تحويل لفاتورة مشتريات | ❌ | `POST .../start-purchase-invoice` (فاتورة temp جاهزة للتسعير) |
+| مشاركة | ❌ | `shareUrl` + `actions.canShare` |
+| تحويل لفاتورة مشتريات | ❌ | **`GET .../purchase-prefill`** ثم `POST purchases/commit` (لا تنشئ فاتورة هنا) |
+| مسار temp | — | `POST .../start-purchase-invoice` يبقى للتوافق فقط |
 | حد الاشتراك | ❌ | نفس `supply_orders` في الويب |
+| منتج variants | غير موثّق | `product_variant_id` إلزامي (من `variants[].id`) |
 
 ---
 
@@ -43,12 +52,20 @@ Accept: application/json
 ```
 
 **Base:** `/api/v1/tenant/shop/`  
+**Body الطلب:** snake_case  
+**JSON الرد:** camelCase  
 **تواريخ الفلاتر:** `Y-m-d`  
-حقل `date` في الرد بقي `d-m-Y` للتوافق مع الرابط العام للمتجر.
+حقل `date` في الرد `d-m-Y`؛ `createdAt` هو `Y-m-d H:i:s`.
+
+المغلف:
+
+```json
+{ "statusCode": 200, "statusText": "success", "message": "...", "data": {}, "errors": [], "locale": "ar" }
+```
 
 ---
 
-## 4) شاشات الويب
+## 4) شاشات الويب → شاشات التطبيق (وحدة جديدة)
 
 ```mermaid
 flowchart TD
@@ -57,20 +74,37 @@ flowchart TD
     A --> D[مشاركة الرابط]
     A --> E[تحويل لفاتورة مشتريات]
     A --> F[حذف]
-    B --> G[مورد + وصف + بنود منتج/كمية]
-    E --> H[شاشة فاتورة مشتريات temp — عبّئ الأسعار ثم save]
+    B --> G[مورد + وصف + بنود منتج/كمية بدون سعر]
+    E --> H[prefill ثم فورم المشتريات — عبّئ الأسعار ثم commit]
 ```
 
-**فورم الإنشاء:** رقم مرجعي (يولّده السيرفر)، مورد (مع إنشاء سريع)، وصف إلزامي، بنود: منتج + كمية (1–250000). بدون سعر.
+**فورم الإنشاء:** رقم مرجعي (يولّده السيرفر)، مورد (مع إنشاء سريع)، وصف إلزامي، بنود: منتج + كمية (1–250000). **بدون سعر، بدون extras، بدون خدمات، بدون دفعات.** الأمر **لا يُقفل** بعد الحفظ (يبقى تعديل/حذف).
 
-**قائمة:** الرقم، اسم المورد، الوصف. بحث على الثلاثة.
+**قائمة:** الرقم، اسم المورد، الوصف. بحث على الثلاثة. لا فلاتر في الويب؛ الـ API يضيف `supplier_id` و`from_date`/`to_date` اختيارياً.
 
-**إجراءات الصف:** نسخ/فتح `shareUrl`، تحويل لفاتورة مشتريات، تعديل، حذف (يحذف البنود أولاً).
+### 4.1 إجراءات صف القائمة (مثل الويب)
 
-منتجات الفورم:  
+كل صف يرجع `actions`. **لا تخفِ إجراء موجود في الويب.**
+
+| إجراء الويب | الشرط | ماذا يفعل الموبايل |
+|-------------|--------|---------------------|
+| مشاركة الرابط | `canShare` | انسخ/افتح `shareUrl` (صفحة عامة `{slug}/supply-orders/{no}`) |
+| تحويل لفاتورة مشتريات | `canConvertToPurchaseInvoice` | `GET .../purchase-prefill` ثم فورم المشتريات (`unitCost` فارغ) ثم `POST purchases/commit`. حد فواتير المشتريات يُفحص عند الـ commit |
+| تعديل | `canEdit` | `GET` ثم `PATCH` |
+| حذف | `canDelete` | `DELETE` بعد تأكيد. يحذف البنود ثم الأمر |
+
+من بطاقة المورد (`GET suppliers/{id}/supply-orders`): مشاركة + تحويل + تعديل. **`canDelete: false`** (الويب لا يحذف من هناك ولا ينشئ أمراً جديداً من بطاقة المورد).
+
+### 4.2 أعلى القائمة
+
+زر إنشاء فقط. معطّل/`400` إذا حد الاشتراك `supply_orders`.
+
+**منتجات الفورم:**  
 `POST /api/v1/tenant/shop/list-products-for-advanced-creation` مع `{ "for": "supply_orders" }`.
 
-منتج `type=variants`: اختر من `variants[]` وأرسل `product_variant_id` (نفس قائمة المشتريات).
+- تشمل المنتجات حتى بلا سعر بيع (`has('lastPrice')` غير مطلوب).
+- `type=basic`: `product_id` + `qty`.
+- `type=variants`: اختر من `variants[]` وأرسل `product_variant_id` = `variants[].id`. **لا** تركّب من `selectVariantOptions`. بدون variant → `422`.
 
 ---
 
@@ -107,7 +141,14 @@ GET /api/v1/tenant/shop/supply-orders
   "createdAt": "2026-08-16 10:00:00",
   "updatedAt": "2026-08-16 10:00:00",
   "shareUrl": "https://client.example.com/{slug}/supply-orders/10458291",
-  "supplier": { "id": 7, "name": "مؤسسة الإمداد" }
+  "detailsCount": 2,
+  "supplier": { "id": 7, "name": "مؤسسة الإمداد" },
+  "actions": {
+    "canShare": true,
+    "canConvertToPurchaseInvoice": true,
+    "canEdit": true,
+    "canDelete": true
+  }
 }
 ```
 
@@ -133,6 +174,8 @@ POST /api/v1/tenant/shop/supply-orders
 ```
 
 - `no` و `user_id` و `tenant_id` من السيرفر.
+- منتج `type=variants` بدون `product_variant_id` (أو `selected_variant_options_ids`) → `422`.
+- variant لا يتبع المنتج → `422`.
 - إن وصل حد الاشتراك: `400` برسالة `supply_orders_maxed_out_*`.
 - `201` + التفاصيل مع `items`.
 
@@ -189,50 +232,75 @@ PATCH /api/v1/tenant/shop/supply-orders/{id}
 
 ## 11) تحويل لفاتورة مشتريات
 
-**المسار المعتمد (شاشات جديدة):** لا تُنشأ فاتورة هنا.
+**مثل الويب:** التحويل يفتح فورم فاتورة مشتريات معبّأ بالكميات **بدون أسعار**. المستخدم يعبّئ `unit_cost` + المستودع ثم يؤكد. **لا تُنشأ فاتورة هنا.**
 
 ```
 GET /api/v1/tenant/shop/supply-orders/{id}/purchase-prefill
 ```
 
-يرجع المورد والكميات و`unitCost: null`. عبّئ الأسعار ثم `POST /purchases/commit` — انظر [`docs/purchases-api-spec.md`](purchases-api-spec.md).
+يرجع `supplierId` والكميات و`unitCost: null` و`taxProfileId`. عبّئ الأسعار + `warehouse_id` ثم `POST /purchases/commit` — انظر [`docs/purchases-api-spec.md`](purchases-api-spec.md).
 
 الأمر بلا بنود: `400`.
 
-**مسار temp القديم (يبقى للتوافق):**
+حد فواتير المشتريات يُفحص عند `commit` وليس عند الـ prefill.
 
-```
-POST /api/v1/tenant/shop/supply-orders/{id}/start-purchase-invoice
-```
-
-ينشئ فاتورة **temp** (`status=purchase_order`, أسعار 0). بعدها: `update-item` (`unit_cost` ≥ 1) → `save` → `update-status: confirmed`. لا تخلطه مع `commit`.
-
-إذا حد فواتير المشتريات: `400`.
+لا تستخدم `POST .../start-purchase-invoice` في هذه الوحدة الجديدة (مسار temp قديم لفواتير المشتريات).
 
 ---
 
-## 12) Prompt جاهز لـ Cursor (Flutter)
+## 12) ما لا تفعله
+
+- لا تفترض وجود شاشة قديمة لأوامر التوريد في الموبايل — ابنِ الوحدة كاملة.
+- لا تستخدم `GET /api/v1/store/supply-orders/{no}` داخل شاشات التاجر إلا لمعاينة `shareUrl`.
+- لا ترسل أسعار / extras / خدمات / `payment_terms` على أمر التوريد.
+- لا تخلط أوامر التوريد مع قائمة فواتير المشتريات.
+- لا تستخدم مسار المشتريات temp (`POST purchases` + add-item) عند التحويل — فقط `purchase-prefill` ثم `POST purchases/commit`.
+
+---
+
+## 13) Prompt جاهز لـ Cursor (Flutter)
+
+انسخ هذا البرومبت كما هو:
 
 ```
-Implement Supply Orders screens to match the MyBee web app using docs/supply-orders-api-spec.md.
+Build a NEW Supply Orders module from scratch. It does NOT exist in the Flutter app. Do not patch an old screen. Single source of truth: docs/supply-orders-api-spec.md. Also read docs/purchases-api-spec.md (convert) and docs/suppliers-api-spec.md (quick-create supplier + supplier card).
 
-Web: Filament SupplyOrderResource — list, create/edit (supplier + description + product qty lines, NO prices), share URL, convert to purchase invoice, delete.
+Place it in the Purchases section of the app (same as web nav_group_purchases).
+
+Web: Filament SupplyOrderResource — list (no, supplier, description), create/edit (supplier + required description + product qty lines, NO prices/extras/services/payments), share URL, convert to purchase invoice, edit, delete. Orders stay editable after save. No lock.
 
 API base: /api/v1/tenant/shop/
 Auth: Bearer + Tenant-Id.
+Body snake_case, response camelCase.
 
 Must implement:
-1) List: search on no/supplier/description. Actions: share shareUrl, edit, delete, convert.
-2) Create/Edit: supplier (search + optional POST /suppliers with name only), description required, line items via POST list-products-for-advanced-creation { "for": "supply_orders" }. Each line: product_id, optional product_variant_id, qty 1–250000. Server generates no.
-3) Convert: GET supply-orders/{id}/purchase-prefill, fill unit costs, POST purchases/commit (see docs/purchases-api-spec.md). Do not use start-purchase-invoice in new UI.
-4) From supplier view, GET suppliers/{id}/supply-orders can open this module.
+
+A) List GET supply-orders
+- Columns: no, supplier name, description.
+- Search: no / supplier / description.
+- Row actions from data.actions:
+  1. Share: copy/open shareUrl.
+  2. Convert if canConvertToPurchaseInvoice: GET supply-orders/{id}/purchase-prefill, fill unit_cost + warehouse, POST purchases/commit. Never call start-purchase-invoice.
+  3. Edit.
+  4. Delete with confirmation.
+- Header Create. On 400 show supply_orders subscription limit.
+
+B) Create/Edit
+- Server generates no — display after save only.
+- supplier required (GET/POST suppliers). description required.
+- Lines: POST list-products-for-advanced-creation { "for": "supply_orders" }. Show basic AND variants (including products without sale price). Variants: pick variants[].id as product_variant_id. Each line: product_id, optional product_variant_id, qty 1–250000. NO unit_cost.
+- PATCH with details replaces all lines.
+
+C) From supplier view GET suppliers/{id}/supply-orders opens this new module (share, convert, edit). canDelete is false on that compact list.
+
+D) Convert does not create an invoice. Prefill then purchases/commit. Order remains editable.
 
 Dates filters Y-m-d. Response date is d-m-Y; createdAt is Y-m-d H:i:s.
 ```
 
 ---
 
-## 13) QA
+## 14) QA
 
 | # | سيناريو | المتوقع |
 |---|---------|---------|
@@ -240,10 +308,12 @@ Dates filters Y-m-d. Response date is d-m-Y; createdAt is Y-m-d H:i:s.
 | 2 | بدون بنود | `422` على `details` |
 | 3 | variant لا يتبع المنتج | `422` |
 | 4 | حد الاشتراك | `400` رسالة الحد |
-| 5 | تحويل لفاتورة | فاتورة temp بنفس المورد وعدد البنود، أسعار 0 |
+| 5 | تحويل: prefill ثم commit | فاتورة مشتريات مؤكدة بنفس المورد والكميات؛ الأمر ما زال موجوداً |
 | 6 | حذف | البنود تُحذف مع الأمر |
 | 7 | `shareUrl` | يفتح الصفحة العامة لنفس الرقم |
+| 8 | منتج variants بدون `product_variant_id` | `422` |
+| 9 | بطاقة المورد | `canDelete: false` |
 
 ---
 
-*آخر تحديث: 2026-08-16.*
+*آخر تحديث: 2026-08-17.*
