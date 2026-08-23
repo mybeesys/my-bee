@@ -4,25 +4,28 @@ namespace App\Http\Resources;
 
 use App\Services\MediaService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
 
 class PaymentVoucherPaymentResource extends BaseResource
 {
     /**
-     * Transform the resource into an array.
-     *
      * @return array<string, mixed>
      */
     public function toArray($request): array
     {
         return $this->filterFields([
             'id' => $this->id,
-            'acc4Name' => $this->creditAccount->name,
-            'acc4Code' => $this->creditAccount->code,
-            'amount' => number_format($this->amount, currency_decimals(), '.', ''),
+            'creditAcc4Name' => $this->creditAccount?->name,
+            'creditAcc4Code' => $this->credit_acc4_code,
+            'debitAcc4Name' => $this->debitAccount?->name,
+            'debitAcc4Code' => $this->debit_acc4_code,
+            'acc4Name' => $this->creditAccount?->name,
+            'acc4Code' => $this->creditAccount?->code,
+            'amount' => number_format((float) $this->amount, currency_decimals(), '.', ''),
+            'amountNumeric' => round((float) $this->amount, currency_decimals()),
             'date' => Carbon::parse($this->date)->format('d-m-Y'),
+            'dateFormatted' => Carbon::parse($this->date)->format('Y-m-d'),
             'statement' => $this->statement,
+            'transactionCompleted' => (bool) $this->transaction_completed,
             'attachments' => MediaService::mediaUrls($this->getMedia('attachments')),
         ]);
     }

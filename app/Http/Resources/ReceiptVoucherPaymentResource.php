@@ -8,19 +8,23 @@ use Carbon\Carbon;
 class ReceiptVoucherPaymentResource extends BaseResource
 {
     /**
-     * Transform the resource into an array.
-     *
      * @return array<string, mixed>
      */
     public function toArray($request): array
     {
         return $this->filterFields([
             'id' => $this->id,
-            'acc4Name' => $this->debitAccount->name,
-            'acc4Code' => $this->creditAccount->code,
-            'amount' => number_format($this->amount, currency_decimals(), '.', ''),
+            'debitAcc4Name' => $this->debitAccount?->name,
+            'debitAcc4Code' => $this->debit_acc4_code,
+            'creditAcc4Name' => $this->creditAccount?->name,
+            'acc4Name' => $this->debitAccount?->name,
+            'acc4Code' => $this->debit_acc4_code,
+            'amount' => number_format((float) $this->amount, currency_decimals(), '.', ''),
+            'amountNumeric' => round((float) $this->amount, currency_decimals()),
             'date' => Carbon::parse($this->date)->format('d-m-Y'),
+            'dateFormatted' => Carbon::parse($this->date)->format('Y-m-d'),
             'statement' => $this->statement,
+            'transactionCompleted' => (bool) $this->transaction_completed,
             'attachments' => MediaService::mediaUrls($this->getMedia('attachments')),
         ]);
     }

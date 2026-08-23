@@ -11,6 +11,8 @@
 - فواتير المبيعات: `app/Filament/Tenant/Resources/SalesInvoiceResource.php` — **📄 مواصفة حصرية:** [`docs/sales-api-spec.md`](sales-api-spec.md)
 - عروض الأسعار: `app/Filament/Tenant/Resources/PriceOfferResource.php` — **📄 مواصفة حصرية:** [`docs/price-offers-api-spec.md`](price-offers-api-spec.md)
 - طلبات المتجر: `app/Filament/Tenant/Resources/OrderResource.php` — **📄 مواصفة حصرية:** [`docs/orders-api-spec.md`](orders-api-spec.md)
+- سندات القبض: `app/Filament/Tenant/Resources/ReceiptVoucherResource.php` — **📄 مواصفة حصرية:** [`docs/receipt-vouchers-api-spec.md`](receipt-vouchers-api-spec.md)
+- سندات الصرف: `app/Filament/Tenant/Resources/PaymentVoucherResource.php` — **📄 مواصفة حصرية:** [`docs/payment-vouchers-api-spec.md`](payment-vouchers-api-spec.md)
 - مرتجع المبيعات: `app/Filament/Tenant/Resources/SalesReturnsResource.php`
 - حسابات المستوى الرابع: `app/Filament/Tenant/Resources/Acc4Resource.php` (slug: `finance/tree-accounts/level-four`)
 - كشف الحساب (فلتر الحساب): `app/Filament/Tenant/Resources/AccountStatementResource.php`
@@ -31,6 +33,8 @@
 | **فواتير المبيعات** | ✅ منفّذ | `POST sales/commit` + إجراءات الصف (مشاركة/PDF/مرتجع/سند/دفعة آجل/عرض سعر) — انظر `docs/sales-api-spec.md` |
 | **عروض الأسعار** | ✅ منفّذ | CRUD tenant + مشاركة + تحويل لمبيعات عبر prefill — انظر `docs/price-offers-api-spec.md` |
 | **طلبات المتجر** | ✅ API جاهز — ترقية شاشة الموبايل | CRUD + stats + إجراءات الصف (حالة/تأكيد/دفع/مراجعة فاتورة) — انظر `docs/orders-api-spec.md` |
+| **سندات القبض** | ✅ منفّذ | allocation FIFO/selected + legacy + محاسبة + prefill/preview — انظر `docs/receipt-vouchers-api-spec.md` |
+| **سندات الصرف** | ✅ منفّذ | mirror للمورد — انظر `docs/payment-vouchers-api-spec.md` |
 | **مرتجع المبيعات** | ✅ منفّذ | `SalesReturnService` + أوضاع `invoice` / `customer` + مسارات returnable |
 | **حسابات الأطراف الأخرى** | ✅ منفّذ | `GET/POST/PATCH/DELETE .../acc4/other-parties` + `?scope=other_parties` + utils |
 | **سندات — get-other-entities** | ✅ منفّذ | يستخدم `userCreatedOtherPartyAccountOptions()` |
@@ -94,6 +98,25 @@ GET    /api/v1/tenant/shop/price-offers/{id}/sales-prefill
 GET    /api/v1/tenant/shop/price-offers-for-sales
 
 GET  /api/v1/tenant/shop/sales-returns-returnable-products/{customerId}
+
+GET    /api/v1/tenant/shop/receipt-vouchers
+POST   /api/v1/tenant/shop/receipt-vouchers
+GET    /api/v1/tenant/shop/receipt-vouchers/{id}
+POST   /api/v1/tenant/shop/receipt-vouchers/payments/add
+POST   /api/v1/tenant/shop/receipt-vouchers/utils/allocation-preview
+GET    /api/v1/tenant/shop/receipt-vouchers/prefill
+GET    /api/v1/tenant/shop/receipt-vouchers/utils/get-customer-invoices/{customer_acc4_code}
+GET    /api/v1/tenant/shop/receipt-vouchers/utils/voucher-payment-accounts
+
+GET    /api/v1/tenant/shop/payment-vouchers
+POST   /api/v1/tenant/shop/payment-vouchers
+GET    /api/v1/tenant/shop/payment-vouchers/{id}
+POST   /api/v1/tenant/shop/payment-vouchers/payments/add
+POST   /api/v1/tenant/shop/payment-vouchers/utils/allocation-preview
+GET    /api/v1/tenant/shop/payment-vouchers/prefill
+GET    /api/v1/tenant/shop/payment-vouchers/utils/get-supplier-invoices/{supplier_acc4_code}
+GET    /api/v1/tenant/shop/payment-vouchers/utils/voucher-payment-accounts
+
 GET  /api/v1/tenant/settings/acc4?scope=other_parties
 GET  /api/v1/tenant/settings/acc4/other-parties
 POST /api/v1/tenant/settings/acc4/other-parties          { "name": "..." }
@@ -122,6 +145,7 @@ GET  /api/v1/client/subscription/coupons/available
 - `app/Services/PriceOfferService.php`
 - `app/Services/SupplyOrderService.php`
 - `app/Services/OrderService.php`
+- `app/Services/ReceiptVoucherService.php`, `PaymentVoucherService.php`, `Concerns/CompletesVoucherPaymentAccounting.php`
 - `app/Services/SubscriptionApiService.php`
 - `app/Http/Controllers/API/V1/ClientSubscriptionController.php`
 - `app/Http/Middleware/EnsureClientSubscriptionActiveApi.php`

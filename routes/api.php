@@ -199,16 +199,22 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
 
 
             Route::post('payment-vouchers/payments/add', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'addPayment']);
+            Route::post('payment-vouchers/utils/allocation-preview', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'allocationPreview']);
+            Route::get('payment-vouchers/prefill', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'prefill']);
             Route::get('payment-vouchers/utils/get-supplier-invoices/{supplier_acc4_code}', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'getSupplierInvoices']);
             Route::get('payment-vouchers/utils/get-other-entities', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'getOtherEntities']);
             Route::get('payment-vouchers/utils/get-invoice-info/{id}', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'getInvoiceInfo']);
             Route::get('payment-vouchers/utils/get-credit-accounts', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'getCreditAccounts']);
+            Route::get('payment-vouchers/utils/voucher-payment-accounts', [\App\Http\Controllers\API\V1\PaymentVoucherController::class, 'getVoucherPaymentAccounts']);
 
             Route::post('receipt-vouchers/payments/add', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'addPayment']);
+            Route::post('receipt-vouchers/utils/allocation-preview', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'allocationPreview']);
+            Route::get('receipt-vouchers/prefill', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'prefill']);
             Route::get('receipt-vouchers/utils/get-customer-invoices/{customer_acc4_code}', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'getCustomerInvoices']);
             Route::get('receipt-vouchers/utils/get-other-entities', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'getOtherEntities']);
             Route::get('receipt-vouchers/utils/get-invoice-info/{id}', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'getInvoiceInfo']);
             Route::get('receipt-vouchers/utils/get-credit-accounts', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'getCreditAccounts']);
+            Route::get('receipt-vouchers/utils/voucher-payment-accounts', [\App\Http\Controllers\API\V1\ReceiptVoucherController::class, 'getVoucherPaymentAccounts']);
 
 
             Route::get('orders/{id}/payments', [\App\Http\Controllers\API\V1\OrderController::class, 'payments']);
