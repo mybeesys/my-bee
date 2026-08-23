@@ -21,6 +21,8 @@ class SalesInvoiceItemResource extends BaseResource
             'productVariantId' => $this->product_variant_id,
             'taxProfileId' => $this->taxProfile?->id,
             'qty' => $this->qty,
+            'originalQty' => (float) ($this->getRawOriginal('qty') ?? $this->attributes['qty'] ?? $this->qty),
+            'qtyReturned' => (float) $this->qty_returned,
             'discount' => number_format($this->discount, currency_decimals(), '.', ''),
             'tax' => number_format($this->tax, currency_decimals(), '.', ''),
             'price' => number_format($this->price, currency_decimals(), '.', ''),

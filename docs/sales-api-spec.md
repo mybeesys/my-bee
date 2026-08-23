@@ -168,7 +168,30 @@ flowchart TD
 GET /api/v1/tenant/shop/sales
 ```
 
-**Query:** `search` (رقم فاتورة / اسم عميل / رقم طلب)، `customer_id`، `payment_terms`، `status` (`confirmed`\|`cancelled`)، `from_date`/`to_date`/`date`، `sort`، `paginate`، `per_page`، بالإضافة لفلاتر legacy (`payment_status`, `payment_method`, …).
+**Query (مطابق فلتر الويب + legacy):**
+
+| المعامل | مثل الويب | ملاحظة |
+|---------|-----------|--------|
+| `search` | بحث الأعمدة | رقم فاتورة / اسم عميل / رقم طلب |
+| `customer_ids[]` | فلتر العملاء (متعدد) | **مثل الويب** |
+| `created_from` / `created_until` | فلتر التاريخ | على **`created_at`** — **مثل الويب** |
+| `customer_id` | — | عميل واحد (legacy) |
+| `from_date` / `to_date` / `date` | — | على **`date`** الفاتورة (legacy) |
+| `payment_terms`, `status`, `payment_status`, … | — | إضافي للموبايل |
+| `sort`, `paginate`, `per_page` | — | |
+| `include_summaries` | صف المجاميع | افتراضي `true` — انظر أدناه |
+
+**رد القائمة — `filters.listSummaries`** (مجاميع أعمدة الويب):
+
+```json
+"listSummaries": {
+  "paidAmount": 150000,
+  "servicesTotal": 5000,
+  "additionalCostsTotal": 2000,
+  "invoiceTotal": 200000,
+  "currency": "SDG"
+}
+```
 
 **كل عنصر** يشمل الحقول القديمة **بالإضافة إلى:**
 
@@ -322,9 +345,29 @@ POST /api/v1/tenant/shop/list-products-for-advanced-creation
 GET /api/v1/tenant/shop/sales/{id}
 ```
 
-نفس حقول القائمة + `items` (فيها `productId`, `productVariantId`, `selectedExtras`) + `services` + `additionalCosts`.
+نفس حقول القائمة + `items` (فيها `productId`, `productVariantId`, `originalQty`, `qtyReturned`, `selectedExtras`) + `services` + `additionalCosts` + **تبويب الدفعات:**
 
-`date` / `createdAt` بقيت `F j, Y, g:i a` للتوافق مع التطبيق القديم.
+```json
+{
+  "hasRecordedPayments": true,
+  "creditPaymentRemaining": "40.00",
+  "creditPaymentMaxAmount": "40.00",
+  "creditPayments": [
+    {
+      "id": 1,
+      "date": "2026-08-10",
+      "dateFormatted": "10/08/2026",
+      "amount": "60.00",
+      "amountNumeric": 60,
+      "statement": "دفعة أولى",
+      "currency": "SDG"
+    }
+  ]
+}
+```
+
+`date` / `createdAt` بقيت `F j, Y, g:i a` للتوافق مع التطبيق القديم.  
+`createdAtDate` (`d-m-Y`) للتجميع مثل الويب.
 
 ---
 

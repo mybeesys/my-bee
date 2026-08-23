@@ -82,14 +82,23 @@ class SaleInvoiceController extends BaseController
             ->when($request->customer_id, function (Builder $builder) use ($request) {
                 return $builder->where('customer_id', $request->customer_id);
             })
+            ->when($request->filled('customer_ids'), function (Builder $builder) use ($request) {
+                return $builder->whereIn('customer_id', $request->input('customer_ids'));
+            })
             ->when($request->user_id, function (Builder $builder) use ($request) {
                 return $builder->where('user_id', $request->user_id);
             })
             ->when($request->date, function (Builder $builder) use ($request) {
-                return $builder->whereDate('date', $request->date);
+                return $builder->whereDate('date', Carbon::parse($request->date)->format('Y-m-d'));
             })
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
-                return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
+                return $builder->whereDateBetween('date', $request->from_date, $request->to_date, 'd-m-Y');
+            })
+            ->when($request->created_from, function (Builder $builder) use ($request) {
+                return $builder->whereDate('created_at', '>=', Carbon::parse($request->created_from)->format('Y-m-d'));
+            })
+            ->when($request->created_until, function (Builder $builder) use ($request) {
+                return $builder->whereDate('created_at', '<=', Carbon::parse($request->created_until)->format('Y-m-d'));
             })->when($sort, function (Builder $builder) use ($request, $sort) {
                 if ($sort == 'oldest')
                     return $builder->orderBy('created_at');
@@ -104,11 +113,34 @@ class SaleInvoiceController extends BaseController
 
         $payload = collect(SalesInvoiceResource::collection($data)->resolve());
 
-        if ($request->boolean('paginate')) {
-            return $this->responder(__('messages.api.retrieved'), 200)->paginate($payload);
+        $additionalFilters = [];
+
+        if ($request->boolean('include_summaries', true)) {
+            $additionalFilters['listSummaries'] = $this->salesListSummaries($data);
         }
 
-        return $this->responder(__('messages.api.retrieved'), 200, $payload)->respond();
+        if ($request->boolean('paginate')) {
+            return $this->responder(__('messages.api.retrieved'), 200, [], [], $additionalFilters)->paginate($payload);
+        }
+
+        return $this->responder(__('messages.api.retrieved'), 200, $payload, [], $additionalFilters)->respond();
+    }
+
+    /**
+     * Column totals for the current filtered list (matches Filament table summarizers).
+     *
+     * @param  \Illuminate\Support\Collection<int, Invoice>  $invoices
+     * @return array<string, mixed>
+     */
+    protected function salesListSummaries($invoices): array
+    {
+        return [
+            'paidAmount' => round((float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->total_paid), currency_decimals()),
+            'servicesTotal' => round((float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->services_cost), currency_decimals()),
+            'additionalCostsTotal' => round((float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->additional_cost), currency_decimals()),
+            'invoiceTotal' => round((float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->items_cost), currency_decimals()),
+            'currency' => main_currency_iso_code(),
+        ];
     }
 
     public function store()

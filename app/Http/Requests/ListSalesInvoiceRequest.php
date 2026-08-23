@@ -13,7 +13,7 @@ class ListSalesInvoiceRequest extends BaseRequest
 
     protected function prepareForValidation(): void
     {
-        foreach (['date', 'from_date', 'to_date'] as $field) {
+        foreach (['date', 'from_date', 'to_date', 'created_from', 'created_until'] as $field) {
             $value = $this->input($field);
 
             if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
@@ -37,14 +37,19 @@ class ListSalesInvoiceRequest extends BaseRequest
             'transaction_ref' => ['sometimes', 'string'],
             'discount_method' => ['sometimes', 'in:amount,percent,none'],
             'customer_id' => ['sometimes', 'integer', 'exists:customers,id'],
+            'customer_ids' => ['sometimes', 'array'],
+            'customer_ids.*' => ['integer', 'exists:customers,id'],
             'user_id' => ['sometimes', 'integer', 'exists:users,id'],
             'date' => ['sometimes', 'date', 'date_format:d-m-Y'],
             'from_date' => ['sometimes', 'date', 'date_format:d-m-Y'],
             'to_date' => ['sometimes', 'date', 'date_format:d-m-Y', 'after:from_date'],
+            'created_from' => ['sometimes', 'date', 'date_format:d-m-Y'],
+            'created_until' => ['sometimes', 'date', 'date_format:d-m-Y', 'after_or_equal:created_from'],
             'search' => ['sometimes', 'nullable', 'string', 'max:255'],
             'paginate' => ['sometimes'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'sort' => ['sometimes', 'in:latest,oldest'],
+            'include_summaries' => ['sometimes'],
         ];
     }
 }

@@ -55,6 +55,15 @@ class SalesInvoiceResource extends BaseResource
             'receiptVoucherId' => $this->relationLoaded('receiptVoucher')
                 ? $this->receiptVoucher?->id
                 : null,
+            'hasRecordedPayments' => $this->relationLoaded('salesPayments')
+                ? $this->salesPayments->isNotEmpty()
+                : false,
+            'creditPaymentRemaining' => number_format((float) $this->total_unpaid, currency_decimals(), '.', ''),
+            'creditPaymentRemainingNumeric' => round((float) $this->total_unpaid, currency_decimals()),
+            'creditPaymentMaxAmount' => number_format(max(0, (float) $this->total_unpaid), currency_decimals(), '.', ''),
+            'creditPayments' => InvoiceCreditPaymentResource::collection(
+                $this->relationLoaded('salesPayments') ? $this->salesPayments : collect()
+            ),
             'actions' => [
                 'canShare' => filled($this->uid) && ! $this->temp,
                 'canSalesReturn' => $this->status === 'confirmed' && ! $this->temp,
@@ -79,6 +88,8 @@ class SalesInvoiceResource extends BaseResource
             'services' => ServiceResource::collection($this->services),
             'additionalCosts' => AdditionalCostResource::collection($this->additionalCosts),
             'createdAt' => $this->created_at->format('F j, Y, g:i a'),
+            'createdAtFormatted' => $this->created_at?->format('Y-m-d H:i:s'),
+            'createdAtDate' => $this->created_at?->format('d-m-Y'),
             'updatedAt' => $this->updated_at ? $this->updated_at->format('F j, Y, g:i a') : null,
         ]);
     }
