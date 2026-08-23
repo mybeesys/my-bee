@@ -14,6 +14,7 @@
 - سندات القبض: `app/Filament/Tenant/Resources/ReceiptVoucherResource.php` — **📄 مواصفة حصرية:** [`docs/receipt-vouchers-api-spec.md`](receipt-vouchers-api-spec.md)
 - سندات الصرف: `app/Filament/Tenant/Resources/PaymentVoucherResource.php` — **📄 مواصفة حصرية:** [`docs/payment-vouchers-api-spec.md`](payment-vouchers-api-spec.md)
 - المصروفات: `app/Filament/Tenant/Resources/ExpenseResource.php` + `ExpenseCategoryResource` — **📄 مواصفة حصرية:** [`docs/expenses-api-spec.md`](expenses-api-spec.md)
+- كوبونات المتجر: `app/Filament/Tenant/Resources/CouponResource.php` — **📄 مواصفة حصرية:** [`docs/coupons-api-spec.md`](coupons-api-spec.md)
 - مرتجع المبيعات: `app/Filament/Tenant/Resources/SalesReturnsResource.php`
 - حسابات المستوى الرابع: `app/Filament/Tenant/Resources/Acc4Resource.php` (slug: `finance/tree-accounts/level-four`)
 - كشف الحساب (فلتر الحساب): `app/Filament/Tenant/Resources/AccountStatementResource.php`
@@ -37,6 +38,7 @@
 | **سندات القبض** | ✅ منفّذ | allocation FIFO/selected + legacy + محاسبة + prefill/preview — انظر `docs/receipt-vouchers-api-spec.md` |
 | **سندات الصرف** | ✅ منفّذ | mirror للمورد — انظر `docs/payment-vouchers-api-spec.md` |
 | **المصروفات** | ✅ منفّذ | إنشاء بمحاسبة كاملة + ضريبة + مرفقات + overview — انظر `docs/expenses-api-spec.md` |
+| **كوبونات المتجر** | ✅ منفّذ | CRUD + span/type + usages — انظر `docs/coupons-api-spec.md` |
 | **مرتجع المبيعات** | ✅ منفّذ | `SalesReturnService` + أوضاع `invoice` / `customer` + مسارات returnable |
 | **حسابات الأطراف الأخرى** | ✅ منفّذ | `GET/POST/PATCH/DELETE .../acc4/other-parties` + `?scope=other_parties` + utils |
 | **سندات — get-other-entities** | ✅ منفّذ | يستخدم `userCreatedOtherPartyAccountOptions()` |
@@ -131,6 +133,13 @@ GET    /api/v1/tenant/expenses/categories
 POST   /api/v1/tenant/expenses/categories
 GET    /api/v1/tenant/expenses/acc4-treasury-accounts
 
+GET    /api/v1/tenant/shop/coupons
+POST   /api/v1/tenant/shop/coupons
+GET    /api/v1/tenant/shop/coupons/{id}
+PATCH  /api/v1/tenant/shop/coupons/{id}
+GET    /api/v1/tenant/shop/coupons/prefill
+GET    /api/v1/tenant/shop/coupons/form-options
+
 GET  /api/v1/tenant/settings/acc4?scope=other_parties
 GET  /api/v1/tenant/settings/acc4/other-parties
 POST /api/v1/tenant/settings/acc4/other-parties          { "name": "..." }
@@ -161,6 +170,7 @@ GET  /api/v1/client/subscription/coupons/available
 - `app/Services/OrderService.php`
 - `app/Services/ReceiptVoucherService.php`, `PaymentVoucherService.php`, `Concerns/CompletesVoucherPaymentAccounting.php`
 - `app/Services/ExpenseService.php`
+- `app/Services/CouponService.php`
 - `app/Services/SubscriptionApiService.php`
 - `app/Http/Controllers/API/V1/ClientSubscriptionController.php`
 - `app/Http/Middleware/EnsureClientSubscriptionActiveApi.php`

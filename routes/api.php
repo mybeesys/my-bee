@@ -107,6 +107,9 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::get('price-offers/{id}/sales-prefill', [\App\Http\Controllers\API\V1\PriceOfferController::class, 'salesPrefill']);
 
             Route::get('orders/stats', [\App\Http\Controllers\API\V1\OrderController::class, 'stats']);
+            Route::get('coupons/prefill', [\App\Http\Controllers\API\V1\CouponController::class, 'prefill']);
+            Route::get('coupons/form-options', [\App\Http\Controllers\API\V1\CouponController::class, 'formOptions']);
+            Route::apiResource('coupons', \App\Http\Controllers\API\V1\CouponController::class);
             Route::post('orders/{id}/confirm-invoice', [\App\Http\Controllers\API\V1\OrderController::class, 'confirmInvoice']);
             Route::put('orders/{id}', [\App\Http\Controllers\API\V1\OrderController::class, 'replace']);
             Route::patch('orders/{id}', [\App\Http\Controllers\API\V1\OrderController::class, 'update']);
