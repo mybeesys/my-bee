@@ -37,17 +37,20 @@
                 target="_blank"
                 rel="noopener noreferrer"
                 class="shop-nav-link__anchor"
+                title="{{ __('fields.shop_link') }}"
             >
-                {{ __('fields.shop_link') }}
+                <x-filament::icon icon="heroicon-m-shopping-bag" class="shop-nav-link__icon" />
+                <span class="shop-nav-link__label">{{ __('fields.shop_link') }}</span>
             </a>
         @else
             <button
                 type="button"
                 class="shop-nav-link__anchor shop-nav-link__anchor--locked"
                 x-on:click="open = true"
+                title="{{ __('fields.shop_link') }}"
             >
-                <x-filament::icon icon="heroicon-m-shopping-bag" class="shop-nav-link__lock-icon" />
-                {{ __('fields.shop_link') }}
+                <x-filament::icon icon="heroicon-m-shopping-bag" class="shop-nav-link__icon" />
+                <span class="shop-nav-link__label">{{ __('fields.shop_link') }}</span>
             </button>
 
             <template x-teleport="body">

@@ -73,13 +73,7 @@ class TenantPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->renderHook(
                 PanelsRenderHook::TOPBAR_START,
-                fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.collapsed-topbar-logo'),
-            )
-            ->renderHook(
-                PanelsRenderHook::TOPBAR_START,
-                fn (): \Illuminate\Contracts\View\View|string => filament()->auth()->check() && filled(filament()->getTenant())
-                    ? view('filament.tenant.components.topbar-tenant-context')
-                    : '',
+                fn (): \Illuminate\Contracts\View\View => view('filament.tenant.components.topbar-start'),
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,

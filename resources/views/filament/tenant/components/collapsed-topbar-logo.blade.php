@@ -5,7 +5,7 @@
     @endphp
 
     <div
-        class="fi-topbar-collapsed-brand me-2 shrink-0 sm:me-4"
+        class="fi-topbar-collapsed-brand shrink-0"
         x-cloak
         x-show="! $store.sidebar.isOpen"
         x-transition:enter="transition ease-out duration-200"

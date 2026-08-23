@@ -28,7 +28,7 @@
 }
 
 .fi-panel-tenant .fi-topbar > nav {
-    @apply relative h-14 border-0 bg-white shadow-none ring-0 dark:bg-gray-900;
+    @apply relative min-h-14 h-auto min-w-0 gap-x-2 overflow-hidden border-0 bg-white px-2 shadow-none ring-0 dark:bg-gray-900 sm:gap-x-3 sm:px-4 md:px-6 lg:px-8;
 }
 
 .fi-panel-tenant .fi-topbar > nav::after {
@@ -37,7 +37,16 @@
 }
 
 .fi-panel-tenant .fi-topbar .ms-auto {
-    @apply gap-2 sm:gap-3;
+    @apply shrink-0 gap-1 sm:gap-2 md:gap-3;
+}
+
+.fi-panel-tenant .fi-topbar .fi-topbar-open-sidebar-btn,
+.fi-panel-tenant .fi-topbar .fi-topbar-close-sidebar-btn {
+    @apply shrink-0;
+}
+
+.tenant-topbar-start {
+    @apply flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden sm:gap-2 md:gap-3;
 }
 
 .fi-panel-tenant .fi-topbar .fi-icon-btn {
@@ -63,9 +72,9 @@
 .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo img,
 .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo-brand {
     height: auto !important;
-    width: 10.5rem !important;
-    max-width: min(42vw, 10.5rem) !important;
-    max-height: 3.5rem !important;
+    width: auto !important;
+    max-width: min(28vw, 4.5rem) !important;
+    max-height: 2rem !important;
     @apply object-contain;
 }
 
@@ -74,6 +83,7 @@
     .fi-panel-tenant .fi-topbar-collapsed-brand .fi-logo-brand {
         width: 11.75rem !important;
         max-width: 11.75rem !important;
+        max-height: 3.5rem !important;
     }
 }
 
@@ -84,11 +94,11 @@
 
 /* —— Topbar tenant context + free plan promo —— */
 .tenant-topbar-context {
-    @apply me-2 flex min-w-0 flex-1 items-center gap-2 sm:gap-3;
+    @apply flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden sm:gap-2 md:gap-3;
 }
 
 .tenant-topbar-context__tenant {
-    @apply flex min-w-0 max-w-[9rem] items-center gap-2 sm:max-w-[12rem] lg:max-w-[16rem];
+    @apply flex min-w-0 max-w-[6.5rem] items-center gap-1.5 sm:max-w-[12rem] sm:gap-2 lg:max-w-[16rem];
 }
 
 .tenant-topbar-context__icon-wrap {
@@ -132,6 +142,28 @@
 }
 
 @media (max-width: 639px) {
+    .tenant-topbar-context__name {
+        @apply hidden;
+    }
+
+    .tenant-topbar-context__hint {
+        @apply hidden;
+    }
+
+    .tenant-topbar-context__plan-pill {
+        @apply hidden;
+    }
+
+    .tenant-topbar-context__tenant {
+        @apply max-w-[2rem];
+    }
+
+    .tenant-topbar-context__icon-wrap {
+        @apply h-7 w-7;
+    }
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
     .tenant-topbar-context__hint-text {
         @apply hidden;
     }
@@ -3973,12 +4005,24 @@ body:has(.tenant-login-page) .fls-display-on {
 }
 
 /* Shop nav link + store upgrade modal */
+.shop-nav-link {
+    @apply shrink-0;
+}
+
 .shop-nav-link__anchor {
-    @apply inline-flex items-center gap-1.5 text-sm font-bold text-[#0054ff] transition hover:text-[#0046d8];
+    @apply inline-flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-sm font-bold text-[#0054ff] transition hover:bg-blue-50 hover:text-[#0046d8] dark:hover:bg-blue-950/30;
+}
+
+.shop-nav-link__icon {
+    @apply h-4 w-4 shrink-0;
+}
+
+.shop-nav-link__label {
+    @apply hidden truncate sm:inline;
 }
 
 .shop-nav-link__anchor--locked {
-    @apply cursor-pointer border-0 bg-transparent p-0;
+    @apply cursor-pointer border-0 bg-transparent;
 }
 
 .shop-nav-link__lock-icon {
