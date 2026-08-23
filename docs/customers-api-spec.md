@@ -432,7 +432,7 @@ GET /api/v1/tenant/shop/clients/{id}/orders
 }
 ```
 
-التفاصيل الكاملة للطلب تبقى عبر `GET /orders/{id}` الموجود.
+التفاصيل الكاملة للطلب عبر `GET /orders/{id}` — انظر [`docs/orders-api-spec.md`](orders-api-spec.md).
 
 ---
 

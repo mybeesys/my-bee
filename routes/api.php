@@ -106,11 +106,16 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
 
             Route::get('price-offers/{id}/sales-prefill', [\App\Http\Controllers\API\V1\PriceOfferController::class, 'salesPrefill']);
 
+            Route::get('orders/stats', [\App\Http\Controllers\API\V1\OrderController::class, 'stats']);
+            Route::post('orders/{id}/confirm-invoice', [\App\Http\Controllers\API\V1\OrderController::class, 'confirmInvoice']);
+            Route::put('orders/{id}', [\App\Http\Controllers\API\V1\OrderController::class, 'replace']);
+            Route::patch('orders/{id}', [\App\Http\Controllers\API\V1\OrderController::class, 'update']);
+            Route::apiResource('orders', \App\Http\Controllers\API\V1\OrderController::class)->except(['update']);
+
             Route::apiResources([
                 'categories' => \App\Http\Controllers\API\V1\CategoryController::class,
                 'suppliers' => \App\Http\Controllers\API\V1\SupplierController::class,
                 'products' => \App\Http\Controllers\API\V1\ProductController::class,
-                'orders' => \App\Http\Controllers\API\V1\OrderController::class,
                 'clients' => \App\Http\Controllers\API\V1\CustomerController::class,
                 'purchases' => \App\Http\Controllers\API\V1\PurchaseInvoiceController::class,
                 'sales' => \App\Http\Controllers\API\V1\SaleInvoiceController::class,

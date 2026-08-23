@@ -1,6 +1,6 @@
 # مواصفة مواءمة API التطبيق مع الويب (MyBee)
 
-> **الهدف:** جعل تطبيق الموبايل يطابق سلوك الويب في: **العملاء**، **الموردين**، **أوامر التوريد**، **فواتير المشتريات**، **فواتير المبيعات**، **عروض الأسعار**، **مرتجع المبيعات**، **حسابات الأطراف الأخرى (المستوى الرابع)**، **الاشتراكات وكوبونات المنصة**.  
+> **الهدف:** جعل تطبيق الموبايل يطابق سلوك الويب في: **العملاء**، **الموردين**، **أوامر التوريد**، **فواتير المشتريات**، **فواتير المبيعات**، **عروض الأسعار**، **طلبات المتجر**، **مرتجع المبيعات**، **حسابات الأطراف الأخرى (المستوى الرابع)**، **الاشتراكات وكوبونات المنصة**.  
 > **مبدأ العمل:** توسيع الـ API الحالي **بدون كسر** العقود القديمة — إضافة حقول/مسارات/معاملات اختيارية، واستخراج منطق الويب إلى Services مشتركة بدل نسخ الكود.
 
 **مرجع الويب:**
@@ -10,6 +10,7 @@
 - فواتير المشتريات: `app/Filament/Tenant/Resources/PurchaseInvoiceResource.php` — **📄 مواصفة حصرية:** [`docs/purchases-api-spec.md`](purchases-api-spec.md)
 - فواتير المبيعات: `app/Filament/Tenant/Resources/SalesInvoiceResource.php` — **📄 مواصفة حصرية:** [`docs/sales-api-spec.md`](sales-api-spec.md)
 - عروض الأسعار: `app/Filament/Tenant/Resources/PriceOfferResource.php` — **📄 مواصفة حصرية:** [`docs/price-offers-api-spec.md`](price-offers-api-spec.md)
+- طلبات المتجر: `app/Filament/Tenant/Resources/OrderResource.php` — **📄 مواصفة حصرية:** [`docs/orders-api-spec.md`](orders-api-spec.md)
 - مرتجع المبيعات: `app/Filament/Tenant/Resources/SalesReturnsResource.php`
 - حسابات المستوى الرابع: `app/Filament/Tenant/Resources/Acc4Resource.php` (slug: `finance/tree-accounts/level-four`)
 - كشف الحساب (فلتر الحساب): `app/Filament/Tenant/Resources/AccountStatementResource.php`
@@ -29,6 +30,7 @@
 | **فواتير المشتريات** | ✅ منفّذ | `POST purchases/commit` + إجراءات الصف (مشاركة/PDF/مرتجع/سند صرف/دفعة آجل) — انظر `docs/purchases-api-spec.md` |
 | **فواتير المبيعات** | ✅ منفّذ | `POST sales/commit` + إجراءات الصف (مشاركة/PDF/مرتجع/سند/دفعة آجل/عرض سعر) — انظر `docs/sales-api-spec.md` |
 | **عروض الأسعار** | ✅ منفّذ | CRUD tenant + مشاركة + تحويل لمبيعات عبر prefill — انظر `docs/price-offers-api-spec.md` |
+| **طلبات المتجر** | ✅ API جاهز — ترقية شاشة الموبايل | CRUD + stats + إجراءات الصف (حالة/تأكيد/دفع/مراجعة فاتورة) — انظر `docs/orders-api-spec.md` |
 | **مرتجع المبيعات** | ✅ منفّذ | `SalesReturnService` + أوضاع `invoice` / `customer` + مسارات returnable |
 | **حسابات الأطراف الأخرى** | ✅ منفّذ | `GET/POST/PATCH/DELETE .../acc4/other-parties` + `?scope=other_parties` + utils |
 | **سندات — get-other-entities** | ✅ منفّذ | يستخدم `userCreatedOtherPartyAccountOptions()` |
@@ -46,6 +48,15 @@ DELETE /api/v1/tenant/shop/clients/{id}
 GET    /api/v1/tenant/shop/clients/{id}/account-statement
 GET    /api/v1/tenant/shop/clients/{id}/invoices
 GET    /api/v1/tenant/shop/clients/{id}/orders
+GET    /api/v1/tenant/shop/orders/stats
+GET    /api/v1/tenant/shop/orders
+POST   /api/v1/tenant/shop/orders
+GET    /api/v1/tenant/shop/orders/{id}
+PUT    /api/v1/tenant/shop/orders/{id}
+PATCH  /api/v1/tenant/shop/orders/{id}
+DELETE /api/v1/tenant/shop/orders/{id}
+POST   /api/v1/tenant/shop/orders/{id}/confirm-invoice
+GET    /api/v1/tenant/shop/orders/{id}/payments
 GET    /api/v1/tenant/shop/location/states|cities|areas
 
 GET    /api/v1/tenant/shop/suppliers
@@ -110,6 +121,7 @@ GET  /api/v1/client/subscription/coupons/available
 - `app/Services/SalesInvoiceService.php`
 - `app/Services/PriceOfferService.php`
 - `app/Services/SupplyOrderService.php`
+- `app/Services/OrderService.php`
 - `app/Services/SubscriptionApiService.php`
 - `app/Http/Controllers/API/V1/ClientSubscriptionController.php`
 - `app/Http/Middleware/EnsureClientSubscriptionActiveApi.php`

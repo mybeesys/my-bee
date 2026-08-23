@@ -3,7 +3,10 @@
 namespace App\Http\Resources;
 
 use App\Models\Invoice;
+use App\Models\Order;
 use App\Services\OrderDiscountService;
+use App\Services\OrderService;
+use App\Services\OrderStatusService;
 use Illuminate\Support\Facades\DB;
 
 class OrderResource extends BaseResource
@@ -15,39 +18,82 @@ class OrderResource extends BaseResource
      */
     public function toArray($request): array
     {
+        $invoice = $this->invoice;
+        $grandTotal = $invoice
+            ? OrderDiscountService::instance()->orderGrandTotal($this->resource)
+            : null;
+
         return $this->filterFields([
             'id' => $this->id,
             'no' => $this->no,
-            'invoiceId' => $this->invoice?->getKey(),
-            'invoiceNo' => $this->invoice?->no,
+            'source' => $this->source,
+            'invoiceId' => $invoice?->getKey(),
+            'invoiceNo' => $invoice?->no,
             'invoiceReceiptVoucherId' => $this->resolveInvoiceReceiptVoucherId(),
-            'invoiceUID' => $this->invoice?->uid,
+            'invoiceUID' => $invoice?->uid,
             'status' => $this->status,
             'statusName' => __("fields.order_status_$this->status"),
-            'paymentStatus' => $this->invoice?->payment_status,
+            'paymentStatus' => $invoice?->payment_status,
             'paymentMethod' => $this->payment_method,
-            'discount' => $this->invoice
+            'deliveryType' => $this->delivery_type,
+            'deliveryAddress' => $this->delivery_address,
+            'notes' => $this->notes,
+            'canceledReason' => $this->canceled_reason,
+            'isPaid' => (bool) $invoice?->paid,
+            'canEdit' => app(OrderService::class)->canEdit($this->resource),
+            'discount' => $invoice
                 ? number_format(OrderDiscountService::instance()->orderDiscountAmount($this->resource), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
+            'discountAmount' => round((float) OrderDiscountService::instance()->orderDiscountAmount($this->resource), currency_decimals()),
             'delivery' => number_format($this->delivery, currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol(),
-            'extras' => $this->invoice
-                ? number_format($this->invoice->extras_total, currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
+            'deliveryAmount' => round((float) $this->delivery, currency_decimals()),
+            'extras' => $invoice
+                ? number_format($invoice->extras_total, currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
-            'tax' => $this->invoice
-                ? number_format($this->invoice->getTaxesAsAmount(), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
+            'tax' => $invoice
+                ? number_format($invoice->getTaxesAsAmount(), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
-            'total' => $this->invoice
-                ? number_format(OrderDiscountService::instance()->orderGrandTotal($this->resource), currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
+            'total' => $grandTotal !== null
+                ? number_format($grandTotal, currency_decimals(), '.', ',') . ' ' . main_currency_native_symbol()
                 : null,
+            'totalAmount' => $grandTotal !== null ? round((float) $grandTotal, currency_decimals()) : null,
+            'currency' => main_currency_iso_code(),
+            'shareUrl' => filled($invoice?->uid) && ! $invoice?->temp ? $invoice->url : null,
+            'pdfUrl' => filled($invoice?->uid) && ! $invoice?->temp ? $invoice->pdf_url : null,
             'orderDate' => $this->created_at->format('F j, Y, g:i a'),
+            'orderDateFormatted' => $this->created_at?->format('Y-m-d H:i:s'),
             'deliveryDate' => $this->delivery_date?->format('F j, Y, g:i a'),
+            'deliveryDateFormatted' => $this->delivery_date?->format('Y-m-d H:i:s'),
             'cancelledDate' => $this->canceled_date?->format('F j, Y, g:i a'),
+            'cancelledDateFormatted' => $this->canceled_date?->format('Y-m-d H:i:s'),
             'customer' => $this->customer ? new CustomerResource($this->customer) : null,
-            'details' => $this->invoice
-                ? OrderItemResource::collection($this->invoice->items)
+            'details' => $invoice
+                ? OrderItemResource::collection($invoice->items)
                 : [],
             'coupon' => $this->coupon ? new CouponResource($this->coupon) : null,
+            'actions' => $this->resolveActions(),
         ]);
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    protected function resolveActions(): array
+    {
+        $invoice = $this->invoice;
+        $statusService = app(OrderStatusService::class);
+        $canReviewInvoice = filled($this->invoice_id)
+            && $invoice?->isEditable()
+            && $this->status !== Order::$STATUS_CANCELLED;
+
+        return [
+            'canChangeStatus' => $statusService->canChangeStatus($this->resource),
+            'canReviewInvoice' => $canReviewInvoice,
+            'canConfirmInvoice' => $canReviewInvoice,
+            'canCompletePayment' => $invoice && ! $invoice->paid,
+            'canEdit' => app(OrderService::class)->canEdit($this->resource),
+            'canShare' => filled($invoice?->uid) && ! $invoice?->temp,
+        ];
     }
 
     protected function resolveInvoiceReceiptVoucherId(): ?int
