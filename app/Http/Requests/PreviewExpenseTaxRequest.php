@@ -2,11 +2,9 @@
 
 namespace App\Http\Requests;
 
-use Carbon\Carbon;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\File;
 
-class StoreExpenseRequest extends BaseRequest
+class PreviewExpenseTaxRequest extends BaseRequest
 {
     public function authorize(): bool
     {
@@ -15,12 +13,6 @@ class StoreExpenseRequest extends BaseRequest
 
     protected function prepareForValidation(): void
     {
-        if (is_string($this->input('date')) && preg_match('/^\d{2}-\d{2}-\d{4}$/', $this->input('date'))) {
-            $this->merge([
-                'date' => Carbon::createFromFormat('d-m-Y', $this->input('date'))->format('Y-m-d'),
-            ]);
-        }
-
         if ($this->has('amount_includes_tax')) {
             $this->merge([
                 'amount_includes_tax' => filter_var($this->input('amount_includes_tax'), FILTER_VALIDATE_BOOLEAN),
@@ -37,18 +29,12 @@ class StoreExpenseRequest extends BaseRequest
 
         return [
             'amount' => ['required', 'numeric', 'min:1', 'max:'.PHP_INT_MAX],
-            'date' => ['required', 'date', 'date_format:Y-m-d'],
-            'expense_category_id' => ['required', 'exists:expense_categories,id'],
             'amount_includes_tax' => ['sometimes', 'boolean'],
             'tax_profile_id' => [
                 Rule::requiredIf($includesTax),
                 'nullable',
                 'exists:tax_profiles,id',
             ],
-            'credit_acc4_code' => ['required', 'exists:acc4,code'],
-            'description' => ['required', 'string', 'max:65535'],
-            'attachments' => ['sometimes', 'array'],
-            'attachments.*' => ['required', 'file', File::types(['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG', 'webp', 'pdf', 'PDF'])->max(2048)],
         ];
     }
 }

@@ -225,6 +225,9 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
 
         Route::group(['prefix' => 'expenses'], function () {
             Route::get('stats', [\App\Http\Controllers\API\V1\StatsController::class, 'expenses']);
+            Route::get('overview', [\App\Http\Controllers\API\V1\ExpenseController::class, 'overview']);
+            Route::get('prefill', [\App\Http\Controllers\API\V1\ExpenseController::class, 'prefill']);
+            Route::post('utils/tax-preview', [\App\Http\Controllers\API\V1\ExpenseController::class, 'taxPreview']);
 
             Route::apiResource('categories', \App\Http\Controllers\API\V1\ExpenseCategoryController::class, [
                 'names' => [
@@ -238,9 +241,6 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::apiResource('expenses', \App\Http\Controllers\API\V1\ExpenseController::class);
 
             Route::get('acc4-treasury-accounts', [\App\Http\Controllers\API\V1\ExpenseController::class, 'treasuryAccounts']);
-//            Route::get('acc4-expense-accounts', [\App\Http\Controllers\API\V1\ExpenseController::class, 'expenseAccounts']);
-
-
         });
 
         Route::group(['prefix' => 'reports'], function () {

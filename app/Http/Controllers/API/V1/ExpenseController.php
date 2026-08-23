@@ -4,152 +4,155 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\API\BaseController;
 use App\Http\Requests\ListExpensesRequest;
+use App\Http\Requests\PreviewExpenseTaxRequest;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
 use App\Http\Resources\Acc4Resource;
 use App\Http\Resources\ExpenseResource;
 use App\Models\Acc4;
 use App\Models\Expense;
-use App\Models\TaxProfile;
-use App\Services\AccountingService;
-use App\Services\MathService;
+use App\Services\ExpenseService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 
 class ExpenseController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(ListExpensesRequest $request)
-    {
-        $data = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])
-            ->when($request->debit_acc4_code, function (Builder $builder) use ($request) {
-                return $builder->whereIn('debit_acc4_code', Arr::wrap($request->debit_acc4_code));
-            })
-            ->when($request->credit_acc4_code, function (Builder $builder) use ($request) {
-                return $builder->whereIn('credit_acc4_code', Arr::wrap($request->credit_acc4_code));
-            })
-            ->when($request->expense_category_id, function (Builder $builder) use ($request) {
-                return $builder->where('expense_category_id', $request->expense_category_id);
-            })
-            ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
-                return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
-            })
-            ->when($request->min_amount or $request->max_amount, function (Builder $builder) use ($request) {
-                return $builder->whereBetween('amount', [$request->min_amount ?? 0, $request->max_amount ?? PHP_INT_MAX]);
-            })
-            ->orderByDesc('created_at')
-            ->get();
-
-        return $this->responder(__('messages.api.retrieved'), 200, ExpenseResource::collection($data))
-            ->filters($request->validated())
-            ->respond();
+    public function __construct(
+        protected ExpenseService $expenses,
+    ) {
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function index(ListExpensesRequest $request)
+    {
+        $sort = $request->input('sort', 'latest');
+
+        $query = Expense::query()
+            ->with(ExpenseService::eagerLoads())
+            ->when($request->filled('search'), function (Builder $builder) use ($request) {
+                $search = $request->input('search');
+
+                $builder->where(function (Builder $inner) use ($search) {
+                    $inner->where('description', 'like', "%{$search}%")
+                        ->orWhereHas('creditAccount', fn (Builder $acc) => $acc->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('category', fn (Builder $cat) => $cat->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when($request->filled('debit_acc4_code'), fn (Builder $builder) => $builder->whereIn('debit_acc4_code', Arr::wrap($request->debit_acc4_code)))
+            ->when($request->filled('credit_acc4_code'), fn (Builder $builder) => $builder->whereIn('credit_acc4_code', Arr::wrap($request->credit_acc4_code)))
+            ->when($request->filled('credit_acc4_codes'), fn (Builder $builder) => $builder->whereIn('credit_acc4_code', Arr::wrap($request->credit_acc4_codes)))
+            ->when($request->filled('expense_category_id') && ! is_array($request->expense_category_id), fn (Builder $builder) => $builder->where('expense_category_id', $request->expense_category_id))
+            ->when(is_array($request->input('expense_category_id')), fn (Builder $builder) => $builder->whereIn('expense_category_id', $request->input('expense_category_id')))
+            ->when($request->filled('expense_category_ids'), fn (Builder $builder) => $builder->whereIn('expense_category_id', Arr::wrap($request->expense_category_ids)))
+            ->when($request->date_from, fn (Builder $builder) => $builder->whereDate('date', '>=', Carbon::parse($request->date_from)->format('Y-m-d')))
+            ->when($request->date_until, fn (Builder $builder) => $builder->whereDate('date', '<=', Carbon::parse($request->date_until)->format('Y-m-d')))
+            ->when($request->from_date || $request->to_date, fn (Builder $builder) => $builder->whereDateBetween('date', $request->from_date, $request->to_date, 'd-m-Y'))
+            ->when($request->min_amount || $request->max_amount, fn (Builder $builder) => $builder->whereBetween('amount', [$request->min_amount ?? 0, $request->max_amount ?? PHP_INT_MAX]))
+            ->when($request->boolean('attachments'), fn (Builder $builder) => $builder->whereHas('media'))
+            ->when($sort === 'oldest', fn (Builder $builder) => $builder->orderBy('created_at'))
+            ->when($sort !== 'oldest', fn (Builder $builder) => $builder->orderByDesc('created_at'));
+
+        $data = $query->get();
+        $payload = collect(ExpenseResource::collection($data)->resolve());
+        $additionalFilters = [];
+
+        if ($request->boolean('include_summaries', true)) {
+            $additionalFilters['listSummaries'] = $this->expenses->listSummaries($data);
+        }
+
+        if ($request->boolean('paginate')) {
+            return $this->responder(__('messages.api.retrieved'), 200, [], [], $additionalFilters)->paginate($payload);
+        }
+
+        return $this->responder(__('messages.api.retrieved'), 200, $payload, [], $additionalFilters)->respond();
+    }
+
     public function store(StoreExpenseRequest $request)
     {
         $data = $request->validated();
+        $attachments = $request->hasFile('attachments') ? $request->file('attachments') : null;
 
-        $data['tenant_id'] = $this->getTenant()->id;
-        $data['debit_acc4_code'] = "122300001";
+        try {
+            $expense = $this->expenses->create(
+                $data,
+                (int) $this->getTenantId(),
+                is_array($attachments) ? $attachments : ($attachments ? [$attachments] : null),
+            );
 
-        $hasTax = false;
-        if ($data['tax_profile_id'] ?? null) {
-            $hasTax = true;
-            $taxProfile = TaxProfile::find($data['tax_profile_id']);
-            $data['tax'] = MathService::instance()->getTaxFromTaxProfile($data['amount'], $taxProfile);
-            $data['tax_profile_data'] = $taxProfile->toArray();
+            return $this->responder(__('messages.api.created'), 201, new ExpenseResource($expense))->respond();
+        } catch (ValidationException $exception) {
+            return $this->responder(__('messages.api.validation_error'), 422, [], $exception->errors())->respond();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->error($exception)->respond();
         }
-        $expense = Expense::create($data);
-
-        if($hasTax and $expense->tax > 0){
-            $op = make_taxes_op();
-            $accService = new AccountingService();
-            $accService
-                ->setUp(
-                    $op->id,
-                    now(),
-                    main_currency_iso_code(),
-                    generate_double_entry_transaction_id(),
-                    $expense->tax,
-                    null,
-                    'Vat',
-                    'Vat',
-                    null,
-                    meta: ['type' => 'expense', 'id' => $expense->id],
-                )->make($expense->credit_acc4_code, $expense->debit_acc4_code)
-                ->finish();
-        }
-        $expense->load(['category', 'debitAccount', 'creditAccount']);
-
-        return $this->responder(__('messages.api.created'), 201, new ExpenseResource($expense))->respond();
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-        $item = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])->findOrFail($id);
+        $item = Expense::with(ExpenseService::eagerLoads())->findOrFail($id);
+
         return $this->responder(__('messages.api.retrieved'), 200, new ExpenseResource($item))->respond();
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(UpdateExpenseRequest $request, string $id)
     {
+        $item = Expense::with(ExpenseService::eagerLoads())->findOrFail($id);
         $data = $request->validated();
-        $item = Expense::with(['category', 'taxProfile', 'debitAccount', 'creditAccount'])->findOrFail($id);
+        $attachments = $request->hasFile('attachments') ? $request->file('attachments') : null;
 
-//        if ($data['tax_profile_id'] ?? null) {
-//            $taxProfile = TaxProfile::find($data['tax_profile_id']);
-//            $percent = collect($taxProfile->taxes)->sum('percent');
-//            $data['tax'] = $percent / 100 * $data['amount'];
-//            $data['tax_profile_data'] = $taxProfile->toArray();
-//        }else{
-//            $data['tax'] = 0;
-//            $data['tax_profile_data'] = null;
-//        }
+        try {
+            $expense = $this->expenses->update(
+                $item,
+                $data,
+                is_array($attachments) ? $attachments : ($attachments ? [$attachments] : null),
+            );
 
-        $item->update($data);
-        return $this->responder(__('messages.api.updated'), 200, new ExpenseResource($item))->respond();
+            return $this->responder(__('messages.api.updated'), 200, new ExpenseResource($expense))->respond();
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return $this->error($exception)->respond();
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        $item = Expense::findOrFail($id);
-        abort( 403, __('messages.api.permission_denied'));
-////        abort_if(!$this->canDelete($item), 403, __('messages.api.permission_denied'));
-//        try {
-//            $item->delete();
-//            return $this->responder(__('messages.api.deleted'), 200, [])->respond();
-//        } catch (\Exception $exception) {
-//            return $this->responder(__('fields.record_in_use_alert'), 400)->respond();
-//        }
+        Expense::findOrFail($id);
+
+        return $this->responder(__('messages.api.permission_denied'), 403)->respond();
+    }
+
+    public function prefill()
+    {
+        return $this->responder(__('messages.api.retrieved'), 200, $this->expenses->prefill())->respond();
+    }
+
+    public function taxPreview(PreviewExpenseTaxRequest $request)
+    {
+        $data = $request->validated();
+
+        return $this->responder(__('messages.api.retrieved'), 200, $this->expenses->taxPreview(
+            (float) $data['amount'],
+            isset($data['tax_profile_id']) ? (int) $data['tax_profile_id'] : null,
+            (bool) ($data['amount_includes_tax'] ?? false),
+        ))->respond();
+    }
+
+    public function overview()
+    {
+        return $this->responder(__('messages.api.retrieved'), 200, [
+            'cards' => $this->expenses->overview(),
+        ])->respond();
     }
 
     public function treasuryAccounts()
     {
-        $data = Acc4::whereIn('code', [120100001])->OrWhereIn('acc3_code', [1227])->get();
+        $codes = array_keys(Acc4::collectionAccountOptions());
+        $data = Acc4::query()->whereIn('code', $codes)->orderBy('name')->get();
 
         return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
     }
-
-//    public function expenseAccounts()
-//    {
-//        $data = Acc4::whereHas('acc3', function ($q) {
-//            return $q->whereIn('acc2_code', [51, 52, 53]);
-//        })->get();
-//
-//        return $this->responder(__('messages.api.retrieved'), 200, Acc4Resource::collection($data))->respond();
-//    }
 }

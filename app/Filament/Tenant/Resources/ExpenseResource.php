@@ -12,10 +12,7 @@ use App\Models\ExpenseCategory;
 use App\Models\Invoice;
 use App\Models\TaxProfile;
 use App\Rules\UniqueTenantItemRule;
-use App\Services\AccountingService;
-use App\Services\MathService;
 use Filament\Actions\Action;
-use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -31,9 +28,10 @@ use Filament\Support\Enums\MaxWidth;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Arr;
 use Illuminate\Support\HtmlString;
+use App\Services\ExpenseService;
+use App\Services\MathService;
 
 class ExpenseResource extends Resource
 {
@@ -570,61 +568,15 @@ class ExpenseResource extends Resource
     {
         $data = static::mutateExpenseCreateData($data);
 
-        $record = new Expense();
-        $record->fill($data);
-
-        if (static::isScopedToTenant() && ($tenant = Filament::getTenant())) {
-            $relationship = static::getTenantRelationship($tenant);
-
-            if ($relationship instanceof HasManyThrough) {
-                $record->save();
-            } else {
-                $relationship->save($record);
-            }
-        } else {
-            $record->save();
-        }
-
-        return $record;
+        return ExpenseService::instance()->create(
+            $data,
+            (int) filament()->getTenant()->id,
+        );
     }
 
     public static function postExpenseCreated(Expense $record): void
     {
-        $op = make_taxes_op();
-        $accService = new AccountingService();
-        $accService
-            ->setUp(
-                $op->id,
-                now(),
-                main_currency_iso_code(),
-                generate_double_entry_transaction_id(),
-                $record->total,
-                null,
-                $record->description,
-                $record->description,
-                null,
-                meta: ['type' => 'expense', 'id' => $record->id],
-            )->make($record->credit_acc4_code, '122300001')
-            ->finish();
-
-        if ($record->tax > 0) {
-            $op = make_taxes_op();
-            $accService = new AccountingService();
-            $accService
-                ->setUp(
-                    $op->id,
-                    now(),
-                    main_currency_iso_code(),
-                    generate_double_entry_transaction_id(),
-                    $record->tax,
-                    null,
-                    'Vat',
-                    'Vat',
-                    null,
-                    meta: ['type' => 'expense', 'id' => $record->id],
-                )->make('122800001', '122300001')
-                ->finish();
-        }
+        // Accounting is posted inside ExpenseService::create.
     }
 
     public static function getPages(): array

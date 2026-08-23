@@ -13,6 +13,7 @@
 - طلبات المتجر: `app/Filament/Tenant/Resources/OrderResource.php` — **📄 مواصفة حصرية:** [`docs/orders-api-spec.md`](orders-api-spec.md)
 - سندات القبض: `app/Filament/Tenant/Resources/ReceiptVoucherResource.php` — **📄 مواصفة حصرية:** [`docs/receipt-vouchers-api-spec.md`](receipt-vouchers-api-spec.md)
 - سندات الصرف: `app/Filament/Tenant/Resources/PaymentVoucherResource.php` — **📄 مواصفة حصرية:** [`docs/payment-vouchers-api-spec.md`](payment-vouchers-api-spec.md)
+- المصروفات: `app/Filament/Tenant/Resources/ExpenseResource.php` + `ExpenseCategoryResource` — **📄 مواصفة حصرية:** [`docs/expenses-api-spec.md`](expenses-api-spec.md)
 - مرتجع المبيعات: `app/Filament/Tenant/Resources/SalesReturnsResource.php`
 - حسابات المستوى الرابع: `app/Filament/Tenant/Resources/Acc4Resource.php` (slug: `finance/tree-accounts/level-four`)
 - كشف الحساب (فلتر الحساب): `app/Filament/Tenant/Resources/AccountStatementResource.php`
@@ -35,6 +36,7 @@
 | **طلبات المتجر** | ✅ API جاهز — ترقية شاشة الموبايل | CRUD + stats + إجراءات الصف (حالة/تأكيد/دفع/مراجعة فاتورة) — انظر `docs/orders-api-spec.md` |
 | **سندات القبض** | ✅ منفّذ | allocation FIFO/selected + legacy + محاسبة + prefill/preview — انظر `docs/receipt-vouchers-api-spec.md` |
 | **سندات الصرف** | ✅ منفّذ | mirror للمورد — انظر `docs/payment-vouchers-api-spec.md` |
+| **المصروفات** | ✅ منفّذ | إنشاء بمحاسبة كاملة + ضريبة + مرفقات + overview — انظر `docs/expenses-api-spec.md` |
 | **مرتجع المبيعات** | ✅ منفّذ | `SalesReturnService` + أوضاع `invoice` / `customer` + مسارات returnable |
 | **حسابات الأطراف الأخرى** | ✅ منفّذ | `GET/POST/PATCH/DELETE .../acc4/other-parties` + `?scope=other_parties` + utils |
 | **سندات — get-other-entities** | ✅ منفّذ | يستخدم `userCreatedOtherPartyAccountOptions()` |
@@ -117,6 +119,18 @@ GET    /api/v1/tenant/shop/payment-vouchers/prefill
 GET    /api/v1/tenant/shop/payment-vouchers/utils/get-supplier-invoices/{supplier_acc4_code}
 GET    /api/v1/tenant/shop/payment-vouchers/utils/voucher-payment-accounts
 
+GET    /api/v1/tenant/expenses/stats
+GET    /api/v1/tenant/expenses/overview
+GET    /api/v1/tenant/expenses/prefill
+POST   /api/v1/tenant/expenses/utils/tax-preview
+GET    /api/v1/tenant/expenses/expenses
+POST   /api/v1/tenant/expenses/expenses
+GET    /api/v1/tenant/expenses/expenses/{id}
+PATCH  /api/v1/tenant/expenses/expenses/{id}
+GET    /api/v1/tenant/expenses/categories
+POST   /api/v1/tenant/expenses/categories
+GET    /api/v1/tenant/expenses/acc4-treasury-accounts
+
 GET  /api/v1/tenant/settings/acc4?scope=other_parties
 GET  /api/v1/tenant/settings/acc4/other-parties
 POST /api/v1/tenant/settings/acc4/other-parties          { "name": "..." }
@@ -146,6 +160,7 @@ GET  /api/v1/client/subscription/coupons/available
 - `app/Services/SupplyOrderService.php`
 - `app/Services/OrderService.php`
 - `app/Services/ReceiptVoucherService.php`, `PaymentVoucherService.php`, `Concerns/CompletesVoucherPaymentAccounting.php`
+- `app/Services/ExpenseService.php`
 - `app/Services/SubscriptionApiService.php`
 - `app/Http/Controllers/API/V1/ClientSubscriptionController.php`
 - `app/Http/Middleware/EnsureClientSubscriptionActiveApi.php`
