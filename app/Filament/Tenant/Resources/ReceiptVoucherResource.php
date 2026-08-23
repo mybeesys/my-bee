@@ -107,7 +107,7 @@ class ReceiptVoucherResource extends Resource
                             if ($get('for') == "customer") {
                                 return Acc4::asOptions(only_item_class: [Customer::class]);
                             } else if ($get('for') == "other_entity") {
-                                return Acc4::userCreatedOtherPartyAccountOptions();
+                                return Acc4::ledgerAccountOptions();
                             } else {
                                 return [];
                             }

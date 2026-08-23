@@ -189,7 +189,7 @@ class AccountStatementResource extends Resource
 
                         Forms\Components\Select::make('account_code')
                             ->label(__('fields.account'))
-                            ->options(Acc4::userCreatedOtherPartyAccountOptions())
+                            ->options(Acc4::ledgerAccountOptions())
                             ->searchable(),
 
                         Forms\Components\Select::make('op_id')
@@ -285,7 +285,7 @@ class AccountStatementResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with(['account', 'operation', 'account.acc3', 'currency', 'invoice'])
-            ->whereHas('account', fn (Builder $query) => $query->userCreatedOtherPartyAccounts())
+            ->whereHas('account', fn (Builder $query) => $query->ledgerAccounts())
             ->orderByDesc('id');
     }
 

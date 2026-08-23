@@ -311,7 +311,7 @@ class ReceiptVoucherService
     {
         $allowed = match ($for) {
             'customer' => Customer::query()->whereRelation('acc4', 'code', $acc4Code)->exists(),
-            'other_entity' => array_key_exists($acc4Code, Acc4::userCreatedOtherPartyAccountOptions()),
+            'other_entity' => Acc4::isLedgerAccountCode($acc4Code),
             default => false,
         };
 

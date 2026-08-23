@@ -108,7 +108,7 @@ class PaymentVoucherResource extends Resource
                             if ($get('for') == "supplier") {
                                 return Acc4::asOptions(only_item_class: [Supplier::class]);
                             } else if ($get('for') == "other_entity") {
-                                return Acc4::userCreatedOtherPartyAccountOptions();
+                                return Acc4::ledgerAccountOptions();
                             } else {
                                 return [];
                             }

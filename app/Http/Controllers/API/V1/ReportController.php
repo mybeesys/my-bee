@@ -23,6 +23,7 @@ class ReportController extends BaseController
     public function allAccounts(ListAllAccountsReportRequest $request): \Illuminate\Http\JsonResponse
     {
         $data = CashDet::with(['account', 'operation', 'account.acc3', 'currency', 'invoice'])
+            ->whereHas('account', fn (Builder $query) => $query->ledgerAccounts())
             ->when($request->from_date or $request->to_date, function (Builder $builder) use ($request) {
                 return $builder->whereDateBetween('date', $request->from_date, $request->to_date, "d-m-Y");
             })

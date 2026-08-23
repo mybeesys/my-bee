@@ -6,6 +6,8 @@ use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductUnit;
 use App\Models\ProductVariant;
+use App\Models\Customer;
+use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -106,6 +108,30 @@ class Acc4 extends BaseModel
             ->where('acc3_code', '1217');
     }
 
+    /**
+     * Accounts eligible for account statements and general account pickers:
+     * other parties, customers, suppliers, treasury, and bank.
+     */
+    public function scopeLedgerAccounts(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query) {
+            $query
+                ->where('code', static::TREASURY_ACCOUNT_CODE)
+                ->orWhere(function (Builder $query) {
+                    $query->whereNull('item_type')->where('acc3_code', '1227');
+                })
+                ->orWhere(function (Builder $query) {
+                    $query->userCreatedOtherPartyAccounts();
+                })
+                ->orWhere(function (Builder $query) {
+                    $query->where('acc3_code', '1203')->where('item_type', Customer::class);
+                })
+                ->orWhere(function (Builder $query) {
+                    $query->where('acc3_code', '1214')->where('item_type', Supplier::class);
+                });
+        });
+    }
+
     public function scopeVoucherOtherEntityPaymentAccounts(Builder $query): Builder
     {
         return $query
@@ -127,6 +153,29 @@ class Acc4 extends BaseModel
             ->orderBy('name')
             ->pluck('name', 'code')
             ->all();
+    }
+
+    public static function ledgerAccountOptions(): array
+    {
+        $options = [];
+
+        foreach (static::query()->ledgerAccounts()->with('item')->orderBy('name')->get() as $account) {
+            $options[$account->code] = $account->item
+                ? ($account->item->finance_name ?? $account->name)
+                : $account->name;
+        }
+
+        asort($options, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $options;
+    }
+
+    public static function isLedgerAccountCode(string $code): bool
+    {
+        return static::query()
+            ->ledgerAccounts()
+            ->where('code', $code)
+            ->exists();
     }
 
     public static function voucherOtherEntityPaymentAccountOptions(): array

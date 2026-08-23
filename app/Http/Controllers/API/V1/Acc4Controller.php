@@ -138,7 +138,7 @@ class Acc4Controller extends BaseController
         return $this->responder(
             __('messages.api.retrieved'),
             200,
-            Acc4::userCreatedOtherPartyAccountOptions()
+            Acc4::ledgerAccountOptions()
         )->respond();
     }
 
