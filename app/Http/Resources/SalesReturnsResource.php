@@ -15,6 +15,7 @@ class SalesReturnsResource extends BaseResource
             'invoiceNo' => $this->invoice?->no,
             'invoiceId' => $this->invoice_id,
             'customerId' => $this->customer_id ?? $this->invoice?->customer_id,
+            'customerName' => $this->resolveCustomer()?->name,
             'paymentTerms' => $this->payment_terms ?? 'cash',
             'refundAcc4Code' => $this->refund_acc4_code,
             'notes' => $this->notes,

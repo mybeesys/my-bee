@@ -3,6 +3,7 @@
 > **الغرض:** مرجع حصرّي لمرتجع المبيعات — للتحقق من مواءمة API الموبايل مع الويب، ولاستخدامه في Cursor عند بناء/مراجعة الشاشات.  
 > **الحالة:** ✅ منفّذ على Laravel — هذا الملف يوثّق **السلوك الفعلي** وليس المطلوب فقط.  
 > **مرجع عام:** [`docs/mobile-api-parity-spec.md`](mobile-api-parity-spec.md) (§3 — ملخص قديم)  
+> **تدقيق مقارن مع المشتريات:** [`docs/returns-parity-api-spec.md`](returns-parity-api-spec.md)  
 > **تُفتح من فاتورة المبيعات:** [`docs/sales-api-spec.md`](sales-api-spec.md) §12
 
 ---

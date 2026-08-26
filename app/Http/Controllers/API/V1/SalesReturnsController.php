@@ -94,8 +94,27 @@ class SalesReturnsController extends BaseController
             });
         });
 
+        $request->whenFilled('customer_id', function () use ($query, $request) {
+            $query->where(function (Builder $builder) use ($request) {
+                $builder
+                    ->where('customer_id', $request->customer_id)
+                    ->orWhereRelation('invoice', 'customer_id', $request->customer_id);
+            });
+        });
+
         $query->when(filled($request->from_date) || filled($request->to_date), function (Builder $builder) use ($request) {
             $builder->whereDateBetween('created_at', $request->from_date, $request->to_date, 'd-m-Y');
+        });
+
+        $request->whenFilled('q', function () use ($query, $request) {
+            $term = '%' . $request->q . '%';
+            $query->where(function (Builder $builder) use ($term) {
+                $builder
+                    ->where('notes', 'like', $term)
+                    ->orWhereRelation('invoice', 'no', 'like', $term)
+                    ->orWhereRelation('customer', 'name', 'like', $term)
+                    ->orWhereRelation('invoice.customer', 'name', 'like', $term);
+            });
         });
 
         return $this->responder(

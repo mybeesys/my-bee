@@ -155,6 +155,7 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
             Route::get('sales-returns-returnable-products/{customerId}', [\App\Http\Controllers\API\V1\SalesReturnsController::class, 'returnableProductsForCustomer']);
             Route::get('purchases-returns-get-available-invoices', [\App\Http\Controllers\API\V1\PurchasesReturnsController::class, 'getAvailableInvoices']);
             Route::get('purchases-returns-list-invoice-items-for-create/{no}', [\App\Http\Controllers\API\V1\PurchasesReturnsController::class, 'listInvoiceItemsForCreate']);
+            Route::get('purchases-returns-returnable-products/{supplierId}', [\App\Http\Controllers\API\V1\PurchasesReturnsController::class, 'returnableProductsForSupplier']);
 
 
             //purchases
@@ -247,11 +248,30 @@ Route::group(['prefix' => "v1", 'middleware' => ['force_json_response', 'localiz
         });
 
         Route::group(['prefix' => 'reports'], function () {
+            Route::get('catalog', [\App\Http\Controllers\API\V1\ReportController::class, 'catalog']);
+
+            Route::prefix('filters')->group(function () {
+                Route::get('account-statement', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersAccountStatement']);
+                Route::get('treasury', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersTreasury']);
+                Route::get('bank', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersBank']);
+                Route::get('tax', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersTax']);
+                Route::get('income-statement', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersIncomeStatement']);
+                Route::get('products-movements', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersProductsMovements']);
+                Route::get('sales-statement', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersSalesStatement']);
+                Route::get('inventory-detail', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersInventoryDetail']);
+                Route::get('inventory-summary', [\App\Http\Controllers\API\V1\ReportController::class, 'filtersInventorySummary']);
+            });
+
             Route::get('account/statement/all', [\App\Http\Controllers\API\V1\ReportController::class, 'allAccounts']);
             Route::get('account/statement/bank', [\App\Http\Controllers\API\V1\ReportController::class, 'bankAccount']);
             Route::get('account/statement/treasury', [\App\Http\Controllers\API\V1\ReportController::class, 'treasuryAccount']);
             Route::get('account/statement/tax', [\App\Http\Controllers\API\V1\ReportController::class, 'taxAccount']);
             Route::get('account/statement/products-movements', [\App\Http\Controllers\API\V1\ReportController::class, 'productsMovements']);
+
+            Route::get('income-statement', [\App\Http\Controllers\API\V1\ReportController::class, 'incomeStatement']);
+            Route::get('sales-statement', [\App\Http\Controllers\API\V1\ReportController::class, 'salesStatement']);
+            Route::get('inventory/detail', [\App\Http\Controllers\API\V1\ReportController::class, 'inventoryDetail']);
+            Route::get('inventory/summary', [\App\Http\Controllers\API\V1\ReportController::class, 'inventorySummary']);
         });
 
         Route::group(['prefix' => 'settings'], function () {

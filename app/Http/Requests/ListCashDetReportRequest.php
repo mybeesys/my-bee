@@ -2,22 +2,24 @@
 
 namespace App\Http\Requests;
 
-class ListSalesReturnsRequest extends BaseRequest
+class ListCashDetReportRequest extends BaseRequest
 {
     public function authorize(): bool
     {
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
-            'client_id' => ['sometimes', 'nullable', 'integer', 'exists:customers,id'],
-            'customer_id' => ['sometimes', 'nullable', 'integer', 'exists:customers,id'],
-            'invoice_no' => ['sometimes', 'nullable', 'string'],
+            'account_code' => ['sometimes', 'nullable', 'string'],
+            'op_id' => ['sometimes', 'nullable', 'integer'],
+            'transaction_id' => ['sometimes', 'nullable', 'string'],
             'from_date' => ['sometimes', 'nullable', 'date_format:d-m-Y'],
             'to_date' => ['sometimes', 'nullable', 'date_format:d-m-Y', 'after_or_equal:from_date'],
-            'q' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }

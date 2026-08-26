@@ -95,7 +95,7 @@ flowchart TD
 | إجراء الويب | متى يظهر | ماذا يفعل الموبايل |
 |-------------|----------|---------------------|
 | **رابط الفاتورة** | `actions.canShare` | انسخ/افتح `shareUrl`. زر تحميل: `pdfUrl` |
-| **مرتجع مشتريات** | `actions.canPurchaseReturn` | إن `purchasesReturnId` → `GET purchases-returns/{id}`. وإلا إنشاء: `GET purchases-returns-list-invoice-items-for-create/{no}` ثم `POST purchases-returns` مع `invoice_no` = رقم الفاتورة. الويب يسمح بمرتجع **واحد** لكل فاتورة |
+| **مرتجع مشتريات** | `actions.canPurchaseReturn` | إن `purchasesReturnId` → `GET purchases-returns/{id}`. وإلا: helpers ثم `POST purchases-returns`. مرتجعات متعددة مسموحة إن بقي رصيد — التفاصيل: [`docs/purchases-returns-api-spec.md`](purchases-returns-api-spec.md) / [`docs/returns-parity-api-spec.md`](returns-parity-api-spec.md) |
 | **تفاصيل الدفع** | `actions.canCompletePayment` (`isPaid=false`) | إن `paymentVoucherId` → `GET/PATCH payment-vouchers/{id}`. وإلا → `POST payment-vouchers` مع `invoice_id` و`for=supplier` |
 | **دفعة آجل** | `actions.canCreditPayment` | `POST purchases/{id}/credit-payment` (تبويب الدفعات يعمل بعد القفل) |
 | فتح/عرض | دائماً | `GET purchases/{id}` — البنود مقفولة إذا `canEdit=false` |
