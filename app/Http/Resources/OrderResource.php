@@ -31,6 +31,8 @@ class OrderResource extends BaseResource
             'invoiceNo' => $invoice?->no,
             'invoiceReceiptVoucherId' => $this->resolveInvoiceReceiptVoucherId(),
             'invoiceUID' => $invoice?->uid,
+            // Review invoice: GET /api/v1/tenant/shop/{invoiceShowPath} — do not list all sales invoices
+            'invoiceShowPath' => $invoice ? 'sales/' . $invoice->getKey() : null,
             'status' => $this->status,
             'statusName' => __("fields.order_status_$this->status"),
             'paymentStatus' => $invoice?->payment_status,

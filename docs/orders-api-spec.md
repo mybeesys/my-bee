@@ -37,7 +37,7 @@
 | تعديل الطلب | ❌ | **`PUT orders/{id}`** — رأس + استبدال البنود |
 | تغيير الحالة | `PATCH orders/{id}` | نفس المسار — **`OrderStatusService`** |
 | تأكيد كفاتورة مبيعات | ❌ | **`POST orders/{id}/confirm-invoice`** |
-| مراجعة الفاتورة | ❌ | `actions.canReviewInvoice` → `GET/PATCH sales/{invoiceId}` |
+| مراجعة الفاتورة | ❌ | `actions.canReviewInvoice` → **`GET sales/{invoiceId}`** (لا تجلب قائمة المبيعات كاملة) |
 | إكمال الدفع | `GET payments` معطوب | **`GET orders/{id}/payments`** + `receipt-vouchers` |
 | مشاركة / PDF | ❌ | عبر الفاتورة: `shareUrl`, `pdfUrl` (بعد التأكيد/UID) |
 | إحصائيات | ❌ | **`GET orders/stats`** |
@@ -83,7 +83,7 @@ flowchart TD
 |-------------|-----------|----------|
 | عرض | — | `GET orders/{id}` |
 | تغيير الحالة | `canChangeStatus` | `PATCH orders/{id}` |
-| مراجعة كفاتورة مبيعات | `canReviewInvoice` | افتح `sales/{invoiceId}` للتعديل |
+| مراجعة كفاتورة مبيعات | `canReviewInvoice` | **`GET /api/v1/tenant/shop/sales/{invoiceId}`** — أو استخدم `invoiceShowPath` من رد الطلب. لا تستخدم `GET sales` ثم بحث بالـ id |
 | تأكيد كفاتورة مبيعات | `canConfirmInvoice` | `POST orders/{id}/confirm-invoice` |
 | تفاصيل الدفع | `canCompletePayment` | `GET orders/{id}/payments` ثم إنشاء/تعديل `receipt-vouchers` |
 | تعديل الطلب | `canEdit` | `PUT orders/{id}` |
@@ -200,7 +200,7 @@ PUT /api/v1/tenant/shop/orders/{id}
 
 ## 7) شكل الرد (`OrderResource`)
 
-حقول أساسية: `id`, `no`, `status`, `statusName`, `source`, `customer`, `details[]`, `invoiceId`, `invoiceNo`, `paymentStatus`, `isPaid`, `deliveryAddress`, `deliveryType`, `total` / `totalAmount`, `actions`, `shareUrl`, `pdfUrl`, `invoiceReceiptVoucherId`.
+حقول أساسية: `id`, `no`, `status`, `statusName`, `source`, `customer`, `details[]`, `invoiceId`, `invoiceNo`, `invoiceShowPath` (`sales/{id}` لمراجعة الفاتورة مباشرة), `paymentStatus`, `isPaid`, `deliveryAddress`, `deliveryType`, `total` / `totalAmount`, `actions`, `shareUrl`, `pdfUrl`, `invoiceReceiptVoucherId`.
 
 ```json
 "actions": {
@@ -274,7 +274,7 @@ C) Detail / Edit
 - PATCH orders/{id} ONLY for status modal (delivery_date, canceled_date, canceled_reason, delivery when in-progress/completed)
 
 D) Row actions
-- canReviewInvoice → navigate to sales invoice edit (invoiceId)
+- canReviewInvoice → **GET /api/v1/tenant/shop/sales/{invoiceId}** (or order.invoiceShowPath). Do NOT fetch full sales list and filter by id.
 - canConfirmInvoice → POST orders/{id}/confirm-invoice
 - canCompletePayment → GET orders/{id}/payments then receipt-vouchers create/edit with invoice_id + order_id
 - shareUrl/pdfUrl when actions.canShare
