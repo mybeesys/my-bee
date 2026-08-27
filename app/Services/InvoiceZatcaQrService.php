@@ -7,12 +7,18 @@ use App\Models\Subscription;
 use App\Models\Tenant;
 use Carbon\Carbon;
 use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Output\QRGdImagePNG;
+use chillerlan\QRCode\Output\QRMarkupSVG;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
-use chillerlan\QRCode\Output\QRGdImagePNG;
+use Throwable;
 
 class InvoiceZatcaQrService
 {
+    public const KIND_ZATCA = 'zatca';
+
+    public const KIND_DOCUMENT = 'document';
+
     public static function instance(): self
     {
         return new self();
@@ -37,11 +43,36 @@ class InvoiceZatcaQrService
         ];
     }
 
-    public function tlvBase64(Invoice $invoice, Tenant $tenant, string $sellerName): ?string
+    /**
+     * Resolve seller TRN from tenant profile first, then tenant settings.
+     *
+     * @param  array<string, mixed>|null  $settings
+     */
+    public function resolveSellerTrn(?Tenant $tenant, ?array $settings = null): string
     {
-        $trn = trim((string) ($tenant->trn ?? ''));
+        $candidates = [
+            trim((string) ($tenant?->trn ?? '')),
+            trim((string) ($settings['company.trn'] ?? '')),
+        ];
 
-        if ($trn === '') {
+        foreach ($candidates as $trn) {
+            if ($trn !== '') {
+                return $trn;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $settings
+     */
+    public function tlvBase64(Invoice $invoice, Tenant $tenant, string $sellerName, ?array $settings = null): ?string
+    {
+        $trn = $this->resolveSellerTrn($tenant, $settings);
+        $sellerName = trim($sellerName);
+
+        if ($trn === '' || $sellerName === '') {
             return null;
         }
 
@@ -64,9 +95,37 @@ class InvoiceZatcaQrService
         ]);
     }
 
-    public function qrDataUri(Invoice $invoice, Tenant $tenant, string $sellerName): ?string
+    /**
+     * @param  array<string, mixed>|null  $settings
+     * @return array{qrPayload: ?string, qrDataUri: ?string, qrKind: ?string, trn: string}
+     */
+    public function buildInvoiceQr(
+        Invoice $invoice,
+        Tenant $tenant,
+        string $sellerName,
+        ?array $settings = null,
+        ?string $documentUrl = null,
+    ): array {
+        $trn = $this->resolveSellerTrn($tenant, $settings);
+        $payload = $this->tlvBase64($invoice, $tenant, $sellerName, $settings);
+        $kind = $payload !== null ? self::KIND_ZATCA : null;
+
+        if ($payload === null && filled($documentUrl)) {
+            $payload = $documentUrl;
+            $kind = self::KIND_DOCUMENT;
+        }
+
+        return [
+            'qrPayload' => $payload,
+            'qrDataUri' => $this->normalizeDataUri($this->qrDataUriFromPayload($payload)),
+            'qrKind' => $kind,
+            'trn' => $trn,
+        ];
+    }
+
+    public function qrDataUri(Invoice $invoice, Tenant $tenant, string $sellerName, ?array $settings = null): ?string
     {
-        return $this->qrDataUriFromPayload($this->tlvBase64($invoice, $tenant, $sellerName));
+        return $this->qrDataUriFromPayload($this->tlvBase64($invoice, $tenant, $sellerName, $settings));
     }
 
     public function subscriptionTlvBase64(Subscription $subscription, string $sellerName, string $trn): ?string
@@ -98,6 +157,30 @@ class InvoiceZatcaQrService
         ]);
     }
 
+    /**
+     * @return array{qrPayload: ?string, qrDataUri: ?string, qrKind: ?string}
+     */
+    public function buildSubscriptionQr(
+        Subscription $subscription,
+        string $sellerName,
+        string $trn,
+        ?string $documentUrl = null,
+    ): array {
+        $payload = $this->subscriptionTlvBase64($subscription, $sellerName, $trn);
+        $kind = $payload !== null ? self::KIND_ZATCA : null;
+
+        if ($payload === null && filled($documentUrl)) {
+            $payload = $documentUrl;
+            $kind = self::KIND_DOCUMENT;
+        }
+
+        return [
+            'qrPayload' => $payload,
+            'qrDataUri' => $this->normalizeDataUri($this->qrDataUriFromPayload($payload)),
+            'qrKind' => $kind,
+        ];
+    }
+
     public function subscriptionQrDataUri(Subscription $subscription, string $sellerName, string $trn): ?string
     {
         return $this->qrDataUriFromPayload(
@@ -105,27 +188,73 @@ class InvoiceZatcaQrService
         );
     }
 
-    public function qrDataUriFromPayload(?string $payload): ?string
+    public function documentQrDataUri(?string $url): ?string
     {
-        if ($payload === null) {
+        if (! filled($url)) {
             return null;
         }
 
-        if (! extension_loaded('gd')) {
-            return null;
-        }
-
-        return (new QRCode($this->qrOptions()))->render($payload);
+        return $this->normalizeDataUri($this->qrDataUriFromPayload($url));
     }
 
-    protected function qrOptions(): QROptions
+    public function qrDataUriFromPayload(?string $payload): ?string
+    {
+        if ($payload === null || $payload === '') {
+            return null;
+        }
+
+        try {
+            if (extension_loaded('gd') && class_exists(QRGdImagePNG::class)) {
+                return (new QRCode($this->pngOptions()))->render($payload);
+            }
+
+            return (new QRCode($this->svgOptions()))->render($payload);
+        } catch (Throwable $exception) {
+            report($exception);
+
+            try {
+                return (new QRCode($this->svgOptions()))->render($payload);
+            } catch (Throwable $fallbackException) {
+                report($fallbackException);
+
+                return null;
+            }
+        }
+    }
+
+    public function normalizeDataUri(?string $uri): ?string
+    {
+        if ($uri === null || $uri === '') {
+            return null;
+        }
+
+        if (str_starts_with($uri, 'data:')) {
+            return $uri;
+        }
+
+        return 'data:image/png;base64,' . $uri;
+    }
+
+    protected function pngOptions(): QROptions
     {
         return new QROptions([
             'outputInterface' => QRGdImagePNG::class,
             'outputBase64' => true,
-            'eccLevel' => EccLevel::H,
-            'scale' => 6,
-            'quietzoneSize' => 4,
+            'eccLevel' => EccLevel::M,
+            'scale' => 5,
+            'quietzoneSize' => 2,
+            'addQuietzone' => true,
+        ]);
+    }
+
+    protected function svgOptions(): QROptions
+    {
+        return new QROptions([
+            'outputInterface' => QRMarkupSVG::class,
+            'outputBase64' => true,
+            'eccLevel' => EccLevel::M,
+            'scale' => 5,
+            'quietzoneSize' => 2,
             'addQuietzone' => true,
         ]);
     }
@@ -138,7 +267,7 @@ class InvoiceZatcaQrService
         $tlv = '';
 
         foreach ($tags as $tag => $value) {
-            $encoded = mb_convert_encoding((string) $value, 'UTF-8');
+            $encoded = mb_convert_encoding((string) $value, 'UTF-8', 'UTF-8');
             $length = strlen($encoded);
 
             if ($length > 255) {

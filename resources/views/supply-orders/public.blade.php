@@ -158,6 +158,44 @@
         .meta h2 { margin: 0 0 .5rem; font-size: 1.5rem; }
         .meta p { margin: .2rem 0; color: #4b5563; }
 
+        .meta-qr {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: {{ $isRtl ? 'flex-start' : 'flex-end' }};
+            gap: .4rem;
+        }
+
+        .meta-qr__frame {
+            width: 128px;
+            height: 128px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 6px;
+            background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+            box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .meta-qr__frame img,
+        .meta-qr img {
+            width: 112px;
+            height: 112px;
+            display: block;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        .meta-qr__label,
+        .meta-qr span {
+            font-size: .72rem;
+            color: #6b7280;
+            max-width: 140px;
+            line-height: 1.35;
+        }
+
         .party {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -286,6 +324,12 @@
                     <p><strong>#{{ $supplyOrder->no }}</strong></p>
                     <p>{{ __('fields.date') }}: {{ $supplyOrder->created_at?->format('d-m-Y') }}</p>
                     <p>{{ __('fields.reference_code') }}: {{ $supplyOrder->no }}</p>
+                    @include('partials.document-qr', [
+                        'qrPayload' => $qrPayload ?? null,
+                        'qrDataUri' => $qrDataUri ?? null,
+                        'qrKind' => $qrKind ?? null,
+                        'qrImageId' => 'supply-order-qr-image',
+                    ])
                 </div>
             </div>
 
@@ -345,5 +389,9 @@
         </div>
     </div>
 </div>
+@include('partials.document-qr-script', [
+    'qrPayload' => $qrPayload ?? null,
+    'qrImageId' => 'supply-order-qr-image',
+])
 </body>
 </html>

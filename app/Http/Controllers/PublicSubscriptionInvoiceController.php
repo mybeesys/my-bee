@@ -17,12 +17,13 @@ class PublicSubscriptionInvoiceController extends Controller
 
         $company = platform_company_profile();
         $qrService = InvoiceZatcaQrService::instance();
-        $qrPayload = $qrService->subscriptionTlvBase64($subscription, $company['name'], $company['trn']);
-        $qrDataUri = $qrService->qrDataUriFromPayload($qrPayload);
-
-        if ($qrDataUri !== null && ! str_starts_with($qrDataUri, 'data:')) {
-            $qrDataUri = 'data:image/png;base64,' . $qrDataUri;
-        }
+        $documentUrl = route('public.subscription-invoice.show', ['uid' => $subscription->uid]);
+        $qr = $qrService->buildSubscriptionQr(
+            $subscription,
+            (string) ($company['name'] ?? ''),
+            (string) ($company['trn'] ?? ''),
+            $documentUrl,
+        );
 
         return view('subscriptions.public-invoice', [
             'subscription' => $subscription,
@@ -33,8 +34,9 @@ class PublicSubscriptionInvoiceController extends Controller
             'companyMobile' => $company['mobile'],
             'companyEmail' => $company['email'],
             'companyTrn' => $company['trn'],
-            'qrPayload' => $qrPayload,
-            'qrDataUri' => $qrDataUri,
+            'qrPayload' => $qr['qrPayload'],
+            'qrDataUri' => $qr['qrDataUri'],
+            'qrKind' => $qr['qrKind'],
             'currency' => main_currency_iso_code(),
         ]);
     }

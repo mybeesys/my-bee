@@ -177,6 +177,14 @@
             height: 96px;
         }
 
+        .qr-label {
+            margin-top: 4px;
+            font-size: 9px;
+            color: #6b7280;
+            line-height: 1.3;
+            max-width: 110px;
+        }
+
         .trn-line {
             color: #4b5563;
             margin: 2px 0;
@@ -213,6 +221,9 @@
                 @if($qrDataUri)
                     <div class="qr-box">
                         <img src="{{ $qrDataUri }}" alt="QR">
+                        @if(! empty($qrLabel))
+                            <div class="qr-label">{{ $qrLabel }}</div>
+                        @endif
                     </div>
                 @endif
             </td>
@@ -243,6 +254,9 @@
                 @if($qrDataUri)
                     <div class="qr-box">
                         <img src="{{ $qrDataUri }}" alt="QR">
+                        @if(! empty($qrLabel))
+                            <div class="qr-label">{{ $qrLabel }}</div>
+                        @endif
                     </div>
                 @endif
             </td>

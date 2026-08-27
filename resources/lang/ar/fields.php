@@ -740,6 +740,7 @@ return [
     'choose_subscription_plans_hint' => 'قارن بين الباقات واختر ما يناسب نشاطك.',
     'choose_subscription_continue' => 'متابعة وبدء العمل',
     'subscription_invoice_qr_hint' => 'رمز ZATCA للتحقق من الفاتورة',
+    'invoice_qr_document_hint' => 'امسح لفتح المستند',
     'subscription_yearly_monthly_savings' => 'وفر :amount / شهر',
     'registration_steps_label' => 'خطوات التسجيل',
     'registration_step_choose_plan' => 'اختيار الباقة',

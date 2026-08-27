@@ -694,16 +694,16 @@
                                 @if($qrDataUri ?? null)
                                     <img
                                         src="{{ $qrDataUri }}"
-                                        alt="{{ __('fields.vat') }} QR"
+                                        alt="{{ ($qrKind ?? null) === \App\Services\InvoiceZatcaQrService::KIND_ZATCA ? __('fields.subscription_invoice_qr_hint') : __('fields.invoice_qr_document_hint') }}"
                                         id="subscription-invoice-qr-image"
                                         width="120"
                                         height="120"
-                                        onerror="window.renderSubscriptionInvoiceQrFallback && window.renderSubscriptionInvoiceQrFallback()"
+                                        onerror="window.renderDocumentQrFallback && window.renderDocumentQrFallback('subscription-invoice-qr-image')"
                                     >
                                 @else
                                     <img
                                         src=""
-                                        alt="{{ __('fields.vat') }} QR"
+                                        alt="{{ __('fields.subscription_invoice_qr_hint') }}"
                                         id="subscription-invoice-qr-image"
                                         width="120"
                                         height="120"
@@ -790,37 +790,9 @@
     </article>
 </main>
 
-@if($qrPayload ?? null)
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-    <script>
-        window.renderSubscriptionInvoiceQrFallback = function () {
-            const image = document.getElementById('subscription-invoice-qr-image');
-
-            if (!image || typeof QRCode === 'undefined') {
-                return;
-            }
-
-            QRCode.toDataURL(@json($qrPayload), {
-                width: 240,
-                margin: 1,
-                errorCorrectionLevel: 'H',
-                color: {
-                    dark: '#0f172a',
-                    light: '#ffffff',
-                },
-            }).then((url) => {
-                image.src = url;
-            }).catch(() => {});
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const image = document.getElementById('subscription-invoice-qr-image');
-
-            if (image && !image.getAttribute('src')) {
-                window.renderSubscriptionInvoiceQrFallback();
-            }
-        });
-    </script>
-@endif
+@include('partials.document-qr-script', [
+    'qrPayload' => $qrPayload ?? null,
+    'qrImageId' => 'subscription-invoice-qr-image',
+])
 </body>
 </html>

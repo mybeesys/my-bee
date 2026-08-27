@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Setting;
 use App\Models\SupplyOrder;
+use App\Services\InvoiceZatcaQrService;
 use Illuminate\View\View;
 
 class PublicSupplyOrderController extends Controller
@@ -11,11 +12,19 @@ class PublicSupplyOrderController extends Controller
     public function show(string $slug, string $no): View
     {
         $supplyOrder = $this->resolveSupplyOrder($slug, $no);
+        $documentUrl = route('public.supply-order.show', [
+            'slug' => $supplyOrder->tenant->slug,
+            'no' => $supplyOrder->no,
+        ]);
+        $qrService = InvoiceZatcaQrService::instance();
 
         return view('supply-orders.public', [
             'supplyOrder' => $supplyOrder,
             'tenant' => $supplyOrder->tenant,
             'settings' => $this->tenantSettings($supplyOrder->tenant_id),
+            'qrPayload' => $documentUrl,
+            'qrDataUri' => $qrService->documentQrDataUri($documentUrl),
+            'qrKind' => InvoiceZatcaQrService::KIND_DOCUMENT,
         ]);
     }
 

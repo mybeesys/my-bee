@@ -249,21 +249,38 @@
             display: flex;
             flex-direction: column;
             align-items: {{ $isRtl ? 'flex-start' : 'flex-end' }};
-            gap: .35rem;
+            gap: .4rem;
         }
 
-        .meta-qr img {
-            width: 120px;
-            height: 120px;
+        .meta-qr__frame {
+            width: 128px;
+            height: 128px;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 4px;
+            border-radius: 12px;
+            padding: 6px;
+            background: linear-gradient(180deg, #fff 0%, #fafafa 100%);
+            box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .meta-qr__frame img,
+        .meta-qr img {
+            width: 112px;
+            height: 112px;
+            display: block;
+            border-radius: 4px;
             background: #fff;
         }
 
+        .meta-qr__label,
         .meta-qr span {
-            font-size: .75rem;
+            font-size: .72rem;
             color: #6b7280;
+            max-width: 140px;
+            text-align: {{ $isRtl ? 'right' : 'left' }};
+            line-height: 1.35;
         }
 
         .trn-line {
@@ -323,7 +340,7 @@
                         <img src="{{ $tenant->logo }}" alt="{{ $companyName }}">
                     @endif
                     <h1>{{ $companyName }}</h1>
-                    @if($trn !== '')
+                    @if(($trn ?? '') !== '')
                         <p class="trn-line">{{ __('fields.trn') }}: {{ $trn }}</p>
                     @endif
                     @if($companyAddress)<p>{{ $companyAddress }}</p>@endif
@@ -334,27 +351,12 @@
                     <p><strong>#{{ $invoice->no }}</strong></p>
                     <p>{{ __('fields.date') }}: {{ $invoice->date?->format('d-m-Y') }}</p>
                     <p>{{ __('fields.payment_status') }}: {{ $invoice->getPaymentStatus($locale) }}</p>
-                    @if($qrPayload)
-                        <div class="meta-qr">
-                            @if($qrDataUri)
-                                <img
-                                    src="{{ $qrDataUri }}"
-                                    alt="{{ __('fields.vat') }} QR"
-                                    id="invoice-qr-image"
-                                    onerror="window.renderInvoiceQrFallback && window.renderInvoiceQrFallback()"
-                                >
-                            @else
-                                <img
-                                    src=""
-                                    alt="{{ __('fields.vat') }} QR"
-                                    id="invoice-qr-image"
-                                    width="120"
-                                    height="120"
-                                >
-                            @endif
-                            <span>{{ __('fields.vat') }}</span>
-                        </div>
-                    @endif
+                    @include('partials.document-qr', [
+                        'qrPayload' => $qrPayload ?? null,
+                        'qrDataUri' => $qrDataUri ?? null,
+                        'qrKind' => $qrKind ?? null,
+                        'qrImageId' => 'invoice-qr-image',
+                    ])
                 </div>
             </div>
 
@@ -516,34 +518,9 @@
         </div>
     </div>
 </div>
-@if($qrPayload ?? null)
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
-    <script>
-        window.renderInvoiceQrFallback = function () {
-            const image = document.getElementById('invoice-qr-image');
-
-            if (!image || typeof QRCode === 'undefined') {
-                return;
-            }
-
-            QRCode.toDataURL(@json($qrPayload), {
-                width: 120,
-                margin: 1,
-            }, function (error, url) {
-                if (!error) {
-                    image.src = url;
-                }
-            });
-        };
-
-        document.addEventListener('DOMContentLoaded', function () {
-            const image = document.getElementById('invoice-qr-image');
-
-            if (!image || !image.getAttribute('src')) {
-                window.renderInvoiceQrFallback();
-            }
-        });
-    </script>
-@endif
+@include('partials.document-qr-script', [
+    'qrPayload' => $qrPayload ?? null,
+    'qrImageId' => 'invoice-qr-image',
+])
 </body>
 </html>

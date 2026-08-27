@@ -15,15 +15,13 @@ class PublicInvoiceController extends Controller
     {
         $invoice = $this->resolveInvoice($uid);
         $settings = $this->tenantSettings($invoice->tenant_id);
-        $companyName = $settings['company.name'] ?? $invoice->tenant->name;
         $viewData = InvoicePublicViewService::instance()->build($invoice, $settings);
 
         return view('invoices.public', array_merge([
             'invoice' => $invoice,
             'tenant' => $invoice->tenant,
             'settings' => $settings,
-            'companyName' => $companyName,
-            'trn' => trim((string) ($invoice->tenant->trn ?? '')),
+            'companyName' => $viewData['companyName'] ?? ($settings['company.name'] ?? $invoice->tenant->name),
             'pdfUrl' => route('public.invoice.pdf', ['uid' => $invoice->uid]),
         ], $viewData));
     }

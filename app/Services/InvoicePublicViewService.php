@@ -32,15 +32,20 @@ class InvoicePublicViewService
             'additionalCosts.type',
         ]);
 
-        $companyName = $settings['company.name'] ?? $invoice->tenant->name;
+        $companyName = trim((string) ($settings['company.name'] ?? '')) ?: (string) $invoice->tenant->name;
         $qrService = InvoiceZatcaQrService::instance();
         $vatSummary = $qrService->vatSummary($invoice);
-        $qrPayload = $qrService->tlvBase64($invoice, $invoice->tenant, $companyName);
-        $qrDataUri = $qrService->qrDataUri($invoice, $invoice->tenant, $companyName);
+        $documentUrl = filled($invoice->uid)
+            ? route('public.invoice.show', ['uid' => $invoice->uid])
+            : null;
 
-        if ($qrDataUri !== null && ! str_starts_with($qrDataUri, 'data:')) {
-            $qrDataUri = 'data:image/png;base64,' . $qrDataUri;
-        }
+        $qr = $qrService->buildInvoiceQr(
+            $invoice,
+            $invoice->tenant,
+            $companyName,
+            $settings,
+            $documentUrl,
+        );
 
         return [
             'party' => $this->partyDetails($invoice),
@@ -48,8 +53,11 @@ class InvoicePublicViewService
             'discountAmount' => $this->invoiceDiscountAmount($invoice),
             'servicesTotal' => (float) $invoice->getServicesCost(true),
             'vatSummary' => $vatSummary,
-            'qrPayload' => $qrPayload,
-            'qrDataUri' => $qrDataUri,
+            'qrPayload' => $qr['qrPayload'],
+            'qrDataUri' => $qr['qrDataUri'],
+            'qrKind' => $qr['qrKind'],
+            'trn' => $qr['trn'],
+            'companyName' => $companyName,
         ];
     }
 

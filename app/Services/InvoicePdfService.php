@@ -35,7 +35,7 @@ class InvoicePdfService
         $isRtl = app()->getLocale() === 'ar';
         $currencyCode = $settings['main_currency'] ?? 'SAR';
         $currencySymbol = $this->currencySymbol($currencyCode, $isRtl);
-        $companyName = $settings['company.name'] ?? $invoice->tenant->name;
+        $companyName = trim((string) ($settings['company.name'] ?? '')) ?: (string) $invoice->tenant->name;
         $companyAddress = $settings['company.address'] ?? ($invoice->tenant->store_address ?? '');
         $companyPhone = $settings['company.contact.phone'] ?? ($invoice->tenant->phone ?? '');
         $partyName = $invoice->getInvoicePerson();
@@ -44,8 +44,19 @@ class InvoicePdfService
         $total = $vatSummary['total'];
         $logoPath = $invoice->tenant->getFirstMedia('logos')?->getPath();
         $decimals = (int) ($settings['main_currency_decimals'] ?? 2);
-        $trn = trim((string) ($invoice->tenant->trn ?? ''));
-        $qrDataUri = $qrService->qrDataUri($invoice, $invoice->tenant, $companyName);
+        $documentUrl = filled($invoice->uid)
+            ? route('public.invoice.show', ['uid' => $invoice->uid])
+            : null;
+        $qr = $qrService->buildInvoiceQr(
+            $invoice,
+            $invoice->tenant,
+            $companyName,
+            $settings,
+            $documentUrl,
+        );
+        $trn = $qr['trn'];
+        $qrDataUri = $qr['qrDataUri'];
+        $qrKind = $qr['qrKind'];
 
         $labels = $this->labels($invoice->type);
         $documentTitle = $invoice->type === 'sales' ? $labels['title'] : $labels['purchaseTitle'];
@@ -88,6 +99,10 @@ class InvoicePdfService
             'trn' => $trn !== '' ? ($isRtl ? arabic_for_pdf($trn) : $trn) : null,
             'trnLabel' => $isRtl ? arabic_for_pdf(__('fields.trn')) : __('fields.trn'),
             'qrDataUri' => $qrDataUri,
+            'qrKind' => $qrKind,
+            'qrLabel' => $isRtl
+                ? arabic_for_pdf($this->qrLabel($qrKind))
+                : $this->qrLabel($qrKind),
             'additionalCosts' => $this->formatAmount($invoice->getAdditionalCosts(true), $decimals, $decimals),
             'discount' => $this->formatAmount($invoice->getDiscountInAmount(), $decimals, $decimals),
             'paymentStatus' => $isRtl ? arabic_for_pdf($paymentStatus) : $paymentStatus,
@@ -110,6 +125,15 @@ class InvoicePdfService
         return $inline
             ? $pdf->stream($filename)
             : $pdf->download($filename);
+    }
+
+    protected function qrLabel(?string $kind): string
+    {
+        return match ($kind) {
+            InvoiceZatcaQrService::KIND_ZATCA => __('fields.subscription_invoice_qr_hint'),
+            InvoiceZatcaQrService::KIND_DOCUMENT => __('fields.invoice_qr_document_hint'),
+            default => __('fields.vat'),
+        };
     }
 
     protected function currencySymbol(string $currencyCode, bool $isRtl): string

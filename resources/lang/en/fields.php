@@ -735,6 +735,7 @@ return [
     'choose_subscription_plans_hint' => 'Compare plans and pick what fits your activity.',
     'choose_subscription_continue' => 'Continue to dashboard',
     'subscription_invoice_qr_hint' => 'ZATCA invoice verification code',
+    'invoice_qr_document_hint' => 'Scan to open the document',
     'subscription_yearly_monthly_savings' => 'Save :amount / month',
     'registration_steps_label' => 'Registration steps',
     'registration_step_choose_plan' => 'Choose plan',
