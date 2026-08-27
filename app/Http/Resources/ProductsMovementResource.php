@@ -35,7 +35,7 @@ class ProductsMovementResource extends BaseResource
         // camelCase = primary (matches rest of mobile API).
         // snake_case kept for ProductMovementModel.fromJson compatibility.
         return $this->filterFields([
-            'id' => (string) $this->id,
+            'id' => (int) $this->id,
             'name' => $name,
             'type' => $movementType,
             'typeFormatted' => $typeFormatted,
@@ -48,6 +48,8 @@ class ProductsMovementResource extends BaseResource
             'invoiceNo' => $invoiceNo,
             'invoice_no' => $invoiceNo,
             'invoiceId' => $this->invoice_id !== null ? (int) $this->invoice_id : null,
+            'movementKey' => (string) ($this->movement_key ?? ''),
+            'movement_key' => (string) ($this->movement_key ?? ''),
             'qty' => $qty,
             'currentQtyMovementBalance' => (float) $balance,
             'current_qty_movement_balance' => (float) $balance,

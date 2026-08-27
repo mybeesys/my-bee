@@ -242,7 +242,7 @@ GET /api/v1/tenant/reports/account/statement/products-movements?type=sales&custo
 **Response row (camelCase + snake_case aliases for Flutter):**
 ```json
 {
-  "id": "invoice-item-12",
+  "id": 12,
   "name": "منتج أ",
   "type": "sales",
   "typeFormatted": "مبيعات",
@@ -255,6 +255,8 @@ GET /api/v1/tenant/reports/account/statement/products-movements?type=sales&custo
   "invoiceNo": "SI-001",
   "invoice_no": "SI-001",
   "invoiceId": 10,
+  "movementKey": "invoice-item-12",
+  "movement_key": "invoice-item-12",
   "qty": 2,
   "currentQtyMovementBalance": 18,
   "current_qty_movement_balance": 18,

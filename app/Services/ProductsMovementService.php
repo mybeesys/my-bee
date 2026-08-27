@@ -95,7 +95,7 @@ class ProductsMovementService
                 $movementType = $invoice->type === 'purchases' ? 'purchases' : 'sales';
 
                 return [
-                    'id' => 'invoice-item-' . $item->id,
+                    'id' => (int) $item->id,
                     'movement_key' => 'invoice-item-' . $item->id,
                     'movement_type' => $movementType,
                     'name' => $this->resolveItemName($item),
@@ -163,7 +163,7 @@ class ProductsMovementService
                 }
 
                 return [
-                    'id' => 'sales-return-' . $detail->id,
+                    'id' => (int) $detail->id,
                     'movement_key' => 'sales-return-' . $detail->id,
                     'movement_type' => 'sales_return',
                     'name' => $this->resolveItemName($item),
@@ -231,7 +231,7 @@ class ProductsMovementService
                 }
 
                 return [
-                    'id' => 'purchase-return-' . $detail->id,
+                    'id' => (int) $detail->id,
                     'movement_key' => 'purchase-return-' . $detail->id,
                     'movement_type' => 'purchase_return',
                     'name' => $this->resolveItemName($item),
@@ -275,7 +275,7 @@ class ProductsMovementService
         return collect($lines)->map(function (array $line): ProductMovementLine {
             $record = new ProductMovementLine;
             $record->forceFill($line);
-            $record->setAttribute($record->getKeyName(), (string) $line['id']);
+            $record->setAttribute($record->getKeyName(), (string) ($line['movement_key'] ?? $line['id']));
             $record->exists = true;
 
             return $record;
