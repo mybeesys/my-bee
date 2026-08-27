@@ -120,7 +120,7 @@ GET /api/v1/tenant/settings/utils/accounts/statement   ← نفس قائمة ا�
   "debit": 100,
   "credit": 0,
   "inFrom": "الصندوق",
-  "outTo": null,
+  "outTo": "",
   "balance": "150.00",
   "balanceNumeric": 150,
   "currency": "SAR"

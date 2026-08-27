@@ -47,14 +47,14 @@ class SupplierAccountStatementResource extends JsonResource
 
                 return [
                     'id' => $line['id'],
-                    'date' => $date,
-                    'voucherNo' => $line['voucher_no'],
-                    'statement' => $line['statement'],
+                    'date' => $date ?? '',
+                    'voucherNo' => (string) ($line['voucher_no'] ?? ''),
+                    'statement' => format_account_statement_text($line['statement'] ?? null),
                     'debit' => (float) $line['debit'],
                     'credit' => (float) $line['credit'],
                     'balance' => (float) $line['balance'],
                     'invoiceId' => $line['invoice_id'],
-                    'invoiceNo' => $line['invoice_no'],
+                    'invoiceNo' => (string) ($line['invoice_no'] ?? ''),
                 ];
             })->values(),
         ];
