@@ -37,7 +37,7 @@ class PaymentVoucher extends BaseModel
 
     public function acc4(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(Acc4::class);
+        return $this->belongsTo(Acc4::class, 'acc4_code', 'code');
     }
 
     public static function findForInvoice(int $invoiceId): ?self

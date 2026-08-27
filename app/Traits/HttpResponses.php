@@ -121,12 +121,21 @@ trait HttpResponses
     public function getFilters($userFriendly = true): array
     {
         $data = array_merge($this->filters ?? [], $this->request ? $this->request->validated() : []);
+
         if ($userFriendly) {
             foreach ($data as $key => $value) {
-                if (str($value)->is([true, false, 'true', 'false', '0', '1']))
-                    $data[$key] = app()->getLocale() == "ar" ? (boolval($value) ? "نعم" : "لا") : (boolval($value) ? "Yes" : "No");
+                if (! is_scalar($value) && $value !== null) {
+                    continue;
+                }
+
+                if (str((string) $value)->is([true, false, 'true', 'false', '0', '1'])) {
+                    $data[$key] = app()->getLocale() == 'ar'
+                        ? (boolval($value) ? 'نعم' : 'لا')
+                        : (boolval($value) ? 'Yes' : 'No');
+                }
             }
         }
+
         return $data;
     }
 

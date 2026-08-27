@@ -41,6 +41,14 @@ trait HideResourceFieldsFromRequest
      */
     protected function filterFields($array): array
     {
-        return collect($array)->forget(array_merge($this->withoutFields, request()->input('hide', [])))->toArray();
+        $hide = request()->input('hide', []);
+
+        if (! is_array($hide)) {
+            $hide = filled($hide) ? [(string) $hide] : [];
+        }
+
+        return collect($array)
+            ->forget(array_merge($this->withoutFields, $hide))
+            ->toArray();
     }
 }
