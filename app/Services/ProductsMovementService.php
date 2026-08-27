@@ -55,7 +55,7 @@ class ProductsMovementService
     protected function invoiceItemLines(array $filters, ?string $type): Collection
     {
         return InvoiceItem::query()
-            ->with(['invoice.customer', 'invoice.supplier'])
+            ->with(['invoice.customer', 'invoice.supplier', 'product', 'productVariant'])
             ->where('cancelled', false)
             ->whereHas('invoice', function ($query) use ($filters, $type) {
                 if ($type === 'purchases') {
@@ -98,7 +98,7 @@ class ProductsMovementService
                     'id' => 'invoice-item-' . $item->id,
                     'movement_key' => 'invoice-item-' . $item->id,
                     'movement_type' => $movementType,
-                    'name' => $item->name,
+                    'name' => $this->resolveItemName($item),
                     'product_id' => $item->product_id,
                     'product_variant_id' => $item->product_variant_id,
                     'entity_name' => $invoice->customer_id
@@ -123,7 +123,7 @@ class ProductsMovementService
     protected function salesReturnLines(array $filters): Collection
     {
         return SalesReturnsDetails::query()
-            ->with(['invoiceItem.invoice.customer'])
+            ->with(['invoiceItem.invoice.customer', 'invoiceItem.product', 'invoiceItem.productVariant'])
             ->when(
                 $filters['created_from'] ?? null,
                 fn ($query) => $query->whereDate('created_at', '>=', $filters['created_from'])
@@ -166,7 +166,7 @@ class ProductsMovementService
                     'id' => 'sales-return-' . $detail->id,
                     'movement_key' => 'sales-return-' . $detail->id,
                     'movement_type' => 'sales_return',
-                    'name' => $item->name,
+                    'name' => $this->resolveItemName($item),
                     'product_id' => $item->product_id,
                     'product_variant_id' => $item->product_variant_id,
                     'entity_name' => $invoice->customer?->name ?? '-',
@@ -191,7 +191,7 @@ class ProductsMovementService
     protected function purchaseReturnLines(array $filters): Collection
     {
         return PurchasesReturnsDetails::query()
-            ->with(['invoiceItem.invoice.supplier'])
+            ->with(['invoiceItem.invoice.supplier', 'invoiceItem.product', 'invoiceItem.productVariant'])
             ->when(
                 $filters['created_from'] ?? null,
                 fn ($query) => $query->whereDate('created_at', '>=', $filters['created_from'])
@@ -234,7 +234,7 @@ class ProductsMovementService
                     'id' => 'purchase-return-' . $detail->id,
                     'movement_key' => 'purchase-return-' . $detail->id,
                     'movement_type' => 'purchase_return',
-                    'name' => $item->name,
+                    'name' => $this->resolveItemName($item),
                     'product_id' => $item->product_id,
                     'product_variant_id' => $item->product_variant_id,
                     'entity_name' => $invoice->supplier?->name ?? '-',
@@ -253,6 +253,21 @@ class ProductsMovementService
             })
             ->filter()
             ->values();
+    }
+
+    protected function resolveItemName(InvoiceItem $item): string
+    {
+        $name = trim((string) ($item->name ?? ''));
+
+        if ($name !== '') {
+            return $name;
+        }
+
+        return trim((string) (
+            $item->productVariant?->name
+            ?? $item->product?->name
+            ?? ''
+        ));
     }
 
     public function toRecords(array $lines): Collection

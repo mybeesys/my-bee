@@ -239,6 +239,32 @@ GET /api/v1/tenant/reports/account/statement/products-movements?type=sales&custo
 
 **Meta options:** `GET .../filters/products-movements` → `types`, `customers`, `suppliers`, `products`
 
+**Response row (camelCase + snake_case aliases for Flutter):**
+```json
+{
+  "id": "invoice-item-12",
+  "name": "منتج أ",
+  "type": "sales",
+  "typeFormatted": "مبيعات",
+  "type_formatted": "مبيعات",
+  "entity": "عميل 1",
+  "entityType": "customer",
+  "entity_type": "customer",
+  "entityId": 3,
+  "entity_id": 3,
+  "invoiceNo": "SI-001",
+  "invoice_no": "SI-001",
+  "invoiceId": 10,
+  "qty": 2,
+  "currentQtyMovementBalance": 18,
+  "current_qty_movement_balance": 18,
+  "createdAt": "2026-08-01 14:30:00",
+  "created_at": "2026-08-01 14:30:00"
+}
+```
+
+> نصيحة Flutter: فضّل قراءة `typeFormatted` / `invoiceNo` / `createdAt` (camelCase) مثل باقي الـ API؛ المفاتيح snake_case ما زالت موجودة للتوافق.
+
 ---
 
 ### 4.7 تقرير المبيعات — Sales statement
