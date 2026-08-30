@@ -1033,7 +1033,7 @@ if (!function_exists('system_logo_icon_url')) {
     function system_logo_icon_url(): ?string
     {
         if (is_file(public_path('logo-icon.svg'))) {
-            return asset('logo-icon.svg');
+            return asset('logo-icon.svg') . '?v=' . filemtime(public_path('logo-icon.svg'));
         }
 
         foreach ([
@@ -1048,7 +1048,7 @@ if (!function_exists('system_logo_icon_url')) {
             }
 
             if (@exif_imagetype($path) === $expectedType) {
-                return asset($filename);
+                return asset($filename) . '?v=' . filemtime($path);
             }
         }
 
@@ -1060,7 +1060,7 @@ if (!function_exists('system_brand_logo_url')) {
     function system_brand_logo_url(): ?string
     {
         if (is_file(public_path('brand-logo.svg'))) {
-            return asset('brand-logo.svg');
+            return asset('brand-logo.svg') . '?v=' . filemtime(public_path('brand-logo.svg'));
         }
 
         foreach (['brand-logo.png', 'brand-logo.webp', 'brand-logo.jpg'] as $filename) {
@@ -1073,7 +1073,7 @@ if (!function_exists('system_brand_logo_url')) {
             $type = @exif_imagetype($path);
 
             if ($type === IMAGETYPE_PNG || $type === IMAGETYPE_JPEG || (defined('IMAGETYPE_WEBP') && $type === IMAGETYPE_WEBP)) {
-                return asset($filename);
+                return asset($filename) . '?v=' . filemtime($path);
             }
         }
 

@@ -130,7 +130,10 @@
             })
 
             document.addEventListener('livewire:navigated', () => {
-                queueMicrotask(syncActiveSidebarGroup)
+                queueMicrotask(() => {
+                    syncActiveSidebarGroup()
+                    hideZeroSidebarBadges()
+                })
             })
         }
 
@@ -183,11 +186,22 @@
             }
         }
 
+        const hideZeroSidebarBadges = () => {
+            if (! isTenantPanel()) {
+                return
+            }
+
+            document.querySelectorAll('.fi-main-sidebar .fi-sidebar-item .fi-badge').forEach((badge) => {
+                badge.hidden = badge.textContent.trim() === '0'
+            })
+        }
+
         const bootSidebarAccordion = () => {
             installSidebarAccordion()
             moveSettingsNavToFooter()
             syncActiveSidebarGroup()
             moveSettingsNavToFooter()
+            hideZeroSidebarBadges()
         }
 
         document.addEventListener('alpine:initialized', bootSidebarAccordion)
@@ -197,6 +211,7 @@
                 moveSettingsNavToFooter()
                 syncActiveSidebarGroup()
                 moveSettingsNavToFooter()
+                hideZeroSidebarBadges()
             })
         })
 

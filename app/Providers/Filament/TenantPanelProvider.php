@@ -51,7 +51,7 @@ class TenantPanelProvider extends PanelProvider
             ->viteTheme('resources/css/filament/tenant/theme.css')
             ->favicon(system_logo_icon_url())
             ->brandLogo(system_brand_logo_url())
-            ->brandLogoHeight('4.75rem')
+            ->brandLogoHeight('4.5rem')
             ->sidebarWidth('16rem')
             ->collapsedSidebarWidth('4rem')
             ->databaseTransactions()
@@ -80,8 +80,8 @@ class TenantPanelProvider extends PanelProvider
                 fn (): string => '<style id="tenant-notification-badge-style">'
                     .'.fi-panel-tenant .tenant-database-notifications-trigger > span[aria-hidden="true"],'
                     .'.fi-panel-tenant .fi-topbar-database-notifications-btn .fi-icon-btn-badge-ctn .fi-badge'
-                    .'{background-color:#dc2626!important;color:#fff!important;border:2px solid #fff!important;'
-                    .'font-weight:700!important;box-shadow:0 2px 8px rgba(220,38,38,.5)!important;}'
+                    .'{background-color:transparent!important;color:#dc2626!important;border:none!important;'
+                    .'font-size:0.875rem!important;font-weight:800!important;box-shadow:none!important;min-width:0!important;min-height:0!important;padding:0!important;}'
                     .'</style>'
                     .'<style id="tenant-settings-footer-style">'
                     .'.fi-panel-tenant .fi-sidebar-nav-groups{display:flex;flex:1 1 auto;flex-direction:column;min-height:100%;}'
@@ -139,10 +139,6 @@ class TenantPanelProvider extends PanelProvider
 
                 NavigationGroup::make()
                     ->label(fn(): string => __('fields.nav_group_purchases'))
-                    ->collapsed(),
-
-                NavigationGroup::make()
-                    ->label(fn(): string => __('fields.nav_group_online_store'))
                     ->collapsed(),
 
                 NavigationGroup::make()

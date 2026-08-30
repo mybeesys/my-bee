@@ -8,12 +8,11 @@
         class="fi-topbar-database-notifications-btn"
     />
 
-    @if (filled($unreadNotificationsCount))
+    @if ($unreadNotificationsCount > 0)
         <span
             aria-hidden="true"
             data-notification-badge="custom"
-            class="pointer-events-none absolute start-full top-1 z-[2] flex min-h-[1.125rem] min-w-[1.125rem] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full px-1 text-[11px] font-bold leading-none text-white rtl:translate-x-1/2"
-            style="background-color:#dc2626;border:2px solid #ffffff;box-shadow:0 2px 8px rgba(220,38,38,.5);color:#ffffff;"
+            class="tenant-notification-count pointer-events-none absolute start-full top-0 z-[2] -translate-x-1/2 -translate-y-1/2 text-sm font-extrabold leading-none text-red-600 rtl:translate-x-1/2 dark:text-red-500"
         >
             {{ $unreadNotificationsCount }}
         </span>

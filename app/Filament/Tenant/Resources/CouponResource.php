@@ -47,7 +47,8 @@ class CouponResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return plan_allows_store();
+        // Hide Store (المتجر) / coupons from the sidebar; resource remains reachable by URL when plan allows.
+        return false;
     }
 
     public static function canAccess(): bool
