@@ -480,18 +480,38 @@ class SalesInvoiceResource extends Resource
 
 
                 Tables\Columns\TextColumn::make('invoice_total')
-                    ->label(__('fields.invoice_total'))
+                    ->label(__('fields.invoice_total_with_tax'))
                     ->color(Color::Violet)
-                    ->tooltip(function ($record) {
+                    ->tooltip(function (Invoice $record) {
                         return numbers_to_words($record->getItemsCost(true, true, true));
                     })
-                    ->getStateUsing(function ($record) {
-                        return format_amount($record->getItemsCost(true, true, true));
+                    ->getStateUsing(function (Invoice $record) {
+                        return main_currency_iso_code() . ' ' . format_amount($record->getItemsCost(true, true, true));
                     })
                     ->summarize(Tables\Columns\Summarizers\Summarizer::make()
                         ->label(__('fields.total'))
                         ->using(function (Table $table) {
-                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('items_cost'));
+                            return main_currency_iso_code() . ' ' . format_amount(
+                                $table->getRecords()->sum(fn (Invoice $record) => $record->getItemsCost(true, true, true))
+                            );
+                        })
+                    ),
+
+                Tables\Columns\TextColumn::make('remaining_amount')
+                    ->label(__('fields.unpaid_amount'))
+                    ->color(fn (Invoice $record) => ((float) $record->total_unpaid) > 0 ? Color::Rose : Color::Emerald)
+                    ->tooltip(function (Invoice $record) {
+                        return numbers_to_words(max(0, (float) $record->total_unpaid));
+                    })
+                    ->getStateUsing(function (Invoice $record) {
+                        return main_currency_iso_code() . ' ' . format_amount(max(0, (float) $record->total_unpaid));
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . ' ' . format_amount(
+                                $table->getRecords()->sum(fn (Invoice $record) => max(0, (float) $record->total_unpaid))
+                            );
                         })
                     ),
             ])
@@ -606,6 +626,7 @@ class SalesInvoiceResource extends Resource
                     'items.product',
                     'items.extras',
                     'items.productVariant',
+                    'items.taxProfile',
                     'salesPayments',
                     'customer',
                     'receiptVoucher',
@@ -613,6 +634,7 @@ class SalesInvoiceResource extends Resource
                     'user',
                     'reviewedBy',
                     'additionalCosts',
+                    'services',
                     'salesReturns',
                 ])
             ->withCount('salesReturns')
@@ -657,9 +679,15 @@ class SalesInvoiceResource extends Resource
                         ->label(__('fields.date')),
 
                     TextEntry::make('invoice_total')
-                        ->label(__('fields.invoice_total'))
+                        ->label(__('fields.invoice_total_with_tax'))
                         ->getStateUsing(function ($record) {
                             return main_currency_iso_code() . " " . format_amount($record->getItemsCost(true, true, true));
+                        }),
+
+                    TextEntry::make('remaining_amount')
+                        ->label(__('fields.unpaid_amount'))
+                        ->getStateUsing(function ($record) {
+                            return main_currency_iso_code() . " " . format_amount(max(0, (float) $record->total_unpaid));
                         }),
 
                     TextEntry::make('additional_costs')

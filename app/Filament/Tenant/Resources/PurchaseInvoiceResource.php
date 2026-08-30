@@ -495,18 +495,38 @@ class PurchaseInvoiceResource extends Resource
 //                    }),
 
                 Tables\Columns\TextColumn::make('invoice_total')
-                    ->label(__('fields.invoice_total'))
+                    ->label(__('fields.invoice_total_with_tax'))
                     ->color(Color::Violet)
                     ->tooltip(function ($record) {
                         return numbers_to_words($record->getItemsCost(true, true, true));
                     })
                     ->getStateUsing(function ($record) {
-                        return format_amount($record->getItemsCost(true, true, true));
+                        return main_currency_iso_code() . ' ' . format_amount($record->getItemsCost(true, true, true));
                     })
                     ->summarize(Tables\Columns\Summarizers\Summarizer::make()
                         ->label(__('fields.total'))
                         ->using(function (Table $table) {
-                            return main_currency_iso_code() . " " . format_amount($table->getRecords()->sum('items_cost'));
+                            return main_currency_iso_code() . ' ' . format_amount(
+                                $table->getRecords()->sum(fn ($record) => $record->getItemsCost(true, true, true))
+                            );
+                        })
+                    ),
+
+                Tables\Columns\TextColumn::make('remaining_amount')
+                    ->label(__('fields.unpaid_amount'))
+                    ->color(fn ($record) => ((float) $record->total_unpaid) > 0 ? Color::Rose : Color::Emerald)
+                    ->tooltip(function ($record) {
+                        return numbers_to_words(max(0, (float) $record->total_unpaid));
+                    })
+                    ->getStateUsing(function ($record) {
+                        return main_currency_iso_code() . ' ' . format_amount(max(0, (float) $record->total_unpaid));
+                    })
+                    ->summarize(Tables\Columns\Summarizers\Summarizer::make()
+                        ->label(__('fields.total'))
+                        ->using(function (Table $table) {
+                            return main_currency_iso_code() . ' ' . format_amount(
+                                $table->getRecords()->sum(fn ($record) => max(0, (float) $record->total_unpaid))
+                            );
                         })
                     ),
 
@@ -629,7 +649,8 @@ class PurchaseInvoiceResource extends Resource
             ->where('temp', false)
             ->with(
                 [
-                    'items',
+                    'items.extras',
+                    'items.taxProfile',
                     'purchasePayments',
                     'salesPayments',
                     'representative',
@@ -637,6 +658,7 @@ class PurchaseInvoiceResource extends Resource
                     'user',
                     'reviewedBy',
                     'additionalCosts',
+                    'services',
                     'purchasesReturns',
                 ])
             ->withCount('purchasesReturns')

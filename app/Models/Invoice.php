@@ -133,18 +133,23 @@ class Invoice extends BaseModel
 
     public function getItemsCost($withAdditionalCosts = false, $applyDiscount = false, $applyTaxes = false)
     {
+        $this->loadMissing(['items.extras', 'additionalCosts', 'services']);
+
         $items = 0;
         $extras = 0;
         $services = 0;
         $additionalCosts = 0;
         $taxes = 0;
+        $overallDiscount = 0;
 
         foreach ($this->items as $item) {
-            $subTotal = $item->price * $item->qty;
-            $extras += $item->extras_total;
+            $qty = (float) ($item->getRawOriginal('qty') ?? $item->getAttributes()['qty'] ?? 0);
+            $subTotal = ((float) $item->price) * $qty;
+            $lineExtras = $this->lineExtrasTotal($item, $qty);
+            $extras += $lineExtras;
 
-            if ($applyDiscount) {
-                $subTotal -= $item->discount;
+            if ($applyDiscount && $this->discount_option !== 'overall') {
+                $subTotal -= (float) $item->discount;
             }
 
             $items += $subTotal;
@@ -161,7 +166,38 @@ class Invoice extends BaseModel
         }
 
         $taxes = $this->prices_includes_taxes ? 0 : $taxes;
-        return $items + $extras + $additionalCosts + $services + $taxes;
+
+        if ($applyDiscount && $this->discount_option === 'overall') {
+            $overallDiscount = $this->resolveOverallDiscountAmount($items + $extras);
+        }
+
+        return max(0, $items + $extras + $additionalCosts + $services + $taxes - $overallDiscount);
+    }
+
+    /**
+     * Gross products total used as base for overall percent discounts (matches invoice form).
+     */
+    protected function resolveOverallDiscountAmount(float $itemsGross): float
+    {
+        return match ($this->discount_method) {
+            'amount' => round((float) ($this->discount_amount ?? 0), 4),
+            'percent' => round($itemsGross * ((float) ($this->discount_percent ?? 0) / 100), 4),
+            default => 0.0,
+        };
+    }
+
+    protected function lineExtrasTotal($item, float $qty): float
+    {
+        if (! $item->relationLoaded('extras') && method_exists($item, 'extras')) {
+            $item->loadMissing('extras');
+        }
+
+        if ($item->relationLoaded('extras') && $item->extras->isNotEmpty()) {
+            return (float) $item->extras->sum(fn ($extra) => ((float) $extra->unit_price) * $qty);
+        }
+
+        // Fallback to accessor when extras were already computed for current qty.
+        return (float) ($item->extras_total ?? 0);
     }
 
     public function getAdditionalCosts($withTaxes = false)
@@ -184,62 +220,41 @@ class Invoice extends BaseModel
 
     public function getDiscountInAmount(): float|int
     {
-        return $this->items->sum('discount');
-        $discount = 0;
+        if ($this->discount_option === 'overall') {
+            $itemsGross = 0.0;
 
-        if ($this->discount_option === "overall") {
-
-            switch ($this->discount_method) {
-                case "none":
-                {
-                    $discount = 0;
-                    break;
-                }
-
-                case "amount":
-                {
-                    $discount = $this->discount_amount;
-                    break;
-                }
-                case "percent":
-                {
-                    $items_cost = 0;
-                    foreach ($this->items as $item) {
-                        $items_cost += $item->price * $item->qty;
-                    }
-                    $discount = $items_cost * ($this->discount_percent / 100);
-                    break;
-                }
-                default:
-                {
-                    throw new \Exception("Unknown discount method: $this->discount_method");
-                }
+            foreach ($this->items as $item) {
+                $qty = (float) ($item->getRawOriginal('qty') ?? $item->getAttributes()['qty'] ?? 0);
+                $itemsGross += (((float) $item->price) * $qty) + $this->lineExtrasTotal($item, $qty);
             }
-        } elseif ($this->discount_option === "per-item") {
-            $discount = $this->items->sum('discount');
+
+            return $this->resolveOverallDiscountAmount($itemsGross);
         }
 
-        return $discount;
+        if ($this->discount_option === 'per-item') {
+            return (float) $this->items->sum('discount');
+        }
+
+        return (float) $this->items->sum('discount');
     }
 
     public function getTaxesAsAmount(): float|int
     {
-        $this->loadMissing('items.taxProfile');
+        $this->loadMissing(['items.taxProfile', 'items.extras', 'additionalCosts', 'services']);
         $total = 0;
 
         foreach ($this->items as $item) {
+            $qty = (float) ($item->getRawOriginal('qty') ?? $item->getAttributes()['qty'] ?? 0);
+            $lineExtras = $this->lineExtrasTotal($item, $qty);
+
             if ($item->tax_profile_data) {
-                $total_percentages = collect([$item->tax_profile_data])->sum(function ($i) use($item) {
+                $total_percentages = collect([$item->tax_profile_data])->sum(function ($i) {
                     return collect($i['taxes'])->sum('percent');
                 });
-                $subTotal = $item->price * $item->qty;
-                $subTotal += $item->extras_total;
-                $subTotal -= $item->discount;
+                $subTotal = (((float) $item->price) * $qty) + $lineExtras - (float) $item->discount;
                 $total += MathService::instance()->getTax($subTotal, $total_percentages, $this->prices_includes_taxes);
             } else {
-                $subTotal = $item->price * $item->qty;
-                $subTotal -= $item->discount;
-                $subTotal += $item->extras_total;
+                $subTotal = (((float) $item->price) * $qty) - (float) $item->discount + $lineExtras;
                 $taxProfile = $item->taxProfile;
                 if ($taxProfile) {
                     $total += MathService::instance()->getTaxFromTaxProfile($subTotal, $taxProfile, $this->prices_includes_taxes);
