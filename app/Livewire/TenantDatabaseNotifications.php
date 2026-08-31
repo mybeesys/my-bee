@@ -14,8 +14,18 @@ class TenantDatabaseNotifications extends BaseDatabaseNotifications
         return parent::getNotificationsQuery()->latest('created_at');
     }
 
+    public function getUnreadNotificationsCount(): int
+    {
+        return (int) parent::getUnreadNotificationsCount();
+    }
+
     public function getTrigger(): View
     {
-        return view('filament.tenant.components.database-notifications-trigger');
+        $count = $this->getUnreadNotificationsCount();
+
+        return view('filament.tenant.components.database-notifications-trigger', [
+            'unreadNotificationsCount' => $count,
+            'showNotificationBadge' => $count > 0,
+        ]);
     }
 }

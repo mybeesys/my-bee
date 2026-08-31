@@ -191,11 +191,16 @@
     border: none !important;
     background-color: transparent !important;
     color: #dc2626 !important;
-    font-size: 0.875rem !important;
-    font-weight: 800 !important;
+    font-size: 1rem !important;
+    font-weight: 900 !important;
     line-height: 1 !important;
     box-shadow: none !important;
     --tw-ring-color: transparent !important;
+}
+
+.fi-panel-tenant .tenant-database-notifications-trigger .fi-icon-btn-badge-ctn:empty,
+.fi-panel-tenant .fi-topbar-database-notifications-btn .fi-icon-btn-badge-ctn:empty {
+    display: none !important;
 }
 
 .dark .fi-panel-tenant .tenant-database-notifications-trigger .fi-icon-btn-badge-ctn .fi-badge,

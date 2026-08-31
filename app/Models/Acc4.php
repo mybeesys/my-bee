@@ -155,6 +155,92 @@ class Acc4 extends BaseModel
             ->all();
     }
 
+    public static function customerPartyAccountOptions(): array
+    {
+        $options = [];
+
+        foreach (
+            static::query()
+                ->where('acc3_code', '1203')
+                ->where('item_type', Customer::class)
+                ->with('item')
+                ->orderBy('name')
+                ->get() as $account
+        ) {
+            $options[$account->code] = $account->item?->finance_name ?? $account->name;
+        }
+
+        asort($options, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $options;
+    }
+
+    public static function supplierPartyAccountOptions(): array
+    {
+        $options = [];
+
+        foreach (
+            static::query()
+                ->where('acc3_code', '1214')
+                ->where('item_type', Supplier::class)
+                ->with('item')
+                ->orderBy('name')
+                ->get() as $account
+        ) {
+            $options[$account->code] = $account->item?->finance_name ?? $account->name;
+        }
+
+        asort($options, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return $options;
+    }
+
+    public static function partyAccountOptionsFor(string $for): array
+    {
+        return match ($for) {
+            'customer' => static::customerPartyAccountOptions(),
+            'supplier' => static::supplierPartyAccountOptions(),
+            'other_entity' => static::userCreatedOtherPartyAccountOptions(),
+            default => [],
+        };
+    }
+
+    public static function voucherPaymentAccountOptionsFor(string $for): array
+    {
+        return match ($for) {
+            'customer', 'supplier' => static::collectionAccountOptions(),
+            'other_entity' => static::voucherOtherEntityPaymentAccountOptions(),
+            default => static::collectionAccountOptions(),
+        };
+    }
+
+    public static function isOtherPartyAccountCode(string $code): bool
+    {
+        return static::query()
+            ->userCreatedOtherPartyAccounts()
+            ->where('code', $code)
+            ->exists();
+    }
+
+    public static function isCollectionAccountCode(string $code): bool
+    {
+        return static::query()
+            ->where(function (Builder $query) {
+                $query->where('code', static::TREASURY_ACCOUNT_CODE)
+                    ->orWhere('acc3_code', '1227');
+            })
+            ->where('code', $code)
+            ->exists();
+    }
+
+    public static function isVoucherOtherEntityPaymentAccountCode(string $code): bool
+    {
+        return static::query()
+            ->voucherOtherEntityPaymentAccounts()
+            ->where('code', $code)
+            ->exists();
+    }
+
     public static function ledgerAccountOptions(): array
     {
         $options = [];

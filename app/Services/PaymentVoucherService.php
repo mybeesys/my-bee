@@ -127,6 +127,12 @@ class PaymentVoucherService
 
         return DB::transaction(function () use ($data) {
             $creditAcc4Code = (string) ($data['credit_acc4_code'] ?? Acc4::defaultCollectionAccountCode());
+
+            if (! Acc4::isCollectionAccountCode($creditAcc4Code)) {
+                throw ValidationException::withMessages([
+                    'credit_acc4_code' => __('validation.exists', ['attribute' => 'credit_acc4_code']),
+                ]);
+            }
             $acc4Code = (string) $data['acc4_code'];
             $paidAmount = $this->normalizePaidAmount($data['paid_amount'] ?? 0);
             $mode = $data['allocation_mode'] ?? 'fifo';
@@ -252,7 +258,7 @@ class PaymentVoucherService
     {
         $allowed = match ($for) {
             'supplier' => Supplier::query()->whereRelation('acc4', 'code', $acc4Code)->exists(),
-            'other_entity' => Acc4::isLedgerAccountCode($acc4Code),
+            'other_entity' => Acc4::isOtherPartyAccountCode($acc4Code),
             default => false,
         };
 

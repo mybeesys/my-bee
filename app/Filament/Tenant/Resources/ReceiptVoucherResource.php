@@ -104,13 +104,7 @@ class ReceiptVoucherResource extends Resource
                         })
                         ->searchable()
                         ->options(function (Get $get) {
-                            if ($get('for') == "customer") {
-                                return Acc4::asOptions(only_item_class: [Customer::class]);
-                            } else if ($get('for') == "other_entity") {
-                                return Acc4::ledgerAccountOptions();
-                            } else {
-                                return [];
-                            }
+                            return Acc4::partyAccountOptionsFor((string) $get('for'));
                         })
                         ->afterStateUpdated(function ($state, Set $set, $record, $livewire) {
                             $set('invoice_id', null);
@@ -329,7 +323,11 @@ class ReceiptVoucherResource extends Resource
                                 ->live()
                                 ->disabled(fn($record) => $record !== null)
                                 ->label(__('fields.account'))
-                                ->options(fn () => Acc4::voucherOtherEntityPaymentAccountOptions())
+                                ->options(function (Get $get, $livewire) {
+                                    $for = (string) ($get('for') ?? $livewire->record?->for ?? 'other_entity');
+
+                                    return Acc4::voucherPaymentAccountOptionsFor($for);
+                                })
                                 ->required(),
 
                             TextInput::make('amount')

@@ -102,7 +102,7 @@ trait InteractsWithPaymentVoucherSupplierForm
                         ->searchable()
                         ->live()
                         ->disabledOn(EditPaymentVoucher::class)
-                        ->options(fn () => Acc4::asOptions(only_item_class: [Supplier::class]))
+                        ->options(fn () => Acc4::supplierPartyAccountOptions())
                         ->afterStateUpdated(function ($state, $livewire, Set $set) {
                             $set('preselected_invoice_id', null);
                             static::refreshSupplierInvoiceLines($livewire, $set);

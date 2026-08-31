@@ -107,7 +107,7 @@ trait InteractsWithReceiptVoucherCustomerForm
                         ->searchable()
                         ->live()
                         ->disabledOn(EditReceiptVoucher::class)
-                        ->options(fn () => Acc4::asOptions(only_item_class: [Customer::class]))
+                        ->options(fn () => Acc4::customerPartyAccountOptions())
                         ->afterStateUpdated(function ($state, $livewire, Set $set) {
                             $set('preselected_invoice_id', null);
                             static::refreshCustomerInvoiceLines($livewire, $set);

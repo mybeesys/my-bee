@@ -151,6 +151,12 @@ class ReceiptVoucherService
         return DB::transaction(function () use ($data) {
             $acc4Code = (string) $data['acc4_code'];
             $debitAcc4Code = (string) ($data['debit_acc4_code'] ?? Acc4::defaultCollectionAccountCode());
+
+            if (! Acc4::isCollectionAccountCode($debitAcc4Code)) {
+                throw ValidationException::withMessages([
+                    'debit_acc4_code' => __('validation.exists', ['attribute' => 'debit_acc4_code']),
+                ]);
+            }
             $paidAmount = $this->normalizePaidAmount($data['paid_amount'] ?? 0);
             $mode = $data['allocation_mode'] ?? 'fifo';
             $description = trim((string) ($data['description'] ?? ''));
@@ -311,7 +317,7 @@ class ReceiptVoucherService
     {
         $allowed = match ($for) {
             'customer' => Customer::query()->whereRelation('acc4', 'code', $acc4Code)->exists(),
-            'other_entity' => Acc4::isLedgerAccountCode($acc4Code),
+            'other_entity' => Acc4::isOtherPartyAccountCode($acc4Code),
             default => false,
         };
 

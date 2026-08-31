@@ -168,7 +168,7 @@ class PaymentVoucherController extends BaseController
 
     public function getOtherEntities()
     {
-        return $this->responder(__('messages.api.retrieved'), 200, Acc4::ledgerAccountOptions())->respond();
+        return $this->responder(__('messages.api.retrieved'), 200, Acc4::userCreatedOtherPartyAccountOptions())->respond();
     }
 
     public function getInvoiceInfo($id)
