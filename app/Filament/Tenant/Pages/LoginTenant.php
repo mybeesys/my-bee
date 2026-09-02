@@ -92,12 +92,8 @@ class LoginTenant extends SimplePage
 
         //custom
 
-        $identifier = $data['email_or_phone'];
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $user = User::with('tenants')->whereEmail($identifier)->first();
-        } else {
-            $user = User::with('tenants')->wherePhone($identifier)->first();
-        }
+        $identifier = trim((string) $data['email_or_phone']);
+        $user = User::findForLoginIdentifier($identifier, ['roles', 'tenants']);
 
         if (!$user)
             $this->throwFailureValidationException();
@@ -127,7 +123,7 @@ class LoginTenant extends SimplePage
             }
 
         }
-        if (!Filament::auth()->attempt($this->getCredentialsFromFormData($identifier, $data), $data['remember'] ?? false)) {
+        if (!Filament::auth()->attempt($user->loginCredentialsForIdentifier($identifier, $data['password']), $data['remember'] ?? false)) {
             $this->throwFailureValidationException();
         }
 
@@ -246,18 +242,5 @@ class LoginTenant extends SimplePage
     protected function hasFullWidthFormActions(): bool
     {
         return true;
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     * @return array<string, mixed>
-     */
-    protected function getCredentialsFromFormData($identifier, array $data): array
-    {
-        $field = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
-        return [
-            $field => $data['email_or_phone'],
-            'password' => $data['password'],
-        ];
     }
 }

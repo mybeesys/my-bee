@@ -33,6 +33,8 @@ return [
     'phone_invalid' => 'Invalid phone number',
     'email_invalid' => 'Invalid email address',
     'account_deactivated' => 'Your Account has been disabled, please contact support',
+    'account_no_role' => 'This account does not have any role configuration, please contact your administrator.',
+    'no_tenant_access' => 'You do not have access to any activities, please contact your administrator.',
     'account_activated' => 'Your Account has been enabled.',
 
     'first_name_required' => 'Please enter your name',

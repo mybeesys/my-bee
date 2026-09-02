@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\MediaService;
 use App\Services\UserService;
+use App\Support\StorePhone;
 use App\Traits\HasFinancialAccount;
 use App\Traits\HasMedia;
 use App\Traits\HasPrefixedId;
@@ -265,5 +266,50 @@ class User extends Authenticatable implements MustVerifyEmail, HasTenants, Filam
     public function setPhoneAttribute($value)
     {
         return $this->attributes['phone'] = str($value)->remove('+')->value();
+    }
+
+    /**
+     * Resolve a login identifier the same way as the tenant dashboard:
+     * valid emails match exactly; phone values accept common local/intl variants.
+     *
+     * @param  array<int, string>  $with
+     */
+    public static function findForLoginIdentifier(string $identifier, array $with = ['roles', 'tenants']): ?self
+    {
+        $identifier = trim($identifier);
+
+        if ($identifier === '') {
+            return null;
+        }
+
+        $query = static::query()->with($with);
+
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return $query->where('email', $identifier)->first();
+        }
+
+        $variants = StorePhone::variants($identifier);
+
+        if ($variants !== []) {
+            return $query->whereIn('phone', $variants)->first();
+        }
+
+        return $query->where('phone', $identifier)->first();
+    }
+
+    /** @return array<string, string> */
+    public function loginCredentialsForIdentifier(string $identifier, string $password): array
+    {
+        if (filter_var(trim($identifier), FILTER_VALIDATE_EMAIL)) {
+            return [
+                'email' => $this->email,
+                'password' => $password,
+            ];
+        }
+
+        return [
+            'phone' => $this->phone,
+            'password' => $password,
+        ];
     }
 }

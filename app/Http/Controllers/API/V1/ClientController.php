@@ -15,7 +15,6 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Rules\InternationalPhoneRule;
 use App\Services\RoleService;
 use App\Services\TenantService;
 use Illuminate\Http\Request;
@@ -90,58 +89,40 @@ class ClientController extends BaseController
 
     public function login(LoginRequest $request)
     {
-        $identifier = $request->input('email_or_phone');
+        $identifier = trim((string) $request->input('email_or_phone'));
 
-        $token = null;
+        $user = User::findForLoginIdentifier($identifier, [
+            'roles',
+            'tenants.client.user',
+            'client.subscription.plan',
+        ]);
 
-        if (is_numeric($identifier)) {
-            $method = "phone";
-            $passes = (new InternationalPhoneRule(false))->passes("phone", $identifier);
-            if (!$passes)
-                return $this->responder(__('messages.phone_invalid'), 422, [], [
-                    'email_or_phone' => __('messages.phone_invalid'),
-                ])->respond();
-
-        } elseif (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $method = "email";
-        } else {
-            return $this->responder(__('messages.invalid_login_identifier'), 422, [], [
-                'email_or_phone' => __('messages.invalid_login_identifier'),
-            ])->respond();
+        if ($user && $user->hasAnyRole([User::ROLE_SUPER_ADMIN, User::ROLE_SUPER_VISOR])) {
+            return $this->responder(__('auth.failed'), 401)->respond();
         }
 
-        $user = User::with(['roles', 'tenants.client.user', 'client.subscription.plan'])->where($method, $identifier)->first();
-
-        if ($user and $user->hasAnyRole([User::ROLE_SUPER_ADMIN, User::ROLE_SUPER_VISOR]))
-            return $this->responder(__("auth.failed"), 401)->respond();
-
-        if ($user && Hash::check($request->input('password'), $user->password)) {
-            if ($user->hasRole(User::ROLE_CLIENT)) {
-                $token = $user->createToken("API token of " . $user->full_name)->plainTextToken;
-                return $this->responder(__('fields.messages.login_success'), 200,
-                    [
-                        'user' => new UserResource($user),
-                        'token' => $token,
-                    ]
-                )->respond();
-            }
-
-            //regular tenant user
-            if ($user->tenants->isNotEmpty()) {
-                $token = $user->createToken("API token of " . $user->full_name)->plainTextToken;
-                return $this->responder(__('fields.messages.login_success'), 200,
-                    [
-                        'user' => new UserResource($user),
-                        'token' => $token,
-                    ]
-                )->respond();
-            } else {
-                return $this->responder(__("messages.no_tenant_access"), 403)->respond();
-            }
-
-        } else {
-            return $this->responder(__("auth.failed"), 401)->respond();
+        if (! $user || ! Hash::check($request->input('password'), $user->password)) {
+            return $this->responder(__('auth.failed'), 401)->respond();
         }
+
+        if (! $user->active) {
+            return $this->responder(__('messages.account_deactivated'), 403)->respond();
+        }
+
+        if ($user->roles->isEmpty()) {
+            return $this->responder(__('messages.account_no_role'), 403)->respond();
+        }
+
+        if (! $user->hasRole(User::ROLE_CLIENT) && $user->tenants->isEmpty()) {
+            return $this->responder(__('messages.no_tenant_access'), 403)->respond();
+        }
+
+        $token = $user->createToken('API token of ' . $user->full_name)->plainTextToken;
+
+        return $this->responder(__('fields.messages.login_success'), 200, [
+            'user' => new UserResource($user),
+            'token' => $token,
+        ])->respond();
     }
 
     public function createTenant(StoreTenantRequest $request)
