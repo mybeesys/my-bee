@@ -25,7 +25,10 @@ class RevenueOverviewWidget extends BaseWidget
         $totalRevenue = (float) Subscription::query()->sum('price');
         $monthRevenue = (float) (clone $monthQuery)->sum('price');
         $monthTax = (float) (clone $monthQuery)->sum('tax_amount');
-        $monthDiscount = (float) (clone $monthQuery)->sum('discount_amount');
+        $monthAdminWaived = (clone $monthQuery)
+            ->whereNotNull('original_price')
+            ->get(['original_price', 'price'])
+            ->sum(fn (Subscription $row): float => max(0, (float) $row->original_price - (float) $row->price));
         $monthCount = (clone $monthQuery)->count();
 
         return [
@@ -35,7 +38,7 @@ class RevenueOverviewWidget extends BaseWidget
                 ->icon('heroicon-o-banknotes'),
 
             Stat::make(__('fields.revenue_total_this_month'), format_amount($monthRevenue))
-                ->description(__('fields.admin_dashboard_this_month'))
+                ->description(__('fields.revenue_subscriptions_month') . ': ' . $monthCount)
                 ->color(Color::Amber)
                 ->icon('heroicon-o-calendar-days'),
 
@@ -44,11 +47,10 @@ class RevenueOverviewWidget extends BaseWidget
                 ->color(Color::Sky)
                 ->icon('heroicon-o-receipt-percent'),
 
-            Stat::make(__('fields.revenue_subscriptions_month'), (string) $monthCount)
-                ->description(__('fields.revenue_discount') . ': ' . format_amount($monthDiscount))
-                ->descriptionIcon('heroicon-m-receipt-percent')
-                ->color($monthDiscount > 0 ? Color::Orange : Color::Green)
-                ->icon('heroicon-o-document-text'),
+            Stat::make(__('fields.revenue_admin_waived_this_month'), format_amount((float) $monthAdminWaived))
+                ->description(__('fields.revenue_admin_waived_short'))
+                ->color(Color::Orange)
+                ->icon('heroicon-o-receipt-percent'),
         ];
     }
 }

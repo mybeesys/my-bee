@@ -24,6 +24,12 @@ class Subscription extends BaseModel
         'tax_amount' => 'float',
         'tax_percent' => 'float',
         'discount_amount' => 'float',
+        'original_price_ex_tax' => 'float',
+        'original_tax_amount' => 'float',
+        'original_price' => 'float',
+        'admin_discount_percent' => 'float',
+        'admin_discount_amount' => 'float',
+        'admin_discounted_at' => 'datetime',
     ];
 
     public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -39,6 +45,11 @@ class Subscription extends BaseModel
     public function platformCoupon(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(PlatformCoupon::class);
+    }
+
+    public function discountedBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'admin_discounted_by');
     }
 
     public function ensurePublicUid(): string
@@ -72,7 +83,13 @@ class Subscription extends BaseModel
 
     public function isFree(): bool
     {
-        return (float) ($this->price ?? 0) <= 0.0;
+        return (float) ($this->price ?? 0) <= 0.0
+            && (float) ($this->admin_discount_percent ?? 0) <= 0.0;
+    }
+
+    public function hasAdminDiscount(): bool
+    {
+        return (float) ($this->admin_discount_percent ?? 0) > 0.0;
     }
 
     public static function isSubscribedTo($plan_id, Client $client): bool

@@ -12,7 +12,9 @@
     };
     $invoiceDate = $subscription->start_date ?? $subscription->created_at;
     $subtotal = (float) ($subscription->price_ex_tax ?? $subscription->price ?? 0);
-    $discount = (float) ($subscription->discount_amount ?? 0);
+    $couponDiscount = (float) ($subscription->discount_amount ?? 0);
+    $adminDiscount = (float) ($subscription->admin_discount_amount ?? 0);
+    $lineGross = $subtotal + $couponDiscount + $adminDiscount;
     $tax = (float) ($subscription->tax_amount ?? 0);
     $total = (float) ($subscription->price ?? 0);
     $taxPercent = (float) ($subscription->tax_percent ?? 0);
@@ -750,15 +752,25 @@
                             <div class="line-title">{{ $lineDescription }}</div>
                             <div class="line-sub">{{ __('fields.subscription_invoice') }}</div>
                         </div>
-                        <div class="line-amount">{{ $currency }} {{ format_amount($subtotal + $discount) }}</div>
+                        <div class="line-amount">{{ $currency }} {{ format_amount($lineGross) }}</div>
                     </div>
 
                     <div class="lines__summary">
-                        @if($discount > 0)
+                        @if($couponDiscount > 0)
                             <div class="lines__summary-row">
                                 <span>{{ __('fields.revenue_discount') }}@if($subscription->coupon_code) ({{ $subscription->coupon_code }})@endif</span>
-                                <span class="line-amount">− {{ $currency }} {{ format_amount($discount) }}</span>
+                                <span class="line-amount">− {{ $currency }} {{ format_amount($couponDiscount) }}</span>
                             </div>
+                        @endif
+
+                        @if($adminDiscount > 0)
+                            <div class="lines__summary-row">
+                                <span>{{ __('fields.revenue_admin_discount') }} ({{ format_amount((float) $subscription->admin_discount_percent) }}%)</span>
+                                <span class="line-amount">− {{ $currency }} {{ format_amount($adminDiscount) }}</span>
+                            </div>
+                        @endif
+
+                        @if($couponDiscount > 0 || $adminDiscount > 0)
                             <div class="lines__summary-row">
                                 <span>{{ __('fields.revenue_before_tax') }}</span>
                                 <span class="line-amount">{{ $currency }} {{ format_amount($subtotal) }}</span>
@@ -769,6 +781,13 @@
                             <div class="lines__summary-row">
                                 <span>{{ __('fields.tax') }} ({{ format_amount($taxPercent) }}%)</span>
                                 <span class="line-amount">{{ $currency }} {{ format_amount($tax) }}</span>
+                            </div>
+                        @endif
+
+                        @if($adminDiscount > 0 && filled($subscription->admin_discount_note))
+                            <div class="lines__summary-row">
+                                <span>{{ __('fields.revenue_admin_discount_note') }}</span>
+                                <span class="line-amount">{{ $subscription->admin_discount_note }}</span>
                             </div>
                         @endif
 

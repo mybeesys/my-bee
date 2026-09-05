@@ -298,3 +298,36 @@
 .fi-admin-dashboard .fi-wi-stats-overview-stat .fi-icon {
     @apply text-amber-500 dark:text-amber-400;
 }
+
+/* Compact KPI row on admin resource pages */
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stats-ctn {
+    @apply gap-3;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat {
+    @apply p-3.5 shadow-none ring-1 ring-gray-200/80 transition duration-200 hover:shadow-sm hover:ring-amber-300/50 dark:ring-white/10;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat > .grid {
+    @apply gap-y-1;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat-label {
+    @apply text-xs font-medium;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat-value {
+    @apply text-xl font-bold tracking-tight sm:text-2xl;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat-description {
+    @apply text-xs leading-snug;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat-icon {
+    @apply h-4 w-4;
+}
+
+.fi-panel-admin .fi-page-header-widgets .fi-wi-stats-overview-stat-description-icon {
+    @apply h-3.5 w-3.5;
+}

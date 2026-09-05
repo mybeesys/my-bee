@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Filament\Admin\Concerns\AdjustsSubscriptionInvoiceDiscount;
 use App\Filament\Admin\Concerns\SharesSubscriptionInvoiceUrl;
 use App\Filament\Admin\Resources\SubscriptionRevenueResource\Pages;
 use App\Models\Subscription;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SubscriptionRevenueResource extends Resource
 {
+    use AdjustsSubscriptionInvoiceDiscount;
     use SharesSubscriptionInvoiceUrl;
 
     protected static ?string $model = Subscription::class;
@@ -92,6 +94,21 @@ class SubscriptionRevenueResource extends Resource
                 Tables\Columns\TextColumn::make('coupon_code')
                     ->label(__('fields.code'))
                     ->placeholder('—')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('admin_discount_percent')
+                    ->label(__('fields.revenue_admin_discount'))
+                    ->formatStateUsing(function ($state, Subscription $record): string {
+                        if (! $record->hasAdminDiscount()) {
+                            return '—';
+                        }
+
+                        return format_amount((float) $state) . '%';
+                    })
+                    ->description(fn (Subscription $record): ?string => $record->hasAdminDiscount()
+                        ? '- ' . format_amount((float) $record->admin_discount_amount)
+                        : null)
+                    ->color(fn (Subscription $record) => $record->hasAdminDiscount() ? 'warning' : null)
                     ->toggleable(),
 
                 Tables\Columns\TextColumn::make('tax_amount')
@@ -103,7 +120,16 @@ class SubscriptionRevenueResource extends Resource
                     ->label(__('fields.revenue_total'))
                     ->formatStateUsing(fn ($state): string => format_amount((float) $state))
                     ->weight('bold')
-                    ->color('success')
+                    ->color(fn (Subscription $record): string => $record->hasAdminDiscount() ? 'warning' : 'success')
+                    ->description(function (Subscription $record): ?string {
+                        if (! $record->hasAdminDiscount() || $record->original_price === null) {
+                            return null;
+                        }
+
+                        return __('fields.revenue_admin_discount_was', [
+                            'amount' => format_amount((float) $record->original_price),
+                        ]);
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -123,6 +149,10 @@ class SubscriptionRevenueResource extends Resource
                         'yearly' => __('fields.yearly'),
                     ]),
 
+                Tables\Filters\Filter::make('has_admin_discount')
+                    ->label(__('fields.revenue_admin_discount'))
+                    ->query(fn (Builder $query): Builder => $query->where('admin_discount_percent', '>', 0)),
+
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         \Filament\Forms\Components\DatePicker::make('from')
@@ -137,8 +167,16 @@ class SubscriptionRevenueResource extends Resource
                     }),
             ])
             ->actions([
-                static::shareSubscriptionInvoiceUrlAction(),
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    static::shareSubscriptionInvoiceUrlAction(),
+                    static::applySubscriptionAdminDiscountAction(),
+                    static::restoreSubscriptionAdminDiscountAction(),
+                ])
+                    ->icon('heroicon-m-ellipsis-vertical')
+                    ->iconButton()
+                    ->tooltip(__('fields.actions'))
+                    ->color('gray'),
             ])
             ->bulkActions([]);
     }

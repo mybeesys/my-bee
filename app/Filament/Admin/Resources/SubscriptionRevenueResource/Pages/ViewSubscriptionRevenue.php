@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources\SubscriptionRevenueResource\Pages;
 
+use App\Filament\Admin\Concerns\AdjustsSubscriptionInvoiceDiscount;
 use App\Filament\Admin\Concerns\SharesSubscriptionInvoiceUrl;
 use App\Filament\Admin\Resources\SubscriptionRevenueResource;
 use App\Models\Subscription;
@@ -11,19 +12,23 @@ use Filament\Resources\Pages\ViewRecord;
 
 class ViewSubscriptionRevenue extends ViewRecord
 {
+    use AdjustsSubscriptionInvoiceDiscount;
     use SharesSubscriptionInvoiceUrl;
 
     protected static string $resource = SubscriptionRevenueResource::class;
 
     protected function getHeaderActions(): array
     {
-        if ($this->record?->isFree()) {
-            return [];
+        $actions = [
+            static::applySubscriptionAdminDiscountHeaderAction(),
+            static::restoreSubscriptionAdminDiscountHeaderAction(),
+        ];
+
+        if ($this->record && ! $this->record->isFree()) {
+            $actions[] = static::shareSubscriptionInvoiceUrlHeaderAction();
         }
 
-        return [
-            static::shareSubscriptionInvoiceUrlHeaderAction(),
-        ];
+        return $actions;
     }
 
     public function infolist(Infolist $infolist): Infolist
@@ -69,6 +74,22 @@ class ViewSubscriptionRevenue extends ViewRecord
                             ->label(__('fields.code'))
                             ->placeholder('—')
                             ->visible(fn (Subscription $record): bool => ! $record->isFree() && filled($record->coupon_code)),
+                        Infolists\Components\TextEntry::make('admin_discount_percent')
+                            ->label(__('fields.revenue_admin_discount'))
+                            ->formatStateUsing(fn ($state): string => format_amount((float) $state) . '%')
+                            ->visible(fn (Subscription $record): bool => $record->hasAdminDiscount()),
+                        Infolists\Components\TextEntry::make('admin_discount_amount')
+                            ->label(__('fields.revenue_admin_discount_amount'))
+                            ->formatStateUsing(fn ($state): string => '- ' . format_amount((float) $state))
+                            ->visible(fn (Subscription $record): bool => $record->hasAdminDiscount()),
+                        Infolists\Components\TextEntry::make('admin_discount_note')
+                            ->label(__('fields.revenue_admin_discount_note'))
+                            ->placeholder('—')
+                            ->visible(fn (Subscription $record): bool => $record->hasAdminDiscount() && filled($record->admin_discount_note)),
+                        Infolists\Components\TextEntry::make('original_price')
+                            ->label(__('fields.revenue_admin_discount_original_total'))
+                            ->formatStateUsing(fn ($state): string => format_amount((float) $state))
+                            ->visible(fn (Subscription $record): bool => $record->hasAdminDiscount() && $record->original_price !== null),
                         Infolists\Components\TextEntry::make('tax_amount')
                             ->label(__('fields.tax'))
                             ->formatStateUsing(fn ($state): string => format_amount((float) ($state ?? 0)))
@@ -79,7 +100,9 @@ class ViewSubscriptionRevenue extends ViewRecord
                                 ? __('fields.free')
                                 : format_amount((float) $state))
                             ->weight('bold')
-                            ->color(fn (Subscription $record): string => $record->isFree() ? 'success' : 'primary'),
+                            ->color(fn (Subscription $record): string => $record->isFree()
+                                ? 'success'
+                                : ($record->hasAdminDiscount() ? 'warning' : 'primary')),
                         Infolists\Components\TextEntry::make('free_plan_notice')
                             ->label('')
                             ->state(fn (): string => __('fields.revenue_free_plan_notice'))

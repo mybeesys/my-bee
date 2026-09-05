@@ -22,6 +22,8 @@ class SubscriptionRevenueBreakdown
      *     discount_months: int,
      *     subtotal_before_discount: float,
      *     discount_amount: float,
+     *     admin_discount_percent: float,
+     *     admin_discount_amount: float,
      *     subtotal_ex_tax: float,
      *     tax_percent: float,
      *     tax_amount: float,
@@ -50,9 +52,11 @@ class SubscriptionRevenueBreakdown
 
         $subtotalExTax = (float) ($subscription->price_ex_tax ?? $subscription->price ?? 0);
         $discountAmount = (float) ($subscription->discount_amount ?? 0);
+        $adminDiscountAmount = (float) ($subscription->admin_discount_amount ?? 0);
+        $adminDiscountPercent = (float) ($subscription->admin_discount_percent ?? 0);
         $subtotalBeforeDiscount = $discountAmount > 0
-            ? round($subtotalExTax + $discountAmount, currency_decimals())
-            : $subtotalExTax;
+            ? round($subtotalExTax + $discountAmount + $adminDiscountAmount, currency_decimals())
+            : round($subtotalExTax + $adminDiscountAmount, currency_decimals());
 
         if ($subscription->price_ex_tax === null && $plan) {
             $quote = $pricing->quote($plan, $period);
@@ -84,6 +88,8 @@ class SubscriptionRevenueBreakdown
             $subtotalBeforeDiscount,
             $discountAmount,
             $subscription->coupon_code,
+            $adminDiscountPercent,
+            $adminDiscountAmount,
             $subtotalExTax,
             $taxPercent,
             $taxAmount,
@@ -100,6 +106,8 @@ class SubscriptionRevenueBreakdown
             'discount_months' => $discountMonths,
             'subtotal_before_discount' => $subtotalBeforeDiscount,
             'discount_amount' => $discountAmount,
+            'admin_discount_percent' => $adminDiscountPercent,
+            'admin_discount_amount' => $adminDiscountAmount,
             'subtotal_ex_tax' => $subtotalExTax,
             'tax_percent' => $taxPercent,
             'tax_amount' => $taxAmount,
@@ -123,6 +131,8 @@ class SubscriptionRevenueBreakdown
         float $subtotalBeforeDiscount,
         float $discountAmount,
         ?string $couponCode,
+        float $adminDiscountPercent,
+        float $adminDiscountAmount,
         float $subtotalExTax,
         float $taxPercent,
         float $taxAmount,
@@ -167,6 +177,19 @@ class SubscriptionRevenueBreakdown
                     ? __('fields.revenue_step_coupon_hint', ['code' => $couponCode])
                     : null,
             ];
+        }
+
+        if ($adminDiscountAmount > 0) {
+            $steps[] = [
+                'label' => __('fields.revenue_step_admin_discount', [
+                    'percent' => format_amount($adminDiscountPercent),
+                ]),
+                'value' => '- ' . $fmt($adminDiscountAmount),
+                'hint' => __('fields.revenue_step_admin_discount_hint'),
+            ];
+        }
+
+        if ($discountAmount > 0 || $adminDiscountAmount > 0) {
             $steps[] = [
                 'label' => __('fields.revenue_step_after_discount'),
                 'value' => $fmt($subtotalExTax),
