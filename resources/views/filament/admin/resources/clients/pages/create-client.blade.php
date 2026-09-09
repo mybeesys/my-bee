@@ -107,6 +107,37 @@
             border-radius: 0.8rem;
             font-weight: 650;
         }
+
+        .create-client-page .create-client-discount-preview {
+            display: grid;
+            gap: 0.35rem;
+            padding: 0.9rem 1rem;
+            border-radius: 0.95rem;
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            background: linear-gradient(135deg, rgba(255, 251, 235, 0.95), rgba(255, 255, 255, 0.7));
+            font-size: 0.875rem;
+            line-height: 1.55;
+            color: rgb(68 64 60);
+        }
+
+        .dark .create-client-page .create-client-discount-preview {
+            border-color: rgba(245, 158, 11, 0.32);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(24, 24, 27, 0.55));
+            color: rgb(231 229 228);
+        }
+
+        .create-client-page .create-client-discount-preview p {
+            margin: 0;
+        }
+
+        .create-client-page .create-client-discount-preview__waived {
+            color: rgb(180 83 9);
+            font-weight: 600;
+        }
+
+        .dark .create-client-page .create-client-discount-preview__waived {
+            color: rgb(253 230 138);
+        }
     </style>
 
     <div class="create-client-shell">

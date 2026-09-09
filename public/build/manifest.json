@@ -10,7 +10,7 @@
     "src": "resources/css/filament/admin/theme.css"
   },
   "resources/css/filament/tenant/theme.css": {
-    "file": "assets/theme-5d16d05f.css",
+    "file": "assets/theme-23224bd3.css",
     "isEntry": true,
     "src": "resources/css/filament/tenant/theme.css"
   },

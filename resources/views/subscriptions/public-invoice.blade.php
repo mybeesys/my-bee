@@ -14,6 +14,10 @@
     $subtotal = (float) ($subscription->price_ex_tax ?? $subscription->price ?? 0);
     $couponDiscount = (float) ($subscription->discount_amount ?? 0);
     $adminDiscount = (float) ($subscription->admin_discount_amount ?? 0);
+    $hasAdminDiscount = $subscription->hasAdminDiscount();
+    $adminPercentLabel = $hasAdminDiscount
+        ? rtrim(rtrim(number_format((float) $subscription->admin_discount_percent, 2, '.', ''), '0'), '.')
+        : null;
     $lineGross = $subtotal + $couponDiscount + $adminDiscount;
     $tax = (float) ($subscription->tax_amount ?? 0);
     $total = (float) ($subscription->price ?? 0);
@@ -413,6 +417,12 @@
             border: 1px solid #a7f3d0;
         }
 
+        .badge--admin {
+            background: #fff7ed;
+            color: #9a3412;
+            border: 1px solid #fdba74;
+        }
+
         .badge--free {
             background: #fef3c7;
             color: #b45309;
@@ -564,6 +574,17 @@
             font-size: .88rem;
         }
 
+        .notice--admin {
+            background: #fff7ed;
+            border-color: #fdba74;
+            color: #9a3412;
+        }
+
+        .notice--admin strong {
+            display: block;
+            margin-bottom: .2rem;
+        }
+
         .invoice__footer {
             padding: 1.15rem 2.25rem 1.5rem;
             border-top: 1px solid var(--line);
@@ -682,6 +703,9 @@
                         @else
                             <span class="badge badge--paid">{{ __('fields.settlement_status_paid') }}</span>
                         @endif
+                        @if($hasAdminDiscount)
+                            <span class="badge badge--admin">{{ __('fields.subscription_admin_discount_badge') }} {{ $adminPercentLabel }}%</span>
+                        @endif
                     </div>
 
                     <div class="hero-document__body">
@@ -740,6 +764,15 @@
                 </div>
             </div>
 
+            @if($hasAdminDiscount)
+                <div class="notice notice--admin">
+                    <strong>{{ __('fields.subscription_admin_discount_applied', ['percent' => $adminPercentLabel]) }}</strong>
+                    @if(filled($subscription->admin_discount_note))
+                        {{ __('fields.subscription_admin_discount_reason') }}: {{ $subscription->admin_discount_note }}
+                    @endif
+                </div>
+            @endif
+
             @unless($isFree)
                 <div class="lines">
                     <div class="lines__head">
@@ -763,14 +796,14 @@
                             </div>
                         @endif
 
-                        @if($adminDiscount > 0)
+                        @if($hasAdminDiscount)
                             <div class="lines__summary-row">
-                                <span>{{ __('fields.revenue_admin_discount') }} ({{ format_amount((float) $subscription->admin_discount_percent) }}%)</span>
+                                <span>{{ __('fields.revenue_admin_discount') }} ({{ $adminPercentLabel }}%)</span>
                                 <span class="line-amount">− {{ $currency }} {{ format_amount($adminDiscount) }}</span>
                             </div>
                         @endif
 
-                        @if($couponDiscount > 0 || $adminDiscount > 0)
+                        @if($couponDiscount > 0 || $hasAdminDiscount)
                             <div class="lines__summary-row">
                                 <span>{{ __('fields.revenue_before_tax') }}</span>
                                 <span class="line-amount">{{ $currency }} {{ format_amount($subtotal) }}</span>
@@ -784,9 +817,9 @@
                             </div>
                         @endif
 
-                        @if($adminDiscount > 0 && filled($subscription->admin_discount_note))
+                        @if($hasAdminDiscount && filled($subscription->admin_discount_note))
                             <div class="lines__summary-row">
-                                <span>{{ __('fields.revenue_admin_discount_note') }}</span>
+                                <span>{{ __('fields.subscription_admin_discount_reason') }}</span>
                                 <span class="line-amount">{{ $subscription->admin_discount_note }}</span>
                             </div>
                         @endif

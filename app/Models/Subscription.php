@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\SubscriptionCouponService;
+use App\Services\SubscriptionInvoiceAdjustmentService;
 use App\Services\SubscriptionPricingService;
 use App\Traits\HasPrefixedId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -107,7 +108,10 @@ class Subscription extends BaseModel
         Plan $plan,
         Client $client,
         string $billingPeriod = SubscriptionPricingService::BILLING_MONTHLY,
-        ?PlatformCoupon $coupon = null
+        ?PlatformCoupon $coupon = null,
+        ?float $adminDiscountPercent = null,
+        ?string $adminDiscountNote = null,
+        ?int $adminUserId = null,
     ): Subscription {
         $client->loadMissing(['user', 'subscription.plan']);
 
@@ -125,7 +129,7 @@ class Subscription extends BaseModel
             $discountAmount = (float) ($quote['discount_amount'] ?? 0);
         }
 
-        return DB::transaction(function () use ($plan, $client, $quote, $coupon, $discountAmount) {
+        return DB::transaction(function () use ($plan, $client, $quote, $coupon, $discountAmount, $adminDiscountPercent, $adminDiscountNote, $adminUserId) {
             $subscription = Subscription::create([
                 'plan_id' => $plan->id,
                 'client_id' => $client->id,
@@ -146,6 +150,15 @@ class Subscription extends BaseModel
                     'client_id' => $client->id,
                     'subscription_id' => $subscription->id,
                 ]);
+            }
+
+            if ($adminDiscountPercent !== null && $adminDiscountPercent > 0 && (float) $quote['total_inc_tax'] > 0) {
+                SubscriptionInvoiceAdjustmentService::instance()->apply(
+                    $subscription->fresh(),
+                    $adminDiscountPercent,
+                    $adminDiscountNote,
+                    $adminUserId,
+                );
             }
 
             $client->refresh();

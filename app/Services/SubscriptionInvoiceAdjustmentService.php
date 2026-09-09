@@ -116,6 +116,56 @@ class SubscriptionInvoiceAdjustmentService
         return round((float) ($subscription->price_ex_tax ?? $subscription->price ?? 0), $decimals);
     }
 
+    /**
+     * Preview an admin % discount against a pricing quote (before a subscription row exists).
+     *
+     * @param  array{subtotal_ex_tax?: float|int|string, tax_percent?: float|int|string, total_inc_tax?: float|int|string}  $quote
+     * @return array{
+     *     percent: float,
+     *     base_ex_tax: float,
+     *     admin_discount_amount: float,
+     *     price_ex_tax: float,
+     *     tax_percent: float,
+     *     tax_amount: float,
+     *     total_inc_tax: float,
+     *     waived_inc_tax: float,
+     *     original_total_inc_tax: float,
+     *     currency: string
+     * }
+     */
+    public function previewFromQuote(array $quote, float $percent): array
+    {
+        $decimals = currency_decimals();
+        $percent = $this->normalizePercent($percent);
+        $baseExTax = round((float) ($quote['subtotal_ex_tax'] ?? 0), $decimals);
+        $taxPercent = (float) ($quote['tax_percent'] ?? SubscriptionPricingService::instance()->vatPercent());
+        $originalTotal = round((float) ($quote['total_inc_tax'] ?? 0), $decimals);
+
+        if ($baseExTax <= 0 && $originalTotal <= 0) {
+            throw ValidationException::withMessages([
+                'percent' => __('fields.revenue_admin_discount_free_plan'),
+            ]);
+        }
+
+        $adminDiscount = round($baseExTax * ($percent / 100), $decimals);
+        $priceExTax = max(0, round($baseExTax - $adminDiscount, $decimals));
+        $taxAmount = round(MathService::instance()->getTax($priceExTax, $taxPercent, false), $decimals);
+        $total = round($priceExTax + $taxAmount, $decimals);
+
+        return [
+            'percent' => $percent,
+            'base_ex_tax' => $baseExTax,
+            'admin_discount_amount' => $adminDiscount,
+            'price_ex_tax' => $priceExTax,
+            'tax_percent' => $taxPercent,
+            'tax_amount' => $taxAmount,
+            'total_inc_tax' => $total,
+            'waived_inc_tax' => max(0, round($originalTotal - $total, $decimals)),
+            'original_total_inc_tax' => $originalTotal,
+            'currency' => main_currency_iso_code(),
+        ];
+    }
+
     public function originalTotalIncTax(Subscription $subscription): float
     {
         $decimals = currency_decimals();

@@ -87,34 +87,65 @@
                         $currentPlan,
                         $subscription->billing_period ?: 'monthly'
                     );
+                    $pricing = \App\Services\SubscriptionPricingService::instance();
+                    $hasAdminDiscount = $subscription->hasAdminDiscount();
+                    $adminPercentLabel = $hasAdminDiscount
+                        ? rtrim(rtrim(number_format((float) $subscription->admin_discount_percent, 2, '.', ''), '0'), '.')
+                        : null;
                 @endphp
 
                 <div class="subscription-page__price">
                     <span class="subscription-page__price-value">
-                        @if ($currentQuote['is_free'])
+                        @if ($currentQuote['is_free'] && ! $hasAdminDiscount)
                             {{ __('fields.free') }}
                         @else
-                            {{ \App\Services\SubscriptionPricingService::instance()->formatMoney((float) ($subscription->price ?? $currentQuote['total_inc_tax']), $currency) }}
+                            {{ $pricing->formatMoney((float) ($subscription->price ?? $currentQuote['total_inc_tax']), $currency) }}
                         @endif
                     </span>
+                    @if ($hasAdminDiscount && $subscription->original_price !== null)
+                        <span class="subscription-page__price-original">
+                            {{ __('fields.revenue_admin_discount_was', ['amount' => $pricing->formatMoney((float) $subscription->original_price, $currency)]) }}
+                        </span>
+                    @endif
                     @if ($suffix = $this->planPriceSuffix($currentPlan))
                         <span class="subscription-page__price-suffix">{{ $suffix }}</span>
                     @endif
                 </div>
 
-                @unless ($currentQuote['is_free'])
+                @if ($hasAdminDiscount)
+                    <aside class="subscription-page__admin-discount" aria-label="{{ __('fields.subscription_admin_discount_badge') }}">
+                        <div class="subscription-page__admin-discount-head">
+                            <span class="subscription-page__admin-discount-badge">
+                                {{ __('fields.subscription_admin_discount_applied', ['percent' => $adminPercentLabel]) }}
+                            </span>
+                            @if ((float) ($subscription->admin_discount_amount ?? 0) > 0)
+                                <span class="subscription-page__admin-discount-amount">
+                                    −{{ $pricing->formatMoney((float) $subscription->admin_discount_amount, $currency) }}
+                                </span>
+                            @endif
+                        </div>
+                        @if (filled($subscription->admin_discount_note))
+                            <p class="subscription-page__admin-discount-reason">
+                                <span>{{ __('fields.subscription_admin_discount_reason') }}:</span>
+                                {{ $subscription->admin_discount_note }}
+                            </p>
+                        @endif
+                    </aside>
+                @endif
+
+                @unless ($currentQuote['is_free'] && ! $hasAdminDiscount)
                     <dl class="subscription-page__price-breakdown">
                         <div>
                             <dt>{{ __('fields.subscription_subtotal_ex_tax') }}</dt>
-                            <dd>{{ \App\Services\SubscriptionPricingService::instance()->formatMoney((float) ($subscription->price_ex_tax ?? $currentQuote['subtotal_ex_tax']), $currency) }}</dd>
+                            <dd>{{ $pricing->formatMoney((float) ($subscription->price_ex_tax ?? $currentQuote['subtotal_ex_tax']), $currency) }}</dd>
                         </div>
                         <div>
                             <dt>{{ __('fields.subscription_tax_amount', ['vat' => rtrim(rtrim(number_format((float) ($subscription->tax_percent ?? $currentQuote['tax_percent']), 2, '.', ''), '0'), '.')]) }}</dt>
-                            <dd>{{ \App\Services\SubscriptionPricingService::instance()->formatMoney((float) ($subscription->tax_amount ?? $currentQuote['tax_amount']), $currency) }}</dd>
+                            <dd>{{ $pricing->formatMoney((float) ($subscription->tax_amount ?? $currentQuote['tax_amount']), $currency) }}</dd>
                         </div>
                         <div class="subscription-page__price-breakdown-total">
                             <dt>{{ __('fields.subscription_total_inc_tax') }}</dt>
-                            <dd>{{ \App\Services\SubscriptionPricingService::instance()->formatMoney((float) ($subscription->price ?? $currentQuote['total_inc_tax']), $currency) }}</dd>
+                            <dd>{{ $pricing->formatMoney((float) ($subscription->price ?? $currentQuote['total_inc_tax']), $currency) }}</dd>
                         </div>
                     </dl>
                 @endunless
@@ -160,6 +191,14 @@
                                 <div class="subscription-page__history-head">
                                     <div class="subscription-page__history-head-main">
                                         <div class="subscription-page__history-badges">
+                                            @if ($entry['has_admin_discount'])
+                                                <span class="subscription-page__history-admin-badge">
+                                                    {{ __('fields.subscription_admin_discount_badge') }}
+                                                    @if ($entry['admin_discount_percent_label'])
+                                                        {{ $entry['admin_discount_percent_label'] }}%
+                                                    @endif
+                                                </span>
+                                            @endif
                                             <span class="subscription-page__tier-label subscription-page__tier-label--{{ $entry['tier'] }}">
                                                 {{ $entry['tier_label'] }}
                                             </span>
@@ -193,6 +232,11 @@
                                     <div class="subscription-page__history-total">
                                         <span class="subscription-page__history-total-label">{{ __('fields.subscription_total_inc_tax') }}</span>
                                         <strong>{{ $entry['total_formatted'] }}</strong>
+                                        @if ($entry['has_admin_discount'] && $entry['original_total_formatted'])
+                                            <span class="subscription-page__history-total-was">
+                                                {{ __('fields.revenue_admin_discount_was', ['amount' => $entry['original_total_formatted']]) }}
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -240,6 +284,27 @@
                                         </div>
                                     @endif
                                 </dl>
+
+                                @if ($entry['has_admin_discount'])
+                                    <aside class="subscription-page__admin-discount subscription-page__admin-discount--history">
+                                        <div class="subscription-page__admin-discount-head">
+                                            <span class="subscription-page__admin-discount-badge">
+                                                {{ __('fields.subscription_admin_discount_applied', ['percent' => $entry['admin_discount_percent_label']]) }}
+                                            </span>
+                                            @if ($entry['admin_discount_amount_formatted'])
+                                                <span class="subscription-page__admin-discount-amount">
+                                                    −{{ $entry['admin_discount_amount_formatted'] }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if ($entry['admin_discount_note'])
+                                            <p class="subscription-page__admin-discount-reason">
+                                                <span>{{ __('fields.subscription_admin_discount_reason') }}:</span>
+                                                {{ $entry['admin_discount_note'] }}
+                                            </p>
+                                        @endif
+                                    </aside>
+                                @endif
 
                                 @unless ($entry['is_free'])
                                     <div class="subscription-page__history-footer">

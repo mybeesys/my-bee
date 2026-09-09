@@ -409,6 +409,25 @@ class ClientResource extends Resource
                                 TextEntry::make('subscription.price')
                                     ->label(__('fields.subscription_total_inc_tax'))
                                     ->formatStateUsing(fn ($state) => $state === null ? '—' : main_currency_iso_code() . ' ' . format_amount($state)),
+                                TextEntry::make('subscription.original_price')
+                                    ->label(__('fields.revenue_admin_discount_original_total'))
+                                    ->visible(fn ($record) => (bool) $record->subscription?->hasAdminDiscount())
+                                    ->formatStateUsing(fn ($state) => $state === null ? '—' : main_currency_iso_code() . ' ' . format_amount($state)),
+                                TextEntry::make('subscription.admin_discount_percent')
+                                    ->label(__('fields.revenue_admin_discount'))
+                                    ->visible(fn ($record) => (bool) $record->subscription?->hasAdminDiscount())
+                                    ->formatStateUsing(function ($state, $record) {
+                                        $percent = rtrim(rtrim(number_format((float) $state, 2, '.', ''), '0'), '.');
+                                        $amount = $record->subscription?->admin_discount_amount;
+
+                                        return $percent . '%'
+                                            . ($amount === null ? '' : ' · ' . main_currency_iso_code() . ' ' . format_amount($amount));
+                                    }),
+                                TextEntry::make('subscription.admin_discount_note')
+                                    ->label(__('fields.revenue_admin_discount_note'))
+                                    ->visible(fn ($record) => (bool) $record->subscription?->hasAdminDiscount())
+                                    ->placeholder('—')
+                                    ->columnSpanFull(),
                                 TextEntry::make('subscription.start_date')->label(__('fields.start_date')),
                             ])->columns(2),
                     ]),

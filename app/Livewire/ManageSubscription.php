@@ -199,6 +199,12 @@ class ManageSubscription extends Component
             $taxPercent = (float) ($subscription->tax_percent ?? $pricing->vatPercent());
             $discountAmount = (float) ($subscription->discount_amount ?? 0);
             $isFree = $subscription->isFree();
+            $hasAdminDiscount = $subscription->hasAdminDiscount();
+            $adminDiscountPercent = (float) ($subscription->admin_discount_percent ?? 0);
+            $adminDiscountAmount = (float) ($subscription->admin_discount_amount ?? 0);
+            $originalTotal = $subscription->original_price !== null
+                ? (float) $subscription->original_price
+                : null;
 
             $changeDirection = null;
 
@@ -253,6 +259,22 @@ class ManageSubscription extends Component
                 'tax_amount_formatted' => $pricing->formatMoney($taxAmount, $currency),
                 'discount_amount_formatted' => $discountAmount > 0
                     ? $pricing->formatMoney($discountAmount, $currency)
+                    : null,
+                'has_admin_discount' => $hasAdminDiscount,
+                'admin_discount_percent' => $adminDiscountPercent,
+                'admin_discount_percent_label' => $hasAdminDiscount
+                    ? rtrim(rtrim(number_format($adminDiscountPercent, 2, '.', ''), '0'), '.')
+                    : null,
+                'admin_discount_amount' => $adminDiscountAmount,
+                'admin_discount_amount_formatted' => $hasAdminDiscount
+                    ? $pricing->formatMoney($adminDiscountAmount, $currency)
+                    : null,
+                'admin_discount_note' => $hasAdminDiscount
+                    ? ($subscription->admin_discount_note ?: null)
+                    : null,
+                'original_total' => $originalTotal,
+                'original_total_formatted' => $originalTotal !== null
+                    ? $pricing->formatMoney($originalTotal, $currency)
                     : null,
             ];
         });

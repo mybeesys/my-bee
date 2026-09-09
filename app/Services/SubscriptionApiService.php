@@ -176,6 +176,19 @@ class SubscriptionApiService
             'discountAmount' => $subscription->discount_amount !== null
                 ? (float) $subscription->discount_amount
                 : null,
+            'hasAdminDiscount' => $subscription->hasAdminDiscount(),
+            'adminDiscountPercent' => $subscription->hasAdminDiscount()
+                ? (float) $subscription->admin_discount_percent
+                : null,
+            'adminDiscountAmount' => $subscription->hasAdminDiscount()
+                ? (float) $subscription->admin_discount_amount
+                : null,
+            'adminDiscountNote' => $subscription->hasAdminDiscount()
+                ? ($subscription->admin_discount_note ?: null)
+                : null,
+            'originalPrice' => $subscription->original_price !== null
+                ? (float) $subscription->original_price
+                : null,
         ];
     }
 

@@ -8,10 +8,14 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Rules\UniqueClientAttributeRule;
 use App\Services\RoleService;
+use App\Services\SubscriptionInvoiceAdjustmentService;
 use App\Services\SubscriptionPricingService;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
@@ -21,6 +25,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
+use Illuminate\Validation\ValidationException;
 
 class CreateClient extends CreateRecord
 {
@@ -159,6 +164,22 @@ class CreateClient extends CreateRecord
                             ->options($planOptions)
                             ->descriptions(fn (Get $get) => $buildPlanDescriptions($get('billing_period')))
                             ->required()
+                            ->live()
+                            ->afterStateUpdated(function (mixed $state, Get $get, Set $set) use ($pricing) {
+                                $plan = Plan::query()->find($state);
+
+                                if (! $plan) {
+                                    $set('apply_admin_discount', false);
+
+                                    return;
+                                }
+
+                                $quote = $pricing->quote($plan, $get('billing_period'));
+
+                                if ($quote['is_free'] || (float) $quote['total_inc_tax'] <= 0) {
+                                    $set('apply_admin_discount', false);
+                                }
+                            })
                             ->validationAttribute(__('fields.subscription_plan'))
                             ->columns([
                                 'default' => 1,
@@ -166,7 +187,92 @@ class CreateClient extends CreateRecord
                                 'lg' => max(1, min(3, count($planOptions))),
                             ])
                             ->columnSpanFull(),
-                    ]),
+
+                        Toggle::make('apply_admin_discount')
+                            ->label(__('fields.revenue_admin_discount'))
+                            ->helperText(__('fields.create_client_admin_discount_helper'))
+                            ->live()
+                            ->default(false)
+                            ->inline(false)
+                            ->disabled(function (Get $get) use ($pricing): bool {
+                                $plan = Plan::query()->find($get('plan_id'));
+
+                                if (! $plan) {
+                                    return true;
+                                }
+
+                                $quote = $pricing->quote($plan, $get('billing_period'));
+
+                                return $quote['is_free'] || (float) $quote['total_inc_tax'] <= 0;
+                            })
+                            ->dehydrated()
+                            ->columnSpanFull(),
+
+                        TextInput::make('admin_discount_percent')
+                            ->label(__('fields.revenue_admin_discount_percent'))
+                            ->numeric()
+                            ->minValue(0.01)
+                            ->maxValue(100)
+                            ->step(0.01)
+                            ->suffix('%')
+                            ->live(onBlur: true)
+                            ->required(fn (Get $get): bool => (bool) $get('apply_admin_discount'))
+                            ->visible(fn (Get $get): bool => (bool) $get('apply_admin_discount'))
+                            ->helperText(__('fields.revenue_admin_discount_percent_hint'))
+                            ->columnSpan(['default' => 1, 'md' => 1]),
+
+                        Textarea::make('admin_discount_note')
+                            ->label(__('fields.revenue_admin_discount_note'))
+                            ->rows(2)
+                            ->maxLength(500)
+                            ->visible(fn (Get $get): bool => (bool) $get('apply_admin_discount'))
+                            ->placeholder(__('fields.revenue_admin_discount_note_placeholder'))
+                            ->columnSpan(['default' => 1, 'md' => 2]),
+
+                        Placeholder::make('admin_discount_preview')
+                            ->label(__('fields.revenue_admin_discount_preview'))
+                            ->visible(fn (Get $get): bool => (bool) $get('apply_admin_discount'))
+                            ->content(function (Get $get) use ($pricing): HtmlString {
+                                $percent = (float) ($get('admin_discount_percent') ?? 0);
+                                $plan = Plan::query()->find($get('plan_id'));
+
+                                if (! $plan || $percent <= 0 || $percent > 100) {
+                                    return new HtmlString(
+                                        '<p class="text-sm text-gray-500">' . e(__('fields.revenue_admin_discount_preview_empty')) . '</p>'
+                                    );
+                                }
+
+                                $quote = $pricing->quote($plan, $get('billing_period'));
+
+                                if ($quote['is_free'] || (float) $quote['total_inc_tax'] <= 0) {
+                                    return new HtmlString(
+                                        '<p class="text-sm text-danger-600">' . e(__('fields.revenue_admin_discount_free_plan')) . '</p>'
+                                    );
+                                }
+
+                                try {
+                                    $preview = SubscriptionInvoiceAdjustmentService::instance()
+                                        ->previewFromQuote($quote, $percent);
+                                } catch (ValidationException) {
+                                    return new HtmlString(
+                                        '<p class="text-sm text-danger-600">' . e(__('fields.revenue_admin_discount_percent_invalid')) . '</p>'
+                                    );
+                                }
+
+                                $fmt = fn (float $amount): string => $pricing->formatMoney($amount, $preview['currency']);
+
+                                return new HtmlString(
+                                    '<div class="create-client-discount-preview">'
+                                    . '<p>' . e(__('fields.revenue_admin_discount_preview_original')) . ': <strong>' . e($fmt($preview['original_total_inc_tax'])) . '</strong></p>'
+                                    . '<p>' . e(__('fields.revenue_admin_discount')) . ': <strong>' . e($preview['percent']) . '%</strong></p>'
+                                    . '<p>' . e(__('fields.revenue_admin_discount_preview_recognized')) . ': <strong>' . e($fmt($preview['total_inc_tax'])) . '</strong></p>'
+                                    . '<p class="create-client-discount-preview__waived">' . e(__('fields.revenue_admin_discount_preview_waived')) . ': <strong>' . e($fmt($preview['waived_inc_tax'])) . '</strong></p>'
+                                    . '</div>'
+                                );
+                            })
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(['default' => 1, 'md' => 3]),
 
                 Section::make(__('fields.account_and_login_details'))
                     ->description(__('fields.create_client_login_hint'))
@@ -217,6 +323,28 @@ class CreateClient extends CreateRecord
         $data['mobile'] = null;
         $data['self_registered'] = false;
 
+        $selectedPlan = Plan::query()->find($data['plan_id'] ?? null);
+        $selectedQuote = $selectedPlan
+            ? SubscriptionPricingService::instance()->quote(
+                $selectedPlan,
+                $data['billing_period'] ?? null
+            )
+            : null;
+
+        if (! $selectedQuote || $selectedQuote['is_free'] || (float) $selectedQuote['total_inc_tax'] <= 0) {
+            $data['apply_admin_discount'] = false;
+        }
+
+        if (! empty($data['apply_admin_discount'])) {
+            $percent = (float) ($data['admin_discount_percent'] ?? 0);
+
+            if ($percent <= 0 || $percent > 100) {
+                throw ValidationException::withMessages([
+                    'admin_discount_percent' => __('fields.revenue_admin_discount_percent_invalid'),
+                ]);
+            }
+        }
+
         return $data;
     }
 
@@ -249,6 +377,9 @@ class CreateClient extends CreateRecord
             $model = parent::handleRecordCreation(Arr::except($data, [
                 'plan_id',
                 'billing_period',
+                'apply_admin_discount',
+                'admin_discount_percent',
+                'admin_discount_note',
                 'user_password',
                 'user_password_confirmation',
                 'user_email',
@@ -259,10 +390,18 @@ class CreateClient extends CreateRecord
                 'user_phone',
             ]));
 
+            $adminPercent = ! empty($data['apply_admin_discount'])
+                ? (float) ($data['admin_discount_percent'] ?? 0)
+                : 0.0;
+
             Subscription::subscribe(
                 $plan,
                 $model,
-                $data['billing_period'] ?? SubscriptionPricingService::BILLING_MONTHLY
+                $data['billing_period'] ?? SubscriptionPricingService::BILLING_MONTHLY,
+                null,
+                $adminPercent > 0 ? $adminPercent : null,
+                $adminPercent > 0 ? ($data['admin_discount_note'] ?? null) : null,
+                auth()->id(),
             );
 
             DB::commit();
