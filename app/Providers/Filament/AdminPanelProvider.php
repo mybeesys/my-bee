@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\SubscriptionRequests;
+use App\Filament\Admin\Resources\SubscriptionRenewalRequestResource;
 use App\Filament\Pages\Backups;
 use App\Filament\Pages\Profile;
 use App\Http\Middleware\FilamentPanelsUserSettings;
@@ -105,7 +107,13 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
+            ->resources([
+                SubscriptionRenewalRequestResource::class,
+            ])
 //            ->discoverResources(in: app_path('Filament/Tenant/Resources'), for: 'App\\Filament\\Tenant\\Resources')
+            ->pages([
+                SubscriptionRequests::class,
+            ])
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([

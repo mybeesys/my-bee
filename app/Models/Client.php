@@ -30,6 +30,11 @@ class Client extends BaseModel
         return $this->hasMany(Subscription::class)->latest();
     }
 
+    public function subscriptionRenewalRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SubscriptionRenewalRequest::class)->latest();
+    }
+
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);

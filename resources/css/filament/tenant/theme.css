@@ -2992,6 +2992,22 @@ body:has(.tenant-login-page) .fls-display-on {
     @apply relative flex flex-col;
 }
 
+.subscription-page__history-more {
+    @apply mt-2 flex flex-col items-center gap-2 border-t border-gray-100 pt-5 dark:border-gray-800;
+}
+
+.subscription-page__history-more-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:cursor-wait disabled:opacity-70 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-800 dark:hover:text-white;
+}
+
+.subscription-page__history-more-icon {
+    @apply h-4 w-4 text-gray-400;
+}
+
+.subscription-page__history-more-hint {
+    @apply mb-0 text-xs font-medium text-gray-500 dark:text-gray-400;
+}
+
 .subscription-page__history-item {
     @apply relative grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-0 pb-6 last:pb-0;
 }
@@ -3147,6 +3163,90 @@ body:has(.tenant-login-page) .fls-display-on {
 
 .subscription-page__price-original {
     @apply w-full text-sm font-medium text-gray-400 line-through dark:text-gray-500;
+}
+
+.subscription-page__request-banner {
+    @apply mb-6 flex items-start gap-4 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 via-white to-amber-50/50 px-5 py-4 shadow-[0_1px_2px_rgba(180,83,9,0.06)] dark:border-amber-900/40 dark:from-amber-950/40 dark:via-gray-900/60 dark:to-amber-950/10;
+}
+
+.subscription-page__request-banner-icon {
+    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200;
+}
+
+.subscription-page__request-banner-icon-svg {
+    @apply h-6 w-6;
+}
+
+.subscription-page__request-banner-eyebrow {
+    @apply m-0 text-[11px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-200;
+}
+
+.subscription-page__request-banner-title {
+    @apply mt-1 mb-1 text-base font-bold text-gray-900 dark:text-white;
+}
+
+.subscription-page__request-banner-text {
+    @apply m-0 text-sm leading-6 text-gray-600 dark:text-gray-300;
+}
+
+.subscription-page__request-list {
+    @apply grid gap-3;
+}
+
+.subscription-page__request-item {
+    @apply rounded-2xl border border-gray-100 bg-gray-50/60 px-4 py-3.5 dark:border-gray-800 dark:bg-gray-900/40;
+}
+
+.subscription-page__request-item--pending {
+    @apply border-amber-200/80 bg-amber-50/40 dark:border-amber-900/40 dark:bg-amber-950/20;
+}
+
+.subscription-page__request-item--active {
+    @apply border-emerald-200/80 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20;
+}
+
+.subscription-page__request-item--cancelled {
+    @apply border-rose-200/80 bg-rose-50/30 dark:border-rose-900/40 dark:bg-rose-950/20;
+}
+
+.subscription-page__request-item-head {
+    @apply mb-2 flex flex-wrap items-center justify-between gap-2;
+}
+
+.subscription-page__request-status {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold;
+}
+
+.subscription-page__request-status--pending {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200;
+}
+
+.subscription-page__request-status--active {
+    @apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200;
+}
+
+.subscription-page__request-status--cancelled {
+    @apply bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200;
+}
+
+.subscription-page__request-date {
+    @apply text-xs text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__request-plan {
+    @apply m-0 text-sm font-bold text-gray-900 dark:text-white;
+}
+
+.subscription-page__request-meta {
+    @apply mt-1 mb-0 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.subscription-page__request-reason {
+    @apply mt-2 mb-0 rounded-xl bg-white/80 px-3 py-2 text-sm leading-6 text-gray-700 dark:bg-gray-950/40 dark:text-gray-200;
+}
+
+.subscription-page__request-reason span {
+    @apply font-semibold text-gray-900 dark:text-gray-100;
 }
 
 .subscription-page__history-footer {
@@ -3731,6 +3831,10 @@ body:has(.tenant-login-page) .fls-display-on {
     @apply border-violet-200/70 bg-violet-50/60 text-violet-900 dark:border-violet-900/40 dark:bg-violet-950/20 dark:text-violet-200;
 }
 
+.subscription-page__selected-summary--pending {
+    @apply border-amber-200/80 bg-amber-50/70 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200;
+}
+
 .subscription-page__plan {
     @apply relative block h-full cursor-pointer overflow-visible px-0;
 }
@@ -3884,6 +3988,10 @@ body:has(.tenant-login-page) .fls-display-on {
     @apply bg-sky-400/30;
 }
 
+.subscription-confirm__dialog--renewal .subscription-confirm__glow {
+    @apply bg-amber-400/30;
+}
+
 .subscription-confirm__header {
     @apply relative flex items-start gap-4 border-b border-gray-100 px-5 py-5 dark:border-gray-800;
 }
@@ -3902,6 +4010,10 @@ body:has(.tenant-login-page) .fls-display-on {
 
 .subscription-confirm__icon-wrap--lateral {
     @apply bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300;
+}
+
+.subscription-confirm__icon-wrap--renewal {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200;
 }
 
 .subscription-confirm__icon {
@@ -3926,6 +4038,10 @@ body:has(.tenant-login-page) .fls-display-on {
 
 .subscription-confirm__badge--lateral {
     @apply bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300;
+}
+
+.subscription-confirm__badge--renewal {
+    @apply bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200;
 }
 
 .subscription-confirm__title {

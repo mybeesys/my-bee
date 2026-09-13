@@ -6,8 +6,10 @@ use App\Filament\Tenant\Pages\Subscription as SubscriptionPage;
 use App\Models\Plan;
 use App\Models\PlatformCoupon;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewalRequest;
 use App\Services\SubscriptionCouponService;
 use App\Services\SubscriptionPricingService;
+use App\Services\SubscriptionRenewalRequestService;
 use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Filament\Support\Facades\FilamentView;
@@ -27,6 +29,8 @@ class ManageSubscription extends Component
     public string $billingPeriod = SubscriptionPricingService::BILLING_MONTHLY;
 
     public bool $showConfirmModal = false;
+
+    public int $historyVisibleCount = 2;
 
     public string $couponCode = '';
 
@@ -81,6 +85,10 @@ class ManageSubscription extends Component
 
         if (session()->pull('subscription_updated')) {
             fns()->sendSuccess(__('fields.subscription_updated'));
+        }
+
+        if (session()->pull('subscription_request_sent')) {
+            fns()->sendSuccess(__('fields.subscription_request_sent'));
         }
     }
 
@@ -159,6 +167,33 @@ class ManageSubscription extends Component
         }
 
         return $this->subscriptionHistory->isNotEmpty();
+    }
+
+    public function loadMoreSubscriptionHistory(): void
+    {
+        $total = $this->subscriptionHistory->count();
+
+        if ($this->historyVisibleCount >= $total) {
+            return;
+        }
+
+        $this->historyVisibleCount = min($this->historyVisibleCount + 3, $total);
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    public function getVisibleSubscriptionHistoryProperty(): Collection
+    {
+        return $this->subscriptionHistory->take($this->historyVisibleCount)->values();
+    }
+
+    public function getRemainingSubscriptionHistoryCountProperty(): int
+    {
+        return max(0, $this->subscriptionHistory->count() - $this->historyVisibleCount);
+    }
+
+    public function getNextSubscriptionHistoryChunkCountProperty(): int
+    {
+        return min(3, $this->remainingSubscriptionHistoryCount);
     }
 
     /** @return Collection<int, array<string, mixed>> */
@@ -326,6 +361,18 @@ class ManageSubscription extends Component
             return;
         }
 
+        if ($this->shouldSubmitRenewalRequest()) {
+            if ($this->pendingRenewalRequest) {
+                fns()->sendWarning(__('fields.subscription_request_already_pending'));
+
+                return;
+            }
+
+            $this->showConfirmModal = true;
+
+            return;
+        }
+
         if ($this->currentSubscription?->plan_id === $plan->id
             && SubscriptionPricingService::instance()->normalizeBillingPeriod($this->currentSubscription->billing_period) === $this->billingPeriod
         ) {
@@ -345,7 +392,137 @@ class ManageSubscription extends Component
     public function confirmUpdateSubscription(): void
     {
         $this->showConfirmModal = false;
+
+        if ($this->shouldSubmitRenewalRequest()) {
+            $this->submitRenewalRequest();
+
+            return;
+        }
+
         $this->updateSubscription();
+    }
+
+    public function shouldSubmitRenewalRequest(): bool
+    {
+        return ! $this->onboarding
+            && ! $this->registrationFlow
+            && $this->currentSubscription !== null;
+    }
+
+    public function getPendingRenewalRequestProperty(): ?SubscriptionRenewalRequest
+    {
+        if ($this->registrationFlow || $this->onboarding) {
+            return null;
+        }
+
+        $client = get_client();
+
+        if (! $client) {
+            return null;
+        }
+
+        return SubscriptionRenewalRequestService::instance()->pendingForClient($client);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, array<string, mixed>> */
+    public function getRenewalRequestHistoryProperty(): \Illuminate\Support\Collection
+    {
+        if ($this->registrationFlow || $this->onboarding) {
+            return collect();
+        }
+
+        $client = get_client();
+
+        if (! $client) {
+            return collect();
+        }
+
+        $pricing = SubscriptionPricingService::instance();
+        $currency = main_currency_iso_code();
+
+        return $client->subscriptionRenewalRequests()
+            ->with(['plan', 'currentPlan'])
+            ->orderByDesc('created_at')
+            ->limit(12)
+            ->get()
+            ->map(function (SubscriptionRenewalRequest $request) use ($pricing, $currency) {
+                $period = $pricing->normalizeBillingPeriod($request->billing_period);
+                $total = $request->quoted_total;
+
+                return [
+                    'id' => $request->id,
+                    'status' => $request->status,
+                    'status_label' => $request->statusLabel(),
+                    'plan_name' => $request->plan?->name ?? '—',
+                    'current_plan_name' => $request->currentPlan?->name,
+                    'billing_label' => $period === SubscriptionPricingService::BILLING_YEARLY
+                        ? __('fields.yearly')
+                        : __('fields.monthly'),
+                    'total_formatted' => $total === null
+                        ? '—'
+                        : $pricing->formatMoney((float) $total, $currency),
+                    'coupon_code' => $request->coupon_code,
+                    'cancellation_reason' => $request->isCancelled() ? $request->cancellation_reason : null,
+                    'created_at' => $request->created_at?->format('d/m/Y H:i'),
+                    'decided_at' => $request->isActive()
+                        ? $request->approved_at?->format('d/m/Y H:i')
+                        : $request->cancelled_at?->format('d/m/Y H:i'),
+                ];
+            });
+    }
+
+    public function submitRenewalRequest(): void
+    {
+        $plan = Plan::query()->find($this->selectedPlanId);
+
+        if (! $plan) {
+            return;
+        }
+
+        $client = get_client();
+
+        if (! $client) {
+            return;
+        }
+
+        if ($this->pendingRenewalRequest) {
+            fns()->sendWarning(__('fields.subscription_request_already_pending'));
+
+            return;
+        }
+
+        $coupon = null;
+
+        if ($this->appliedCouponId) {
+            try {
+                $couponModel = PlatformCoupon::query()->find($this->appliedCouponId);
+                $coupon = $couponModel
+                    ? SubscriptionCouponService::instance()->findUsable($couponModel->code, $client)
+                    : null;
+            } catch (\InvalidArgumentException $e) {
+                $this->clearAppliedCoupon(false);
+                fns()->sendWarning($e->getMessage());
+
+                return;
+            }
+        }
+
+        try {
+            SubscriptionRenewalRequestService::instance()->submit(
+                $client,
+                $plan,
+                $this->billingPeriod,
+                $coupon,
+            );
+        } catch (\InvalidArgumentException $e) {
+            fns()->sendWarning($e->getMessage());
+
+            return;
+        }
+
+        session()->flash('subscription_request_sent', true);
+
+        $this->redirect(SubscriptionPage::getUrl(), navigate: false);
     }
 
     public function continueRegistration(): void
@@ -785,6 +962,13 @@ class ManageSubscription extends Component
         }
 
         if ($this->isCurrentSelection($selectedPlan)) {
+            if ($this->shouldSubmitRenewalRequest()) {
+                $summary = $this->buildPlanChangeSummary($currentPlan, $selectedPlan);
+                $summary['direction'] = 'renewal';
+
+                return $summary;
+            }
+
             return null;
         }
 

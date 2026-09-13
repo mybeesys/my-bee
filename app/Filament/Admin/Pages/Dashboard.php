@@ -47,6 +47,11 @@ class Dashboard extends BaseDashboard
                 'icon' => 'heroicon-o-user-plus',
             ],
             [
+                'label' => __('fields.subscription_requests'),
+                'url' => '/subscription-requests',
+                'icon' => 'heroicon-o-clipboard-document-list',
+            ],
+            [
                 'label' => __('fields.admin_dashboard_quick_plans'),
                 'url' => PlanResource::getUrl('index'),
                 'icon' => 'heroicon-o-briefcase',

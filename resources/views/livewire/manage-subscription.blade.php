@@ -153,9 +153,86 @@
         </section>
     @endif
 
+    @if (! $onboarding && ! $registrationFlow)
+        @php
+            $pendingRequest = $this->pendingRenewalRequest;
+            $renewalRequests = $this->renewalRequestHistory;
+        @endphp
+
+        @if ($pendingRequest)
+            <aside class="subscription-page__request-banner" role="status">
+                <div class="subscription-page__request-banner-icon" aria-hidden="true">
+                    <x-filament::icon icon="heroicon-m-clock" class="subscription-page__request-banner-icon-svg" />
+                </div>
+                <div class="subscription-page__request-banner-body">
+                    <p class="subscription-page__request-banner-eyebrow">{{ __('fields.subscription_request_status_pending') }}</p>
+                    <h2 class="subscription-page__request-banner-title">{{ __('fields.subscription_request_pending_title') }}</h2>
+                    <p class="subscription-page__request-banner-text">
+                        {{ __('fields.subscription_request_pending_body', [
+                            'plan' => $pendingRequest->plan?->name ?? '—',
+                            'period' => \App\Services\SubscriptionPricingService::instance()->normalizeBillingPeriod($pendingRequest->billing_period) === 'yearly'
+                                ? __('fields.yearly')
+                                : __('fields.monthly'),
+                        ]) }}
+                    </p>
+                </div>
+            </aside>
+        @endif
+
+        @if ($renewalRequests->isNotEmpty())
+            <section class="subscription-page__card subscription-page__requests">
+                <header class="subscription-page__card-header">
+                    <div>
+                        <p class="subscription-page__eyebrow">{{ __('fields.subscription_requests_eyebrow') }}</p>
+                        <h2 class="subscription-page__title">{{ __('fields.subscription_requests') }}</h2>
+                        <p class="subscription-page__subtitle">{{ __('fields.subscription_requests_subtitle') }}</p>
+                    </div>
+                </header>
+
+                <div class="subscription-page__card-body">
+                    <div class="subscription-page__request-list">
+                        @foreach ($renewalRequests as $entry)
+                            <article @class([
+                                'subscription-page__request-item',
+                                'subscription-page__request-item--' . $entry['status'],
+                            ])>
+                                <div class="subscription-page__request-item-head">
+                                    <span class="subscription-page__request-status subscription-page__request-status--{{ $entry['status'] }}">
+                                        {{ $entry['status_label'] }}
+                                    </span>
+                                    <span class="subscription-page__request-date">{{ $entry['created_at'] }}</span>
+                                </div>
+                                <h3 class="subscription-page__request-plan">{{ $entry['plan_name'] }}</h3>
+                                <p class="subscription-page__request-meta">
+                                    {{ $entry['billing_label'] }}
+                                    @if ($entry['current_plan_name'])
+                                        · {{ __('fields.subscription_request_from_plan', ['plan' => $entry['current_plan_name']]) }}
+                                    @endif
+                                    · {{ $entry['total_formatted'] }}
+                                </p>
+                                @if ($entry['coupon_code'])
+                                    <p class="subscription-page__request-meta">{{ __('fields.subscription_coupon') }}: {{ $entry['coupon_code'] }}</p>
+                                @endif
+                                @if ($entry['cancellation_reason'])
+                                    <p class="subscription-page__request-reason">
+                                        <span>{{ __('fields.subscription_request_cancel_reason') }}:</span>
+                                        {{ $entry['cancellation_reason'] }}
+                                    </p>
+                                @endif
+                            </article>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+        @endif
+    @endif
+
     @if ($this->showSubscriptionHistory)
         @php
-            $historyEntries = $this->subscriptionHistory;
+            $historyEntries = $this->visibleSubscriptionHistory;
+            $historyTotal = $this->subscriptionHistory->count();
+            $historyRemaining = $this->remainingSubscriptionHistoryCount;
+            $historyNextChunk = $this->nextSubscriptionHistoryChunkCount;
         @endphp
 
         <section class="subscription-page__card subscription-page__history">
@@ -166,14 +243,23 @@
                     <p class="subscription-page__subtitle">{{ __('fields.subscription_history_subtitle') }}</p>
                 </div>
                 <span class="subscription-page__history-count">
-                    {{ trans_choice('fields.subscription_history_count', $historyEntries->count(), ['count' => $historyEntries->count()]) }}
+                    @if ($historyTotal > $historyEntries->count())
+                        {{ __('fields.subscription_history_showing', [
+                            'shown' => $historyEntries->count(),
+                            'total' => $historyTotal,
+                        ]) }}
+                    @else
+                        {{ trans_choice('fields.subscription_history_count', $historyTotal, ['count' => $historyTotal]) }}
+                    @endif
                 </span>
             </header>
 
             <div class="subscription-page__card-body">
                 <div class="subscription-page__history-list">
                     @foreach ($historyEntries as $entry)
-                        <article @class([
+                        <article
+                            wire:key="subscription-history-{{ $entry['id'] }}"
+                            @class([
                             'subscription-page__history-item',
                             'subscription-page__history-item--current' => $entry['is_current'],
                             'subscription-page__history-item--past' => ! $entry['is_current'],
@@ -329,6 +415,29 @@
                         </article>
                     @endforeach
                 </div>
+
+                @if ($historyRemaining > 0)
+                    <div class="subscription-page__history-more">
+                        <button
+                            type="button"
+                            wire:click="loadMoreSubscriptionHistory"
+                            wire:loading.attr="disabled"
+                            wire:target="loadMoreSubscriptionHistory"
+                            class="subscription-page__history-more-btn"
+                        >
+                            <span wire:loading.remove wire:target="loadMoreSubscriptionHistory">
+                                {{ __('fields.subscription_history_show_more_count', ['count' => $historyNextChunk]) }}
+                            </span>
+                            <span wire:loading wire:target="loadMoreSubscriptionHistory">
+                                {{ __('fields.subscription_history_loading') }}
+                            </span>
+                            <x-filament::icon icon="heroicon-m-chevron-down" class="subscription-page__history-more-icon" />
+                        </button>
+                        <p class="subscription-page__history-more-hint">
+                            {{ trans_choice('fields.subscription_history_remaining', $historyRemaining, ['count' => $historyRemaining]) }}
+                        </p>
+                    </div>
+                @endif
             </div>
         </section>
     @endif
@@ -347,9 +456,9 @@
                         {{ $registrationFlow ? __('fields.registration_choose_plan_plans_hint') : __('fields.choose_subscription_plans_hint') }}
                     </p>
                 @else
-                    <p class="subscription-page__eyebrow">{{ __('fields.subscription_change_plan') }}</p>
-                    <h2 class="subscription-page__title">{{ __('fields.subscription_plans') }}</h2>
-                    <p class="subscription-page__subtitle">{{ __('fields.subscription_plans_marketing_hint') }}</p>
+                    <p class="subscription-page__eyebrow">{{ __('fields.subscription_request_change_eyebrow') }}</p>
+                    <h2 class="subscription-page__title">{{ __('fields.subscription_request_change_title') }}</h2>
+                    <p class="subscription-page__subtitle">{{ __('fields.subscription_request_change_hint') }}</p>
                 @endif
             </div>
         </header>
@@ -690,11 +799,23 @@
             @endif
 
             <footer class="subscription-page__card-footer">
-                @if ($selectedPlan && ! $this->isCurrentSelection($selectedPlan))
+                @if ($this->shouldSubmitRenewalRequest() && $this->pendingRenewalRequest)
+                    <p class="subscription-page__selected-summary subscription-page__selected-summary--pending">
+                        <x-filament::icon icon="heroicon-m-clock" class="subscription-page__selected-summary-icon" />
+                        <span>{{ __('fields.subscription_request_wait_pending') }}</span>
+                    </p>
+                @elseif ($selectedPlan && ! $this->isCurrentSelection($selectedPlan))
                     <p class="subscription-page__selected-summary subscription-page__selected-summary--{{ $this->planTier($selectedPlan) }}">
                         <x-filament::icon icon="heroicon-m-check-circle" class="subscription-page__selected-summary-icon" />
                         <span>
                             {{ __('fields.subscription_selected_plan_summary', ['plan' => $selectedPlan->name]) }}
+                        </span>
+                    </p>
+                @elseif ($selectedPlan && $this->shouldSubmitRenewalRequest())
+                    <p class="subscription-page__selected-summary subscription-page__selected-summary--{{ $this->planTier($selectedPlan) }}">
+                        <x-filament::icon icon="heroicon-m-arrow-path" class="subscription-page__selected-summary-icon" />
+                        <span>
+                            {{ __('fields.subscription_request_renew_summary', ['plan' => $selectedPlan->name]) }}
                         </span>
                     </p>
                 @endif
@@ -704,14 +825,15 @@
                     wire:click="openConfirmModal"
                     wire:loading.attr="disabled"
                     class="w-full"
-                    :disabled="! $onboarding && ! $registrationFlow && $this->isCurrentSelection($selectedPlan)"
+                    :disabled="($this->shouldSubmitRenewalRequest() && (bool) $this->pendingRenewalRequest)
+                        || (! $onboarding && ! $registrationFlow && ! $this->shouldSubmitRenewalRequest() && $this->isCurrentSelection($selectedPlan))"
                 >
                     @if ($registrationFlow)
                         {{ __('fields.registration_continue_to_account') }}
                     @elseif ($onboarding)
                         {{ __('fields.choose_subscription_continue') }}
                     @else
-                        {{ __('fields.subscription_update_plan') }}
+                        {{ __('fields.subscription_request_submit') }}
                     @endif
                 </x-filament::button>
             </footer>
@@ -744,6 +866,8 @@
                             <x-filament::icon icon="heroicon-m-arrow-trending-up" class="subscription-confirm__icon" />
                         @elseif ($change['direction'] === 'downgrade')
                             <x-filament::icon icon="heroicon-m-arrow-trending-down" class="subscription-confirm__icon" />
+                        @elseif ($change['direction'] === 'renewal')
+                            <x-filament::icon icon="heroicon-m-arrow-path" class="subscription-confirm__icon" />
                         @else
                             <x-filament::icon icon="heroicon-m-arrows-right-left" class="subscription-confirm__icon" />
                         @endif
@@ -755,14 +879,21 @@
                             'subscription-confirm__badge--upgrade' => $change['direction'] === 'upgrade',
                             'subscription-confirm__badge--downgrade' => $change['direction'] === 'downgrade',
                             'subscription-confirm__badge--lateral' => $change['direction'] === 'lateral',
+                            'subscription-confirm__badge--renewal' => $change['direction'] === 'renewal',
                         ])>
                             {{ __('fields.subscription_confirm_' . $change['direction'] . '_badge') }}
                         </span>
 
                         <h3 id="subscription-confirm-title" class="subscription-confirm__title">
-                            {{ __('fields.subscription_confirm_title') }}
+                            {{ $this->shouldSubmitRenewalRequest()
+                                ? __('fields.subscription_request_confirm_title')
+                                : __('fields.subscription_confirm_title') }}
                         </h3>
-                        <p class="subscription-confirm__subtitle">{{ __('fields.subscription_confirm_subtitle') }}</p>
+                        <p class="subscription-confirm__subtitle">
+                            {{ $this->shouldSubmitRenewalRequest()
+                                ? __('fields.subscription_request_confirm_subtitle')
+                                : __('fields.subscription_confirm_subtitle') }}
+                        </p>
                     </div>
 
                     <button type="button" class="subscription-confirm__close" wire:click="closeConfirmModal">
@@ -771,7 +902,11 @@
                 </header>
 
                 <div class="subscription-confirm__body">
-                    <p class="subscription-confirm__question">{{ __('fields.subscription_confirm_question') }}</p>
+                    <p class="subscription-confirm__question">
+                        {{ $this->shouldSubmitRenewalRequest()
+                            ? __('fields.subscription_request_confirm_question')
+                            : __('fields.subscription_confirm_question') }}
+                    </p>
 
                     <div class="subscription-confirm__transition">
                         <div class="subscription-confirm__plan subscription-confirm__plan--from subscription-confirm__plan--tier-{{ $change['from_tier'] }}">
@@ -862,10 +997,14 @@
                         class="subscription-confirm__btn-confirm"
                     >
                         <span wire:loading.remove wire:target="confirmUpdateSubscription">
-                            {{ __('fields.subscription_confirm_proceed') }}
+                            {{ $this->shouldSubmitRenewalRequest()
+                                ? __('fields.subscription_request_confirm_proceed')
+                                : __('fields.subscription_confirm_proceed') }}
                         </span>
                         <span wire:loading wire:target="confirmUpdateSubscription">
-                            {{ __('fields.subscription_update_plan') }}...
+                            {{ $this->shouldSubmitRenewalRequest()
+                                ? __('fields.subscription_request_submit')
+                                : __('fields.subscription_update_plan') }}...
                         </span>
                     </x-filament::button>
                 </footer>
