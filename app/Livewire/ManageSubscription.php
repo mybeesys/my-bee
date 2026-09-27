@@ -3,10 +3,16 @@
 namespace App\Livewire;
 
 use App\Filament\Tenant\Pages\Subscription as SubscriptionPage;
+use App\Models\Client;
+use App\Models\HyperPayPayment;
 use App\Models\Plan;
 use App\Models\PlatformCoupon;
 use App\Models\Subscription;
 use App\Models\SubscriptionRenewalRequest;
+use App\Models\User;
+use App\Services\HyperPay\HyperPayCheckoutService;
+use App\Services\HyperPay\HyperPayConfig;
+use App\Services\RoleService;
 use App\Services\SubscriptionCouponService;
 use App\Services\SubscriptionPricingService;
 use App\Services\SubscriptionRenewalRequestService;
@@ -14,7 +20,10 @@ use Carbon\Carbon;
 use Filament\Facades\Filament;
 use Filament\Support\Facades\FilamentView;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Livewire\Component;
+use RuntimeException;
 
 use function Filament\Support\is_app_url;
 
@@ -30,11 +39,31 @@ class ManageSubscription extends Component
 
     public bool $showConfirmModal = false;
 
+    public bool $showRegistrationPayModal = false;
+
     public int $historyVisibleCount = 2;
 
     public string $couponCode = '';
 
     public ?int $appliedCouponId = null;
+
+    public string $paymentMethod = 'card';
+
+    public string $billingGivenName = '';
+
+    public string $billingSurname = '';
+
+    public string $billingEmail = '';
+
+    public string $billingStreet1 = '';
+
+    public string $billingCity = '';
+
+    public string $billingState = '';
+
+    public string $billingCountry = 'SA';
+
+    public string $billingPostcode = '';
 
     public function mount(bool $onboarding = false, bool $registrationFlow = false): void
     {
@@ -89,6 +118,20 @@ class ManageSubscription extends Component
 
         if (session()->pull('subscription_request_sent')) {
             fns()->sendSuccess(__('fields.subscription_request_sent'));
+        }
+
+        $this->fillBillingFromClient();
+
+        if ($pending = session()->pull('hyperpay.pending_registration')) {
+            $this->selectedPlanId = (int) ($pending['plan_id'] ?? $this->selectedPlanId);
+            $this->billingPeriod = SubscriptionPricingService::instance()
+                ->normalizeBillingPeriod($pending['billing_period'] ?? $this->billingPeriod);
+            $this->paymentMethod = 'card';
+            $this->showConfirmModal = true;
+        }
+
+        if (! $this->cardPaymentAvailable) {
+            $this->paymentMethod = 'request';
         }
     }
 
@@ -349,13 +392,17 @@ class ManageSubscription extends Component
             return;
         }
 
+        if ($this->cardPaymentAvailable && ! $this->allowManualRequest) {
+            $this->paymentMethod = 'card';
+        }
+
         if ($this->registrationFlow) {
             $this->continueRegistration();
 
             return;
         }
 
-        if ($this->onboarding && ! $this->currentSubscription) {
+        if ($this->onboarding && ! $this->currentSubscription && ! $this->cardPaymentAvailable) {
             $this->updateSubscription();
 
             return;
@@ -393,6 +440,12 @@ class ManageSubscription extends Component
     {
         $this->showConfirmModal = false;
 
+        if ($this->cardPaymentAvailable && $this->paymentMethod === 'card') {
+            $this->startCardCheckout();
+
+            return;
+        }
+
         if ($this->shouldSubmitRenewalRequest()) {
             $this->submitRenewalRequest();
 
@@ -400,6 +453,177 @@ class ManageSubscription extends Component
         }
 
         $this->updateSubscription();
+    }
+
+    public function getHyperPayConfiguredProperty(): bool
+    {
+        return HyperPayConfig::instance()->isConfigured();
+    }
+
+    public function getCardPaymentAvailableProperty(): bool
+    {
+        if ($this->registrationFlow || ! $this->hyperPayConfigured) {
+            return false;
+        }
+
+        $plan = Plan::query()->find($this->selectedPlanId);
+
+        if (! $plan) {
+            return false;
+        }
+
+        $quote = $this->planQuote($plan);
+
+        return ! empty($quote['total_inc_tax']) && (float) $quote['total_inc_tax'] > 0;
+    }
+
+    public function getRegistrationRequiresPaymentProperty(): bool
+    {
+        if (! $this->registrationFlow) {
+            return false;
+        }
+
+        $plan = Plan::query()->find($this->selectedPlanId);
+
+        if (! $plan) {
+            return false;
+        }
+
+        $quote = $this->planQuote($plan);
+
+        return ! empty($quote['total_inc_tax']) && (float) $quote['total_inc_tax'] > 0;
+    }
+
+    /** @return array<int, string> */
+    public function getPaymentBrandsProperty(): array
+    {
+        return preg_split('/\s+/', HyperPayConfig::instance()->brands()) ?: ['MADA', 'VISA', 'MASTER'];
+    }
+
+    public function getAllowManualRequestProperty(): bool
+    {
+        return HyperPayConfig::instance()->allowManualRequest();
+    }
+
+    /** @return array<string, string> */
+    public function getBillingCountryOptionsProperty(): array
+    {
+        return [
+            'SA' => __('fields.country_sa'),
+            'AE' => __('fields.country_ae'),
+            'KW' => __('fields.country_kw'),
+            'BH' => __('fields.country_bh'),
+            'OM' => __('fields.country_om'),
+            'QA' => __('fields.country_qa'),
+            'JO' => __('fields.country_jo'),
+            'EG' => __('fields.country_eg'),
+        ];
+    }
+
+    public function startCardCheckout(): void
+    {
+        $plan = Plan::query()->find($this->selectedPlanId);
+
+        if (! $plan) {
+            return;
+        }
+
+        $client = get_client();
+
+        if (! $client) {
+            return;
+        }
+
+        $coupon = $this->resolveSelectedCoupon($client);
+
+        if ($this->appliedCouponId && $coupon === null) {
+            return;
+        }
+
+        $billing = [
+            'given_name' => trim($this->billingGivenName),
+            'surname' => trim($this->billingSurname),
+            'email' => trim($this->billingEmail),
+            'street1' => trim($this->billingStreet1),
+            'city' => trim($this->billingCity),
+            'state' => trim($this->billingState) ?: trim($this->billingCity),
+            'country' => strtoupper(trim($this->billingCountry) ?: 'SA'),
+            'postcode' => trim($this->billingPostcode),
+        ];
+
+        try {
+            $payment = HyperPayCheckoutService::instance()->start(
+                $client,
+                $plan,
+                $this->billingPeriod,
+                $billing,
+                $coupon,
+                Filament::getTenant(),
+                HyperPayPayment::SOURCE_SUBSCRIPTION,
+            );
+        } catch (\InvalidArgumentException $e) {
+            fns()->sendWarning($e->getMessage());
+            $this->showConfirmModal = true;
+
+            return;
+        } catch (RuntimeException $e) {
+            fns()->sendDanger(__('fields.hyperpay_checkout_failed'), $e->getMessage());
+            $this->showConfirmModal = true;
+
+            return;
+        }
+
+        $this->redirect(route('filament.tenant.hyperpay.checkout', [
+            'uid' => $payment->uid,
+        ]), navigate: false);
+    }
+
+    protected function fillBillingFromClient(): void
+    {
+        if ($this->registrationFlow) {
+            return;
+        }
+
+        try {
+            $client = get_client();
+        } catch (\Throwable) {
+            return;
+        }
+
+        if (! $client) {
+            return;
+        }
+
+        $billing = HyperPayCheckoutService::instance()->billingFromClient($client);
+
+        $this->billingGivenName = $billing['given_name'];
+        $this->billingSurname = $billing['surname'];
+        $this->billingEmail = $billing['email'];
+        $this->billingStreet1 = $billing['street1'];
+        $this->billingCity = $billing['city'];
+        $this->billingState = $billing['state'];
+        $this->billingCountry = $billing['country'] ?: 'SA';
+        $this->billingPostcode = $billing['postcode'];
+    }
+
+    protected function resolveSelectedCoupon($client): ?PlatformCoupon
+    {
+        if (! $this->appliedCouponId) {
+            return null;
+        }
+
+        try {
+            $couponModel = PlatformCoupon::query()->find($this->appliedCouponId);
+
+            return $couponModel
+                ? SubscriptionCouponService::instance()->findUsable($couponModel->code, $client)
+                : null;
+        } catch (\InvalidArgumentException $e) {
+            $this->clearAppliedCoupon(false);
+            fns()->sendWarning($e->getMessage());
+
+            return null;
+        }
     }
 
     public function shouldSubmitRenewalRequest(): bool
@@ -535,9 +759,129 @@ class ManageSubscription extends Component
 
         store_registration_plan_selection($plan->id, $this->billingPeriod);
 
-        $redirectUrl = filament()->getTenantRegistrationUrl();
+        if (! $this->registrationRequiresPayment) {
+            $this->showRegistrationPayModal = false;
+            $redirectUrl = filament()->getTenantRegistrationUrl();
+            $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
 
-        $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
+            return;
+        }
+
+        $this->showRegistrationPayModal = true;
+    }
+
+    public function closeRegistrationPayModal(): void
+    {
+        $this->showRegistrationPayModal = false;
+    }
+
+    public function startRegistrationCheckout(): void
+    {
+        $plan = Plan::query()->find($this->selectedPlanId);
+
+        if (! $plan) {
+            return;
+        }
+
+        store_registration_plan_selection($plan->id, $this->billingPeriod);
+
+        $client = $this->ensureRegistrationClient($plan);
+
+        if (! $client) {
+            return;
+        }
+
+        try {
+            $payment = HyperPayCheckoutService::instance()->start(
+                $client,
+                $plan,
+                $this->billingPeriod,
+                HyperPayCheckoutService::placeholderBilling(),
+                null,
+                Filament::getTenant(),
+                HyperPayPayment::SOURCE_REGISTRATION,
+            );
+        } catch (\InvalidArgumentException $exception) {
+            fns()->sendWarning($exception->getMessage());
+            $this->showRegistrationPayModal = true;
+
+            return;
+        } catch (RuntimeException $exception) {
+            fns()->sendDanger(__('fields.hyperpay_checkout_failed'), $exception->getMessage());
+            $this->showRegistrationPayModal = true;
+
+            return;
+        }
+
+        $this->redirect(route('filament.tenant.hyperpay.checkout', [
+            'uid' => $payment->uid,
+        ]), navigate: false);
+    }
+
+    protected function ensureRegistrationClient(Plan $plan): ?Client
+    {
+        if (Filament::auth()->check()) {
+            $client = get_client();
+
+            if ($client) {
+                $client->forceFill([
+                    'pending_plan_id' => $plan->id,
+                    'pending_billing_period' => $this->billingPeriod,
+                ])->save();
+            }
+
+            return $client;
+        }
+
+        $billing = HyperPayCheckoutService::placeholderBilling();
+
+        try {
+            $phone = $this->uniqueRegistrationPhone();
+            $user = User::query()->create([
+                'first_name' => $billing['given_name'],
+                'second_name' => $billing['surname'],
+                'phone' => $phone,
+                'email' => $billing['email'],
+                'password' => Hash::make(Str::password(20)),
+            ]);
+
+            (new RoleService())->assignRole($user, User::ROLE_CLIENT);
+
+            $client = Client::query()->create([
+                'name' => trim($billing['given_name'].' '.$billing['surname']),
+                'phone' => $phone,
+                'email' => $billing['email'],
+                'user_id' => $user->id,
+            ]);
+
+            Filament::auth()->login($user);
+            session()->regenerate();
+            store_registration_plan_selection($plan->id, $this->billingPeriod);
+
+            $client->forceFill([
+                'pending_plan_id' => $plan->id,
+                'pending_billing_period' => $this->billingPeriod,
+            ])->save();
+
+            return $client->fresh();
+        } catch (\Throwable $exception) {
+            report($exception);
+            fns()->sendDanger(__('fields.join_activity_failed_title'), __('fields.join_activity_failed_body'));
+
+            return null;
+        }
+    }
+
+    protected function uniqueRegistrationPhone(): string
+    {
+        do {
+            $phone = '9665'.str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+        } while (
+            User::query()->where('phone', $phone)->exists()
+            || Client::query()->where('phone', $phone)->exists()
+        );
+
+        return $phone;
     }
 
     public function updateSubscription(): void
@@ -957,8 +1301,15 @@ class ManageSubscription extends Component
         $currentPlan = $this->currentPlan;
         $selectedPlan = $this->plans->firstWhere('id', $this->selectedPlanId);
 
-        if (! $currentPlan || ! $selectedPlan) {
+        if (! $selectedPlan) {
             return null;
+        }
+
+        if (! $currentPlan) {
+            $summary = $this->buildPlanChangeSummary($selectedPlan, $selectedPlan);
+            $summary['direction'] = 'upgrade';
+
+            return $summary;
         }
 
         if ($this->isCurrentSelection($selectedPlan)) {

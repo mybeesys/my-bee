@@ -103,6 +103,8 @@ class SettingsSeeder extends Seeder
 
         $this->setupTabs();
 
+        \App\Services\HyperPay\HyperPaySettingsInstaller::install();
+
         }catch (\Throwable $exception)
         {
             dd($exception);

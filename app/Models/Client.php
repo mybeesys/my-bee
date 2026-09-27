@@ -35,6 +35,33 @@ class Client extends BaseModel
         return $this->hasMany(SubscriptionRenewalRequest::class)->latest();
     }
 
+    public function hyperPayPayments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(HyperPayPayment::class)->latest();
+    }
+
+    public function pendingPlan(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Plan::class, 'pending_plan_id');
+    }
+
+    public function hasPendingPaidRegistration(): bool
+    {
+        return filled($this->pending_plan_id);
+    }
+
+    public function clearPendingPaidRegistration(): void
+    {
+        if (! $this->hasPendingPaidRegistration()) {
+            return;
+        }
+
+        $this->forceFill([
+            'pending_plan_id' => null,
+            'pending_billing_period' => null,
+        ])->save();
+    }
+
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);

@@ -32,7 +32,7 @@ class ChooseRegistrationPlan extends Page
 
     public static function getUrl(array $parameters = [], bool $isAbsolute = true, ?string $panel = null, ?Model $tenant = null): string
     {
-        $panel = $panel ? Filament::getPanel($panel) : Filament::getCurrentPanel();
+        $panel = $panel ? Filament::getPanel($panel) : (Filament::getCurrentPanel() ?? Filament::getPanel('tenant'));
 
         return $panel->route(static::getRelativeRouteName(), $parameters, $isAbsolute);
     }

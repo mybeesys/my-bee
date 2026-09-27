@@ -111,6 +111,16 @@ class AppServiceProvider extends ServiceProvider
             \Filament\Livewire\DatabaseNotifications::class,
             \App\Livewire\TenantDatabaseNotifications::class,
         );
+
+        Livewire::component(
+            'app.filament.tenant.pages.complete-registration-payment',
+            \App\Filament\Tenant\Pages\CompleteRegistrationPayment::class,
+        );
+
+        Livewire::component(
+            'app.filament.tenant.pages.choose-registration-plan',
+            \App\Filament\Tenant\Pages\ChooseRegistrationPlan::class,
+        );
     }
 
     protected function configPublicPath(): void

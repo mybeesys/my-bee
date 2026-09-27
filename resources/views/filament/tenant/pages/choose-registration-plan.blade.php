@@ -5,6 +5,9 @@
         <h1 class="fi-simple-header-heading text-2xl font-bold tracking-tight text-gray-950 dark:text-white">
             {{ __('fields.registration_choose_plan_title') }}
         </h1>
+        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {{ __('fields.registration_choose_plan_subheading') }}
+        </p>
     </div>
 
     <div class="choose-subscription-card">

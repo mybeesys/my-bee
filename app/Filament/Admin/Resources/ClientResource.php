@@ -354,6 +354,7 @@ class ClientResource extends Resource
     {
         return [
             RelationManagers\ActivitiesRelationManager::class,
+            RelationManagers\HyperPayPaymentsRelationManager::class,
         ];
     }
 

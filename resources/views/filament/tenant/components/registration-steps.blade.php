@@ -18,6 +18,7 @@
         <li @class([
             'registration-steps__item',
             'registration-steps__item--active' => $currentStep === 2,
+            'registration-steps__item--completed' => $currentStep > 2,
         ])>
             <span class="registration-steps__marker" aria-hidden="true">2</span>
             <span class="registration-steps__label">{{ __('fields.registration_step_create_account') }}</span>

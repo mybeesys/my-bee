@@ -2,6 +2,7 @@
 
 namespace App\Filament\Tenant\Pages;
 
+use App\Filament\Tenant\Pages\ChooseRegistrationPlan;
 use App\Models\Client;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -11,6 +12,7 @@ use App\Rules\InternationalPhoneRule;
 use App\Rules\UniqueClientAttributeRule;
 use App\Rules\UniqueTenantNameRule;
 use App\Services\RoleService;
+use App\Services\SubscriptionPricingService;
 use App\Services\TenantNamingService;
 use App\Services\TenantService;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
@@ -61,7 +63,18 @@ class RegisterTenant extends BaseRegisterTenant
             abort(404);
         }
 
-        if (! Filament::auth()->check() && ! registration_plan_selection()) {
+        if (! Filament::auth()->check() && ! registration_plan_selection() && ! registration_paid_client()) {
+            $redirectUrl = ChooseRegistrationPlan::getUrl();
+
+            $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
+
+            return;
+        }
+
+        $needsWorkspaceOnboarding = ! Filament::auth()->check()
+            || tenant_client()?->tenants->isEmpty();
+
+        if ($needsWorkspaceOnboarding && registration_selection_requires_payment() && ! registration_has_completed_payment()) {
             $redirectUrl = ChooseRegistrationPlan::getUrl();
 
             $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
@@ -162,7 +175,14 @@ class RegisterTenant extends BaseRegisterTenant
 
                                 $this->validateFormField($component->getStatePath());
                             })
-                            ->rules([new InternationalPhoneRule(false), new UniqueClientAttributeRule('phone', 'phone')])
+                            ->rules(function (): array {
+                                $client = registration_paid_client();
+
+                                return [
+                                    new InternationalPhoneRule(false),
+                                    new UniqueClientAttributeRule('phone', 'phone', $client?->id, $client?->user_id),
+                                ];
+                            })
                             ->columnSpan(['default' => 2, 'md' => 1]),
 
                         TextInput::make('user_email')
@@ -177,7 +197,14 @@ class RegisterTenant extends BaseRegisterTenant
 
                                 $this->validateFormField($component->getStatePath());
                             })
-                            ->rules(['email', new UniqueClientAttributeRule('email', 'email')])
+                            ->rules(function (): array {
+                                $client = registration_paid_client();
+
+                                return [
+                                    'email',
+                                    new UniqueClientAttributeRule('email', 'email', $client?->id, $client?->user_id),
+                                ];
+                            })
                             ->columnSpan(['default' => 2, 'md' => 1]),
 
                         TextInput::make('password')
@@ -302,25 +329,47 @@ class RegisterTenant extends BaseRegisterTenant
             $data = $this->form->getState();
 
             $names = explode(' ', $data['full_name']);
+            $paidClient = registration_paid_client();
 
-            $user = User::query()->create([
-                'first_name' => $names[0],
-                'second_name' => $names[1] ?? '',
-                'third_name' => $names[2] ?? null,
-                'fourth_name' => $names[3] ?? null,
-                'phone' => $data['user_phone'],
-                'email' => $data['user_email'],
-                'password' => Hash::make($data['password']),
-            ]);
+            if ($paidClient?->user) {
+                $user = $paidClient->user;
+                $user->forceFill([
+                    'first_name' => $names[0],
+                    'second_name' => $names[1] ?? '',
+                    'third_name' => $names[2] ?? null,
+                    'fourth_name' => $names[3] ?? null,
+                    'phone' => $data['user_phone'],
+                    'email' => $data['user_email'],
+                    'password' => Hash::make($data['password']),
+                ])->save();
 
-            (new RoleService())->assignRole($user, User::ROLE_CLIENT);
+                $paidClient->forceFill([
+                    'name' => $data['full_name'],
+                    'phone' => $data['user_phone'],
+                    'email' => $data['user_email'],
+                ])->save();
 
-            $client = Client::query()->create([
-                'name' => $data['full_name'],
-                'phone' => $data['user_phone'],
-                'email' => $data['user_email'],
-                'user_id' => $user->id,
-            ]);
+                $client = $paidClient;
+            } else {
+                $user = User::query()->create([
+                    'first_name' => $names[0],
+                    'second_name' => $names[1] ?? '',
+                    'third_name' => $names[2] ?? null,
+                    'fourth_name' => $names[3] ?? null,
+                    'phone' => $data['user_phone'],
+                    'email' => $data['user_email'],
+                    'password' => Hash::make($data['password']),
+                ]);
+
+                (new RoleService())->assignRole($user, User::ROLE_CLIENT);
+
+                $client = Client::query()->create([
+                    'name' => $data['full_name'],
+                    'phone' => $data['user_phone'],
+                    'email' => $data['user_email'],
+                    'user_id' => $user->id,
+                ]);
+            }
 
             $tenantData = $this->prepareTenantRegistrationData($data);
 
@@ -347,6 +396,9 @@ class RegisterTenant extends BaseRegisterTenant
 
         $this->applyRegistrationPlanSubscription($client);
 
+        clear_registration_paid_client();
+        $client->refresh();
+
         $redirectUrl = Filament::getUrl($this->tenant);
 
         $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
@@ -354,13 +406,43 @@ class RegisterTenant extends BaseRegisterTenant
 
     protected function applyRegistrationPlanSubscription(Client $client): void
     {
+        $client->refresh();
+        $existing = $client->subscription;
+        $existingPlanPrice = (float) ($existing?->plan?->price ?? 0);
+
+        if ($existing && $existingPlanPrice > 0) {
+            clear_registration_plan_selection();
+
+            return;
+        }
+
         $selection = registration_plan_selection();
 
         if ($selection) {
             $plan = Plan::query()->find($selection['plan_id']);
 
             if ($plan) {
-                Subscription::subscribe($plan, $client, $selection['billing_period']);
+                $quote = SubscriptionPricingService::instance()->quote($plan, $selection['billing_period']);
+                $needsPayment = (float) ($quote['total_inc_tax'] ?? 0) > 0;
+
+                if ($needsPayment) {
+                    $freePlan = Plan::query()
+                        ->where('code', Plan::CODE_FREE)
+                        ->where('active', true)
+                        ->first()
+                        ?? Plan::query()->where('active', true)->where('price', 0)->first();
+
+                    if ($freePlan) {
+                        Subscription::subscribe($freePlan, $client, SubscriptionPricingService::BILLING_MONTHLY);
+                    }
+
+                    $client->forceFill([
+                        'pending_plan_id' => $plan->id,
+                        'pending_billing_period' => $selection['billing_period'],
+                    ])->save();
+                } else {
+                    Subscription::subscribe($plan, $client, $selection['billing_period']);
+                }
             }
 
             clear_registration_plan_selection();

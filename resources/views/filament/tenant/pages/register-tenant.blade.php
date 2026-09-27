@@ -4,7 +4,7 @@
 
 <x-filament-panels::page.simple class="register-activity-page">
     @unless ($limitReached)
-        @if (! Filament\Facades\Filament::auth()->check())
+        @if (! Filament\Facades\Filament::auth()->check() || tenant_client()?->tenants->isEmpty())
             @include('filament.tenant.components.registration-steps', ['currentStep' => 2])
             @include('filament.tenant.components.registration-plan-summary')
         @endif

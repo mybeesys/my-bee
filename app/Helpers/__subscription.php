@@ -500,3 +500,92 @@ if (!function_exists('registration_selected_plan')) {
         return \App\Models\Plan::query()->find($selection['plan_id']);
     }
 }
+
+if (!function_exists('registration_selection_requires_payment')) {
+    function registration_selection_requires_payment(): bool
+    {
+        $selection = registration_plan_selection();
+        $plan = registration_selected_plan();
+
+        if ($selection === null || $plan === null) {
+            return false;
+        }
+
+        $quote = \App\Services\SubscriptionPricingService::instance()->quote(
+            $plan,
+            $selection['billing_period']
+        );
+
+        return (float) ($quote['total_inc_tax'] ?? 0) > 0;
+    }
+}
+
+if (!function_exists('registration_paid_client_id')) {
+    function registration_paid_client_id(): ?int
+    {
+        $id = session('registration_paid_client_id');
+
+        return is_numeric($id) ? (int) $id : null;
+    }
+}
+
+if (!function_exists('registration_paid_client')) {
+    function registration_paid_client(): ?\App\Models\Client
+    {
+        $id = registration_paid_client_id();
+
+        if (! $id) {
+            return null;
+        }
+
+        return \App\Models\Client::query()->find($id);
+    }
+}
+
+if (!function_exists('remember_registration_paid_client')) {
+    function remember_registration_paid_client(int $clientId): void
+    {
+        session()->put('registration_paid_client_id', $clientId);
+    }
+}
+
+if (!function_exists('clear_registration_paid_client')) {
+    function clear_registration_paid_client(): void
+    {
+        session()->forget('registration_paid_client_id');
+    }
+}
+
+if (!function_exists('registration_has_completed_payment')) {
+    function registration_has_completed_payment(): bool
+    {
+        $client = registration_paid_client()
+            ?? (function_exists('get_client') ? get_client() : null);
+
+        if (! $client) {
+            return false;
+        }
+
+        $planId = registration_plan_selection()['plan_id'] ?? $client->pending_plan_id;
+
+        $query = \App\Models\HyperPayPayment::query()
+            ->where('client_id', $client->id)
+            ->where('status', \App\Models\HyperPayPayment::STATUS_PAID)
+            ->where('source', \App\Models\HyperPayPayment::SOURCE_REGISTRATION);
+
+        if ($planId) {
+            $query->where('plan_id', $planId);
+        }
+
+        if ($query->exists()) {
+            return true;
+        }
+
+        $subscription = $client->subscription;
+
+        return $subscription
+            && (float) ($subscription->plan?->price ?? 0) > 0
+            && filled($subscription->paid_at);
+    }
+}
+

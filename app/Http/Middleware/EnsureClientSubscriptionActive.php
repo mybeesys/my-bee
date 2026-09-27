@@ -26,6 +26,12 @@ class EnsureClientSubscriptionActive
             return $next($request);
         }
 
+        $client = $user->client;
+
+        if ($client?->hasPendingPaidRegistration() && ! $this->canAccessWhilePendingPayment($request)) {
+            return redirect()->to(\App\Filament\Tenant\Pages\ChooseRegistrationPlan::getUrl());
+        }
+
         if (! subscription_account_restricted()) {
             return $next($request);
         }
@@ -44,8 +50,12 @@ class EnsureClientSubscriptionActive
 
     protected function canAccessWhileRestricted(Request $request): bool
     {
-        if (str_contains(trim($request->path(), '/'), 'subscription')
-            || str_contains(trim($request->path(), '/'), 'choose-plan')) {
+        $path = trim($request->path(), '/');
+
+        if (str_contains($path, 'subscription')
+            || str_contains($path, 'choose-plan')
+            || str_contains($path, 'complete-payment')
+            || str_contains($path, 'billing/card')) {
             return true;
         }
 
@@ -60,6 +70,17 @@ class EnsureClientSubscriptionActive
         }
 
         return false;
+    }
+
+    protected function canAccessWhilePendingPayment(Request $request): bool
+    {
+        $path = trim($request->path(), '/');
+
+        return str_contains($path, 'join')
+            || str_contains($path, 'new-activity')
+            || str_contains($path, 'complete-payment')
+            || str_contains($path, 'subscription/pay')
+            || $request->routeIs('filament.tenant.auth.logout');
     }
 
     protected function isExemptRequest(Request $request): bool

@@ -16,6 +16,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -59,14 +60,14 @@ class Settings extends Page implements HasForms
 
     public $enable_full_access = false;
 
-//    protected function getFormStatePath(): string
-//    {
-//        return 'data';
-//    }
+    protected function getFormStatePath(): string
+    {
+        return 'data';
+    }
 
     public function mount(): void
     {
-        $this->form->fill($this->getInitialFormState());
+        $this->refreshSettingsForm();
 
         if (config('app.debug')) {
             $this->enable_full_access = true;
@@ -78,10 +79,46 @@ class Settings extends Page implements HasForms
         $state = [];
 
         foreach (platform_settings()->where('visible_in_user_friendly_settings', true) as $setting) {
-            $state[$setting->id] = $setting->value;
+            $value = $setting->value;
+
+            if ($setting->type === 'toggle') {
+                $value = in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+            }
+
+            $state[$this->settingFieldName($setting)] = $value;
         }
 
         return $state;
+    }
+
+    public function refreshSettingsForm(): void
+    {
+        CacheService::instance()->forget('settings');
+        CacheService::instance()->forget('platform_settings');
+
+        $state = $this->getInitialFormState();
+        $this->data = $state;
+        $this->form->fill($state);
+    }
+
+    protected function settingFieldName(Setting $setting): string
+    {
+        return 'setting_'.$setting->id;
+    }
+
+    protected function settingFromField(string $field): ?Setting
+    {
+        if (! str_starts_with($field, 'setting_')) {
+            return null;
+        }
+
+        $id = (int) str_replace('setting_', '', $field);
+
+        if ($id < 1) {
+            return null;
+        }
+
+        return Setting::query()->whereNull('tenant_id')->find($id);
     }
 
     protected function getActions(): array
@@ -123,7 +160,8 @@ class Settings extends Page implements HasForms
 //        unset($tabs[4]);
         return [
             Tabs::make('Settings')
-                ->tabs($tabs)->statePath('data'),
+                ->persistTabInQueryString('tab')
+                ->tabs($tabs),
         ];
     }
 
@@ -141,20 +179,24 @@ class Settings extends Page implements HasForms
         foreach ($tabs as $tab) {
             $fields = $this->getFields($tab);
 
-            $textFields = collect($fields)->filter(function ($item) {
-                return $item instanceof TextInput or $item instanceof Select;
-            })->toArray();
+            $mainFields = collect($fields)->filter(function ($item) {
+                return $item instanceof TextInput
+                    || $item instanceof Select
+                    || $item instanceof Toggle
+                    || $item instanceof Textarea;
+            })->values()->all();
 
             $richEditorFields = collect($fields)->filter(function ($item) {
                 return $item instanceof RichEditor;
-            })->toArray();
+            })->values()->all();
 
             $schema = [
-                Card::make($textFields)->columns(3),
+                Card::make($mainFields)->columns(3),
             ];
 
-            if (count($richEditorFields) > 0)
+            if (count($richEditorFields) > 0) {
                 $schema[] = Section::make(__('fields.other_settings'))->schema($richEditorFields)->collapsible()->collapsed();
+            }
 
             $data[] = Tabs\Tab::make(__("fields." . strtolower(\Str::replace([' ', '-'], '_', $tab))))
                 ->visible(function () use ($tab) {
@@ -183,26 +225,47 @@ class Settings extends Page implements HasForms
         foreach ($settings as $setting) {
             if ($setting->type == "text") {
                 $action = null;
-                if ($setting->key == 'cpanel.user') {
-                    $action = \Filament\Forms\Components\Actions\Action::make('visit')
+                if ($setting->key == 'hyperpay.access_token') {
+                    $action = \Filament\Forms\Components\Actions\Action::make('verify_hyperpay')
                         ->icon('heroicon-s-check-badge')
                         ->action(function () {
-                            $ok = \App\Services\CpanelService::instance()->check();
+                            try {
+                                $config = \App\Services\HyperPay\HyperPayConfig::instance();
+                                $gateway = \App\Services\HyperPay\HyperPayGateway::make($config);
+                                $service = \App\Services\HyperPay\HyperPayCheckoutService::instance();
+                                $payload = $service->checkoutPayload(
+                                    $config->formatAmount(1),
+                                    'MB-VERIFY-'.now()->format('YmdHis'),
+                                    [
+                                        'given_name' => 'Verify',
+                                        'surname' => 'MyBee',
+                                        'email' => 'verify@mybeesystem.com',
+                                        'street1' => 'Test street',
+                                        'city' => 'Riyadh',
+                                        'state' => 'Riyadh',
+                                        'country' => 'SA',
+                                        'postcode' => '11564',
+                                    ],
+                                );
+                                $checkout = $gateway->createCheckout($payload);
 
-                            if ($ok)
-                                fns()->sendSuccess("Connection ok");
-                            else
-                                fns()->sendSuccess("Connection failed");
+                                fns()->sendSuccess(__('fields.hyperpay_credentials_ok'), $checkout['id'] ?? '');
+                            } catch (\Throwable $exception) {
+                                fns()->sendDanger(__('fields.hyperpay_credentials_failed'), $exception->getMessage());
+                            }
                         });
                 }
-                $field = TextInput::make($setting->id)
+                $field = TextInput::make($this->settingFieldName($setting))
                     ->required($setting->is_required)
                     ->numeric($setting->is_numeric)
                     ->password($setting->is_password)
+                    ->revealable($setting->is_password)
                     ->label($setting->display_name)
                     ->placeholder($setting->placeholder)
                     ->helperText($setting->helper_text)
                     ->rules($setting->rules ?? [])
+                    ->columnSpan($setting->is_password ? 2 : 1)
+                    ->maxLength($setting->is_password ? 2000 : 255)
                     ->default($setting->value);
 
                 if ($action)
@@ -212,7 +275,7 @@ class Settings extends Page implements HasForms
             }
 
             if ($setting->type == "options") {
-                $fields[] = Select::make($setting->id)
+                $fields[] = Select::make($this->settingFieldName($setting))
                     ->searchable()
                     ->required($setting->is_required)
                     ->rules($setting->rules ?? [])
@@ -221,8 +284,28 @@ class Settings extends Page implements HasForms
                     ->default($setting->value);
             }
 
+            if ($setting->type == "toggle") {
+                $fields[] = Toggle::make($this->settingFieldName($setting))
+                    ->label($setting->display_name)
+                    ->helperText($setting->helper_text)
+                    ->inline(false)
+                    ->onColor('success')
+                    ->default(in_array(strtolower((string) $setting->value), ['1', 'true', 'yes', 'on'], true));
+            }
+
+            if ($setting->type == "text-area") {
+                $fields[] = Textarea::make($this->settingFieldName($setting))
+                    ->rows(8)
+                    ->columnSpanFull()
+                    ->label($setting->display_name)
+                    ->helperText($setting->helper_text)
+                    ->placeholder($setting->placeholder)
+                    ->rules($setting->rules ?? [])
+                    ->default($setting->value);
+            }
+
             if ($setting->type == "rich-text") {
-                $fields[] = RichEditor::make($setting->id)
+                $fields[] = RichEditor::make($this->settingFieldName($setting))
                     ->rules($setting->rules ?? [])
                     ->label($setting->display_name)
                     ->default($setting->value);
@@ -237,22 +320,95 @@ class Settings extends Page implements HasForms
         return [
             \Filament\Actions\Action::make('save')
                 ->label(__('fields.save'))
-                ->action(function () {
-                    $this->form->validate();
-
-                    foreach ($this->data as $id => $value) {
-                        $setting = Setting::find($id);
-                        if ($this->validateSetting($setting, $value)) {
-                            $setting->update(['value' => $value]);
-                        }
-                    }
-
-                    CacheService::instance()->forget('settings');
-                    CacheService::instance()->forget('platform_settings');
-
-                    fns()->saved();
-                })
+                ->action(fn () => $this->save()),
         ];
+    }
+
+    public function save(): void
+    {
+        $state = $this->form->getState();
+
+        foreach ($state as $field => $value) {
+            $setting = $this->settingFromField((string) $field);
+
+            if (! $setting) {
+                continue;
+            }
+
+            if ($setting->is_password && ($value === null || $value === '')) {
+                continue;
+            }
+
+            if ($setting->type === 'toggle') {
+                $value = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+            }
+
+            if ($this->validateSetting($setting, $value)) {
+                $setting->update(['value' => $value]);
+            }
+        }
+
+        CacheService::instance()->forget('settings');
+        CacheService::instance()->forget('platform_settings');
+
+        $this->refreshSettingsForm();
+
+        fns()->saved();
+    }
+
+    public function fillHyperPayTestDefaults(): void
+    {
+        \App\Services\HyperPay\HyperPaySettingsInstaller::applyTestDefaults();
+
+        $this->refreshSettingsForm();
+
+        try {
+            $checkoutId = $this->verifyHyperPayConnection();
+            fns()->sendSuccess(
+                __('fields.hyperpay_fill_test_defaults_success'),
+                __('fields.hyperpay_credentials_ok').($checkoutId ? ': '.$checkoutId : ''),
+            );
+        } catch (\Throwable $exception) {
+            fns()->sendWarning(
+                __('fields.hyperpay_fill_test_defaults_saved'),
+                $exception->getMessage(),
+            );
+        }
+    }
+
+    public function verifyHyperPayConnection(): string
+    {
+        $defaults = \App\Services\HyperPay\HyperPaySettingsInstaller::testDefaults();
+
+        $config = \App\Services\HyperPay\HyperPayConfig::instance([
+            'enabled' => true,
+            'mode' => 'test',
+            'test_base_url' => $defaults['test_base_url'] ?? 'https://eu-test.oppwa.com',
+            'access_token' => platform_setting('hyperpay.access_token') ?: ($defaults['access_token'] ?? ''),
+            'entity_id' => platform_setting('hyperpay.entity_id') ?: ($defaults['entity_id'] ?? ''),
+            'currency' => 'SAR',
+            'payment_type' => 'DB',
+            'round_test_amounts' => true,
+        ]);
+
+        $gateway = \App\Services\HyperPay\HyperPayGateway::make($config);
+        $service = new \App\Services\HyperPay\HyperPayCheckoutService($config, $gateway);
+        $checkout = $gateway->createCheckout($service->checkoutPayload(
+            $config->formatAmount(1),
+            'MB-VERIFY-'.now()->format('YmdHis'),
+            [
+                'given_name' => 'Verify',
+                'surname' => 'MyBee',
+                'email' => 'verify@mybeesystem.com',
+                'street1' => 'Test street',
+                'city' => 'Riyadh',
+                'state' => 'Riyadh',
+                'country' => 'SA',
+                'postcode' => '11564',
+            ],
+        ));
+
+        return (string) ($checkout['id'] ?? '');
     }
 
     public function validateSetting(Setting $setting, $newValue): bool
@@ -302,6 +458,14 @@ class Settings extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            \Filament\Actions\Action::make('fill_hyperpay_test_defaults')
+                ->label(__('fields.hyperpay_fill_test_defaults'))
+                ->icon('heroicon-o-beaker')
+                ->color('warning')
+                ->requiresConfirmation()
+                ->modalHeading(__('fields.hyperpay_fill_test_defaults'))
+                ->modalDescription(__('fields.hyperpay_fill_test_defaults_help'))
+                ->action(fn () => $this->fillHyperPayTestDefaults()),
             ClearCache::make(),
         ];
     }

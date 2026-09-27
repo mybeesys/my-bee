@@ -3,12 +3,14 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Tenant\Pages\ChooseRegistrationPlan;
+use App\Filament\Tenant\Pages\CompleteRegistrationPayment;
 use App\Filament\Tenant\Pages\CustomSettings;
 use App\Filament\Tenant\Pages\Dashboard;
 use App\Filament\Tenant\Pages\EditTenantProfile;
 use App\Filament\Tenant\Pages\LoginTenant;
 use App\Filament\Tenant\Pages\RegisterTenant;
 use App\Filament\Tenant\Pages\TenantUserProfile;
+use App\Http\Controllers\HyperPayCheckoutController;
 use App\Http\Middleware\ApplyTenantScopes;
 use App\Http\Middleware\FilamentPanelsUserSettings;
 use App\Models\Tenant;
@@ -30,6 +32,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Rupadana\FilamentAnnounce\FilamentAnnouncePlugin;
 
@@ -63,7 +66,17 @@ class TenantPanelProvider extends PanelProvider
             ->globalSearch(false)
 //            ->passwordReset()
             ->tenant(Tenant::class, slugAttribute: 'slug')
-            ->routes(fn (Panel $panel) => ChooseRegistrationPlan::routes($panel))
+            ->routes(function (Panel $panel): void {
+                ChooseRegistrationPlan::routes($panel);
+                CompleteRegistrationPayment::routes($panel);
+
+                Route::middleware([Authenticate::class])->group(function (): void {
+                    Route::get('/subscription/pay/{uid}', [HyperPayCheckoutController::class, 'show'])
+                        ->name('hyperpay.checkout');
+                    Route::match(['get', 'post'], '/subscription/pay/{uid}/result', [HyperPayCheckoutController::class, 'result'])
+                        ->name('hyperpay.result');
+                });
+            })
             ->tenantRegistration(RegisterTenant::class)
             ->tenantProfile(EditTenantProfile::class)
             ->tenantMiddleware([
@@ -118,6 +131,8 @@ class TenantPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Tenant/Pages'), for: 'App\\Filament\\Tenant\\Pages')
             ->pages([
                 Dashboard::class,
+                ChooseRegistrationPlan::class,
+                CompleteRegistrationPayment::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Tenant/Widgets'), for: 'App\\Filament\\Tenant\\Widgets')
             ->widgets([

@@ -38,6 +38,9 @@
                     {{ $pricingService->formatMoney($quote['total_inc_tax'], $quote['currency']) }}
                 @endif
             </p>
+            @unless ($quote['is_free'])
+                <p class="registration-plan-summary__next">{{ __('fields.registration_pay_subheading') }}</p>
+            @endunless
         </div>
     </aside>
 @endif
