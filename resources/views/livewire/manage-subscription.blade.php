@@ -941,7 +941,32 @@
                         </div>
                     </div>
 
-                    @if ($change['price_change'])
+                    @php
+                        $confirmQuote = $this->planQuote($change['to']);
+                        $confirmPricing = \App\Services\SubscriptionPricingService::instance();
+                        $confirmCurrency = $confirmQuote['currency'] ?? main_currency_iso_code();
+                        $confirmVat = rtrim(rtrim(number_format((float) ($confirmQuote['tax_percent'] ?? 0), 2, '.', ''), '0'), '.');
+                    @endphp
+
+                    @if (! ($confirmQuote['is_free'] ?? false))
+                        <div class="order-summary__box">
+                            <div class="order-summary__row">
+                                <span>{{ __('fields.subscription_subtotal_ex_tax') }}</span>
+                                <b>{{ $confirmPricing->formatMoney($confirmQuote['subtotal_ex_tax'] ?? 0, $confirmCurrency) }}</b>
+                            </div>
+                            @if (($confirmQuote['tax_amount'] ?? 0) > 0)
+                                <div class="order-summary__row mt-2">
+                                    <span>{{ __('fields.subscription_vat_line', ['vat' => $confirmVat]) }}</span>
+                                    <b>{{ $confirmPricing->formatMoney($confirmQuote['tax_amount'] ?? 0, $confirmCurrency) }}</b>
+                                </div>
+                            @endif
+                            <div class="order-summary__dash"></div>
+                            <div class="order-summary__total">
+                                <span class="order-summary__total-label">{{ __('fields.hyperpay_grand_total') }}</span>
+                                <strong class="order-summary__total-value">{{ $confirmPricing->formatMoney($confirmQuote['total_inc_tax'] ?? 0, $confirmCurrency) }}</strong>
+                            </div>
+                        </div>
+                    @elseif ($change['price_change'])
                         <div class="subscription-confirm__price">
                             <span>{{ $change['price_change']['label'] }}</span>
                             <strong>{{ $change['price_change']['value'] }}</strong>
@@ -1005,10 +1030,9 @@
                                 <label @class(['subscription-confirm__pay-option', 'is-active' => $paymentMethod === 'card'])>
                                     <input type="radio" wire:model.live="paymentMethod" value="card" class="sr-only">
                                     <span class="subscription-confirm__pay-option-name">{{ __('fields.hyperpay_pay_with_card') }}</span>
-                                    <span class="subscription-confirm__pay-brands">
-                                        <span class="subscription-confirm__pay-brand subscription-confirm__pay-brand--mada">MADA</span>
-                                        <span class="subscription-confirm__pay-brand">VISA</span>
-                                        <span class="subscription-confirm__pay-brand">MC</span>
+                                    <span class="order-summary__methods mt-2 mb-1">
+                                        <span class="order-summary__methods-label">{{ __('fields.hyperpay_available_methods') }}</span>
+                                        <x-payment-brand-badges :brands="$this->paymentBrands" />
                                     </span>
                                     <span class="subscription-confirm__pay-option-hint">{{ __('fields.hyperpay_pay_with_card_hint') }}</span>
                                 </label>
@@ -1069,23 +1093,23 @@
                     </div>
                 @endif
 
-                <footer class="subscription-confirm__footer">
-                    <x-filament::button
+                <footer class="order-summary__footer">
+                    <button
                         type="button"
-                        color="gray"
+                        class="order-summary__cancel"
                         wire:click="closeConfirmModal"
-                        class="subscription-confirm__btn-cancel"
                     >
                         {{ __('fields.subscription_confirm_cancel') }}
-                    </x-filament::button>
+                    </button>
 
-                    <x-filament::button
+                    <button
                         type="button"
+                        class="order-summary__pay"
                         wire:click="confirmUpdateSubscription"
                         wire:loading.attr="disabled"
-                        class="subscription-confirm__btn-confirm"
                     >
-                        <span wire:loading.remove wire:target="confirmUpdateSubscription">
+                        <span wire:loading.remove wire:target="confirmUpdateSubscription" class="inline-flex items-center gap-2">
+                            <x-filament::icon icon="heroicon-m-lock-closed" class="order-summary__pay-icon" />
                             @if ($this->cardPaymentAvailable && $paymentMethod === 'card')
                                 {{ __('fields.hyperpay_continue_to_payment') }}
                             @elseif ($this->shouldSubmitRenewalRequest())
@@ -1097,7 +1121,7 @@
                         <span wire:loading wire:target="confirmUpdateSubscription">
                             {{ __('fields.please_wait') }}
                         </span>
-                    </x-filament::button>
+                    </button>
                 </footer>
             </div>
         </div>
@@ -1118,42 +1142,73 @@
                 wire:click="closeRegistrationPayModal"
                 aria-label="{{ __('fields.subscription_confirm_cancel') }}"
             ></button>
-            <div class="subscription-confirm__dialog" role="dialog" aria-modal="true">
+            <div
+                class="subscription-confirm__dialog subscription-confirm__dialog--order"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="order-summary-title"
+            >
                 <header class="subscription-confirm__header">
                     <div class="subscription-confirm__heading">
-                        <span class="subscription-confirm__badge">{{ __('fields.hyperpay_order_title') }}</span>
-                        <h3 class="subscription-confirm__title">{{ $selectedPlan->name }}</h3>
-                        <p class="subscription-confirm__subtitle">
-                            {{ $this->billingPeriod === 'yearly' ? __('fields.yearly') : __('fields.monthly') }}
-                        </p>
+                        <span class="order-summary__pill">
+                            <x-filament::icon icon="heroicon-m-lock-closed" class="order-summary__pill-icon" />
+                            {{ __('fields.hyperpay_confirm_badge') }}
+                        </span>
+                        <div class="order-summary__plan-row">
+                            <h3 id="order-summary-title" class="order-summary__plan-name">{{ $selectedPlan->name }}</h3>
+                            <span class="order-summary__period">
+                                {{ $this->billingPeriod === 'yearly' ? __('fields.yearly') : __('fields.monthly') }}
+                            </span>
+                        </div>
                     </div>
                     <button type="button" class="subscription-confirm__close" wire:click="closeRegistrationPayModal">
-                        <x-filament::icon icon="heroicon-m-x-mark" class="h-5 w-5" />
+                        <x-filament::icon icon="heroicon-m-x-mark" class="h-4 w-4" />
                     </button>
                 </header>
+
                 <div class="subscription-confirm__body">
-                    <div class="complete-pay__total">
-                        <span>{{ __('fields.subscription_subtotal_ex_tax') }} — {{ $paySubtotal }}</span>
+                    <div class="order-summary__box">
+                        <div class="order-summary__row">
+                            <span>{{ __('fields.subscription_subtotal_ex_tax') }}</span>
+                            <b>{{ $paySubtotal }}</b>
+                        </div>
                         @if (($payQuote['tax_amount'] ?? 0) > 0)
-                            <span>{{ __('fields.subscription_tax_amount', ['vat' => rtrim(rtrim(number_format((float) ($payQuote['tax_percent'] ?? 0), 2, '.', ''), '0'), '.')]) }} — {{ $payTax }}</span>
+                            <div class="order-summary__row mt-2">
+                                <span>{{ __('fields.subscription_vat_line', ['vat' => rtrim(rtrim(number_format((float) ($payQuote['tax_percent'] ?? 0), 2, '.', ''), '0'), '.')]) }}</span>
+                                <b>{{ $payTax }}</b>
+                            </div>
                         @endif
-                        <strong>{{ $payTotal }}</strong>
-                        <span>{{ __('fields.subscription_price_incl_tax_hint') }}</span>
+                        <div class="order-summary__dash"></div>
+                        <div class="order-summary__total">
+                            <span class="order-summary__total-label">{{ __('fields.hyperpay_grand_total') }}</span>
+                            <strong class="order-summary__total-value">{{ $payTotal }}</strong>
+                        </div>
                     </div>
-                    <div class="complete-pay__brands">
-                        @foreach ($this->paymentBrands as $brand)
-                            <span @class(['complete-pay__brand', 'complete-pay__brand--mada' => strtoupper($brand) === 'MADA'])>{{ $brand }}</span>
-                        @endforeach
+
+                    <div class="order-summary__methods">
+                        <span class="order-summary__methods-label">{{ __('fields.hyperpay_available_methods') }}</span>
+                        <x-payment-brand-badges :brands="$this->paymentBrands" />
                     </div>
                 </div>
-                <footer class="subscription-confirm__footer">
-                    <x-filament::button type="button" color="gray" wire:click="closeRegistrationPayModal">
+
+                <footer class="order-summary__footer">
+                    <button type="button" class="order-summary__cancel" wire:click="closeRegistrationPayModal">
                         {{ __('fields.subscription_confirm_cancel') }}
-                    </x-filament::button>
-                    <x-filament::button type="button" wire:click="startRegistrationCheckout" wire:loading.attr="disabled" class="complete-pay__cta">
-                        <span wire:loading.remove wire:target="startRegistrationCheckout">{{ __('fields.hyperpay_continue_to_payment') }}</span>
-                        <span wire:loading wire:target="startRegistrationCheckout">{{ __('fields.please_wait') }}</span>
-                    </x-filament::button>
+                    </button>
+                    <button
+                        type="button"
+                        class="order-summary__pay"
+                        wire:click="startRegistrationCheckout"
+                        wire:loading.attr="disabled"
+                    >
+                        <span wire:loading.remove wire:target="startRegistrationCheckout" class="inline-flex items-center gap-2">
+                            <x-filament::icon icon="heroicon-m-lock-closed" class="order-summary__pay-icon" />
+                            {{ __('fields.hyperpay_continue_to_payment') }}
+                        </span>
+                        <span wire:loading wire:target="startRegistrationCheckout">
+                            {{ __('fields.please_wait') }}
+                        </span>
+                    </button>
                 </footer>
             </div>
         </div>

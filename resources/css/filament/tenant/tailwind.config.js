@@ -6,6 +6,7 @@ export default {
     content: [
         './app/Filament/Tenant/**/*.php',
         './resources/views/components/**/*.blade.php',
+        './resources/views/livewire/**/*.blade.php',
         './resources/views/filament/tenant/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
         './vendor/awcodes/filament-table-repeater/resources/**/*.blade.php',
