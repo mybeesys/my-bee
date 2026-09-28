@@ -218,7 +218,7 @@ class HyperPaySettingsInstaller
         }
 
         CacheService::instance()->forget('settings');
-        CacheService::instance()->forget('platform_settings');
+        forget_platform_settings_cache();
     }
 
     /**
@@ -236,7 +236,7 @@ class HyperPaySettingsInstaller
         self::install();
 
         foreach (self::testDefaults() as $suffix => $value) {
-            $setting = Setting::query()
+            $setting = Setting::withoutGlobalScopes()
                 ->whereNull('tenant_id')
                 ->where('key', 'hyperpay.'.$suffix)
                 ->first();
@@ -249,12 +249,12 @@ class HyperPaySettingsInstaller
         }
 
         CacheService::instance()->forget('settings');
-        CacheService::instance()->forget('platform_settings');
+        forget_platform_settings_cache();
     }
 
     protected static function exists(string $key): bool
     {
-        return Setting::query()
+        return Setting::withoutGlobalScopes()
             ->whereNull('tenant_id')
             ->where('key', $key)
             ->exists();

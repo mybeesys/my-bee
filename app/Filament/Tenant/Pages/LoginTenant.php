@@ -38,6 +38,8 @@ class LoginTenant extends SimplePage
 
     protected static string $layout = 'filament.tenant.layout.login';
 
+    protected static ?string $slug = 'login';
+
     /**
      * @var array<string, mixed> | null
      */

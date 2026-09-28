@@ -35,9 +35,8 @@
                             {{ __('fields.register_have_account_prompt') }}
                         </p>
                         <a
-                            href="{{ filament()->getLoginUrl() }}"
+                            href="{{ tenant_panel_login_url() }}"
                             class="tenant-login-register-cta__link"
-                            wire:navigate
                         >
                             {{ __('fields.register_back_to_login') }}
                         </a>

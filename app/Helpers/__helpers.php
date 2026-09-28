@@ -113,13 +113,21 @@ if (!function_exists('setting')) {
     }
 }
 
+if (!function_exists('forget_platform_settings_cache')) {
+    function forget_platform_settings_cache(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget('central.platform_settings');
+        \App\Services\CacheService::instance()->forget('platform_settings');
+    }
+}
+
 if (!function_exists('platform_settings')) {
     function platform_settings(): \Illuminate\Support\Collection
     {
-        return \App\Services\CacheService::instance()->remember(
-            'platform_settings',
+        return \Illuminate\Support\Facades\Cache::remember(
+            'central.platform_settings',
             \App\Services\CacheService::TTL_DAY,
-            fn () => \App\Models\Setting::query()
+            fn () => \App\Models\Setting::withoutGlobalScopes()
                 ->whereNull('tenant_id')
                 ->orderBy('sort')
                 ->get(),
@@ -1087,5 +1095,17 @@ if (!function_exists('system_logo_url')) {
         return system_brand_logo_url();
     }
 }
+
+if (! function_exists('tenant_panel_login_url')) {
+    function tenant_panel_login_url(): string
+    {
+        try {
+            return \Filament\Facades\Filament::getPanel('tenant')->getLoginUrl() ?: url('/login');
+        } catch (\Throwable) {
+            return url('/login');
+        }
+    }
+}
+
 
 

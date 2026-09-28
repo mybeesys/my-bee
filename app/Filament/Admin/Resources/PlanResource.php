@@ -205,6 +205,11 @@ class PlanResource extends Resource
                         ->label(__('fields.enable_store'))
                         ->default(false),
 
+                    Forms\Components\Toggle::make('enable_mobile_app')
+                        ->label(__('fields.enable_mobile_app'))
+                        ->helperText(__('fields.enable_mobile_app_helper'))
+                        ->default(false),
+
                     Forms\Components\TextInput::make('sort_order')
                         ->label(__('fields.sort_order'))
                         ->numeric()

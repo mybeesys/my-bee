@@ -36,7 +36,7 @@
     @if (! Filament\Facades\Filament::auth()->check())
         <p class="register-activity-login-hint">
             {{ __('fields.register_have_account_prompt') }}
-            <a href="{{ filament()->getLoginUrl() }}" wire:navigate class="register-activity-login-hint__link">
+            <a href="{{ tenant_panel_login_url() }}" class="register-activity-login-hint__link">
                 {{ __('fields.register_back_to_login') }}
             </a>
         </p>

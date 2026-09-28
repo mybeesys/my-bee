@@ -202,6 +202,7 @@ class SubscriptionApiService
             'span' => $plan->span,
             'spanDuration' => $plan->span_duration,
             'enableStore' => (bool) $plan->enable_store,
+            'enableMobileApp' => (bool) $plan->enable_mobile_app,
             'enableRoles' => (bool) $plan->enable_roles,
             'isFeatured' => plan_is_featured($plan),
             'restrictAccountAfterDays' => (int) $plan->restrict_account_after_days,

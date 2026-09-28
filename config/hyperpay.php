@@ -10,7 +10,7 @@ return [
     'currency' => env('HYPERPAY_CURRENCY', 'SAR'),
     'payment_type' => env('HYPERPAY_PAYMENT_TYPE', 'DB'),
     'brands' => env('HYPERPAY_BRANDS', 'MADA VISA MASTER'),
-    'allow_manual_request' => env('HYPERPAY_ALLOW_MANUAL_REQUEST', true),
+    'allow_manual_request' => env('HYPERPAY_ALLOW_MANUAL_REQUEST', false),
     'round_test_amounts' => env('HYPERPAY_ROUND_TEST_AMOUNTS', true),
     'widget_locale' => env('HYPERPAY_WIDGET_LOCALE', 'ar'),
     'merchant_portal_url' => env('HYPERPAY_MERCHANT_PORTAL_URL', 'https://gate2play.test.ctpe.info'),

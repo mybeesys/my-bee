@@ -24,6 +24,7 @@ class Plan extends BaseModel
 
     protected $casts = [
         'enable_store' => 'boolean',
+        'enable_mobile_app' => 'boolean',
         'enable_roles' => 'boolean',
         'is_featured' => 'boolean',
         'active' => 'boolean',

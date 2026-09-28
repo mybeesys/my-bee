@@ -28,6 +28,13 @@ if (!function_exists('plan_allows_store')) {
     }
 }
 
+if (!function_exists('plan_allows_mobile_app')) {
+    function plan_allows_mobile_app(): bool
+    {
+        return (bool) get_plan()?->enable_mobile_app;
+    }
+}
+
 if (!function_exists('plan_allows_multiple_users')) {
     function plan_allows_multiple_users(): bool
     {

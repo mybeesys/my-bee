@@ -78,8 +78,8 @@ if (config('app.env') === "production") {
 }
 
 Route::get('/login', function () {
-    return redirect(route('filament.tenant.auth.login'));
-})->name('login');
+    return redirect()->guest(tenant_panel_login_url());
+})->name('login')->domain(parse_url((string) config('app.url'), PHP_URL_HOST) ?: null);
 
 Route::get('/einvoice/{uid}', [\App\Http\Controllers\PublicInvoiceController::class, 'show'])
     ->name('public.invoice.show');

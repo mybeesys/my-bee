@@ -130,9 +130,7 @@ class ManageSubscription extends Component
             $this->showConfirmModal = true;
         }
 
-        if (! $this->cardPaymentAvailable) {
-            $this->paymentMethod = 'request';
-        }
+        $this->paymentMethod = 'card';
     }
 
     public function updatedBillingPeriod(string $value): void
@@ -392,9 +390,7 @@ class ManageSubscription extends Component
             return;
         }
 
-        if ($this->cardPaymentAvailable && ! $this->allowManualRequest) {
-            $this->paymentMethod = 'card';
-        }
+        $this->paymentMethod = 'card';
 
         if ($this->registrationFlow) {
             $this->continueRegistration();
@@ -402,26 +398,15 @@ class ManageSubscription extends Component
             return;
         }
 
-        if ($this->onboarding && ! $this->currentSubscription && ! $this->cardPaymentAvailable) {
+        if ($this->onboarding && ! $this->currentSubscription && ! $this->clientPaysWithCard()) {
             $this->updateSubscription();
 
             return;
         }
 
-        if ($this->shouldSubmitRenewalRequest()) {
-            if ($this->pendingRenewalRequest) {
-                fns()->sendWarning(__('fields.subscription_request_already_pending'));
-
-                return;
-            }
-
-            $this->showConfirmModal = true;
-
-            return;
-        }
-
-        if ($this->currentSubscription?->plan_id === $plan->id
-            && SubscriptionPricingService::instance()->normalizeBillingPeriod($this->currentSubscription->billing_period) === $this->billingPeriod
+        if (
+            $this->isCurrentSelection($plan)
+            && ! $this->clientPaysWithCard()
         ) {
             fns()->sendWarning(__('fields.subscription_already_on_plan'));
 
@@ -440,14 +425,18 @@ class ManageSubscription extends Component
     {
         $this->showConfirmModal = false;
 
-        if ($this->cardPaymentAvailable && $this->paymentMethod === 'card') {
+        if ($this->clientPaysWithCard()) {
             $this->startCardCheckout();
 
             return;
         }
 
-        if ($this->shouldSubmitRenewalRequest()) {
-            $this->submitRenewalRequest();
+        $plan = Plan::query()->find($this->selectedPlanId);
+        $quote = $plan ? $this->planQuote($plan) : null;
+
+        if ($plan && (float) ($quote['total_inc_tax'] ?? 0) > 0) {
+            fns()->sendDanger(__('fields.hyperpay_not_configured'));
+            $this->showConfirmModal = true;
 
             return;
         }
@@ -460,9 +449,13 @@ class ManageSubscription extends Component
         return HyperPayConfig::instance()->isConfigured();
     }
 
-    public function getCardPaymentAvailableProperty(): bool
+    public function clientPaysWithCard(): bool
     {
-        if ($this->registrationFlow || ! $this->hyperPayConfigured) {
+        if ($this->registrationFlow) {
+            return false;
+        }
+
+        if (! HyperPayConfig::instance()->isConfigured()) {
             return false;
         }
 
@@ -474,7 +467,12 @@ class ManageSubscription extends Component
 
         $quote = $this->planQuote($plan);
 
-        return ! empty($quote['total_inc_tax']) && (float) $quote['total_inc_tax'] > 0;
+        return (float) ($quote['total_inc_tax'] ?? 0) > 0;
+    }
+
+    public function getCardPaymentAvailableProperty(): bool
+    {
+        return $this->clientPaysWithCard();
     }
 
     public function getRegistrationRequiresPaymentProperty(): bool
@@ -540,23 +538,12 @@ class ManageSubscription extends Component
             return;
         }
 
-        $billing = [
-            'given_name' => trim($this->billingGivenName),
-            'surname' => trim($this->billingSurname),
-            'email' => trim($this->billingEmail),
-            'street1' => trim($this->billingStreet1),
-            'city' => trim($this->billingCity),
-            'state' => trim($this->billingState) ?: trim($this->billingCity),
-            'country' => strtoupper(trim($this->billingCountry) ?: 'SA'),
-            'postcode' => trim($this->billingPostcode),
-        ];
-
         try {
             $payment = HyperPayCheckoutService::instance()->start(
                 $client,
                 $plan,
                 $this->billingPeriod,
-                $billing,
+                HyperPayCheckoutService::placeholderBilling(),
                 $coupon,
                 Filament::getTenant(),
                 HyperPayPayment::SOURCE_SUBSCRIPTION,
@@ -628,9 +615,7 @@ class ManageSubscription extends Component
 
     public function shouldSubmitRenewalRequest(): bool
     {
-        return ! $this->onboarding
-            && ! $this->registrationFlow
-            && $this->currentSubscription !== null;
+        return false;
     }
 
     public function getPendingRenewalRequestProperty(): ?SubscriptionRenewalRequest
@@ -1155,6 +1140,16 @@ class ManageSubscription extends Component
             }
         }
 
+        if ($plan->enable_mobile_app) {
+            $mobileItems = array_values(array_filter([
+                $this->makeIncludedFeature(__('fields.plan_feature_mobile_app')),
+            ]));
+
+            if ($group = $this->buildFeatureGroup(__('fields.plan_feature_mobile_app'), $mobileItems)) {
+                $groups[] = $group;
+            }
+        }
+
         $extras = [];
 
         if ($plan->restrict_account_after_days > 0 && (float) $plan->price === 0.0) {
@@ -1313,7 +1308,7 @@ class ManageSubscription extends Component
         }
 
         if ($this->isCurrentSelection($selectedPlan)) {
-            if ($this->shouldSubmitRenewalRequest()) {
+            if ($this->clientPaysWithCard()) {
                 $summary = $this->buildPlanChangeSummary($currentPlan, $selectedPlan);
                 $summary['direction'] = 'renewal';
 
@@ -1363,6 +1358,18 @@ class ManageSubscription extends Component
         } elseif ($from->enable_store && ! $to->enable_store) {
             $losses[] = [
                 'label' => __('fields.plan_feature_online_store'),
+                'detail' => __('fields.subscription_confirm_feature_removed'),
+            ];
+        }
+
+        if (! $from->enable_mobile_app && $to->enable_mobile_app) {
+            $gains[] = [
+                'label' => __('fields.plan_feature_mobile_app'),
+                'detail' => __('fields.subscription_confirm_feature_included'),
+            ];
+        } elseif ($from->enable_mobile_app && ! $to->enable_mobile_app) {
+            $losses[] = [
+                'label' => __('fields.plan_feature_mobile_app'),
                 'detail' => __('fields.subscription_confirm_feature_removed'),
             ];
         }

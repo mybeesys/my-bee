@@ -115,13 +115,24 @@ class HyperPayCheckoutController extends Controller
         ]);
     }
 
-    protected function subscriptionUrl(Request $request): string
+    protected function subscriptionUrl(Request $request, ?HyperPayPayment $payment = null): string
     {
-        $tenant = Filament::getTenant() ?? $request->route('tenant');
+        $payment?->loadMissing(['tenant', 'client.tenants']);
+
+        $tenant = $payment?->tenant
+            ?? Filament::getTenant()
+            ?? $request->route('tenant')
+            ?? $payment?->client?->tenants?->first();
 
         try {
             return SubscriptionPage::getUrl(tenant: $tenant);
         } catch (\Throwable) {
+            $slug = is_object($tenant) ? ($tenant->slug ?? null) : null;
+
+            if (filled($slug)) {
+                return url('/'.$slug.'/subscription');
+            }
+
             return url('/');
         }
     }
@@ -136,7 +147,7 @@ class HyperPayCheckoutController extends Controller
             }
         }
 
-        return $this->subscriptionUrl($request);
+        return $this->subscriptionUrl($request, $payment);
     }
 
     protected function nextUrl(Request $request, HyperPayPayment $payment): string
@@ -158,7 +169,7 @@ class HyperPayCheckoutController extends Controller
             }
         }
 
-        return $this->cancelUrl($request, $payment);
+        return $this->subscriptionUrl($request, $payment);
     }
 
     protected function finish(Request $request, HyperPayPayment $payment, string $flash, array $data = []): RedirectResponse

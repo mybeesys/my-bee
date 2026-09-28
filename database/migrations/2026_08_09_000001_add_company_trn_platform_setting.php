@@ -47,7 +47,7 @@ return new class extends Migration
         }
 
         CacheService::instance()->forget('settings');
-        CacheService::instance()->forget('platform_settings');
+        forget_platform_settings_cache();
     }
 
     public function down(): void
@@ -73,6 +73,6 @@ return new class extends Migration
         }
 
         CacheService::instance()->forget('settings');
-        CacheService::instance()->forget('platform_settings');
+        forget_platform_settings_cache();
     }
 };

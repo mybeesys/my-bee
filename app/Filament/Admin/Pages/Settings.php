@@ -94,7 +94,7 @@ class Settings extends Page implements HasForms
     public function refreshSettingsForm(): void
     {
         CacheService::instance()->forget('settings');
-        CacheService::instance()->forget('platform_settings');
+        forget_platform_settings_cache();
 
         $state = $this->getInitialFormState();
         $this->data = $state;
@@ -349,7 +349,7 @@ class Settings extends Page implements HasForms
         }
 
         CacheService::instance()->forget('settings');
-        CacheService::instance()->forget('platform_settings');
+        forget_platform_settings_cache();
 
         $this->refreshSettingsForm();
 

@@ -201,7 +201,8 @@ class TenantPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                FilamentPanelsUserSettings::class
+                FilamentPanelsUserSettings::class,
+                \App\Http\Middleware\RedirectTenantRootToLogin::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

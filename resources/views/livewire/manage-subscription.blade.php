@@ -153,7 +153,7 @@
         </section>
     @endif
 
-    @if (! $onboarding && ! $registrationFlow)
+    @if (! $onboarding && ! $registrationFlow && ! $this->clientPaysWithCard())
         @php
             $pendingRequest = $this->pendingRenewalRequest;
             $renewalRequests = $this->renewalRequestHistory;
@@ -456,9 +456,9 @@
                         {{ $registrationFlow ? __('fields.registration_choose_plan_plans_hint') : __('fields.choose_subscription_plans_hint') }}
                     </p>
                 @else
-                    <p class="subscription-page__eyebrow">{{ __('fields.subscription_request_change_eyebrow') }}</p>
-                    <h2 class="subscription-page__title">{{ __('fields.subscription_request_change_title') }}</h2>
-                    <p class="subscription-page__subtitle">{{ __('fields.subscription_request_change_hint') }}</p>
+                    <p class="subscription-page__eyebrow">{{ __('fields.subscription_pay_change_eyebrow') }}</p>
+                    <h2 class="subscription-page__title">{{ __('fields.subscription_pay_change_title') }}</h2>
+                    <p class="subscription-page__subtitle">{{ __('fields.subscription_pay_change_hint') }}</p>
                 @endif
             </div>
         </header>
@@ -799,23 +799,18 @@
             @endif
 
             <footer class="subscription-page__card-footer">
-                @if ($this->shouldSubmitRenewalRequest() && $this->pendingRenewalRequest)
-                    <p class="subscription-page__selected-summary subscription-page__selected-summary--pending">
-                        <x-filament::icon icon="heroicon-m-clock" class="subscription-page__selected-summary-icon" />
-                        <span>{{ __('fields.subscription_request_wait_pending') }}</span>
-                    </p>
-                @elseif ($selectedPlan && ! $this->isCurrentSelection($selectedPlan))
+                @if ($selectedPlan && ! $this->isCurrentSelection($selectedPlan))
                     <p class="subscription-page__selected-summary subscription-page__selected-summary--{{ $this->planTier($selectedPlan) }}">
                         <x-filament::icon icon="heroicon-m-check-circle" class="subscription-page__selected-summary-icon" />
                         <span>
                             {{ __('fields.subscription_selected_plan_summary', ['plan' => $selectedPlan->name]) }}
                         </span>
                     </p>
-                @elseif ($selectedPlan && $this->shouldSubmitRenewalRequest())
+                @elseif ($selectedPlan && $this->clientPaysWithCard() && $this->isCurrentSelection($selectedPlan))
                     <p class="subscription-page__selected-summary subscription-page__selected-summary--{{ $this->planTier($selectedPlan) }}">
                         <x-filament::icon icon="heroicon-m-arrow-path" class="subscription-page__selected-summary-icon" />
                         <span>
-                            {{ __('fields.subscription_request_renew_summary', ['plan' => $selectedPlan->name]) }}
+                            {{ __('fields.subscription_renew_pay_summary', ['plan' => $selectedPlan->name]) }}
                         </span>
                     </p>
                 @endif
@@ -838,19 +833,20 @@
                     wire:click="openConfirmModal"
                     wire:loading.attr="disabled"
                     class="w-full"
-                    :disabled="($this->shouldSubmitRenewalRequest() && (bool) $this->pendingRenewalRequest)
-                        || (! $onboarding && ! $registrationFlow && ! $this->shouldSubmitRenewalRequest() && $this->isCurrentSelection($selectedPlan))"
+                    :disabled="! $onboarding && ! $registrationFlow && $this->isCurrentSelection($selectedPlan) && ! $this->clientPaysWithCard()"
                 >
                     @if ($registrationFlow)
                         {{ $this->registrationRequiresPayment
                             ? __('fields.registration_continue_then_pay')
                             : __('fields.registration_continue_to_account') }}
-                    @elseif ($this->cardPaymentAvailable)
-                        {{ __('fields.hyperpay_pay_with_card') }}
+                    @elseif ($this->clientPaysWithCard())
+                        {{ $this->isCurrentSelection($selectedPlan)
+                            ? __('fields.subscription_renew_pay')
+                            : __('fields.hyperpay_pay_with_card') }}
                     @elseif ($onboarding)
                         {{ __('fields.choose_subscription_continue') }}
                     @else
-                        {{ __('fields.subscription_request_submit') }}
+                        {{ __('fields.hyperpay_pay_with_card') }}
                     @endif
                 </x-filament::button>
             </footer>
@@ -902,14 +898,10 @@
                         </span>
 
                         <h3 id="subscription-confirm-title" class="subscription-confirm__title">
-                            {{ $this->shouldSubmitRenewalRequest()
-                                ? __('fields.subscription_request_confirm_title')
-                                : __('fields.subscription_confirm_title') }}
+                            {{ __('fields.subscription_confirm_title') }}
                         </h3>
                         <p class="subscription-confirm__subtitle">
-                            {{ $this->shouldSubmitRenewalRequest()
-                                ? __('fields.subscription_request_confirm_subtitle')
-                                : __('fields.subscription_confirm_subtitle') }}
+                            {{ __('fields.subscription_confirm_subtitle') }}
                         </p>
                     </div>
 
@@ -920,9 +912,7 @@
 
                 <div class="subscription-confirm__body">
                     <p class="subscription-confirm__question">
-                        {{ $this->shouldSubmitRenewalRequest()
-                            ? __('fields.subscription_request_confirm_question')
-                            : __('fields.subscription_confirm_question') }}
+                        {{ __('fields.subscription_confirm_question') }}
                     </p>
 
                     <div class="subscription-confirm__transition">
@@ -1022,72 +1012,18 @@
                     </div>
                 </div>
 
-                @if ($this->cardPaymentAvailable || $this->allowManualRequest)
+                @if ($this->clientPaysWithCard())
                     <div class="subscription-confirm__pay">
                         <p class="subscription-confirm__pay-title">{{ __('fields.hyperpay_choose_method') }}</p>
                         <div class="subscription-confirm__pay-options">
-                            @if ($this->cardPaymentAvailable)
-                                <label @class(['subscription-confirm__pay-option', 'is-active' => $paymentMethod === 'card'])>
-                                    <input type="radio" wire:model.live="paymentMethod" value="card" class="sr-only">
-                                    <span class="subscription-confirm__pay-option-name">{{ __('fields.hyperpay_pay_with_card') }}</span>
-                                    <span class="order-summary__methods mt-2 mb-1">
-                                        <span class="order-summary__methods-label">{{ __('fields.hyperpay_available_methods') }}</span>
-                                        <x-payment-brand-badges :brands="$this->paymentBrands" />
-                                    </span>
-                                    <span class="subscription-confirm__pay-option-hint">{{ __('fields.hyperpay_pay_with_card_hint') }}</span>
-                                </label>
-                            @endif
-
-                            @if ($this->allowManualRequest && $this->shouldSubmitRenewalRequest())
-                                <label @class(['subscription-confirm__pay-option', 'is-active' => $paymentMethod === 'request'])>
-                                    <input type="radio" wire:model.live="paymentMethod" value="request" class="sr-only">
-                                    <span class="subscription-confirm__pay-option-name">{{ __('fields.hyperpay_send_request') }}</span>
-                                    <span class="subscription-confirm__pay-option-hint">{{ __('fields.hyperpay_send_request_hint') }}</span>
-                                </label>
-                            @endif
-                        </div>
-                    </div>
-                @endif
-
-                @if ($this->cardPaymentAvailable && $paymentMethod === 'card')
-                    <div class="subscription-confirm__billing">
-                        <p class="subscription-confirm__pay-title">{{ __('fields.hyperpay_billing_title') }}</p>
-                        <div class="subscription-confirm__billing-grid">
-                            <label>
-                                <span>{{ __('fields.hyperpay_given_name') }}</span>
-                                <input type="text" wire:model="billingGivenName" required>
-                            </label>
-                            <label>
-                                <span>{{ __('fields.hyperpay_surname') }}</span>
-                                <input type="text" wire:model="billingSurname" required>
-                            </label>
-                            <label class="subscription-confirm__billing-span">
-                                <span>{{ __('fields.email') }}</span>
-                                <input type="email" wire:model="billingEmail" required>
-                            </label>
-                            <label class="subscription-confirm__billing-span">
-                                <span>{{ __('fields.hyperpay_street') }}</span>
-                                <input type="text" wire:model="billingStreet1" required placeholder="{{ __('fields.hyperpay_street_ph') }}">
-                            </label>
-                            <label>
-                                <span>{{ __('fields.city') }}</span>
-                                <input type="text" wire:model="billingCity" required placeholder="{{ __('fields.hyperpay_city_ph') }}">
-                            </label>
-                            <label>
-                                <span>{{ __('fields.hyperpay_state') }}</span>
-                                <input type="text" wire:model="billingState" required placeholder="{{ __('fields.hyperpay_state_ph') }}">
-                            </label>
-                            <label>
-                                <span>{{ __('fields.country') }}</span>
-                                <select wire:model="billingCountry">
-                                    @foreach ($this->billingCountryOptions as $code => $label)
-                                        <option value="{{ $code }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
-                            <label>
-                                <span>{{ __('fields.hyperpay_postcode') }}</span>
-                                <input type="text" wire:model="billingPostcode" required inputmode="numeric" maxlength="5" placeholder="{{ __('fields.hyperpay_postcode_ph') }}">
+                            <label @class(['subscription-confirm__pay-option', 'is-active' => $paymentMethod === 'card'])>
+                                <input type="radio" wire:model.live="paymentMethod" value="card" class="sr-only">
+                                <span class="subscription-confirm__pay-option-name">{{ __('fields.hyperpay_pay_with_card') }}</span>
+                                <span class="order-summary__methods mt-2 mb-1">
+                                    <span class="order-summary__methods-label">{{ __('fields.hyperpay_available_methods') }}</span>
+                                    <x-payment-brand-badges :brands="$this->paymentBrands" />
+                                </span>
+                                <span class="subscription-confirm__pay-option-hint">{{ __('fields.hyperpay_pay_with_card_hint') }}</span>
                             </label>
                         </div>
                     </div>
@@ -1110,10 +1046,8 @@
                     >
                         <span wire:loading.remove wire:target="confirmUpdateSubscription" class="inline-flex items-center gap-2">
                             <x-filament::icon icon="heroicon-m-lock-closed" class="order-summary__pay-icon" />
-                            @if ($this->cardPaymentAvailable && $paymentMethod === 'card')
+                            @if ($this->clientPaysWithCard())
                                 {{ __('fields.hyperpay_continue_to_payment') }}
-                            @elseif ($this->shouldSubmitRenewalRequest())
-                                {{ __('fields.subscription_request_confirm_proceed') }}
                             @else
                                 {{ __('fields.subscription_confirm_proceed') }}
                             @endif
