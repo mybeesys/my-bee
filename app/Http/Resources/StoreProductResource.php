@@ -77,6 +77,24 @@ class StoreProductResource extends BaseResource
             'outOfStock' => is_bool($inStock) ? !$inStock : null,
             'extras' => StoreProductExtraResource::collection($this->extras),
             'variantsOptions' => StoreProductVariantOptionResource::collection($this->variantOptions),
+            // Full variant rows (price/image/option ids) so the storefront can
+            // switch media + pricing instantly without waiting on get-variant-info.
+            'variants' => $this->type == Product::$TYPE_VARIANTS
+                ? $this->variants->map(function ($variant) use ($pricingService) {
+                    $originalPrice = number_format($pricingService->getOriginalPrice($variant), currency_decimals(), '.', '');
+                    $retailPrice = number_format($pricingService->getRetailPrice($variant), currency_decimals(), '.', '');
+
+                    return [
+                        'id' => $variant->id,
+                        'name' => $variant->name,
+                        'image' => MediaService::mediaUrls($variant->getMedia('images'), true),
+                        'originalPrice' => $originalPrice,
+                        'price' => $retailPrice,
+                        'hasDiscount' => $pricingService->hasDiscount($variant),
+                        'variant_library_options_ids' => $variant->variant_library_options_ids ?? [],
+                    ];
+                })->values()
+                : [],
         ];
     }
 

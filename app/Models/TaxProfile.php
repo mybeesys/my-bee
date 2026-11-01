@@ -18,10 +18,11 @@ class TaxProfile extends BaseModel
         return $this->hasMany(Tax::class);
     }
 
-    public function getTotalPercentagesAttribute(): int
+    public function getTotalPercentagesAttribute(): float
     {
         $this->loadMissing('taxes');
-        return $this->taxes->sum('percent');
+
+        return round((float) $this->taxes->sum('percent'), 4);
     }
 
     public function getTaxesDescriptionAttribute(): string

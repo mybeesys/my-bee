@@ -58,6 +58,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class StoreController extends BaseController
@@ -86,6 +87,7 @@ class StoreController extends BaseController
             'stockTrackingEnabled' => $tenant->store_enable_stock_tracking == true,
             'ordersTrackingEnabled' => $tenant->store_orders_tracking_mode != null,
             'workingHours' => $tenant->store_working_hours ?? "",
+            'couponsAvailable' => $this->storeHasUsableCoupons($tenant),
             'social' => [
                 'facebook' => $tenant->store_social_media_links['facebook'] ?? "",
                 'instagram' => $tenant->store_social_media_links['instagram'] ?? "",
@@ -136,6 +138,7 @@ class StoreController extends BaseController
             'extras.extra',
             'variantOptions.library',
             'variants.media',
+            'variants.lastPrice',
         ]);
 
         $query->whereHas('tenant', function (Builder $q) use ($store_slug) {
@@ -513,22 +516,19 @@ class StoreController extends BaseController
 
                     $subTotal = ($unit_price * $item['qty']) + (PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty']);
 
-                    if($product->taxProfile){
-                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
-                    }
+                    $tax = $this->includedTax($product, $subTotal);
 
                 } else if ($item['type'] == "variants") {
-                    $productVariant = ProductVariant::find($item['productVariantId']);
+                    $productVariant = ProductVariant::with('lastPrice')->find($item['productVariantId']);
                     $itemModel = $productVariant;
                     $item_id = $productVariant->id;
+                    $product_variant_id = $productVariant->id;
                     $item_type = get_class($productVariant);
                     $unit_price = PricingService::instance()->getRetailPrice($productVariant);
 
                     $subTotal = ($unit_price * $item['qty']) + (PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty']);
 
-                    if($productVariant->product->taxProfile){
-                        $tax = MathService::instance()->getTaxFromTaxProfile($subTotal, $productVariant->product->taxProfile, true);
-                    }
+                    $tax = $this->includedTax($product, $subTotal);
                 } else {
                     throw new \Exception("Unknown product type");
                 }
@@ -630,8 +630,18 @@ class StoreController extends BaseController
     public function applyCoupon(StoreApplyCouponRequest $request): \Illuminate\Http\JsonResponse
     {
         $uuid = \request()->header('Store-UUID');
+        $code = trim((string) $request->validated('coupon'));
+        $coupon = $this->findStoreCoupon($code);
 
-        Cache::put("coupon_code@$uuid", $request->input('coupon'));
+        if (! $coupon || CouponService::instance()->resolveStatus($coupon) !== 'active') {
+            throw ValidationException::withMessages([
+                'coupon' => app()->getLocale() === 'ar'
+                    ? 'رمز الخصم غير صالح أو منتهي الصلاحية.'
+                    : 'The coupon code is invalid or expired.',
+            ]);
+        }
+
+        Cache::put("coupon_code@$uuid", $coupon->code);
 
         return $this->responder(__('messages.api.retrieved'), 200, $this->getCart())->respond();
     }
@@ -649,9 +659,19 @@ class StoreController extends BaseController
     {
         $phoneVariants = StorePhone::variants($request->validated('phone'));
 
-        $orders = Order::with(['tenant', 'details.item', 'details.orderDetailsExtras', 'customer', 'invoice'])
+        $orders = Order::with([
+                'tenant',
+                'customer',
+                'state',
+                'city',
+                'area',
+                'invoice.items.extras',
+                'details.item',
+                'details.orderDetailsExtras',
+            ])
             ->whereRelation('tenant', 'slug', $request->header('Store-Slug'))
             ->whereHas('customer', fn (Builder $query) => $query->whereIn('phone', $phoneVariants))
+            ->latest('id')
             ->get();
 
         return $this->responder(__('messages.api.retrieved'), 200, OrderResource::collection($orders))->respond();
@@ -828,21 +848,48 @@ class StoreController extends BaseController
     protected function generateCartData(array $items): array
     {
         $items = array_values($items);
-        $subTotal = $this->calculateSubTotal($items);
+        $lines = [];
+        $subTotal = 0.0;
+
+        foreach ($items as $index => $item) {
+            $line = $this->cartLineFigures($item);
+            $lines[$index] = $line;
+            $subTotal += $line['gross'] ?? 0;
+        }
+
+        $subTotal = round($subTotal, currency_decimals());
         $couponData = $this->getCouponInfo($subTotal);
         $couponAmount = $couponData['valid'] ? (float) $couponData['amount'] : 0.0;
-        $taxes = $this->calculateTaxes($items, $couponAmount);
-        $total = max(0, $subTotal - $couponAmount);
+        $couponAmount = round(min($couponAmount, max(0, $subTotal)), currency_decimals());
+        $payable = round(max(0, $subTotal - $couponAmount), currency_decimals());
+        $payableRatio = $subTotal > 0 ? $payable / $subTotal : 0.0;
+
+        $taxes = 0.0;
+        foreach ($items as $index => &$item) {
+            $line = $lines[$index] ?? null;
+            $gross = round((float) ($line['gross'] ?? 0), currency_decimals());
+            $tax = $line
+                ? $this->includedTax($line['product'], round($gross * $payableRatio, currency_decimals()))
+                : 0.0;
+            $item['lineTotal'] = number_format($gross, currency_decimals(), '.', '');
+            $item['tax'] = number_format($tax, currency_decimals(), '.', '');
+            $taxes += $tax;
+        }
+        unset($item);
+
+        $taxes = round($taxes, currency_decimals());
 
         return [
             'subTotal' => $subTotal,
             'subTotalFormatted' => number_format($subTotal, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
-            'subTotalAfterDiscount' => max(0, $subTotal - $couponAmount),
-            'subTotalFormattedAfterDiscount' => number_format(max(0, $subTotal - $couponAmount), currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
+            'subTotalAfterDiscount' => $payable,
+            'subTotalFormattedAfterDiscount' => number_format($payable, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
+            // Retail prices already include VAT. Tax is disclosed, not added again.
+            'pricesIncludesTaxes' => true,
             'tax' => number_format($taxes, currency_decimals(), '.', ''),
             'taxFormatted' => number_format($taxes, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
-            'total' => number_format($total, currency_decimals(), '.', ''),
-            'totalFormated' => number_format($total, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
+            'total' => number_format($payable, currency_decimals(), '.', ''),
+            'totalFormated' => number_format($payable, currency_decimals(), '.', ',') . " " . main_currency_native_symbol(),
             'deliveryFees' => app()->getLocale() == "ar" ? "سيتم إحتساب رسوم التوصيل بناءً على موقعك" : "Delivery fees will be calculated based on your location",
             'coupon' => $couponData,
             "items" => $items
@@ -853,71 +900,142 @@ class StoreController extends BaseController
     {
         $uuid = \request()->header('Store-UUID');
         $code = Cache::get("coupon_code@$uuid", null);
-        $coupon = Coupon::firstWhere('code', $code);
+        $coupon = $this->findStoreCoupon($code);
+        $valid = $coupon && CouponService::instance()->resolveStatus($coupon) === 'active';
+        $amount = 0.0;
+
+        if ($valid && $coupon->type === Coupon::$TYPE_FIXED) {
+            $amount = min((float) $coupon->value, max(0, (float) $subTotal));
+        } elseif ($valid && $coupon->type === Coupon::$TYPE_PERCENT && $subTotal > 0) {
+            $amount = (float) $subTotal * ((float) $coupon->value / 100);
+        }
 
         return [
             'id' => $coupon?->id,
-            'code' => $code,
-            'valid' => CouponService::instance()->isValid($code),
+            'code' => $valid ? $coupon->code : null,
+            'valid' => (bool) $valid,
             'percent' => $coupon?->type == "percent" ? $coupon?->value : null,
-            'amount' => CouponService::instance()->amount($code, $subTotal),
+            'amount' => $amount,
+        ];
+    }
+
+    protected function findStoreCoupon(?string $code): ?Coupon
+    {
+        if (! filled($code)) {
+            return null;
+        }
+
+        return Coupon::query()
+            ->where('tenant_id', $this->storeTenantId())
+            ->where('code', trim((string) $code))
+            ->first();
+    }
+
+    protected function storeHasUsableCoupons(Tenant $tenant): bool
+    {
+        return Coupon::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('active', true)
+            ->where(function (Builder $query) {
+                $query
+                    ->whereNull('valid_until')
+                    ->orWhere('valid_until', '>', now());
+            })
+            ->where(function (Builder $query) {
+                $query
+                    ->where('span', '!=', 'one-time')
+                    ->orWhereDoesntHave('usages');
+            })
+            ->exists();
+    }
+
+    protected function storeTenantId(): int
+    {
+        return (int) Tenant::query()
+            ->where('slug', \request()->header('Store-Slug'))
+            ->value('id');
+    }
+
+    /**
+     * VAT already inside a tax-inclusive amount, rounded to currency decimals.
+     * Lines without a tax profile contribute zero — tax is never invented.
+     */
+    protected function includedTax(?Product $product, float $taxInclusiveAmount): float
+    {
+        $percent = (float) ($product?->taxProfile?->total_percentages ?? 0);
+        if ($percent <= 0 || $taxInclusiveAmount <= 0) {
+            return 0.0;
+        }
+
+        return round(
+            MathService::instance()->getTax($taxInclusiveAmount, $percent, true),
+            currency_decimals()
+        );
+    }
+
+    /**
+     * @return array{product: Product, gross: float}|null
+     */
+    protected function cartLineFigures(array $item): ?array
+    {
+        $product = Product::with(['taxProfile.taxes', 'lastPrice'])->find($item['productId'] ?? null);
+        if (!$product) {
+            return null;
+        }
+
+        $priced = $product;
+        if (($item['type'] ?? null) === 'variants' && !empty($item['productVariantId'])) {
+            $variant = ProductVariant::with('lastPrice')->find($item['productVariantId']);
+            if (!$variant) {
+                return null;
+            }
+            $priced = $variant;
+        } elseif (($item['type'] ?? null) !== 'basic') {
+            return null;
+        }
+
+        $extras = ProductExtra::with(['lastPrice', 'extra'])->findMany(
+            collect($item['extras'] ?? [])->pluck('id')->filter()->values()->all()
+        );
+        $qty = (float) ($item['qty'] ?? 0);
+        $unit = (float) PricingService::instance()->getRetailPrice($priced);
+        $extrasUnit = (float) PricingService::instance()->getRetailItemsPrices($extras);
+
+        return [
+            'product' => $product,
+            'gross' => round(($unit + $extrasUnit) * $qty, currency_decimals()),
         ];
     }
 
     protected function calculateTaxes(array $items, float $couponAmount = 0): float
     {
-        $items = array_values($items);
-        $taxes = 0;
-
-        foreach ($items as $item) {
-            $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
-
-            $product = Product::with(['taxProfile', 'lastPrice'])->find($item['productId']);
-            if($product->taxProfile){
-
-                $model = $product;
-
-                if($productVariant = ProductVariant::find($item['productVariantId'])){
-                    $model = $productVariant;
-                }
-
-                $unit_price = PricingService::instance()->getRetailPrice($model);
-
-                $subTotal = ($unit_price * $item['qty']) + (PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty']);
-
-                $taxes += MathService::instance()->getTaxFromTaxProfile($subTotal, $product->taxProfile, true);
-            }
-        }
-
         $subTotal = $this->calculateSubTotal($items);
+        $payable = max(0, $subTotal - min($couponAmount, max(0, $subTotal)));
+        $ratio = $subTotal > 0 ? $payable / $subTotal : 0.0;
+        $taxes = 0.0;
 
-        if ($couponAmount > 0 && $subTotal > 0) {
-            $ratio = max(0, ($subTotal - $couponAmount) / $subTotal);
-            $taxes *= $ratio;
+        foreach (array_values($items) as $item) {
+            $line = $this->cartLineFigures($item);
+            if (!$line) {
+                continue;
+            }
+            $taxes += $this->includedTax($line['product'], round($line['gross'] * $ratio, currency_decimals()));
         }
 
-        return $taxes;
+        return round($taxes, currency_decimals());
     }
 
     protected function calculateSubTotal(array $items)
     {
-        $subTotal = 0;
-        foreach ($items as $item) {
-            $extrasModels = ProductExtra::with(['lastPrice', 'extra'])->findMany(collect($item['extras'])->pluck('id')->toArray());
-
-            if ($item['type'] == "basic") {
-                $product = Product::find($item['productId']);
-                $subTotal += PricingService::instance()->getRetailPrice($product) * $item['qty'];
-                $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
-            } else if ($item['type'] == "variants") {
-                $productVariant = ProductVariant::find($item['productVariantId']);
-                $subTotal += PricingService::instance()->getRetailPrice($productVariant) * $item['qty'];
-                $subTotal += PricingService::instance()->getRetailItemsPrices($extrasModels) * $item['qty'];
-            } else {
-                throw new \Exception("Unknown product type");
+        $subTotal = 0.0;
+        foreach (array_values($items) as $item) {
+            $line = $this->cartLineFigures($item);
+            if ($line) {
+                $subTotal += $line['gross'];
             }
         }
-        return $subTotal;
+
+        return round($subTotal, currency_decimals());
     }
 
     protected function convertExtrasToArray(Collection $collection): array
