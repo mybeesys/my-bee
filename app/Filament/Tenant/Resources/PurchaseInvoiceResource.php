@@ -16,7 +16,6 @@ use App\Models\Product;
 use App\Models\ProductUnit;
 use App\Models\ProductVariant;
 use App\Models\Supplier;
-use App\Models\SupplyOrder;
 use App\Models\TaxProfile;
 use App\Models\Unit;
 use App\Models\VariantLibrary;
@@ -111,22 +110,6 @@ class PurchaseInvoiceResource extends Resource
                         ->type('warning'),
 
                     Forms\Components\Hidden::make('supply_order_id')->dehydrated(false),
-
-                    Shout::make('from-price-offer')
-                        ->visible(fn(Get $get) => $get('supply_order_id') !== null)
-                        ->content(fn(Get $get) => SupplyOrder::find($get('supply_order_id'))?->description)
-                        ->icon("")
-                        ->color(Color::Yellow)
-                        ->columnSpan(2)
-                        ->type('warning'),
-
-                    Shout::make('payment-terms-required-alert')
-                        ->visible(fn (Get $get) => $form->getRecord() === null && blank($get('payment_terms')))
-                        ->content(__('fields.payment_terms_required_hint'))
-                        ->icon('heroicon-o-exclamation-triangle')
-                        ->color(Color::Amber)
-                        ->columnSpanFull()
-                        ->type('warning'),
 
                     Forms\Components\Section::make()
                         ->disabled($form->getRecord()?->locked_at !== null)

@@ -9,7 +9,6 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Order;
-use App\Models\PriceOffer;
 use App\Models\Product;
 use App\Models\ProductExtra;
 use App\Models\ProductVariant;
@@ -103,22 +102,6 @@ class SalesInvoiceResource extends Resource
                     ->content(__('fields.config_invoice_alert'))
                     ->icon("")
                     ->color(Color::Sky)
-                    ->type('warning'),
-
-                Shout::make('from-price-offer')
-                    ->visible(fn(Get $get) => $get('price_offer_id') !== null)
-                    ->content(fn(Get $get) => PriceOffer::find($get('price_offer_id'))?->description)
-                    ->icon("")
-                    ->color(Color::Yellow)
-                    ->columnSpan(2)
-                    ->type('warning'),
-
-                Shout::make('payment-terms-required-alert')
-                    ->visible(fn (Get $get) => $form->getRecord() === null && blank($get('payment_terms')))
-                    ->content(__('fields.payment_terms_required_hint'))
-                    ->icon('heroicon-o-exclamation-triangle')
-                    ->color(Color::Amber)
-                    ->columnSpanFull()
                     ->type('warning'),
 
                 Shout::make('order-review-hint')
