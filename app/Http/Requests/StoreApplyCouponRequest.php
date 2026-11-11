@@ -20,7 +20,7 @@ class StoreApplyCouponRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'coupon' => ['required', 'string'],
+            'coupon' => ['required', 'string', 'max:100'],
         ];
     }
 }

@@ -160,6 +160,7 @@ class CreateSalesInvoice extends CreateRecord
                 'discount_amount' => $priceOffer->discount_amount,
                 'discount_percent' => $priceOffer->discount_percent,
                 'prices_includes_taxes' => $priceOffer->prices_includes_taxes,
+                'payment_terms' => null,
                 'items' => $items,
                 'services' => $services,
                 'additional_costs' => $additional_costs,

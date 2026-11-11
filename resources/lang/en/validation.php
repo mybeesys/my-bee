@@ -118,6 +118,7 @@ return [
     'string' => 'The :attribute must be a string.',
     'timezone' => 'The :attribute must be a valid zone.',
     'unique' => 'The :attribute has already been taken.',
+    'unique_product_per_wholesaler' => 'The :attribute is already used with this wholesaler.',
     'uploaded' => 'The :attribute failed to upload.',
     'url' => 'The :attribute format is invalid.',
     'uuid' => 'The :attribute must be a valid UUID.',

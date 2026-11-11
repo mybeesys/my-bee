@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Rules\UniqueProductPerWholesalerRule;
 use App\Rules\UniqueTenantItemRule;
 use Illuminate\Validation\Rules\File;
 
@@ -26,7 +27,8 @@ class StoreProductRequest extends BaseRequest
     {
         return [
             'type' => ['required', 'in:basic,variants'],
-            'name' => ['required', 'string', 'max:255', new UniqueTenantItemRule(Product::class, 'name')],
+            'name' => ['required', 'string', 'max:255'],
+            'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
 
             'images' => ['sometimes', 'array'],
             'images.*' => ['sometimes', 'file', File::types(['png', 'PNG', 'jpg', 'JPG', 'jpeg', 'JPEG'])->max(1024)],
@@ -36,7 +38,7 @@ class StoreProductRequest extends BaseRequest
             'extras.*.price' => ['required', 'numeric', 'max:'.PHP_INT_MAX],
             'extras.*.discount_price' => ['required', 'numeric', 'lt:extras.*.price', 'max:'.PHP_INT_MAX],
 
-            'barcode' => ['sometimes', 'min:4', 'max:255', new UniqueTenantItemRule(Product::class, 'barcode')],
+            'barcode' => ['sometimes', 'nullable', 'min:4', 'max:255', new UniqueProductPerWholesalerRule(UniqueProductPerWholesalerRule::BARCODE)],
             'sku' => ['required', 'digits:9', new UniqueTenantItemRule(Product::class, 'sku')],
             'calories' => ['sometimes', 'integer'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],

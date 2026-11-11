@@ -19,6 +19,7 @@ class OrderResource extends BaseResource
     public function toArray($request): array
     {
         $invoice = $this->invoice;
+        $invoiceFinal = $this->isFinalCustomerInvoice($invoice);
         $grandTotal = $invoice
             ? OrderDiscountService::instance()->orderGrandTotal($this->resource)
             : null;
@@ -29,6 +30,8 @@ class OrderResource extends BaseResource
             'source' => $this->source,
             'invoiceId' => $invoice?->getKey(),
             'invoiceNo' => $invoice?->no,
+            'invoiceStatus' => $invoice?->status,
+            'invoiceFinal' => $invoiceFinal,
             'invoiceReceiptVoucherId' => $this->resolveInvoiceReceiptVoucherId(),
             'invoiceUID' => $invoice?->uid,
             // Review invoice: GET /api/v1/tenant/shop/{invoiceShowPath} — do not list all sales invoices
@@ -39,6 +42,10 @@ class OrderResource extends BaseResource
             'paymentMethod' => $this->payment_method,
             'deliveryType' => $this->delivery_type,
             'deliveryAddress' => $this->delivery_address,
+            'stateName' => $this->state?->name,
+            'cityName' => $this->city?->name,
+            'areaName' => $this->area?->name,
+            'fullAddress' => $this->resolveFullDeliveryAddress(),
             'notes' => $this->notes,
             'canceledReason' => $this->canceled_reason,
             'isPaid' => (bool) $invoice?->paid,
@@ -60,8 +67,8 @@ class OrderResource extends BaseResource
                 : null,
             'totalAmount' => $grandTotal !== null ? round((float) $grandTotal, currency_decimals()) : null,
             'currency' => main_currency_iso_code(),
-            'shareUrl' => filled($invoice?->uid) && ! $invoice?->temp ? $invoice->url : null,
-            'pdfUrl' => filled($invoice?->uid) && ! $invoice?->temp ? $invoice->pdf_url : null,
+            'shareUrl' => $invoiceFinal ? $invoice?->url : null,
+            'pdfUrl' => $invoiceFinal ? $invoice?->pdf_url : null,
             'orderDate' => $this->created_at->format('F j, Y, g:i a'),
             'orderDateFormatted' => $this->created_at?->format('Y-m-d H:i:s'),
             'deliveryDate' => $this->delivery_date?->format('F j, Y, g:i a'),
@@ -94,8 +101,36 @@ class OrderResource extends BaseResource
             'canConfirmInvoice' => $canReviewInvoice,
             'canCompletePayment' => $invoice && ! $invoice->paid,
             'canEdit' => app(OrderService::class)->canEdit($this->resource),
-            'canShare' => filled($invoice?->uid) && ! $invoice?->temp,
+            'canShare' => $this->isFinalCustomerInvoice($invoice),
         ];
+    }
+
+    protected function isFinalCustomerInvoice(?Invoice $invoice): bool
+    {
+        if (! $invoice) {
+            return false;
+        }
+
+        return $invoice->type === Invoice::$TYPE_SALES
+            && $invoice->status === 'confirmed'
+            && ! $invoice->temp
+            && filled($invoice->uid);
+    }
+
+    protected function resolveFullDeliveryAddress(): ?string
+    {
+        $parts = array_values(array_filter([
+            $this->state?->name,
+            $this->city?->name,
+            $this->area?->name,
+            $this->delivery_address,
+        ], fn ($part) => filled($part)));
+
+        if ($parts === []) {
+            return null;
+        }
+
+        return implode(' · ', $parts);
     }
 
     protected function resolveInvoiceReceiptVoucherId(): ?int

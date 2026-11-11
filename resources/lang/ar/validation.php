@@ -120,6 +120,7 @@ return [
     'string'               => 'يجب أن يكون حقل :attribute نصًا.',
     'timezone'             => 'يجب أن يكون حقل :attribute نطاقًا زمنيًا صحيحًا.',
     'unique'               => 'قيمة حقل :attribute مُستخدمة من قبل.',
+    'unique_product_per_wholesaler' => ':attribute مستخدم مسبقاً مع هذا الهولسيلر.',
     'uploaded'             => 'فشل في تحميل الـ :attribute.',
     'url'                  => 'صيغة رابط حقل :attribute غير صحيحة.',
     'uuid'                 => 'حقل :attribute يجب أن يكون بصيغة UUID سليمة.',

@@ -28,9 +28,62 @@ trait HandlesInvoiceCreditPayments
 
     protected function prepareInvoiceFormDataForPersistence(array $data): array
     {
+        $this->assertRequiredInvoiceFields($data);
         $this->stashPendingCreditPaymentUi();
 
         return static::stripCreditPaymentUiFields($data);
+    }
+
+    protected function onValidationError(ValidationException $exception): void
+    {
+        $this->notifyMissingRequiredInvoiceFields($exception);
+    }
+
+    protected function assertRequiredInvoiceFields(array $data): void
+    {
+        $errors = [];
+
+        if (! in_array($data['payment_terms'] ?? null, ['cash', 'credit'], true)) {
+            $errors['payment_terms'] = __('fields.payment_terms_required');
+        }
+
+        if ($errors === []) {
+            return;
+        }
+
+        throw ValidationException::withMessages($errors);
+    }
+
+    protected function notifyMissingRequiredInvoiceFields(ValidationException $exception): void
+    {
+        $labels = [
+            'payment_terms' => __('fields.payment_terms'),
+            'customer_id' => __('fields.client'),
+            'supplier_id' => __('fields.supplier'),
+            'date' => __('fields.date'),
+            'warehouse_id' => __('fields.warehouse'),
+            'items' => __('fields.items'),
+            'no' => __('fields.invoice_no'),
+        ];
+
+        $names = [];
+
+        foreach ($exception->errors() as $field => $messages) {
+            $root = explode('.', str_replace('data.', '', (string) $field))[0];
+            $names[] = $labels[$root] ?? (is_array($messages) ? ($messages[0] ?? $root) : $root);
+        }
+
+        $names = array_values(array_unique(array_filter($names)));
+        $separator = app()->getLocale() === 'ar' ? '، ' : ', ';
+
+        Notification::make()
+            ->warning()
+            ->title(__('fields.required_fields_missing_title'))
+            ->body($names === []
+                ? __('fields.required_fields_missing_generic')
+                : __('fields.required_fields_missing_body', ['fields' => implode($separator, $names)]))
+            ->persistent()
+            ->send();
     }
 
     protected function stashPendingCreditPaymentUi(): void

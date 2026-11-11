@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\ItemExtra;
 use App\Models\ItemPrice;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\ProductExtra;
 use App\Models\ProductionCost;
 use App\Models\ProductProductionCost;
@@ -24,6 +25,7 @@ use App\Models\Unit;
 use App\Models\VariantLibrary;
 use App\Models\VariantLibraryOption;
 use App\Models\Warehouse;
+use App\Rules\UniqueProductPerWholesalerRule;
 use App\Rules\UniqueTenantItemRule;
 use App\Services\FilamentVariantBuilderService;
 use App\Services\PricingService;
@@ -126,12 +128,44 @@ class ProductResource extends Resource
                             ->required()
                             ->live(true)
                             ->afterStateUpdated(fn($livewire) => self::updateVariantsViewV2($livewire))
-                            ->rules([new UniqueTenantItemRule(Product::class, 'name', $form->getRecord()?->id)])
                             ->label(__('fields.name')),
+
+                        Select::make('supplier_id')
+                            ->label(__('fields.wholesaler'))
+                            ->searchable()
+                            ->live()
+                            ->required()
+                            ->helperText(__('fields.product_identity_hint'))
+                            ->options(fn () => Supplier::query()->pluck('name', 'id'))
+                            ->createOptionForm(SupplierResource::getQuickCreateSchema())
+                            ->createOptionUsing(function ($data) {
+                                $data['tenant_id'] = filament()->getTenant()->id;
+
+                                return Supplier::create($data)->id;
+                            })
+                            ->createOptionAction(
+                                fn (Forms\Components\Actions\Action $action) => $action->modalWidth('md'),
+                            ),
 
                         Forms\Components\TextInput::make('barcode')
                             ->label(__('fields.barcode'))
-                            ->rules([new UniqueTenantItemRule(Product::class, 'barcode', $form->getRecord()?->id)]),
+                            ->helperText(__('fields.product_barcode_wholesaler_hint'))
+                            ->live(onBlur: true)
+                            ->rules([
+                                fn (Forms\Get $get): UniqueProductPerWholesalerRule => new UniqueProductPerWholesalerRule(
+                                    UniqueProductPerWholesalerRule::BARCODE,
+                                    $form->getRecord()?->id,
+                                    $get('supplier_id'),
+                                ),
+                            ]),
+
+                        Forms\Components\TextInput::make('accounting_code')
+                            ->label(__('fields.accounting_code'))
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->helperText(__('fields.product_accounting_code_wholesaler_hint'))
+                            ->formatStateUsing(fn (?Product $record) => $record?->acc4?->code)
+                            ->visible(fn (?Product $record) => filled($record?->acc4?->code)),
 
                         TextInput::make('sku')
                             ->required()
@@ -837,10 +871,21 @@ class ProductResource extends Resource
                     ->toggleable()
                     ->label(__('fields.category')),
 
+                Tables\Columns\TextColumn::make('supplier.name')
+                    ->label(__('fields.wholesaler'))
+                    ->searchable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('barcode')
                     ->label(__('fields.barcode'))
                     ->toggleable()
                     ->searchable(),
+
+                Tables\Columns\TextColumn::make('acc4.code')
+                    ->label(__('fields.accounting_code'))
+                    ->searchable()
+                    ->toggleable()
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('price')
                     ->label(__('fields.price'))
@@ -903,6 +948,12 @@ class ProductResource extends Resource
                     ->sortable(),
             ])
             ->filters([
+
+                Tables\Filters\SelectFilter::make('supplier_id')
+                    ->label(__('fields.wholesaler'))
+                    ->relationship('supplier', 'name')
+                    ->searchable()
+                    ->preload(),
 
                 Tables\Filters\Filter::make('created_at')
                     ->label(__('fields.created_at'))
@@ -1141,7 +1192,7 @@ class ProductResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['category', 'media', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks', 'invoiceItems.invoice.customer'])->latest();
+        return parent::getEloquentQuery()->with(['category', 'media', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks', 'invoiceItems.invoice.customer', 'supplier', 'acc4'])->latest();
     }
 
     public static function getPages(): array

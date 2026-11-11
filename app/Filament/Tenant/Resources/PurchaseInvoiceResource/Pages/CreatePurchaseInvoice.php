@@ -80,6 +80,7 @@ class CreatePurchaseInvoice extends CreateRecord
                 'for' => 'supplier',
                 'status' => 'confirmed',
                 'discount_option' => 'per-item',
+                'payment_terms' => null,
                 'supply_order_id' => $supplyOder->id,
                 'supplier_id' => $supplyOder->supplier_id,
                 'items' => $items,

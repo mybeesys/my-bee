@@ -113,6 +113,14 @@ class SalesInvoiceResource extends Resource
                     ->columnSpan(2)
                     ->type('warning'),
 
+                Shout::make('payment-terms-required-alert')
+                    ->visible(fn (Get $get) => $form->getRecord() === null && blank($get('payment_terms')))
+                    ->content(__('fields.payment_terms_required_hint'))
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->color(Color::Amber)
+                    ->columnSpanFull()
+                    ->type('warning'),
+
                 Shout::make('order-review-hint')
                     ->visible(fn () => $form->getRecord()?->isEditable()
                         && Order::where('invoice_id', $form->getRecord()?->id)->exists())

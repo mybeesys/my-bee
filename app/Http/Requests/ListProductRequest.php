@@ -24,6 +24,8 @@ class ListProductRequest extends BaseRequest
             'type' => ['sometimes', 'string', 'in:basic,variants'],
             'barcode' => ['sometimes', 'string'],
             'sku' => ['sometimes', 'string'],
+            'supplier_id' => ['sometimes', 'integer'],
+            'accounting_code' => ['sometimes', 'string'],
             'calories_min' => ['sometimes', 'integer'],
             'calories_max' => ['sometimes', 'integer'],
             'category_id' => ['sometimes', 'integer'],

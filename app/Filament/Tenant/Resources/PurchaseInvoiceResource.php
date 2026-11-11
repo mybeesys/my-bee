@@ -120,6 +120,14 @@ class PurchaseInvoiceResource extends Resource
                         ->columnSpan(2)
                         ->type('warning'),
 
+                    Shout::make('payment-terms-required-alert')
+                        ->visible(fn (Get $get) => $form->getRecord() === null && blank($get('payment_terms')))
+                        ->content(__('fields.payment_terms_required_hint'))
+                        ->icon('heroicon-o-exclamation-triangle')
+                        ->color(Color::Amber)
+                        ->columnSpanFull()
+                        ->type('warning'),
+
                     Forms\Components\Section::make()
                         ->disabled($form->getRecord()?->locked_at !== null)
                         ->schema([

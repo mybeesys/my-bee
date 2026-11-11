@@ -6,7 +6,9 @@ use App\Traits\HasFinancialAccount;
 use App\Traits\HasPrice;
 use App\Traits\HasStock;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -55,6 +57,18 @@ class Product extends BaseModel implements HasMedia
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
+    protected function barcode(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => filled($value) ? trim((string) $value) : null,
+        );
     }
 
     public function taxProfile()

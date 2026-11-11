@@ -31,7 +31,7 @@ class ProductController extends BaseController
      */
     public function index(ListProductRequest $request)
     {
-        $data = Product::with(['category', 'variantOptions', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks.warehouse', 'taxProfile'])
+        $data = Product::with(['category', 'variantOptions', 'allStocks', 'extras.prices', 'extras.lastPrice', 'lastPrice', 'prices', 'stocks.warehouse', 'taxProfile', 'supplier', 'acc4'])
             ->when($request->name, function (Builder $builder) use ($request) {
                 return $builder->where('name', 'LIKE', '%' . $request->name . '%');
             })
@@ -43,6 +43,12 @@ class ProductController extends BaseController
             })
             ->when($request->sku, function (Builder $builder) use ($request) {
                 return $builder->where('sku', $request->sku);
+            })
+            ->when($request->supplier_id, function (Builder $builder) use ($request) {
+                return $builder->where('supplier_id', $request->supplier_id);
+            })
+            ->when($request->accounting_code, function (Builder $builder) use ($request) {
+                return $builder->whereHas('acc4', fn (Builder $acc4) => $acc4->where('code', $request->accounting_code));
             })
             ->when($request->calories_min or $request->calories_max, function (Builder $builder) use ($request) {
                 return $builder->whereBetween('calories', [$request->calories_min ?? 0, $request->calories_max ?? PHP_INT_MAX]);
@@ -91,7 +97,7 @@ class ProductController extends BaseController
             $product = null;
 
             if ($data['type'] == "basic") {
-                $product = Product::create(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants']));
+                $product = Product::create(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants', 'accounting_code']));
 
                 PricingService::instance()
                     ->tenant($data['tenant_id'])
@@ -105,7 +111,7 @@ class ProductController extends BaseController
                 if ($request->hasFile('images'))
                     return $this->errorBadRequest()->message("Cannot receive images on type variants this way, please specify image per variant")->respond();
 
-                $product = Product::create(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants']));
+                $product = Product::create(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants', 'accounting_code']));
 
                 $variant_library_options_ids = collect($data['variants'])->pluck('variant_library_options_ids')->flatten()->toArray();
 
@@ -185,7 +191,7 @@ class ProductController extends BaseController
     public function show(string $id)
     {
         $product = Product::with(['category', 'allStocks', 'extras.prices',
-            'extras.lastPrice', 'lastPrice', 'prices', 'stocks.warehouse', 'taxProfile'])->findOrFail($id);
+            'extras.lastPrice', 'lastPrice', 'prices', 'stocks.warehouse', 'taxProfile', 'supplier', 'acc4'])->findOrFail($id);
 
         return $this->responder(__('messages_data_stored'), 201, new ProductResource($product))->respond();
     }
@@ -213,7 +219,7 @@ class ProductController extends BaseController
             }
 
             if ($data['type'] == "basic") {
-                $product->update(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants']));
+                $product->update(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants', 'accounting_code']));
 
                 PricingService::instance()
                     ->tenant($data['tenant_id'])
@@ -227,7 +233,7 @@ class ProductController extends BaseController
                 if ($request->hasFile('images'))
                     return $this->errorBadRequest()->message("Cannot receive images on type variants this way, please specify image per variant")->respond();
 
-                $product->update(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants']));
+                $product->update(Arr::except($data, ['price', 'discount_price', 'images', 'extras', 'variants', 'accounting_code']));
 
                 $variant_library_options_ids = collect($variants)->pluck('variant_library_options_ids')->flatten()->toArray();
 

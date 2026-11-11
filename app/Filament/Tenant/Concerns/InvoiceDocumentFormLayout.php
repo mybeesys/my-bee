@@ -474,13 +474,23 @@ trait InvoiceDocumentFormLayout
     {
         return Forms\Components\Select::make('payment_terms')
             ->label(__('fields.payment_terms'))
+            ->placeholder(__('fields.payment_terms_placeholder'))
             ->options([
                 'cash' => __('fields.payment_terms_cash'),
                 'credit' => __('fields.payment_terms_credit'),
             ])
-            ->default('credit')
+            ->default(fn () => $form->getRecord() ? null : 'credit')
+            ->required()
             ->native(false)
             ->live()
+            ->helperText(fn (Get $get): string => match ($get('payment_terms')) {
+                'cash' => __('fields.payment_terms_cash_hint'),
+                'credit' => __('fields.payment_terms_credit_hint'),
+                default => __('fields.payment_terms_required_hint'),
+            })
+            ->validationMessages([
+                'required' => __('fields.payment_terms_required'),
+            ])
             ->disabled($form->getRecord()?->locked_at !== null);
     }
 
